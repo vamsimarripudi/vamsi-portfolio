@@ -1,0 +1,19 @@
+*{
+    
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+html,body{
+    overflow-x:hidden;
+}
+
+
+.app-container {
+    background-color:black;
+    color:#ffffff;
+    margin-top:0px;
+    padding-top:10px;
+    
+}
+
