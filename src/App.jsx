@@ -27,8 +27,9 @@ const App = () => {
     <>
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-10 bg-black">
-        <img src="/Mobile version.gif" className="w-auto h-auto block md:hidden " alt="Mobile Loader..." />
-         <img src="/Desktop version.gif" alt="Desktop Loader..." className="w-auto h-auto hidden md:block"/>
+          <img src="/Desktop version.gif" alt="Desktop Loader..." className=" hidden md:block w-auto h-auto"/>
+        <img src="/Mobile version.gif" className=" block md:hidden  w-auto h-auto" alt="Mobile Loader..." />
+         
         </div>
         
       ) : (
