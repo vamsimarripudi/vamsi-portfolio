@@ -71,8 +71,6 @@ const App = () => (
        <FaArrowUp size={28}/>
          </div>
           </div>
-      )}
-    )
-
+      )
 
 export default App
