@@ -10,29 +10,8 @@ import { FaArrowUp } from 'react-icons/fa';
 import "./App.css";
 
 
-const App = () => {
-  const [isLoading, setItLoaded ] = useState(true)
+const App = () => (
   
-
-  useEffect(() => {
-    
-    const timer = setTimeout(() => {
-      setItLoaded(false);
-    }, 3000); // Simulate a 2-second loading time
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <>
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-10 bg-black">
-          <img src="/Desktop version.gif" alt="Desktop Loader..." className=" hidden md:block w-auto h-auto"/>
-        <img src="/Mobile version.gif" className=" block md:hidden  w-auto h-auto" alt="Mobile Loader..." />
-         
-        </div>
-        
-      ) : (
         
         <div className="app-container bg-gradient-to-r from-black-800 via-black-900 to-black min-h-screen text-white scroll-smooth">
     <Header />
@@ -93,9 +72,7 @@ const App = () => {
          </div>
           </div>
       )}
-    </>
-  )
-}
+    )
 
 
 export default App
