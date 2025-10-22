@@ -12,15 +12,10 @@ import "./App.css";
 
 const App = () => {
   const [isLoading, setItLoaded ] = useState(true)
-  const [isMobile, setIsMobile] = useState(false);
+  
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768); // mobile breakpoint
-    };
-
-    handleResize(); // run on load
-    window.addEventListener("resize", handleResize);
+    
     const timer = setTimeout(() => {
       setItLoaded(false);
     }, 3000); // Simulate a 2-second loading time
@@ -32,7 +27,8 @@ const App = () => {
     <>
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-10 bg-black">
-          {isMobile ? (<img src="/Mobile version.gif" className="w-auto h-auto " alt="Mobile Loader..." />) : (<img src="/Desktop version.gif" alt="Desktop Loader..." className="w-auto h-auto"/>)}
+        <img src="/Mobile version.gif" className="w-auto h-auto block md:hidden " alt="Mobile Loader..." />
+         <img src="/Desktop version.gif" alt="Desktop Loader..." className="w-auto h-auto hidden md:block"/>
         </div>
         
       ) : (
