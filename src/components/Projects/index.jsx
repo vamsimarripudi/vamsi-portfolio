@@ -3,21 +3,24 @@ import { CarouselDefault } from "../../Context/ProjectCard/projectcard.jsx";
 const projectsList = [
   {
     title: "Jobby App",
-    description: "Jobby — Your career starts with one tap!",
+    description: "Your career starts with one tap!",
     link: "https://jobbybyvamsi.ccbp.tech",
     imageUrl: "/jobby-image-1.png",
+    technologies:["HTML","CSS","JavaScript","ReactJS"]
   },
   {
-    title: "BMI Calculator",
-    description: "Calculate your Body Mass Index with ease!",
-    link: "https://vamsibmiapp.ccbp.tech",
-    imageUrl: "/bmi-image-1.png",
+    title: "Twitter Clone DB",
+    description: "API perform Operations to Twitter Clone.",
+    link: "https://github.com/vamsimarripudi/twitter-API-s.git",
+    imageUrl: "https://res.cloudinary.com/dpd6wdnou/image/upload/v1761218488/ChatGPT_Image_Oct_23_2025_04_48_26_PM_nf8jcy.png",
+    technologies:["NodeJS","ExpressJS","REST API","CURD"]
   },
   {
     title: "NxtTrenz E-commerce",
     description: "Your one-stop shop for the latest trends!",
     link: "https://nxttrendsvamsi.ccbp.tech",
     imageUrl: "/nxttrend-image-1.png",
+    technologies:["HTML","CSS","JavaScript","ReactJS"]
   },
 ];
 
@@ -40,7 +43,7 @@ const Projects = () => (
           <img
             src={project.imageUrl}
             alt={project.title}
-            className="w-full h-56 sm:h-64 object-cover"
+            className="w-auto h-56 sm:h-64 object-cover"
           />
 
           {/* Content */}
@@ -51,18 +54,14 @@ const Projects = () => (
             <p className="text-gray-300 text-md mb-3">{project.description}</p>
 
             <ul className="flex flex-wrap gap-2 mb-4">
-              <li className="bg-black text-white px-3 py-1 text-sm rounded-full">
-                HTML
-              </li>
-              <li className="bg-black text-white px-3 py-1 text-sm rounded-full">
-                CSS
-              </li>
-              <li className="bg-black text-white px-3 py-1 text-sm rounded-full">
-                JavaScript
-              </li>
-              <li className="bg-black text-white px-3 py-1 text-sm rounded-full">
-                ReactJS
-              </li>
+              {project.technologies.map((tech, techIndex) => (
+                <li
+                  key={techIndex}
+                  className="bg-black text-white px-3 py-1 text-sm rounded-full"
+                >
+                  {tech}
+                </li>
+              ))}
             </ul>
 
             <a
