@@ -26,8 +26,8 @@ const imageLogos = [
 
 export default function Skills() {
   return (
-    <div style={{ height: '200px', position: 'relative', overflow: 'hidden'}}>
-        <h1 className="text-3xl ml-15 mt-5 font-bold mb-5">My Skills</h1>
+    <div  style={{ height: '200px', position: 'relative', overflow: 'hidden'}}>
+        <h1 className="text-3xl ml-8 md:ml-15 mt-5 font-bold mb-5">My Skills</h1>
       <LogoLoop
         logos={techLogos}
         speed={120}

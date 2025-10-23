@@ -111,15 +111,15 @@ const Contact = () => {
     return (
         <>
             {showPopup && (
-            <div>
+            <div
              className="fixed top-6 right-6 z-[9999] bg-gradient-to-r from-[#e8f7ff] to-[#f0fff0] 
                rounded-xl border border-[#b2e2e2] shadow-md 
-               px-8 py-4 text-[#0078d4] font-bold text-lg"
+               px-8 py-4 text-[#0078d4] font-bold text-lg">
              Request successful
              </div>
             )}
             <div className="min-h-130 px-4 md:px-3 mt-7  ">
-             <h1 className="text-3xl  font-bold ml-15 sm: text-2xl ml-10 text-white mt-10">Contact Me</h1>
+             <h1 className="text-3xl  font-bold  sm: text-2xl ml-7 md:ml-10 text-white mt-10">Contact Me</h1>
              <div className=" border-1 rounded-3xl p-5 ml-2 w-88 mr-2 flex flex-col md:flex-row items-center md:items-start mt-5 w-auto space-y-8 md:space-y-0 md:ml-13 md:mr-13  md:space-x-10">
             <div className="ml-7 flex flex-col md:flex-row w-full md:w-auto" ref={root}>
                 
@@ -137,10 +137,10 @@ const Contact = () => {
                     </div>
                     <div>
 								<strong>Open to:</strong>
-								<ul className="list-none flex items-center  mt-2">
-									<li className="list-item m-1 text-sm md:text-lg rounded-full border-1 pl-3 pr-3">Remote roles</li>
-									<li className="list-item m-1 text-sm md:text-lg rounded-full border-1 pl-3 pr-3">Freelancing</li>
-									<li className="list-item m-1  text-sm md:text-lg rounded-full border-1 pl-3 pr-3">Collaborations</li>
+								<ul className="list-none flex items-center flex-wrap  mt-2">
+									<li className="list-item m-1 text-sm md:text-md rounded-full border-1 pl-3 pr-3">Remote roles</li>
+									<li className="list-item m-1 text-sm md:text-md rounded-full border-1 pl-3 pr-3">Freelancing</li>
+									<li className="list-item m-1  text-sm md:text-md rounded-full border-1 pl-3 pr-3">Collaborations</li>
 								</ul>
 							</div>
                     
@@ -149,7 +149,7 @@ const Contact = () => {
             </div> 
             <hr className="mx-6 border-1 h-70 mt-20 mb-20 hidden md:block"/>
             <div>
-                <form className="max-w-md bg-gray-800 p-6 rounded-lg shadow-lg" onSubmit={handleSubmit}>
+                <form className="max-w-md bg-gray-800  p-6 rounded-lg shadow-lg" onSubmit={handleSubmit}>
                     <div className=" flex  md:flex-row items-center mb-4 flex-col items-start gap-4">
                         <div>
                         <label className="block text-white mb-2" htmlFor="name">Name</label>
@@ -157,7 +157,7 @@ const Contact = () => {
                             type="text"
                             id="name"
                             placeholder="Enter Your Name"
-                            className=" w-70 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className=" w-66 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.name}
                             onChange={(e) => {
                                 setFormData({...formData,name:e.target.value}); 
@@ -171,7 +171,7 @@ const Contact = () => {
                             type="email"    
                             id="email"
                             placeholder="Enter Your Email"
-                            className="w-70 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-66 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.email}
                             onChange={(e) => {
                                 setFormData({...formData, email: e.target.value});
