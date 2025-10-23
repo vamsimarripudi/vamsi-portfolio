@@ -24,14 +24,23 @@ const projectsList = [
   },
 ];
 
+function credentialsAlert(){
+
+    alert("Username: rahul, Password: rahul@2021")
+
+}
+
 const Projects = () => (
   <section
     id="projects"
     className="w-full min-h-screen bg-black text-white px-4 sm:px-8 md:px-16 py-10 overflow-x-hidden"
   >
+    <div className="flex items-center justify-between md:flex-row md:items-center md:justify-between mb-10">
     <h1 className="text-3xl font-bold mb-8 text-center md:text-left">
       My Projects
     </h1>
+    <p title="click to view the credentials" onClick={() => credentialsAlert()} className="cursor-pointer text-gray-400 text-sm mb-6 text-center md:text-left">Credentials</p>
+    </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-center">
       {projectsList.map((project, index) => (

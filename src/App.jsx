@@ -13,7 +13,7 @@ import "./App.css";
 const App = () => (
   
         
-  <div className="app-container bg-gradient-to-r from-black-800 via-black-900 to-black min-h-screen min-w-screen text-white scroll-smooth mr-5 overflow-x-hidden ">
+  <div className="app-container bg-gradient-to-r from-black-800 via-black-900 to-black min-h-screen min-w-screen text-white scroll-smooth mr-5  ">
     <Header />
     <section id="home"><Home/></section>
     <section id="projects"><Projects/></section>
@@ -30,7 +30,7 @@ const App = () => (
           <p className="text-gray-300 ml-2 text-lg">Mobile No: +91-7013981759</p>
         </div>
         <div>
-          <h3 className="underline">Quick Links</h3>
+          <h3 className="underline text-lg mb-1 text-white">Quick Links</h3>
           <ul className="space-y-2">
               <li><a href="#home" className="hover:text-blue-400">Home</a></li>
               <li><a href="#about" className="hover:text-blue-400">About</a></li>
@@ -41,7 +41,7 @@ const App = () => (
 
         </div>
         <div>
-          <h3 className="underline">Technologies</h3>
+          <h3 className="underline text-lg mb-1 text-white">Technologies</h3>
           <ul className="flex flex-col justify-center list-none">
           <a href ="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank"><li className="m-1 hover:text-blue-500">JavaScript</li></a>
           <a href="https://react.dev/" target="_blank"><li className="m-1 hover:text-blue-500">ReactJS</li></a>
@@ -53,7 +53,7 @@ const App = () => (
           </ul>
         </div>
         <div>
-          <h3 className="underline">Address</h3>
+          <h3 className="underline text-white text-lg mb-1 ">Address</h3>
           <p>1-95, Ramanayyapeta,</p>
           <p>Kirlampudi,</p>
           <p>Kirlampudi Mandal,</p>

@@ -131,9 +131,9 @@ const Contact = () => {
                 <div>
                     <h3 className="mb-5 text-white-800 text-md underline">Social Media:-</h3>
                     <div className="flex items-center mb-5">
-                        <a href="https://www.linkedin.com/in/vamsimarripudi/" target="_blank"><FaLinkedin size={40} className="text-white-600 mr-3"/></a>
-                        <a href="https://github.com/vamsimarripudi" target="_blank"><FaGithub size={35} className="text-white-600 mr-3"/></a>
-                        <a href="https://x.com/myselfvamsi27" target="_blank"><BsTwitterX size={32} className="text-white-600 "/></a>
+                        <a href="https://www.linkedin.com/in/vamsimarripudi/" target="_blank"><FaLinkedin title="LinkedIn" size={40} className="text-white-600 mr-3"/></a>
+                        <a href="https://github.com/vamsimarripudi" target="_blank"><FaGithub title="GitHub" size={35} className="text-white-600 mr-3"/></a>
+                        <a href="https://x.com/myselfvamsi27" target="_blank"><BsTwitterX title="Twitter" size={32} className="text-white-600 "/></a>
                     </div>
                     <div>
 								<strong>Open to:</strong>
@@ -223,7 +223,7 @@ const Contact = () => {
                     <div className=" flex flex-row items-center justify-between mb-4">
                         <div style={{ display:"flex", justifyContent:"flex-start", color: remaining < 0 ? 'crimson' : 'var(--muted)' }}>{remaining} words left</div>
                         <div className="flex flex-row items-flex-end justify-end">
-                    <button type="submit" className="bg-black-500 text-white px-4 py-2 border-1 rounded-md hover:bg-blue-600 transition-colors duration-300">Submit</button>
+                    <button type="submit" className="bg-black-500 text-white px-4 py-2 border-1 rounded-md hover:bg-blue-600 transition-colors duration-300" title="Click to Submit the Form">Submit</button>
                     </div>
                     </div>
                     {error && <div style={{color:"red"}}>{error}</div>}
