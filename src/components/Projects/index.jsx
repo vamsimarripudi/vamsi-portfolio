@@ -23,13 +23,13 @@ const projectsList = [
 
 
 const Projects = () => (
-    <div className="min-h-82 mt-5 mb-10 m-10  text-white">
-        <h1 className="text-3xl ml-5 mt-5 font-bold">My Projects</h1>
+    <div className="min-h-82 min-w-88 mt-5 mb-10 m-10 mr-2  text-white">
+        <h1 className="text-3xl ml-2 mt-5 md:ml-5 font-bold">My Projects</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 px-4 md:px-8">
   {projectsList.map((project, index) => (
     <div
       key={index}
-      className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:scale-105  transition-transform duration-300 flex flex-col"
+      className="bg-gray-800   rounded-lg overflow-hidden shadow-lg hover:scale-105  transition-transform duration-300 flex flex-col"
     >
       {/* Image */}
       <img

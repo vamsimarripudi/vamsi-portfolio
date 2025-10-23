@@ -12,6 +12,13 @@
     color:#ffffff;
     margin-top:0px;
     padding-top:10px;
-    
+
+    margin:0px;
 }
 
+
+@media screen and (max-width: 768px) {
+    .app-container {
+        padding: 5px;
+    }
+}

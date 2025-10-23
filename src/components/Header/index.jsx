@@ -7,7 +7,7 @@ const Header = () => {
     const [isOpen,setOpen] = useState(false);
 
    return (
-    <nav className="bg-glass ml-2 md:ml-15  rounded-full   p-4 text-white mt-3 ml-8 mr-13 border-white-500  ">
+    <nav className="bg-glass ml-1   md:ml-15  rounded-full   p-2 text-white mt-3 ml-8  border-white-500  ">
         <div className="flex items-center justify-around hidden md:block md:flex">
            <div>
              <h1 className="font-serif text-3xl  font-bold">
@@ -35,8 +35,8 @@ const Header = () => {
             </div>
        </div>
         {/* Mobile-Menu */}
-       <div className="mt-2 pl-10 pr-10 text-center border-1 flex items-center justify-between border-white-100 rounded-full w-100 md:hidden sm:block ">
-          <img src="/Favcon.jpg" alt="logo" className="h-15 w-20"/>
+       <div className="mt-2  pl-8 p-3 pr-10  text-center border-1 flex items-center justify-between border-white-100 rounded-full w-78 md:hidden sm:block ">
+          <img src="/Favcon.jpg" alt="logo" className="h-10 w-15 "/>
           <button onClick={() => setOpen(!isOpen)}>
             {isOpen ? "X": <HiOutlineBars3 className="h-8 w-8 text-white cursor-pointer "/>}
           </button>

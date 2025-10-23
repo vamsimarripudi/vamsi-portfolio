@@ -120,7 +120,7 @@ const Contact = () => {
             )}
             <div className="min-h-130 px-4 md:px-3 mt-7  ">
              <h1 className="text-3xl  font-bold ml-15 sm: text-2xl ml-10 text-white mt-10">Contact Me</h1>
-             <div className=" border-1 rounded-3xl p-5 ml-13 mr-13 flex flex-col md:flex-row items-center md:items-start mt-5 space-y-8 md:space-y-0 md:space-x-10">
+             <div className=" border-1 rounded-3xl p-5 ml-2 w-88 mr-2 flex flex-col md:flex-row items-center md:items-start mt-5 w-auto space-y-8 md:space-y-0 md:ml-13 md:mr-13  md:space-x-10">
             <div className="ml-7 flex flex-col md:flex-row w-full md:w-auto" ref={root}>
                 
                 <div className="left  md:ml-15  md:mb-0 max-w-auto">
@@ -157,7 +157,7 @@ const Contact = () => {
                             type="text"
                             id="name"
                             placeholder="Enter Your Name"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className=" w-70 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.name}
                             onChange={(e) => {
                                 setFormData({...formData,name:e.target.value}); 
@@ -165,13 +165,13 @@ const Contact = () => {
                             }
                         />
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-2 md:ml-4">
                         <label className="block text-white mb-2" htmlFor="email">Email</label>
                         <input
                             type="email"    
                             id="email"
                             placeholder="Enter Your Email"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-70 md:w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.email}
                             onChange={(e) => {
                                 setFormData({...formData, email: e.target.value});
