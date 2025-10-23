@@ -150,7 +150,7 @@ const Contact = () => {
             <hr className="mx-6 border-1 h-70 mt-20 mb-20 hidden md:block"/>
             <div>
                 <form className="max-w-md bg-gray-800 p-6 rounded-lg shadow-lg" onSubmit={handleSubmit}>
-                    <div className=" flex  flex-row items-center mb-4">
+                    <div className=" flex  md:flex-row items-center mb-4 flex-col items-start gap-4">
                         <div>
                         <label className="block text-white mb-2" htmlFor="name">Name</label>
                         <input
@@ -199,7 +199,7 @@ const Contact = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-white mb-2" htmlFor="budget">Budget</label>
+                            <label className="block text-white mb-2" htmlFor="budget">Budget (INR)</label>
                             <input type="text" id="budget" placeholder="Enter Your Budget" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.budget}
                            

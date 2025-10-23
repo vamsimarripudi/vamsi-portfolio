@@ -7,7 +7,7 @@ const Header = () => {
     const [isOpen,setOpen] = useState(false);
 
    return (
-    <nav className="bg-glass  rounded-full   p-4 text-white mt-3 ml-13 mr-13 border-white-500  ">
+    <nav className="bg-glass ml-2 md:ml-15  rounded-full   p-4 text-white mt-3 ml-8 mr-13 border-white-500  ">
         <div className="flex items-center justify-around hidden md:block md:flex">
            <div>
              <h1 className="font-serif text-3xl  font-bold">
@@ -42,12 +42,15 @@ const Header = () => {
           </button>
           
           {isOpen && (
-            <ul  className="flex  md:hidden bg-neutral-900 text-center space-y-4 py-6">
-              <li><a href="#home" className="block hover:text-cyan-400" onClick={() => setIsOpen(false)}>Home</a></li>
-              <li><a href="#projects" className="block hover:text-cyan-400" onClick={() => setIsOpen(false)}>Projects</a></li>
-              <li><a href="#about" className="block hover:text-cyan-400" onClick={() => setIsOpen(false)}>About</a></li>
-              <li><a href="#contact" className="block hover:text-cyan-400" onClick={() => setIsOpen(false)}>Contact</a></li>
+            <div className="absolute top-20 left-4 right-4 z-10 rounded-lg shadow-lg m-10 bg-neutral-900  ">
+            <ul  className="flex flex-col items-center  justify-center md:hidden bg-neutral-900 text-center space-y-4 py-6 ">
+              <li><a href="#home" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Home</a></li>
+              <li><a href="#projects" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Projects</a></li>
+              <li><a href="#about" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>About</a></li>
+              <li><a href="#contact" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Contact</a></li>
+              <li><a href="https://www.backendportfolio.xyz" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Resourses</a></li>
             </ul>
+            </div>
             
           )}
          

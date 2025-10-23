@@ -22,7 +22,7 @@ const App = () => (
     <section id="contact"><Contact/></section>
     <footer className="min-h-72 text-center p-4 text-gray-400 border-t bg-gray border-gray-700 mt-10">
       <div className=" flex flex-wrap grid grid-cols-1 md:grid-cols-4  mb-4">
-        <div className="flex flex-col items-start m-3">
+        <div className="text-center flex flex-col items-center md:items-start m-3">
         
           <h1 className="text-blue-400 text-3xl m-2 mb-3 font-serif font-bold">Vamsi Marripudi</h1>
           <p className="text-gray-300 m-2">Full Stack Developer</p>
