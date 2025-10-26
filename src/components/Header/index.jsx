@@ -27,7 +27,7 @@ const Header = () => {
             <li><a href="#skills" className="hover:underline">Skills</a></li>
             <li><a href="#about" className="hover:underline">About</a></li>
             <li><a href="#contact" className="hover:underline">Contact</a></li>
-            <li><a href="https://www.backendportfolio.xyz/responses" className="hover:underline">Resources</a></li>
+            <li><a href="https://www.backendportfolio.xyz/responses" target="_blank" className="hover:underline">Responses</a></li>
              </ul>
             <div>
             <a href="#contact">
@@ -49,7 +49,7 @@ const Header = () => {
               <li><a href="#projects" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Projects</a></li>
               <li><a href="#about" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>About</a></li>
               <li><a href="#contact" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Contact</a></li>
-              <li><a href="https://www.backendportfolio.xyz/response" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Resourses</a></li>
+              <li><a href="https://www.backendportfolio.xyz/responses" target='_blank' className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Responses</a></li>
             </ul>
             </div>
             

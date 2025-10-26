@@ -1,0 +1,26 @@
+.image-div {
+  height: 16rem;
+  width: 100%   ;
+   /* Default height for small screens */
+}
+
+@media (min-width: 640px) {
+  .image-div {
+    height: 18rem;
+    width: 100%; /* Medium screens */
+  }
+}
+
+@media (min-width: 768px) {
+  .image-div {
+    height: 18rem;
+    width: 100%; /* Large screens */
+  }
+}
+
+@media (min-width: 1024px) {
+  .image-div {
+    height: 15rem;
+    width: 100%; /* Extra large screens */
+  }
+}
