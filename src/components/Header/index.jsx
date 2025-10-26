@@ -44,12 +44,12 @@ const Header = () => {
           
           {isOpen && (
             <div className="absolute top-20 left-4 right-4 z-10 rounded-lg shadow-lg m-10 bg-neutral-900  ">
-            <ul  className="flex flex-col items-center  justify-center md:hidden bg-neutral-900 text-center space-y-4 py-6 ">
-              <li><a href="#home" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Home</a></li>
-              <li><a href="#projects" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Projects</a></li>
-              <li><a href="#about" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>About</a></li>
-              <li><a href="#contact" className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Contact</a></li>
-              <li><a href="https://www.backendportfolio.xyz/responses" target='_blank' className="block hover:text-cyan-400 mr-3" onClick={() => setIsOpen(false)}>Responses</a></li>
+            <ul  className="flex flex-col items-center  justify-center md:hidden rounded-3xl bg-neutral-900 text-center space-y-4 py-6 ">
+              <li className="border-1 rounded-full border-white pl-5 p-2 pr-5 w-50 text-sm "><a href="#home" className="text-center block hover:text-cyan-400 " onClick={() => setIsOpen(false)}>Home</a></li>
+              <li className='border-1 rounded-full border-white pl-5 p-2 pr-5 w-50 text-sm'><a href="#projects" className="block hover:text-cyan-400 " onClick={() => setIsOpen(false)}>Projects</a></li>
+              <li className='border-1 rounded-full border-white pl-5 p-2 pr-5 w-50 text-sm'><a href="#about" className="block hover:text-cyan-400 " onClick={() => setIsOpen(false)}>About</a></li>
+              <li className='border-1 rounded-full border-white pl-5 p-2 pr-5 w-50 text-sm'><a href="#contact" className="block hover:text-cyan-400 " onClick={() => setIsOpen(false)}>Contact</a></li>
+              <li className='border-1 rounded-full border-white pl-5 p-2 pr-5 w-50 text-sm'><a href="https://www.backendportfolio.xyz/responses" target='_blank' className="block hover:text-cyan-400 " onClick={() => setIsOpen(false)}>Responses</a></li>
             </ul>
             </div>
             
