@@ -33,7 +33,7 @@ function credentialsAlert() {
 const Projects = () => (
   <section
     id="projects"
-    className="w-full min-h-screen bg-black text-white px-4 sm:px-8 md:px-16 py-10 overflow-x-hidden"
+    className="w-full min-h-screen  px-4 sm:px-8 md:px-16 py-10 overflow-x-hidden"
   >
     <div className="flex items-center justify-between flex-wrap mb-10">
       <h1 className="text-3xl font-bold mb-4 text-center md:text-left">

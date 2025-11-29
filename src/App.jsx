@@ -13,7 +13,7 @@ import "./App.css";
 const App = () => (
   
         
-  <div className="app-container bg-gradient-to-r from-black-800 via-black-900 to-black min-h-screen min-w-screen text-white scroll-smooth mr-5  ">
+  <div className="app-container  min-h-screen min-w-screen  scroll-smooth mr-5  ">
     <Header />
     <section id="home"><Home/></section>
     <section id="projects"><Projects/></section>

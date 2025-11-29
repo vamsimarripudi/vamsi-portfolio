@@ -41,7 +41,7 @@ const Home = () => {
       {/* 🏠 Home Section */}
       <section
         id="home"
-        className="w-full min-h-screen bg-black text-white flex flex-col-reverse md:flex-row items-center justify-center px-6 sm:px-10 md:px-16 py-10 md:py-20 overflow-x-hidden"
+        className="w-full min-h-screen  flex flex-col-reverse md:flex-row items-center justify-center px-6 sm:px-10 md:px-16 py-10 md:py-20 overflow-x-hidden"
       >
         {/* ✍️ Left Section - Text Content */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-2xl">
@@ -89,13 +89,7 @@ const Home = () => {
         </div>
 
         {/* 🖼️ Right Section - Profile Image */}
-        <div className="flex justify-center md:justify-end mt-8 md:mt-0">
-          <img
-            src="/vamsi image.png"
-            alt="Vamsi Marripudi"
-            className="w-56 h-56 sm:w-72 sm:h-72 md:w-80 rounded-xl border border-blue-500 shadow-lg hover:scale-105 transition-transform duration-300"
-          />
-        </div>
+        
       </section>
     </>
   );

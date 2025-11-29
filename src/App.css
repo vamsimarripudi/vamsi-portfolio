@@ -2,14 +2,15 @@
     
     box-sizing: border-box;
     font-family: 'Arial', sans-serif;
+    
 }
 
 
 
 
 .app-container {
-    background-color:black;
-    color:#ffffff;
+    background-image:linear-gradient(to top,#0F0C29,#302B63);
+    color:#f4f4f4;
     margin-top:0px;
     padding-top:10px;
 
