@@ -23,7 +23,7 @@ const About = () => (
       {/* Right Section (Image) */}
       <div className="flex justify-center md:justify-end">
         <img
-          src="/vamsi image.png"
+          src="https://assests.vamsimarripudi.tech/vamsi+image.png"
           alt="Vamsi Marripudi"
           className="w-56 h-60 sm:w-72 sm:h-72 md:w-75 rounded-xl border border-blue-500 shadow-lg hover:scale-105 transition-transform duration-300"
         />
