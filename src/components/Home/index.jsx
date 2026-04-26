@@ -80,7 +80,7 @@ const Home = () => {
                 View Projects
               </button>
             </a>
-            <a href="/Vamsi CV(Full-stack).pdf" download>
+            <a href="/Vamsi-CV.pdf" download>
               <button className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-black border border-green-400 transition duration-300">
                 Download CV
               </button>
