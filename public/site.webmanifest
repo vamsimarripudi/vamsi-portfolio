@@ -1,0 +1,9 @@
+{
+  "name": "Vamsi Marripudi — Founder Engineer",
+  "short_name": "Vamsi Marripudi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#f7f6f2",
+  "icons": [{ "src": "/vm-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

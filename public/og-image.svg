@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Vamsi Marripudi — Founder Engineer</title>
+  <desc id="desc">A dark editorial social card with the VM monogram.</desc>
+  <rect width="1200" height="630" fill="#171816"/>
+  <path d="M0 0H1200M0 157.5H1200M0 315H1200M0 472.5H1200M200 0V630M400 0V630M600 0V630M800 0V630M1000 0V630" stroke="#f2f0e9" stroke-opacity=".1"/>
+  <rect x="80" y="80" width="160" height="160" rx="26" fill="#f2f0e9"/>
+  <path d="M109 112h28l24 69 24-69h28l-39 98h-26z" fill="#171816"/>
+  <path d="m184 112 29 98h-25l-16-54z" fill="#db4c2f"/>
+  <text x="80" y="380" fill="#f2f0e9" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-3">Vamsi Marripudi</text>
+  <text x="84" y="434" fill="#b6b6ac" font-family="Arial, Helvetica, sans-serif" font-size="25" letter-spacing="2">FOUNDER ENGINEER</text>
+  <text x="84" y="480" fill="#b6b6ac" font-family="Arial, Helvetica, sans-serif" font-size="22">Full-stack products · Backend systems · Product engineering</text>
+  <rect x="84" y="544" width="170" height="5" fill="#db4c2f"/>
+</svg>
