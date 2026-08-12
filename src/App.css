@@ -99,3 +99,14 @@ html,body{max-width:100%;overflow-x:hidden}img,svg,video,canvas{max-width:100%;h
 @media(max-width:620px){.home-editorial,.work-catalog,.engineering-index,.now-ledger,.journey-strip{width:min(calc(100% - 2rem),var(--max));margin-top:4rem;padding-top:2.4rem}.home-editorial h2,.catalog-header h2{font-size:clamp(2.1rem,10.2vw,3.25rem)}.work-lead{grid-template-columns:1fr;padding:1.15rem}.work-lead-mark{min-height:170px}.work-lead-copy h3{font-size:clamp(2.15rem,12vw,3.5rem)}.work-lead-copy dl{grid-template-columns:1fr;gap:.45rem}.work-supporting-item{min-height:unset}.engineering-index-item{grid-template-columns:2.5rem minmax(0,1fr) auto;gap:.75rem;padding-block:1.15rem}.engineering-index-item:hover{padding-inline:0}.engineering-index-item h3{font-size:1.2rem}.engineering-index-item p{font-size:.87rem}.journey-strip ol{grid-template-columns:1fr}.journey-strip li,.journey-strip li+li{padding:1.15rem 0;border-right:0;border-bottom:1px solid var(--line)}.journey-strip li:last-child{border-bottom:0}.ledger-footer{align-items:flex-start;flex-direction:column}.contact-panel{margin-top:4.5rem!important;border-radius:var(--radius-sm);padding:1.25rem!important}.contact-panel h2{font-size:clamp(2.15rem,11vw,3.45rem)}}
 @media(hover:none){.work-supporting-item:hover{background:var(--bg);color:var(--ink)}.engineering-index-item:hover{padding-inline:0;color:var(--ink)}}
 @media(prefers-reduced-motion:reduce){.work-supporting-item,.work-supporting-item>svg,.engineering-index-item,.engineering-index-item>svg{transition:none!important}}
+
+/* Typography calibration: reduce display scale without flattening hierarchy. */
+:root{--type-display:clamp(2.85rem,5.1vw,5.35rem);--type-section:clamp(2rem,3.8vw,3.9rem)}
+.hero h1,.hero-title{max-width:740px!important;font-size:clamp(2.95rem,5.35vw,5.45rem)!important}
+.page-hero h1,.case-hero h1,.article-page h1,.not-found h1{font-size:clamp(2.65rem,5.3vw,5.55rem)!important}
+.home-editorial h2,.catalog-header h2{max-width:790px;font-size:clamp(2rem,3.85vw,4rem)}
+.work-lead-copy h3{font-size:clamp(2rem,3.65vw,3.9rem)}
+.work-lead-mark b{font-size:clamp(3.25rem,6.4vw,5.9rem)}
+.contact-panel h2{font-size:clamp(2.1rem,4.1vw,4.35rem)}
+.engineering-note h2,.writing-list h2{font-size:clamp(2rem,3.75vw,3.55rem)}
+@media(max-width:620px){.hero h1,.hero-title{font-size:clamp(2.65rem,11.3vw,3.75rem)!important}.home-editorial h2,.catalog-header h2{font-size:clamp(1.95rem,9.3vw,2.9rem)}.work-lead-copy h3{font-size:clamp(1.95rem,10vw,2.85rem)}.contact-panel h2{font-size:clamp(2rem,9.7vw,3rem)}}
