@@ -11,3 +11,7 @@
 
 /* Keep the homepage version aligned with the site container; page routes inherit from .page. */
 main>.how-build{width:min(calc(100% - 3rem),var(--max));margin-left:auto;margin-right:auto}@media(max-width:620px){main>.how-build{width:min(calc(100% - 2rem),var(--max))}}
+
+.changelog-list{margin:0;padding:0;border-top:1px solid var(--line);list-style:none}.changelog-list li{display:grid;grid-template-columns:4rem minmax(0,1fr);gap:1rem;padding:1.7rem 0;border-bottom:1px solid var(--line)}.changelog-list>li>span{color:var(--accent);font:700 .7rem ui-monospace,monospace}.changelog-list h2{margin:.2rem 0 .55rem;font-size:clamp(1.35rem,3vw,2.5rem);letter-spacing:-.05em}.changelog-list p:last-child{max-width:720px;margin:0;color:var(--muted);line-height:1.65}@media(max-width:620px){.changelog-list li{grid-template-columns:2.7rem 1fr}}
+
+.contact-intent{grid-column:1/-1;margin:0;padding:.75rem 0;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}.not-found-actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2rem}.not-found-actions .arrow-link{margin:0}@media(max-width:620px){.contact-intent{grid-column:auto}}
