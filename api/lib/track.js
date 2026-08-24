@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export const TRACK_OWNER_EMAIL = 'enquiry.portfolio@vamsimarripudi.tech';
 export const TRACK_STATUSES = ['NEW', 'ACKNOWLEDGED', 'REVIEWING', 'REPLIED', 'FOLLOW_UP_DUE', 'WAITING_ON_CONTACT', 'COMPLETED', 'CLOSED', 'SPAM', 'ERASURE_PENDING', 'ERASED'];
@@ -154,33 +154,37 @@ export const emailShell = ({ preheader, body }) => `<!doctype html><html lang="e
 
 export const escapeHtml = (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
-export const requestMagicLink = async () => {
-  const raw = randomToken();
-  const tokenHash = valueHash(raw);
-  await query()`INSERT INTO track_auth_tokens (token_hash, owner_email, expires_at) VALUES (${tokenHash}, ${ownerEmail()}, NOW() + INTERVAL '15 minutes')`;
-  const verifyUrl = `${SITE_URL}/api/track/auth/verify?token=${encodeURIComponent(raw)}`;
+const otpHash = (challengeId, code) => valueHash(`${challengeId}:${code}:${sign(challengeId)}`);
+const newOtp = () => randomInt(100000, 1000000).toString();
+
+export const requestOtp = async () => {
+  const challengeId = randomUUID();
+  const code = newOtp();
+  const tokenHash = otpHash(challengeId, code);
+  await query()`UPDATE track_auth_tokens SET consumed_at = NOW() WHERE owner_email = ${ownerEmail()} AND consumed_at IS NULL`;
+  await query()`INSERT INTO track_auth_tokens (id, token_hash, owner_email, expires_at) VALUES (${challengeId}, ${tokenHash}, ${ownerEmail()}, NOW() + INTERVAL '10 minutes')`;
   const messageId = await sendResend({
     to: ownerEmail(),
     replyTo: TRACK_OWNER_EMAIL,
-    subject: 'Secure sign-in link for Enquiry Tracker',
-    text: `Use this one-time link to sign in to Enquiry Tracker: ${verifyUrl}\n\nThe link expires in 15 minutes. If you did not request it, ignore this email.`,
-    html: emailShell({ preheader: 'Your secure Enquiry Tracker sign-in link.', body: `<tr><td style="padding:30px"><h1 style="margin:0 0 14px;font-size:25px">Sign in to Enquiry Tracker</h1><p style="color:#4f514b;line-height:1.6">Use this one-time link to access the private tracker. It expires in 15 minutes.</p><p><a href="${verifyUrl}" style="display:inline-block;padding:12px 16px;background:#171816;color:#fff;text-decoration:none">Open Enquiry Tracker</a></p><p style="color:#64665f;font-size:13px;line-height:1.5">If you did not request this, you can ignore this email.</p></td></tr>` }),
-    idempotencyKey: `track-auth-${tokenHash}`,
-    tags: [{ name: 'type', value: 'track-auth' }],
+    subject: 'Your Enquiry Tracker verification code',
+    text: `Your Enquiry Tracker verification code is ${code}.\n\nIt expires in 10 minutes and can be used once. If you did not request it, ignore this email.`,
+    html: emailShell({ preheader: 'Your Enquiry Tracker verification code.', body: `<tr><td style="padding:30px"><h1 style="margin:0 0 14px;font-size:25px">Verify your sign-in</h1><p style="color:#4f514b;line-height:1.6">Enter this one-time code in Enquiry Tracker. It expires in 10 minutes.</p><p style="margin:24px 0;padding:16px 18px;border:1px solid #deded8;background:#f5f5f3;font-size:30px;font-weight:800;letter-spacing:.24em;text-align:center">${code}</p><p style="color:#64665f;font-size:13px;line-height:1.5">If you did not request this code, you can ignore this email.</p></td></tr>` }),
+    idempotencyKey: `track-otp-${challengeId}`,
+    tags: [{ name: 'type', value: 'track-otp' }],
   });
-  return messageId;
+  return { challengeId, messageId };
 };
 
-export const consumeMagicLink = async (token) => {
-  const tokenHash = valueHash(token);
-  const rows = await query()`UPDATE track_auth_tokens SET consumed_at = NOW() WHERE token_hash = ${tokenHash} AND owner_email = ${ownerEmail()} AND consumed_at IS NULL AND expires_at > NOW() RETURNING id, owner_email`;
+export const consumeOtp = async ({ challengeId, code }) => {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(challengeId) || !/^\d{6}$/.test(code)) throw new TrackError(401, 'This verification code is invalid or has expired.', 'OTP_INVALID');
+  const tokenHash = otpHash(challengeId, code);
+  const rows = await query()`UPDATE track_auth_tokens SET consumed_at = NOW() WHERE id = ${challengeId} AND token_hash = ${tokenHash} AND owner_email = ${ownerEmail()} AND consumed_at IS NULL AND expires_at > NOW() RETURNING id, owner_email`;
   const tokenRecord = rows[0];
-  if (!tokenRecord) throw new TrackError(401, 'This sign-in link is invalid or has expired.', 'AUTH_LINK_INVALID');
+  if (!tokenRecord) throw new TrackError(401, 'This verification code is invalid or has expired.', 'OTP_INVALID');
   const id = randomToken(24);
   await query()`INSERT INTO track_sessions (id, owner_email, expires_at) VALUES (${id}, ${ownerEmail()}, NOW() + INTERVAL '8 hours')`;
   return id;
 };
-
 export const setSession = (res, id) => res.setHeader('Set-Cookie', sessionCookie(id));
 
 export const closeSession = async (req, res) => {

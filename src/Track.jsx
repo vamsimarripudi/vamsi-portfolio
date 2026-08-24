@@ -23,19 +23,31 @@ function TrackHeader({ onLogout }) {
   return <header className="track-header"><Link to="/track" className="track-brand" aria-label="Enquiry Tracker home"><span>VM<span>.</span></span><b>Enquiry Tracker</b></Link><div><span className="track-private"><FiLock/> Private owner workspace</span>{onLogout && <button type="button" className="track-logout" onClick={onLogout}><FiLogOut/> Sign out</button>}</div></header>;
 }
 
-function SignIn({ onSignedIn }) {
-  const [state, setState] = useState('idle');
+function SignIn({ onAuthenticated }) {
+  const [email, setEmail] = useState('');
+  const [challengeId, setChallengeId] = useState('');
+  const [code, setCode] = useState('');
+  const [state, setState] = useState('email');
   const [message, setMessage] = useState('');
-  const location = useLocation();
-  const requested = new URLSearchParams(location.search).get('auth');
-  const sendLink = async (event) => {
-    event.preventDefault(); setState('sending'); setMessage('');
-    try { const result = await request('/api/track/auth/request', { method: 'POST', body: JSON.stringify({ email: OWNER }) }); setMessage(result.message); setState('sent'); onSignedIn?.(); }
-    catch (error) { setMessage(error.message); setState('idle'); }
+  const [messageType, setMessageType] = useState('success');
+  const requestCode = async (event) => {
+    event?.preventDefault();
+    setState('sending'); setMessage(''); setMessageType('success');
+    try {
+      const result = await request('/api/track/auth/request', { method: 'POST', body: JSON.stringify({ email }) });
+      setChallengeId(result.challengeId); setCode(''); setMessage(result.message); setMessageType('success'); setState('verify');
+    } catch (error) { setMessage(error.message); setMessageType('error'); setState('email'); }
   };
-  return <main className="track-auth"><section><p className="track-kicker">Vamsi Marripudi / private workspace</p><h1>Enquiry Tracker</h1><p>This workspace is restricted to the authorized owner. A single-use sign-in link is sent only to the designated enquiry mailbox.</p>{requested && <p className="track-alert" role="alert">That sign-in link is invalid, expired, or already used. Request a fresh link below.</p>}<form onSubmit={sendLink}><label>Email<input value={OWNER} readOnly aria-readonly="true"/></label><button type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Sending secure link…' : <><FiMail/> Email secure sign-in link</>}</button></form>{message && <p className={state === 'sent' ? 'track-success' : 'track-alert'} role="status">{message}</p>}<Link to="/" className="track-back"><FiArrowLeft/> Back to public site</Link></section></main>;
+  const verifyCode = async (event) => {
+    event.preventDefault(); setState('verifying'); setMessage(''); setMessageType('success');
+    try {
+      await request('/api/track/auth/verify', { method: 'POST', body: JSON.stringify({ challengeId, code }) });
+      onAuthenticated();
+    } catch (error) { setMessage(error.message); setMessageType('error'); setState('verify'); }
+  };
+  const reset = () => { setChallengeId(''); setCode(''); setMessage(''); setMessageType('success'); setState('email'); };
+  return <main className="track-auth"><section><p className="track-kicker">Vamsi Marripudi / private workspace</p><h1>Enquiry Tracker</h1>{state === 'email' || state === 'sending' ? <><p>Enter the approved owner email to receive a six-digit verification code.</p><form onSubmit={requestCode}><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required placeholder="enquiry.portfolio@vamsimarripudi.tech"/></label><button type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Sending code…' : <><FiMail/> Send verification code</>}</button></form></> : <><p>A verification code was sent to <strong>{OWNER}</strong>. Enter it below to open the private tracker.</p><form onSubmit={verifyCode}><label>Six-digit code<input className="track-otp-input" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" required autoFocus placeholder="000000"/></label><button type="submit" disabled={state === 'verifying' || code.length !== 6}>{state === 'verifying' ? 'Verifying code…' : <><FiLock/> Verify and sign in</>}</button></form><button type="button" className="track-secondary-action" onClick={requestCode} disabled={state === 'verifying'}>Send a new code</button><button type="button" className="track-text-action" onClick={reset}>Use a different email</button></>}{message && <p className={messageType === 'error' ? 'track-alert' : 'track-success'} role={messageType === 'error' ? 'alert' : 'status'}>{message}</p>}<Link to="/" className="track-back"><FiArrowLeft/> Back to public site</Link></section></main>;
 }
-
 function Dashboard() {
   const toast = useToast();
   const navigate = useNavigate();
@@ -66,7 +78,7 @@ function PrivateTrack() {
   useEffect(() => { checkSession(); }, [location.pathname]);
   const logout = async () => { try { await request('/api/track/auth/logout', { method: 'POST', body: '{}' }); } finally { setSession('guest'); window.location.assign('/track'); } };
   if (session === 'checking') return <main className="track-auth"><p>Checking secure access…</p></main>;
-  if (session === 'guest') return <SignIn onSignedIn={() => {}}/>;
+  if (session === 'guest') return <SignIn onAuthenticated={() => setSession('ready')}/>;
   return <><TrackHeader onLogout={logout}/><Routes><Route index element={<Dashboard/>}/><Route path="enquiries/:referenceId" element={<Detail/>}/><Route path="*" element={<Dashboard/>}/></Routes></>;
 }
 

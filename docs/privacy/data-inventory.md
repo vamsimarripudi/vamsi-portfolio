@@ -18,5 +18,5 @@
 - No advertising cookies or marketing tracker.
 - No visitor analytics or session-replay product.
 - No public user account, newsletter list, or public phone-number collection.
-- The private owner-only Enquiry Tracker uses Neon PostgreSQL, passwordless email-link authentication, and a short-lived signed HttpOnly session.
+- The private owner-only Enquiry Tracker uses Neon PostgreSQL, passwordless email-code authentication, and a short-lived signed HttpOnly session.
 - No contact-message body is deliberately written to server logs by `api/contact.js`.
