@@ -71,13 +71,13 @@ export function useToast() {
 }
 
 function ToastViewport({ toasts, dismiss }) {
+  const labels = { success: 'Saved', info: 'Update', warning: 'Attention', error: 'Action required', loading: 'Working', offline: 'Network' };
   return <div className="toast-viewport" aria-label="Notifications">{toasts.map((toast) => {
     const Icon = iconByVariant[toast.variant] || FiInfo;
     const isAlert = toast.variant === 'error' || toast.variant === 'offline';
-    return <section key={toast.id} className={`toast toast-${toast.variant}`} role={isAlert ? 'alert' : 'status'} aria-live={isAlert ? 'assertive' : 'polite'} aria-atomic="true"><Icon aria-hidden="true"/><div><strong>{toast.title}</strong>{toast.description && <p>{toast.description}</p>}{toast.action && <button type="button" onClick={() => { toast.action.onClick?.(); dismiss(toast.id); }}>{toast.action.label}</button>}</div><button type="button" className="toast-close" aria-label={`Dismiss ${toast.title}`} onClick={() => dismiss(toast.id)}><FiX/></button></section>;
+    return <section key={toast.id} className={`toast toast-${toast.variant}`} role={isAlert ? 'alert' : 'status'} aria-live={isAlert ? 'assertive' : 'polite'} aria-atomic="true"><span className="toast-icon" aria-hidden="true"><Icon/></span><div className="toast-content"><span className="toast-kind">{labels[toast.variant] || 'Update'}</span><strong>{toast.title}</strong>{toast.description && <p>{toast.description}</p>}{toast.action && <button type="button" className="toast-action" onClick={() => { toast.action.onClick?.(); dismiss(toast.id); }}>{toast.action.label}</button>}</div><button type="button" className="toast-close" aria-label={`Dismiss ${toast.title}`} onClick={() => dismiss(toast.id)}><FiX/></button></section>;
   })}</div>;
 }
-
 export function NetworkWatcher() {
   const toast = useToast();
   useEffect(() => {
