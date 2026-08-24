@@ -41,4 +41,9 @@ export const staticRouteMeta = {
   '/uses': { title: 'Vamsi Marripudi — Uses', description: pageDescriptions['/uses'] },
   '/contact': { title: 'Vamsi Marripudi — Contact', description: pageDescriptions['/contact'] },
   '/changelog': { title: 'Vamsi Marripudi — Changelog', description: pageDescriptions['/changelog'] },
+  '/not-found': { title: 'Page Not Found — Vamsi Marripudi', description: 'This route does not exist on vamsimarripudi.tech.', noindex: true },
+  '/offline': { title: 'You’re Offline — Vamsi Marripudi', description: 'Connection status and recovery options for vamsimarripudi.tech.', noindex: true },
+  '/error': { title: 'Something Went Wrong — Vamsi Marripudi', description: 'A recoverable application error page for vamsimarripudi.tech.', noindex: true },
+  '/maintenance': { title: 'Maintenance — Vamsi Marripudi', description: 'Temporary maintenance information for vamsimarripudi.tech.', noindex: true },
+  '/rate-limited': { title: 'Too Many Requests — Vamsi Marripudi', description: 'A temporary rate limit recovery page for vamsimarripudi.tech.', noindex: true },
 };

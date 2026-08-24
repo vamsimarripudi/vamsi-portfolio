@@ -24,6 +24,8 @@ The site intentionally uses the existing compact structure:
 
 - `src/App.jsx` — routes, canonical profile/project/content data, accessible interactions, route metadata, schema, and page components.
 - `src/App.css` — visual tokens, responsive rules, reduced-motion alternatives, and the shared motion system.
+- `src/Resilience.jsx` + `src/Resilience.css` — global toast feedback, network state, error normalization, recovery pages, and the application error boundary.
+- `src/SignalRunner.jsx` — an optional local Canvas mini-game, loaded only from a recovery page.
 - `public/` — CV, favicon/mark, sitemap, robots, manifest, and social preview asset.
 - `vercel.json` — SPA rewrite plus proportional security headers.
 
@@ -52,6 +54,12 @@ The Vercel rewrite supports direct visits to client-side routes. Update `public/
 The engineering path, system map, principles, case-study architecture view, Lab transform, and command palette all work with buttons and keyboard focus. They use native browser features and degrade to visible static content with `prefers-reduced-motion: reduce`.
 
 The command palette is available through Ctrl/Cmd + K. It supports partial search, arrow-key selection, Enter, Escape, focus trapping, and focus restoration. The Lab transform works only on local JSON and never evaluates code or calls external APIs.
+
+## Resilience and recovery
+
+The site uses one native React toast system for loading, success, warning, error, offline, and connection-restored feedback. It limits the visible stack to three and replaces repeated messages by ID. Dedicated noindex utility routes are available at `/not-found`, `/offline`, `/error`, `/maintenance`, and `/rate-limited`; unknown production paths use the generated branded `404.html` rather than the old catch-all SPA rewrite.
+
+`NetworkWatcher` preserves readable pages when a connection drops and offers offline mode instead of forcing a redirect. `/offline` can check the lightweight local `robots.txt` resource before returning home. There is no service worker, so first-load offline availability remains browser-cache dependent. Signal Runner is local and lazy-loaded only after a visitor explicitly chooses it.
 
 ## Contact and privacy
 

@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { SITE_IDENTITY, SITE_URL, staticRouteMeta } from '../src/seo.js';
 
 const distDir = new URL('../dist/', import.meta.url);
@@ -9,6 +9,7 @@ const replaceMeta = (html, attribute, value) => html.replace(
   `$1${escapeHtml(value)}$2`,
 );
 
+let notFoundHtml = baseHtml;
 for (const [route, meta] of Object.entries(staticRouteMeta)) {
   const canonical = `${SITE_URL}${route === '/' ? '/' : route}`;
   let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(meta.title)}</title>`);
@@ -19,10 +20,12 @@ for (const [route, meta] of Object.entries(staticRouteMeta)) {
   html = replaceMeta(html, 'name="twitter:title"', meta.title);
   html = replaceMeta(html, 'name="twitter:description"', meta.description);
   html = html.replace(/(<link rel="canonical" href=")[^"]*("\s*\/?>)/i, `$1${canonical}$2`);
+  if (meta.noindex) html = html.replace('</head>', '    <meta name="robots" content="noindex, follow" />\n  </head>');
   const routeDir = route === '/' ? distDir : new URL(`${route.slice(1)}/`, distDir);
   await mkdir(routeDir, { recursive: true });
   await writeFile(new URL('index.html', routeDir), html);
+  if (route === '/not-found') notFoundHtml = html;
 }
 
-await cp(new URL('index.html', distDir), new URL('404.html', distDir));
+await writeFile(new URL('404.html', distDir), notFoundHtml);
 console.log(`Generated crawler-visible metadata for ${Object.keys(staticRouteMeta).length} routes: ${SITE_IDENTITY.name}.`);
