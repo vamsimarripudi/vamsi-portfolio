@@ -1,4 +1,4 @@
-﻿# Vamsi Personal Site
+# Vamsi Personal Site
 
 A Vite + React personal engineering profile for [vamsimarripudi.tech](https://vamsimarripudi.tech).
 
@@ -55,7 +55,15 @@ The command palette is available through Ctrl/Cmd + K. It supports partial searc
 
 ## Contact and privacy
 
-The contact flow uses `mailto:` and a honeypot field; it does not use a hosted backend or store submissions. A production server-side form requires a separately configured email/API endpoint, rate limiting, and environment secrets—none are included in this static app.
+The contact form posts to the Vercel function at `/api/contact`. Every accepted enquiry is routed to `enquiry.portfolio@vamsimarripudi.tech`, then the visitor receives a transactional acknowledgement with the same public reference ID. The owner notification uses the visitor as `Reply-To`; the visitor acknowledgement uses the enquiry mailbox as `Reply-To`.
+
+The endpoint validates input, escapes visitor content before it enters HTML email, limits request size, keeps the existing honeypot, rate-limits requests in memory, and suppresses accidental duplicate submissions for a short period. It stores no enquiry database or visitor profile. If owner delivery cannot be accepted by Resend, the UI shows a direct-email fallback. If the acknowledgement fails after owner delivery, the enquiry remains accepted and the server logs the safe event.
+
+Configure these server-side Vercel environment variables; never expose the API key in frontend code:
+
+- `RESEND_API_KEY` — Resend server credential.
+- `CONTACT_FROM_EMAIL` — verified transactional sender, for example `Vamsi Marripudi <contact@vamsimarripudi.tech>`.
+- `CONTACT_TO_EMAIL` — fixed enquiry mailbox: `enquiry.portfolio@vamsimarripudi.tech`.
 
 ## Deployment
 
