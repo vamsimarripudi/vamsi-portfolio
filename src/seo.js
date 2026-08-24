@@ -18,6 +18,7 @@ export const pageDescriptions = {
   '/resume': 'Web résumé for Vamsi Marripudi, Founder Engineer.',
   '/uses': 'Tools Vamsi Marripudi uses for product engineering.',
   '/contact': 'Contact Vamsi Marripudi for engineering opportunities and collaboration.',
+  '/privacy': 'Privacy Notice for vamsimarripudi.tech, including contact-form processing and local browser preferences.',
   '/changelog': 'A lightweight record of verified improvements to Vamsi Marripudi’s personal engineering site.',
 };
 
@@ -40,6 +41,7 @@ export const staticRouteMeta = {
   '/resume': { title: 'Vamsi Marripudi — Résumé', description: pageDescriptions['/resume'] },
   '/uses': { title: 'Vamsi Marripudi — Uses', description: pageDescriptions['/uses'] },
   '/contact': { title: 'Vamsi Marripudi — Contact', description: pageDescriptions['/contact'] },
+  '/privacy': { title: 'Vamsi Marripudi — Privacy Notice', description: pageDescriptions['/privacy'] },
   '/changelog': { title: 'Vamsi Marripudi — Changelog', description: pageDescriptions['/changelog'] },
   '/not-found': { title: 'Page Not Found — Vamsi Marripudi', description: 'This route does not exist on vamsimarripudi.tech.', noindex: true },
   '/offline': { title: 'You’re Offline — Vamsi Marripudi', description: 'Connection status and recovery options for vamsimarripudi.tech.', noindex: true },

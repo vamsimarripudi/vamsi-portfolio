@@ -69,7 +69,7 @@ const emailShell = ({ preheaderText, body }) => `<!doctype html>
           ${body}
           <tr><td style="padding:20px 32px 26px;border-top:1px solid #deded8;color:#64665f;font-size:12px;line-height:18px;">
             <strong style="color:#171816;">Vamsi Marripudi</strong> · Founder Engineer<br>
-            <a href="${SITE_URL}" style="color:#171816;text-decoration:underline;">vamsimarripudi.tech</a> · <a href="mailto:${DEFAULT_RECIPIENT}" style="color:#171816;text-decoration:underline;overflow-wrap:anywhere;">${DEFAULT_RECIPIENT}</a>
+            <a href="${SITE_URL}" style="color:#171816;text-decoration:underline;">vamsimarripudi.tech</a> · <a href="${SITE_URL}/privacy" style="color:#171816;text-decoration:underline;">Privacy Notice</a> · <a href="mailto:${DEFAULT_RECIPIENT}" style="color:#171816;text-decoration:underline;overflow-wrap:anywhere;">${DEFAULT_RECIPIENT}</a>
             <div style="margin-top:10px;">${escapeHtml('You received this message because you contacted Vamsi through vamsimarripudi.tech.')}</div>
           </td></tr>
         </table>
