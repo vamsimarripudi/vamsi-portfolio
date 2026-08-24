@@ -151,7 +151,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.CONTACT_FROM_EMAIL;
-  const recipient = process.env.CONTACT_TO_EMAIL || DEFAULT_RECIPIENT;
+  const recipient = DEFAULT_RECIPIENT;
   if (!apiKey || !from || !isEmail(recipient)) {
     console.error('contact.configuration_missing');
     return res.status(503).json({ ok: false, message: `Message delivery is temporarily unavailable. Please email ${DEFAULT_RECIPIENT} directly.` });
