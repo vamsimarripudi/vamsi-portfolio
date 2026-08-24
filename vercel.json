@@ -16,9 +16,9 @@
   ],
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "www.vamsimarripudi.tech" }],
-      "destination": "https://vamsimarripudi.tech/:path*",
+      "destination": "https://vamsimarripudi.tech/$1",
       "permanent": true
     }
   ],
