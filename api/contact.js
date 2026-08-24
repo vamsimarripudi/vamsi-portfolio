@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { createEmailEvent, createEnquiry } from './lib/track.js';
 
 const DEFAULT_RECIPIENT = 'enquiry.portfolio@vamsimarripudi.tech';
 const SITE_URL = 'https://vamsimarripudi.tech';
@@ -89,12 +90,13 @@ const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:in
 
 const ownerEmail = (entry) => {
   const replyUrl = `mailto:${encodeURIComponent(entry.email)}?subject=${encodeURIComponent(`Re: ${entry.referenceId}`)}`;
+  const trackerUrl = `${SITE_URL}/track/enquiries/${encodeURIComponent(entry.referenceId)}`;
   return {
     subject: `New ${entry.reason} enquiry · ${entry.referenceId} · ${entry.name}`,
-    text: `NEW ENQUIRY\n\nReference: ${entry.referenceId}\nStatus: NEW\nSubmitted: ${entry.submittedAt}\n\nName: ${entry.name}\nEmail: ${entry.email}\nIntent: ${entry.reason}\n\nMESSAGE\n${entry.message}\n\nReply directly to this email to respond to ${entry.name}.\n\n${SITE_URL}`,
+    text: `NEW ENQUIRY\n\nReference: ${entry.referenceId}\nStatus: NEW\nSubmitted: ${entry.submittedAt}\n\nName: ${entry.name}\nEmail: ${entry.email}\nIntent: ${entry.reason}\n\nMESSAGE\n${entry.message}\n\nReply directly to this email to respond to ${entry.name}.\n\nOpen the private Enquiry Tracker: ${trackerUrl}\n\n${SITE_URL}`,
     html: emailShell({
       preheaderText: `New ${entry.reason} enquiry from ${entry.name}.`,
-      body: `<tr><td style="padding:32px;"><div style="color:#db4c2f;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">New enquiry · <span style="display:inline-block;padding:3px 7px;border:1px solid #db4c2f;border-radius:999px;">NEW</span></div><h1 style="margin:12px 0 7px;color:#171816;font-size:28px;line-height:34px;letter-spacing:-.5px;">${escapeHtml(entry.reason)}</h1><p style="margin:0 0 24px;color:#64665f;font-size:14px;line-height:21px;">Reference ${escapeHtml(entry.referenceId)} · ${escapeHtml(entry.submittedAt)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 25px;">${detailRow('Name', entry.name)}${detailRow('Email', entry.email, `mailto:${entry.email}`)}${detailRow('Intent', entry.reason)}${detailRow('Reference', entry.referenceId)}${detailRow('Submitted', entry.submittedAt)}</table><div style="margin:0 0 8px;color:#64665f;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Message</div><div style="padding:17px 18px;margin-bottom:25px;background:#f5f5f3;border:1px solid #deded8;border-radius:10px;color:#171816;font-size:14px;line-height:21px;white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(entry.message)}</div>${button(replyUrl, `Reply to ${entry.name}`)}</td></tr>`,
+      body: `<tr><td style="padding:32px;"><div style="color:#db4c2f;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">New enquiry · <span style="display:inline-block;padding:3px 7px;border:1px solid #db4c2f;border-radius:999px;">NEW</span></div><h1 style="margin:12px 0 7px;color:#171816;font-size:28px;line-height:34px;letter-spacing:-.5px;">${escapeHtml(entry.reason)}</h1><p style="margin:0 0 24px;color:#64665f;font-size:14px;line-height:21px;">Reference ${escapeHtml(entry.referenceId)} · ${escapeHtml(entry.submittedAt)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 25px;">${detailRow('Name', entry.name)}${detailRow('Email', entry.email, `mailto:${entry.email}`)}${detailRow('Intent', entry.reason)}${detailRow('Reference', entry.referenceId)}${detailRow('Submitted', entry.submittedAt)}</table><div style="margin:0 0 8px;color:#64665f;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Message</div><div style="padding:17px 18px;margin-bottom:25px;background:#f5f5f3;border:1px solid #deded8;border-radius:10px;color:#171816;font-size:14px;line-height:21px;white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(entry.message)}</div>${button(replyUrl, `Reply to ${entry.name}`)}&nbsp;&nbsp;${button(trackerUrl, `Open Enquiry Tracker`)}</td></tr>`,
     }),
   };
 };
@@ -158,9 +160,16 @@ export default async function handler(req, res) {
   }
 
   entry.referenceId = referenceId();
+  let trackerEnquiry = null;
+  try {
+    trackerEnquiry = await createEnquiry({ referenceId: entry.referenceId, name: entry.name, email: entry.email, intent: entry.reason, subject: '', message: entry.message });
+  } catch (error) {
+    console.error('contact.tracker_record.failed', { referenceId: entry.referenceId, code: error?.code || 'UNKNOWN' });
+  }
   try {
     const ownerEmailId = await sendEmail({ apiKey, from, to: recipient, replyTo: entry.email, email: ownerEmail(entry), tags: [{ name: 'type', value: 'contact-owner' }, { name: 'intent', value: entry.reason.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50) }, { name: 'reference', value: entry.referenceId }] });
     console.info('contact.owner_email.sent', { referenceId: entry.referenceId, providerMessageId: ownerEmailId });
+    if (trackerEnquiry) await createEmailEvent({ enquiryId: trackerEnquiry.id, providerMessageId: ownerEmailId, emailType: 'owner_notification', recipient, status: 'SENT' });
   } catch (error) {
     console.error('contact.owner_email.failed', { referenceId: entry.referenceId, error: error instanceof Error ? error.message : 'unknown' });
     return res.status(502).json({ ok: false, message: `Message delivery is temporarily unavailable. Please email ${DEFAULT_RECIPIENT} directly.` });
@@ -171,8 +180,10 @@ export default async function handler(req, res) {
     const confirmationEmailId = await sendEmail({ apiKey, from, to: entry.email, replyTo: recipient, email: confirmationEmail(entry), tags: [{ name: 'type', value: 'contact-confirmation' }, { name: 'intent', value: entry.reason.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50) }, { name: 'reference', value: entry.referenceId }] });
     confirmationSent = true;
     console.info('contact.confirmation.sent', { referenceId: entry.referenceId, providerMessageId: confirmationEmailId });
+    if (trackerEnquiry) await createEmailEvent({ enquiryId: trackerEnquiry.id, providerMessageId: confirmationEmailId, emailType: 'confirmation', recipient: entry.email, status: 'SENT' });
   } catch (error) {
     console.error('contact.confirmation.failed', { referenceId: entry.referenceId, error: error instanceof Error ? error.message : 'unknown' });
+    if (trackerEnquiry) { try { await createEmailEvent({ enquiryId: trackerEnquiry.id, emailType: 'confirmation', recipient: entry.email, status: 'FAILED', failureCode: error?.message || 'UNKNOWN' }); } catch { /* Tracker logging is non-critical to public email delivery. */ } }
   }
 
   submissions.set(key, { createdAt: Date.now(), referenceId: entry.referenceId, confirmationSent });

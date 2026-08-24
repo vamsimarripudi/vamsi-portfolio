@@ -3,7 +3,7 @@ export const PRIVACY = {
   contactEmail: 'enquiry.portfolio@vamsimarripudi.tech',
   siteUrl: 'https://vamsimarripudi.tech',
   lastUpdated: '24 August 2026',
-  version: '1.0',
+  version: '1.1',
 };
 
 export const privacySections = [
@@ -21,7 +21,7 @@ export const privacySections = [
   },
   {
     title: 'Service providers',
-    body: 'The site is hosted on Vercel. Contact-form email delivery uses Resend, and messages are delivered to Vamsi’s enquiry mailbox. These providers process only the information needed to host the site, deliver the message, and operate the relevant service. Their own privacy notices apply to their services.',
+    body: 'The site is hosted on Vercel. Contact-form email delivery uses Resend, and the private Enquiry Tracker stores contact records in Neon PostgreSQL. Messages are delivered to Vamsi’s enquiry mailbox. These providers process only the information needed to host the site, deliver the message, and operate the relevant service. Their own privacy notices apply to their services.',
   },
   {
     title: 'Local preferences and no advertising tracker',
@@ -29,11 +29,11 @@ export const privacySections = [
   },
   {
     title: 'Retention',
-    body: 'The site does not keep contact-form messages in an application database. In-memory abuse controls are short-lived: rate-limit entries are kept for up to 15 minutes and duplicate-submission fingerprints for up to 10 minutes per running instance. Contact correspondence in the enquiry mailbox is reviewed for deletion or archiving 24 months after the last meaningful interaction, unless a longer period is needed for a legal, security, or dispute-related reason. Delivery and platform logs are retained under the applicable provider account settings.',
+    body: 'Contact-form records, private notes, and delivery events are stored in the Enquiry Tracker for up to 24 months after the last meaningful interaction, then reviewed for deletion or anonymization. Spam records are reviewed within 90 days. Approved erasure requests redact the contact record and associated delivery recipients while retaining only minimal non-identifying audit evidence where necessary. In-memory abuse controls are short-lived: rate-limit entries are kept for up to 15 minutes and duplicate-submission fingerprints for up to 10 minutes per running instance. Contact correspondence, delivery, platform, and security logs are retained under the applicable provider account settings or longer only where reasonably needed for a legal, security, or dispute-related reason.',
   },
   {
     title: 'Security',
-    body: 'The contact endpoint uses server-side validation, a honeypot field, rate limiting, duplicate-submission protection, and HTTPS deployment controls. No security measure can guarantee absolute protection, so please avoid sending passwords, financial information, government identifiers, or other sensitive information through the form.',
+    body: 'The contact endpoint uses server-side validation, a honeypot field, rate limiting, duplicate-submission protection, private owner-only tracker access through single-use email links, and HTTPS deployment controls. No security measure can guarantee absolute protection, so please avoid sending passwords, financial information, government identifiers, or other sensitive information through the form.',
   },
   {
     title: 'Your privacy questions and requests',

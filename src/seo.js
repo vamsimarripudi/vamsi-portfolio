@@ -20,6 +20,7 @@ export const pageDescriptions = {
   '/contact': 'Contact Vamsi Marripudi for engineering opportunities and collaboration.',
   '/privacy': 'Privacy Notice for vamsimarripudi.tech, including contact-form processing and local browser preferences.',
   '/changelog': 'A lightweight record of verified improvements to Vamsi Marripudi’s personal engineering site.',
+  '/track': 'Private Enquiry Tracker for the authorized owner only.',
 };
 
 export const staticRouteMeta = {
@@ -43,6 +44,7 @@ export const staticRouteMeta = {
   '/contact': { title: 'Vamsi Marripudi — Contact', description: pageDescriptions['/contact'] },
   '/privacy': { title: 'Vamsi Marripudi — Privacy Notice', description: pageDescriptions['/privacy'] },
   '/changelog': { title: 'Vamsi Marripudi — Changelog', description: pageDescriptions['/changelog'] },
+  '/track': { title: 'Enquiry Tracker — Vamsi Marripudi', description: pageDescriptions['/track'], noindex: true },
   '/not-found': { title: 'Page Not Found — Vamsi Marripudi', description: 'This route does not exist on vamsimarripudi.tech.', noindex: true },
   '/offline': { title: 'You’re Offline — Vamsi Marripudi', description: 'Connection status and recovery options for vamsimarripudi.tech.', noindex: true },
   '/error': { title: 'Something Went Wrong — Vamsi Marripudi', description: 'A recoverable application error page for vamsimarripudi.tech.', noindex: true },
