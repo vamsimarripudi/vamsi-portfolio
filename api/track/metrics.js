@@ -10,9 +10,12 @@ export default async function handler(req, res) {
       SELECT
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE status = 'NEW')::int AS new_count,
-        COUNT(*) FILTER (WHERE status IN ('ACKNOWLEDGED', 'REVIEWING'))::int AS in_progress_count,
-        COUNT(*) FILTER (WHERE follow_up_at IS NOT NULL AND follow_up_at <= NOW() AND status NOT IN ('COMPLETED', 'CLOSED', 'SPAM', 'ERASED'))::int AS follow_up_due_count,
-        COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed_count
+        COUNT(*) FILTER (WHERE status = 'REVIEWING')::int AS in_progress_count,
+        COUNT(*) FILTER (WHERE follow_up_at IS NOT NULL AND follow_up_at <= NOW() AND status NOT IN ('COMPLETED', 'CLOSED', 'SPAM', 'ERASED', 'ERASURE_PENDING'))::int AS follow_up_due_count,
+        COUNT(*) FILTER (WHERE status = 'WAITING_ON_CONTACT')::int AS waiting_on_contact_count,
+        COUNT(*) FILTER (WHERE status = 'ERASURE_PENDING')::int AS erasure_pending_count,
+        COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed_count,
+        MAX(created_at) AS last_received_at
       FROM track_enquiries`;
     return json(res, 200, { ok: true, metrics: rows[0] });
   } catch (error) {
