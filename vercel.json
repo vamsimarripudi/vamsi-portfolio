@@ -14,7 +14,7 @@
       ]
     }
   ],
-  "crons": [{ "path": "/api/track/cron/followups", "schedule": "0 * * * *" }],
+  "crons": [{ "path": "/api/track/cron/followups", "schedule": "0 8 * * *" }],
   "redirects": [
     {
       "source": "/(.*)",
