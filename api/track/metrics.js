@@ -1,4 +1,4 @@
-import { json, query, requireOwner } from '../../lib/track.js';
+import { json, query, requireOwner } from '../lib/track.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return json(res, 405, { ok: false, message: 'Method not allowed.' });
