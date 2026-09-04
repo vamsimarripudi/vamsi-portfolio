@@ -19,6 +19,8 @@ export const pageDescriptions = {
   '/uses': 'Tools Vamsi Marripudi uses for product engineering.',
   '/contact': 'Contact Vamsi Marripudi for engineering opportunities and collaboration.',
   '/privacy': 'Privacy Notice for vamsimarripudi.tech, including contact-form processing and local browser preferences.',
+  '/terms': 'Terms of use for vamsimarripudi.tech.',
+  '/faq': 'Frequently asked questions about Vamsi Marripudi, this site, and contacting him.',
   '/changelog': 'A lightweight record of verified improvements to Vamsi Marripudi’s personal engineering site.',
   '/track': 'Private Enquiry Tracker for the authorized owner only.',
 };
@@ -43,6 +45,8 @@ export const staticRouteMeta = {
   '/uses': { title: 'Vamsi Marripudi — Uses', description: pageDescriptions['/uses'] },
   '/contact': { title: 'Vamsi Marripudi — Contact', description: pageDescriptions['/contact'] },
   '/privacy': { title: 'Vamsi Marripudi — Privacy Notice', description: pageDescriptions['/privacy'] },
+  '/terms': { title: 'Vamsi Marripudi — Terms of Use', description: pageDescriptions['/terms'] },
+  '/faq': { title: 'Vamsi Marripudi — FAQ', description: pageDescriptions['/faq'] },
   '/changelog': { title: 'Vamsi Marripudi — Changelog', description: pageDescriptions['/changelog'] },
   '/track': { title: 'Enquiry Tracker — Vamsi Marripudi', description: pageDescriptions['/track'], noindex: true },
   '/not-found': { title: 'Page Not Found — Vamsi Marripudi', description: 'This route does not exist on vamsimarripudi.tech.', noindex: true },

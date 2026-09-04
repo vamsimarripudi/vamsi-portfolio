@@ -137,3 +137,12 @@ html,body{max-width:100%;overflow-x:hidden}img,svg,video,canvas{max-width:100%;h
 .contact-submit-notice a,.contact-privacy a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:.16em}
 .site-footer small a{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:.18em}
 @media(max-width:620px){.privacy-notice>header,.privacy-notice>section{padding:1.35rem 0}.privacy-notice>aside{padding:1.2rem}.contact-submit-notice{font-size:.78rem}}
+/* Launch-readiness legal and FAQ pages */
+.faq-list{display:grid;max-width:860px;border-top:1px solid var(--line)}
+.faq-list details{border-bottom:1px solid var(--line)}
+.faq-list summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem 0;cursor:pointer;font-size:clamp(1.15rem,2vw,1.45rem);font-weight:700;letter-spacing:-.03em;list-style:none}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{content:'+';flex:0 0 auto;color:var(--accent);font:400 1.6rem/1 ui-monospace,monospace;transition:transform var(--motion-fast) var(--motion-ease)}
+.faq-list details[open] summary::after{transform:rotate(45deg)}
+.faq-list p{max-width:700px;margin:0;padding:0 0 1.35rem;color:var(--muted)}
+.terms-notice section:first-child{padding-top:0}
