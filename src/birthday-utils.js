@@ -1,10 +1,23 @@
-export const DEFAULT_BIRTHDAY_MESSAGE = `May this birthday bring you happiness that stays, memories that make you smile, and countless reasons to look forward to everything ahead. May the dreams you’ve been quietly wishing for find their way to you, and may this new year of your life be filled with beautiful moments, genuine people, exciting adventures, and unexpected blessings.
+export const BIRTHDAY_MESSAGE_TEMPLATES = Object.freeze([
+  `I hope today feels as warm, bright, and unforgettable as the happiness you bring to the people around you.
 
-Keep smiling, keep dreaming, and keep being the wonderful person you are.
+May this new year open doors to the moments you have been quietly hoping for, the people who feel like home, and the adventures that make you feel fully alive.
 
-Happy Birthday! 🎂✨`;
+Keep smiling, keep growing, and keep being exactly the wonderful person you are.`,
+  `Some people make ordinary days feel lighter just by being themselves. Today is for celebrating that rare kind of brightness in you.
 
-export const BIRTHDAY_LIMITS = Object.freeze({ recipientName: 60, senderName: 60, message: 3000, payload: 16000 });
+May the year ahead bring calm wins, beautiful surprises, and more reasons to be proud of the life you are creating.
+
+Here is to memories worth keeping and dreams worth chasing — one lovely year at a time.`,
+  `A birthday is a small pause to remember how far you have come and how much possibility still waits ahead.
+
+I hope the next chapter gives you honest joy, meaningful people, brave new beginnings, and the kind of peace that stays.
+
+May every good thing find its way to you at exactly the right time.`,
+]);
+
+export const DEFAULT_BIRTHDAY_MESSAGE = BIRTHDAY_MESSAGE_TEMPLATES[0];
+export const BIRTHDAY_LIMITS = Object.freeze({ recipientName: 60, senderName: 60, message: 720, payload: 5200 });
 
 const stripControls = (value) => Array.from(value, (character) => {
   const code = character.charCodeAt(0);
@@ -25,6 +38,8 @@ export const normalizeBirthdayData = (value = {}) => {
   return { recipientName, senderName, message: message || DEFAULT_BIRTHDAY_MESSAGE };
 };
 
+export const randomBirthdayMessage = () => BIRTHDAY_MESSAGE_TEMPLATES[Math.floor(Math.random() * BIRTHDAY_MESSAGE_TEMPLATES.length)];
+
 const toBase64Url = (text) => {
   const bytes = new TextEncoder().encode(text);
   let binary = '';
@@ -33,7 +48,7 @@ const toBase64Url = (text) => {
 };
 
 const fromBase64Url = (value) => {
-  if (!/^[A-Za-z0-9_-]{1,17000}$/.test(value)) return null;
+  if (!/^[A-Za-z0-9_-]{1,5400}$/.test(value)) return null;
   try {
     const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
     const binary = atob(padded);

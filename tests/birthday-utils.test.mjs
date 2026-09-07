@@ -19,8 +19,8 @@ test('birthday data strips unsafe controls and respects public-link limits', () 
   assert.equal(data.message, DEFAULT_BIRTHDAY_MESSAGE);
 });
 
-test('birthday links preserve a maximum-length Unicode message', () => {
-  const message = '✨'.repeat(1500);
+test('birthday links preserve the supported Unicode message size', () => {
+  const message = '✨'.repeat(Math.floor(BIRTHDAY_LIMITS.message / 2));
   const decoded = decodeBirthdayPayload(encodeBirthdayPayload({ recipientName: 'Riya', senderName: 'Vamsi', message }));
   assert.equal(decoded?.message, message);
 });
