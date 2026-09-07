@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FiArrowLeft, FiCopy, FiGift, FiMusic, FiPause, FiPlay, FiRotateCcw, FiShare2, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiCopy, FiEdit3, FiGift, FiMusic, FiPause, FiPlay, FiRotateCcw, FiShare2, FiX } from 'react-icons/fi';
 import { BIRTHDAY_LIMITS, birthdayShareUrl, decodeBirthdayPayload, normalizeBirthdayData, randomBirthdayMessage } from './birthday-utils.js';
 import './Birthday.css';
 
@@ -26,57 +26,30 @@ const useReducedMotion = () => {
   return reduced;
 };
 
-const makeNoise = (context, seconds) => {
-  const length = Math.max(1, Math.floor(context.sampleRate * seconds));
-  const buffer = context.createBuffer(1, length, context.sampleRate);
-  const samples = buffer.getChannelData(0);
-  for (let index = 0; index < length; index += 1) samples[index] = (Math.random() * 2 - 1) * (1 - index / length);
-  return buffer;
-};
-
 function useBirthdayAudio() {
-  const contextRef = useRef(null);
-  const timersRef = useRef([]);
+  const envelopeRef = useRef(null);
+  const applauseRef = useRef(null);
   const mutedRef = useRef(false);
   const [muted, setMuted] = useState(false);
   useEffect(() => { mutedRef.current = muted; }, [muted]);
-  const getContext = useCallback(() => {
-    if (contextRef.current) return contextRef.current;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return null;
-    contextRef.current = new AudioContext();
-    return contextRef.current;
+  useEffect(() => {
+    envelopeRef.current = new Audio('/sounds/birthday-envelope-open.mp3');
+    applauseRef.current = new Audio('/sounds/birthday-applause.mp3');
+    envelopeRef.current.preload = 'auto'; envelopeRef.current.volume = 0.34;
+    applauseRef.current.preload = 'auto'; applauseRef.current.volume = 0.26;
+    return () => [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } });
   }, []);
-  const clear = useCallback(() => { timersRef.current.forEach(window.clearTimeout); timersRef.current = []; }, []);
-  useEffect(() => () => { clear(); contextRef.current?.close?.().catch(() => {}); }, [clear]);
+  const playSound = useCallback((reference) => {
+    if (mutedRef.current || !reference.current) return;
+    reference.current.currentTime = 0;
+    reference.current.play().catch(() => {});
+  }, []);
   const paper = useCallback(() => {
-    if (mutedRef.current) return;
-    try {
-      const context = getContext(); if (!context) return;
-      context.resume?.();
-      const source = context.createBufferSource(); const filter = context.createBiquadFilter(); const gain = context.createGain();
-      source.buffer = makeNoise(context, 0.48); filter.type = 'bandpass'; filter.frequency.value = 1650; filter.Q.value = 0.7;
-      gain.gain.setValueAtTime(0.0001, context.currentTime); gain.gain.exponentialRampToValueAtTime(0.13, context.currentTime + 0.03); gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.46);
-      source.connect(filter).connect(gain).connect(context.destination); source.start();
-    } catch { /* Sound is progressive enhancement. */ }
-  }, [getContext]);
-  const celebrate = useCallback(() => {
-    if (mutedRef.current) return;
-    try {
-      const context = getContext(); if (!context) return;
-      context.resume?.();
-      Array.from({ length: 11 }, (_, index) => index).forEach((index) => {
-        const timer = window.setTimeout(() => {
-          const clap = context.createBufferSource(); const filter = context.createBiquadFilter(); const gain = context.createGain();
-          clap.buffer = makeNoise(context, 0.1); filter.type = 'highpass'; filter.frequency.value = 900 + (index % 3) * 180;
-          gain.gain.setValueAtTime(0.0001, context.currentTime); gain.gain.exponentialRampToValueAtTime(0.055, context.currentTime + 0.008); gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.095);
-          clap.connect(filter).connect(gain).connect(context.destination); clap.start();
-        }, index * 95 + (index % 2) * 40);
-        timersRef.current.push(timer);
-      });
-    } catch { /* Sound is progressive enhancement. */ }
-  }, [getContext]);
+    playSound(envelopeRef);
+  }, [playSound]);
+  const celebrate = useCallback(() => playSound(applauseRef), [playSound]);
   const toggle = useCallback(() => setMuted(current => !current), []);
+  const clear = useCallback(() => [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } }), []);
   return { muted, paper, celebrate, toggle, clear };
 }
 
@@ -95,24 +68,19 @@ function MugguFrame({ letter = false }) {
   </svg>;
 }
 
-function CelebrationParticles({ active, quiet = false }) {
-  const particles = useMemo(() => Array.from({ length: quiet ? 16 : 38 }, (_, index) => ({ id: index, x: (index * 37) % 96 + 2, delay: (index % 12) * 95, rotate: (index * 47) % 180, size: 5 + (index % 4) * 2 })), [quiet]);
-  return <div className={`birthday-particles ${active ? 'is-active' : ''}`} aria-hidden="true">{particles.map(particle => <i key={particle.id} style={{ '--x': `${particle.x}%`, '--delay': `${particle.delay}ms`, '--rotate': `${particle.rotate}deg`, '--size': `${particle.size}px` }}/>)}</div>;
-}
-
 function BirthdayEnvelope({ onOpen, disabled }) {
   return <div className={`birthday-envelope ${disabled ? 'is-opening' : ''}`}><div className="envelope-shadow"/><div className="envelope-back"/><div className="envelope-flap"/><div className="envelope-face"><span>For you</span><i/></div><button className="wax-seal" type="button" onClick={onOpen} disabled={disabled} aria-label="Open the birthday letter"><b>V</b><small>Tap to open</small></button></div>;
 }
 
 function WrittenParagraph({ text, visibleCharacters, complete }) {
-  return <p className="letter-paragraph">{Array.from(text).map((character, index) => <span className={complete || index < visibleCharacters ? 'is-written' : ''} key={`${character}-${index}`}>{character === ' ' ? ' ' : character}</span>)}</p>;
+  return <p className="letter-paragraph">{Array.from(text).map((character, index) => <span className={complete || index < visibleCharacters ? 'is-written' : ''} key={`${character}-${index}`}>{character}</span>)}</p>;
 }
 
 function BirthdayLetter({ data, stage, writtenCharacters }) {
   const paragraphs = data.message.split(/\n\s*\n/).filter(Boolean).slice(0, 4);
   const complete = stage === 'complete';
   let consumed = 0;
-  return <article className={`birthday-letter ${stage === 'letter' || stage === 'writing' || complete ? 'is-visible' : ''}`} aria-live="polite"><MugguFrame letter/><p className="letter-title">A birthday letter</p><p className={`letter-greeting ${complete || writtenCharacters > 0 ? 'is-written' : ''}`}>Happy birthday, {data.recipientName}.</p><div className="letter-copy">{paragraphs.map((paragraph, index) => { const visible = Math.max(0, writtenCharacters - consumed); consumed += Array.from(paragraph).length; return <WrittenParagraph text={paragraph} visibleCharacters={visible} complete={complete} key={`${paragraph}-${index}`}/>; })}</div><p className={`letter-signoff ${complete ? 'is-written' : ''}`}>From<br/><strong>{data.senderName}</strong></p><span className={`writing-pen ${stage === 'writing' && !complete ? 'is-writing' : ''}`} aria-hidden="true"><i/><b/></span></article>;
+  return <article className={`birthday-letter ${stage === 'letter' || stage === 'writing' || complete ? 'is-visible' : ''}`} aria-live="polite"><MugguFrame letter/><p className="letter-title">A birthday letter</p><p className={`letter-greeting ${complete || writtenCharacters > 0 ? 'is-written' : ''}`}>Happy birthday, {data.recipientName}.</p><div className="letter-copy">{paragraphs.map((paragraph, index) => { const visible = Math.max(0, writtenCharacters - consumed); consumed += Array.from(paragraph).length; return <WrittenParagraph text={paragraph} visibleCharacters={visible} complete={complete} key={`${paragraph}-${index}`}/>; })}</div><p className={`letter-signoff ${complete ? 'is-written' : ''}`}>From<br/><strong>{data.senderName}</strong><FiEdit3 className="letter-pen-icon" aria-label="Written with care"/></p></article>;
 }
 
 function RecipientToolbar({ audio, stage, onReadNow, onReplay, onShare }) {
@@ -127,24 +95,24 @@ function MakeWishPanel({ onClose }) {
 }
 
 function BirthdayExperience({ data, onExitPreview }) {
-  const reduced = useReducedMotion(); const [stage, setStage] = useState('intro'); const [writtenCharacters, setWrittenCharacters] = useState(0); const [celebrating, setCelebrating] = useState(true); const [makerOpen, setMakerOpen] = useState(false);
+  const reduced = useReducedMotion(); const [stage, setStage] = useState('intro'); const [writtenCharacters, setWrittenCharacters] = useState(0); const [makerOpen, setMakerOpen] = useState(false);
   const timers = useRef([]); const { muted, paper, celebrate, toggle, clear: clearAudio } = useBirthdayAudio();
   const paragraphs = data.message.split(/\n\s*\n/).filter(Boolean).slice(0, 4); const totalCharacters = Array.from(paragraphs.join('')).length;
   const clearTimers = () => { timers.current.forEach(window.clearTimeout); timers.current = []; };
   const later = (callback, delay) => { const timer = window.setTimeout(callback, delay); timers.current.push(timer); };
-  useEffect(() => { later(() => setStage('envelope'), reduced ? 0 : 2100); later(() => setCelebrating(false), reduced ? 0 : 10000); return () => clearTimers(); }, [reduced]);
+  useEffect(() => { later(() => setStage('envelope'), reduced ? 0 : 500); return () => clearTimers(); }, [reduced]);
   useEffect(() => {
     if (stage !== 'writing') return undefined;
-    if (reduced) { setWrittenCharacters(totalCharacters); setStage('complete'); setCelebrating(true); celebrate(); later(() => setCelebrating(false), 10000); return undefined; }
+    if (reduced) { setWrittenCharacters(totalCharacters); setStage('complete'); celebrate(); return undefined; }
     setWrittenCharacters(0);
-    const interval = window.setInterval(() => { setWrittenCharacters(current => { const next = Math.min(current + 2, totalCharacters); if (next === totalCharacters) { window.clearInterval(interval); later(() => { setStage('complete'); setCelebrating(true); celebrate(); later(() => setCelebrating(false), 10000); }, 360); } return next; }); }, 28);
+    const interval = window.setInterval(() => { setWrittenCharacters(current => { const next = Math.min(current + 1, totalCharacters); if (next === totalCharacters) { window.clearInterval(interval); later(() => { setStage('complete'); celebrate(); }, 360); } return next; }); }, 18);
     return () => window.clearInterval(interval);
   }, [stage, totalCharacters, reduced, celebrate]);
   const open = () => { if (stage !== 'envelope') return; paper(); setStage('opening'); later(() => setStage('letter'), reduced ? 80 : 780); later(() => setStage('writing'), reduced ? 130 : 1240); };
-  const readNow = () => { clearTimers(); setWrittenCharacters(totalCharacters); setStage('complete'); setCelebrating(true); celebrate(); later(() => setCelebrating(false), 10000); };
-  const replay = () => { clearTimers(); clearAudio(); setWrittenCharacters(0); setCelebrating(true); setStage('intro'); later(() => setStage('envelope'), reduced ? 0 : 1700); later(() => setCelebrating(false), reduced ? 0 : 10000); };
+  const readNow = () => { clearTimers(); setWrittenCharacters(totalCharacters); setStage('complete'); celebrate(); };
+  const replay = () => { clearTimers(); clearAudio(); setWrittenCharacters(0); setStage('intro'); later(() => setStage('envelope'), reduced ? 0 : 500); };
   const share = async () => { try { if (navigator.share) await navigator.share({ title: 'A birthday surprise is waiting for you 🎂', url: window.location.href }); else await navigator.clipboard?.writeText(window.location.href); } catch { /* A cancelled share is not an error. */ } };
-  return <main className={`birthday-page stage-${stage}`}><MugguFrame/>{celebrating && <CelebrationParticles active quiet={reduced}/>} {onExitPreview && <button className="birthday-preview-exit" type="button" onClick={onExitPreview}><FiArrowLeft/> Edit surprise</button>}<section className="birthday-scene" aria-labelledby="birthday-recipient"><p className="birthday-kicker">A little something for</p><h1 id="birthday-recipient">{data.recipientName}</h1><p className="birthday-quiet-note">From {data.senderName}</p><div className="birthday-object"><BirthdayEnvelope onOpen={open} disabled={stage !== 'envelope'}/><BirthdayLetter data={data} stage={stage} writtenCharacters={writtenCharacters}/></div>{stage === 'complete' && <div className="birthday-complete"><p className="birthday-final">Happy Birthday, {data.recipientName} <span aria-hidden="true">✦</span></p><button type="button" className="birthday-make-wish" onClick={() => setMakerOpen(true)}><FiGift/> Make a wish / Try yours</button></div>}</section><RecipientToolbar audio={{ muted, toggle }} stage={stage} onReadNow={readNow} onReplay={replay} onShare={share}/>{makerOpen && <MakeWishPanel onClose={() => setMakerOpen(false)}/>}</main>;
+  return <main className={`birthday-page stage-${stage}`}><MugguFrame/>{onExitPreview && <button className="birthday-preview-exit" type="button" onClick={onExitPreview}><FiArrowLeft/> Edit surprise</button>}<section className="birthday-scene" aria-labelledby="birthday-recipient"><p className="birthday-kicker">A little something for</p><h1 id="birthday-recipient">{data.recipientName}</h1><p className="birthday-quiet-note">From {data.senderName}</p><div className="birthday-object"><BirthdayEnvelope onOpen={open} disabled={stage !== 'envelope'}/><BirthdayLetter data={data} stage={stage} writtenCharacters={writtenCharacters}/></div>{stage === 'complete' && <div className="birthday-complete"><p className="birthday-final">Happy Birthday, {data.recipientName}</p><button type="button" className="birthday-make-wish" onClick={() => setMakerOpen(true)}><FiGift/> Make a wish / Try yours</button></div>}</section><RecipientToolbar audio={{ muted, toggle }} stage={stage} onReadNow={readNow} onReplay={replay} onShare={share}/>{makerOpen && <MakeWishPanel onClose={() => setMakerOpen(false)}/>}</main>;
 }
 
 function BirthdayCreator() {

@@ -1,24 +1,21 @@
 .birthday-page,
 .birthday-creator {
-  --ink: #311d2f;
-  --plum: #562044;
-  --wine: #822c52;
-  --rose: #d47a78;
-  --gold: #bd8a3f;
-  --amber: #f4d9a3;
-  --ivory: #fffaf1;
-  --paper: #fffdf6;
-  --shadow: rgb(47 20 39 / 27%);
+  --ink: #30211e;
+  --plum: #432b24;
+  --wine: #7f352f;
+  --rose: #b66b59;
+  --gold: #a97a43;
+  --amber: #e7d2b2;
+  --ivory: #faf1e3;
+  --paper: #fffbf3;
+  --shadow: rgb(15 9 7 / 42%);
   isolation: isolate;
   min-height: 100svh;
   position: relative;
   overflow: hidden;
   color: var(--ink);
   font-family: Georgia, "Noto Serif Telugu", serif;
-  background:
-    radial-gradient(circle at 50% -10%, #ffe4bd 0%, transparent 36%),
-    radial-gradient(circle at 84% 88%, #daa0a0 0%, transparent 30%),
-    linear-gradient(145deg, #f3e2d3 0%, #f8eee0 53%, #e5cbbf 100%);
+  background: #291d1b;
 }
 
 .birthday-page::before,
@@ -28,9 +25,8 @@
   z-index: -1;
   content: "";
   pointer-events: none;
-  background-image: linear-gradient(rgb(90 43 64 / 5%) 1px, transparent 1px), linear-gradient(90deg, rgb(90 43 64 / 5%) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(circle, #000 0%, transparent 75%);
+  border: 1px solid rgb(231 210 178 / 12%);
+  background: radial-gradient(circle at 50% 50%, rgb(255 246 230 / 4%), transparent 62%);
 }
 
 .birthday-muggu {
@@ -39,7 +35,8 @@
   z-index: -1;
   width: 100%;
   height: 100%;
-  color: var(--wine);
+  color: #d8af78;
+  opacity: 0.36;
   pointer-events: none;
 }
 
@@ -120,14 +117,14 @@
 
 .envelope-back {
   inset: 0;
-  background: linear-gradient(135deg, #ddb7a7, #f4d8b7);
+  background: #cfa58b;
 }
 
 .envelope-face {
   inset: 0;
   z-index: 3;
   clip-path: polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%);
-  background: linear-gradient(145deg, #f8dbbf, #e8b086);
+  background: #dfbb9d;
 }
 
 .envelope-face span {
@@ -159,7 +156,7 @@
   height: 65%;
   clip-path: polygon(0 0, 100% 0, 50% 60%);
   transform-origin: top;
-  background: linear-gradient(140deg, #fce2cb, #e2a77f);
+  background: #ebcaae;
   transition: transform 0.78s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -177,7 +174,7 @@
   flex-direction: column;
   border: 3px solid rgb(255 228 182 / 40%);
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 25%, #da7b76, #8a2449 61%, #57152f);
+  background: #8a3b35;
   box-shadow: 0 6px 0 #601a35, 0 15px 22px rgb(75 18 45 / 27%);
   color: #fff0d1;
   cursor: pointer;
@@ -223,9 +220,7 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgb(130 44 82 / 24%);
-  background:
-    linear-gradient(90deg, rgb(189 138 63 / 8%) 1px, transparent 1px),
-    linear-gradient(120deg, #fffef9 0%, #fff8eb 100%);
+  background: #fffbf2;
   box-shadow: 0 24px 46px var(--shadow);
   color: #402a2a;
   opacity: 0;
@@ -302,7 +297,7 @@
 }
 
 .letter-signoff {
-  margin-top: auto;
+  margin-top: 0.85rem;
   padding-top: 0.35rem;
 }
 
@@ -313,48 +308,22 @@
   font-weight: 500;
 }
 
-.writing-pen {
-  position: absolute;
-  top: 28%;
-  right: 13%;
-  opacity: 0;
-  pointer-events: none;
-  transform: rotate(-36deg) translate(86px, 26px);
-  transition: opacity 0.25s ease;
-}
-
-.writing-pen.is-writing {
-  animation: pen-travel 4s ease-in-out infinite alternate;
-  opacity: 0.93;
-}
-
-.writing-pen i {
-  display: block;
-  width: 82px;
-  height: 8px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #2b1720, #bd8a3f 43%, #ffefc9 50%, #85294b 64%, #291720);
-}
-
-.writing-pen b {
-  display: block;
-  width: 0;
-  height: 0;
-  margin-left: 74px;
-  border-top: 7px solid transparent;
-  border-right: 19px solid #2d2221;
-  border-bottom: 7px solid transparent;
+.letter-pen-icon {
+  display: inline-block;
+  margin-left: 0.45rem;
+  color: var(--gold);
+  vertical-align: middle;
 }
 
 .birthday-toolbar {
   position: fixed;
   z-index: 20;
-  bottom: max(0.85rem, env(safe-area-inset-bottom));
-  left: 50%;
+  top: max(0.85rem, env(safe-area-inset-top));
+  right: 0.85rem;
   display: flex;
   gap: 0.45rem;
   justify-content: center;
-  transform: translateX(-50%);
+  transform: none;
 }
 
 .birthday-toolbar button,
@@ -416,36 +385,12 @@
   font: 800 0.78rem/1 ui-sans-serif, system-ui, sans-serif;
 }
 
-.birthday-particles {
-  position: absolute;
-  z-index: 8;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.birthday-particles i {
-  position: absolute;
-  top: -6%;
-  left: var(--x);
-  width: var(--size);
-  height: calc(var(--size) * 1.5);
-  border-radius: 42% 58% 45% 55%;
-  background: var(--particle, #9f3654);
-  opacity: 0;
-  transform: rotate(var(--rotate));
-}
-
-.birthday-particles i:nth-child(3n) { --particle: #bf8a3c; }
-.birthday-particles i:nth-child(4n) { --particle: #e3a678; border-radius: 50%; }
-.birthday-particles i:nth-child(5n) { --particle: #642247; }
-.birthday-particles.is-active i { animation: fall-celebration 8.8s var(--delay) cubic-bezier(0.18, 0.44, 0.26, 1) both; }
-
 .birthday-creator {
   display: grid;
   min-height: 100svh;
   padding: clamp(1rem, 5vw, 4rem);
   place-items: center;
+  overflow: auto;
 }
 
 .birthday-creator-card,
@@ -620,18 +565,6 @@
 .stage-opening .envelope-flap { transform: rotateX(170deg); }
 .stage-opening .wax-seal { opacity: 0; transform: scale(0.65); }
 
-@keyframes fall-celebration {
-  0% { opacity: 0; transform: translate3d(0, -5vh, 0) rotate(var(--rotate)) scale(0.65); }
-  8% { opacity: 1; }
-  72% { opacity: 0.94; }
-  100% { opacity: 0; transform: translate3d(calc((50% - var(--x)) * 0.45), 115svh, 0) rotate(calc(var(--rotate) + 330deg)) scale(1); }
-}
-
-@keyframes pen-travel {
-  from { transform: rotate(-36deg) translate(86px, 24px); }
-  to { transform: rotate(-36deg) translate(-175px, 170px); }
-}
-
 @keyframes rise {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
@@ -650,9 +583,7 @@
   .letter-copy { font-size: clamp(0.72rem, 3.4vw, 0.88rem); line-height: 1.45; }
   .letter-title { margin-bottom: 0.55rem; }
   .letter-paragraph { margin-bottom: 0.42rem; }
-  .writing-pen { transform: scale(0.72) rotate(-36deg) translate(86px, 24px); }
-  .writing-pen.is-writing { animation-name: pen-travel-mobile; }
-  .birthday-toolbar { max-width: calc(100vw - 1rem); }
+  .birthday-toolbar { top: max(0.65rem, env(safe-area-inset-top)); right: 0.65rem; max-width: calc(100vw - 1rem); }
   .birthday-toolbar button { padding: 0.66rem; }
   .birthday-toolbar button span { display: none; }
   .birthday-toolbar button:first-child span { display: inline; }
@@ -666,22 +597,14 @@
   .make-wish-panel h2 { max-width: 8ch; font-size: 2.25rem; }
 }
 
-@keyframes pen-travel-mobile {
-  from { transform: scale(0.72) rotate(-36deg) translate(86px, 24px); }
-  to { transform: scale(0.72) rotate(-36deg) translate(-160px, 160px); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .birthday-envelope,
   .birthday-letter,
   .envelope-flap,
   .wax-seal,
-  .writing-pen,
   .birthday-final {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }
-  .birthday-particles { display: none; }
   .stage-intro .birthday-envelope { opacity: 1; transform: translateX(-50%); }
-  .writing-pen { display: none; }
 }

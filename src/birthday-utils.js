@@ -17,7 +17,7 @@ May every good thing find its way to you at exactly the right time.`,
 ]);
 
 export const DEFAULT_BIRTHDAY_MESSAGE = BIRTHDAY_MESSAGE_TEMPLATES[0];
-export const BIRTHDAY_LIMITS = Object.freeze({ recipientName: 60, senderName: 60, message: 720, payload: 5200 });
+export const BIRTHDAY_LIMITS = Object.freeze({ recipientName: 60, senderName: 60, message: 520, payload: 3900 });
 
 const stripControls = (value) => Array.from(value, (character) => {
   const code = character.charCodeAt(0);
@@ -48,7 +48,7 @@ const toBase64Url = (text) => {
 };
 
 const fromBase64Url = (value) => {
-  if (!/^[A-Za-z0-9_-]{1,5400}$/.test(value)) return null;
+  if (!/^[A-Za-z0-9_-]{1,4100}$/.test(value)) return null;
   try {
     const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
     const binary = atob(padded);
