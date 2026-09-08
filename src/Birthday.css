@@ -40,12 +40,16 @@
   pointer-events: none;
 }
 
-/* Telugu muggu: a pulli (dot-grid) is enclosed by continuous looping strokes. */
-.muggu-frame-lines { stroke-width: 1.15px; opacity: 0.48; }
-.muggu-corner > g:last-child { stroke-width: 1.65px; }
-.muggu-pulli { opacity: 0.82; }
-.muggu-guide { stroke-width: 0.85px; opacity: 0.56; }
-.muggu-centre-mark { stroke-width: 1.25px; opacity: 0.56; }
+/* Invitation-style floral frame: restrained leaf work, gold rules and diamond checkpoints. */
+.muggu-frame-lines { stroke-width: 1.15px; opacity: 0.72; }
+.invitation-corner { stroke-width: 1.6px; }
+.invitation-vine { stroke: currentColor; }
+.invitation-leaf { fill: #4f5e3d; stroke: #4f5e3d; stroke-width: 1px; }
+.invitation-flower { stroke: currentColor; stroke-width: 1.35px; }
+.invitation-diamond { stroke: currentColor; stroke-width: 1.55px; }
+.invitation-stem { stroke: currentColor; stroke-dasharray: 1 8; stroke-width: 1.3px; }
+.invitation-dot { fill: currentColor; stroke: none; }
+.invitation-side-motif { stroke-width: 1.4px; }
 
 .birthday-opening-burst {
   position: fixed;
@@ -293,9 +297,10 @@
   pointer-events: none;
 }
 
-.letter-muggu .muggu-frame-lines { stroke-width: 1px; opacity: 0.38; }
-.letter-muggu .muggu-corner > g:last-child { stroke-width: 1.25px; }
-.letter-muggu .muggu-pulli { opacity: 0.64; }
+.letter-muggu .muggu-frame-lines { stroke-width: 0.95px; opacity: 0.54; }
+.letter-muggu .invitation-corner { stroke-width: 1.15px; }
+.letter-muggu .invitation-side-motif { stroke-width: 1px; }
+.letter-muggu .invitation-leaf { fill: #64704d; stroke: #64704d; }
 
 .letter-title {
   position: relative;

@@ -57,33 +57,40 @@ function useBirthdayAudio() {
 }
 
 function MugguCorner({ transform }) {
-  return <g transform={transform} className="muggu-corner" fill="none">
-    <g className="muggu-pulli" fill="currentColor">
-      <circle cx="28" cy="28" r="2.2"/><circle cx="68" cy="28" r="2.2"/><circle cx="108" cy="28" r="2.2"/>
-      <circle cx="28" cy="68" r="2.2"/><circle cx="68" cy="68" r="2.2"/><circle cx="108" cy="68" r="2.2"/>
-      <circle cx="28" cy="108" r="2.2"/><circle cx="68" cy="108" r="2.2"/><circle cx="108" cy="108" r="2.2"/>
-    </g>
-    <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 28C8 4 48 4 48 28c0 24 40 24 40 0s40-24 40 0c0 24-40 24-40 48s-40 24-40 0-40-24-40 0 40 24 40 48"/>
-      <path d="M28 8c24 0 24 40 0 40S4 88 28 88s24 40 0 40m80-120c-24 0-24 40 0 40s24 40 0 40-24 40 0 40"/>
-      <path d="M68 50c-15 0-23 12-23 23s8 23 23 23 23-12 23-23-8-23-23-23Z"/>
-      <path d="M68 50c0 17-8 23-23 23m23-23c0 17 8 23 23 23m-23 23c0-17-8-23-23-23m23 23c0-17 8-23 23-23"/>
-      <path d="M8 144h120M144 8v120" className="muggu-guide"/>
-    </g>
+  return <g transform={transform} className="invitation-corner" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <path className="invitation-vine" d="M12 142C16 105 23 77 47 53 69 31 99 22 136 20"/>
+    <path className="invitation-vine" d="M20 124C49 122 71 105 78 78M52 55C72 67 92 68 112 53"/>
+    <path className="invitation-leaf" d="M31 100c-18-20-10-37 11-36 12 8 9 27-11 36Z"/>
+    <path className="invitation-leaf" d="M61 75c-8-23 8-35 27-25 6 13-4 27-27 25Z"/>
+    <path className="invitation-leaf" d="M91 46c3-22 21-28 34-14 0 15-13 24-34 14Z"/>
+    <path className="invitation-flower" d="M17 122c-18-9-16-29 2-32 13 8 11 25-2 32ZM17 122c9 18 29 16 32-2-8-13-25-11-32 2Z"/>
+    <circle className="invitation-dot" cx="14" cy="144" r="2.4"/><circle className="invitation-dot" cx="139" cy="18" r="2.4"/>
+  </g>;
+}
+
+function BorderMotif({ transform }) {
+  return <g transform={transform} className="invitation-side-motif" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <path className="invitation-stem" d="M0 0v62"/>
+    <path className="invitation-diamond" d="M0 13 10 23 0 33-10 23Z"/>
+    <path className="invitation-diamond" d="M0 43 15 58 0 73-15 58Z"/>
+    <path className="invitation-leaf" d="M-15 58C-37 50-35 34-17 32c13 6 13 20 2 26ZM15 58c22-8 20-24 2-26-13 6-13 20-2 26Z"/>
+    <circle className="invitation-dot" cx="0" cy="86" r="2"/><circle className="invitation-dot" cx="0" cy="98" r="2"/>
   </g>;
 }
 
 function MugguFrame({ letter = false }) {
   return <svg className={letter ? 'letter-muggu' : 'birthday-muggu'} viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
     <g className="muggu-frame-lines" fill="none" stroke="currentColor" strokeLinecap="round">
-      <path d="M198 36H1002M198 764H1002"/><path d="M36 198V602M1164 198V602"/>
+      <rect x="22" y="22" width="1156" height="756"/><rect x="33" y="33" width="1134" height="734"/>
+      <path d="M188 22H575m50 0h387M188 778H575m50 0h387"/>
+      <path d="M600 11 611 22 600 33 589 22ZM600 767l11 11-11 11-11-11Z"/>
     </g>
-    <MugguCorner transform="translate(32 32)"/><MugguCorner transform="translate(1168 32) scale(-1 1)"/>
-    <MugguCorner transform="translate(32 768) scale(1 -1)"/><MugguCorner transform="translate(1168 768) scale(-1 -1)"/>
-    {!letter && <g className="muggu-centre-mark" fill="none" stroke="currentColor"><circle cx="600" cy="400" r="5"/><circle cx="600" cy="400" r="17" strokeDasharray="1 11"/></g>}
+    <MugguCorner transform="translate(38 38)"/><MugguCorner transform="translate(1162 38) scale(-1 1)"/>
+    <MugguCorner transform="translate(38 762) scale(1 -1)"/><MugguCorner transform="translate(1162 762) scale(-1 -1)"/>
+    <BorderMotif transform="translate(43 238)"/><BorderMotif transform="translate(1157 238)"/>
+    <BorderMotif transform="translate(43 522)"/><BorderMotif transform="translate(1157 522)"/>
   </svg>;
 }
-
 const burstColours = ['#f5c974', '#b95a4e', '#df9376', '#6f3437', '#f7e7c5'];
 const burstPieces = (run) => Array.from({ length: 38 }, (_, index) => {
   const seed = (index * 47 + run * 71) % 101;
