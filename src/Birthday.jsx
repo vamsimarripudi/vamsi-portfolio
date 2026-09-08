@@ -53,19 +53,44 @@ function useBirthdayAudio() {
   return { muted, paper, celebrate, toggle, clear };
 }
 
-function MugguFrame({ letter = false }) {
-  const dots = letter ? 'letter-dots' : 'birthday-dots';
-  return <svg className={letter ? 'letter-muggu' : 'birthday-muggu'} viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
-    <defs><pattern id={dots} width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="1.4"/></pattern></defs>
-    {!letter && <rect width="1200" height="800" fill={`url(#${dots})`} opacity=".35"/>}
-    <g fill="none" stroke="currentColor" strokeWidth={letter ? '2' : '1.4'} opacity=".78">
-      <path d="M42 222C106 158 106 82 42 18M18 42c64 64 140 64 204 0M42 18c-28 84 14 126 98 98C168 32 126-10 42 18z"/>
-      <path d="M1158 222c-64-64-64-140 0-204m24 24c-64 64-140 64-204 0m180-24c28 84-14 126-98 98-28-84 14-126 98-98z"/>
-      <path d="M42 578c64 64 64 140 0 204M18 758c64-64 140-64 204 0m-180 24c28-84-14-126 98-98 28 84-14 126-98 98z"/>
-      <path d="M1158 578c-64 64-64 140 0 204m24-24c-64-64-140-64-204 0m180 24c28-84 14-126-98-98-28 84 14 126 98 98z"/>
-      {!letter && <><circle cx="600" cy="400" r="270" strokeDasharray="2 14" opacity=".42"/><circle cx="600" cy="400" r="310" strokeDasharray="1 24" opacity=".25"/></>}
+function MugguCorner({ transform }) {
+  return <g transform={transform} className="muggu-corner" fill="none">
+    <g className="muggu-pulli" fill="currentColor">
+      <circle cx="28" cy="28" r="2.2"/><circle cx="68" cy="28" r="2.2"/><circle cx="108" cy="28" r="2.2"/>
+      <circle cx="28" cy="68" r="2.2"/><circle cx="68" cy="68" r="2.2"/><circle cx="108" cy="68" r="2.2"/>
+      <circle cx="28" cy="108" r="2.2"/><circle cx="68" cy="108" r="2.2"/><circle cx="108" cy="108" r="2.2"/>
     </g>
+    <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 28C8 4 48 4 48 28c0 24 40 24 40 0s40-24 40 0c0 24-40 24-40 48s-40 24-40 0-40-24-40 0 40 24 40 48"/>
+      <path d="M28 8c24 0 24 40 0 40S4 88 28 88s24 40 0 40m80-120c-24 0-24 40 0 40s24 40 0 40-24 40 0 40"/>
+      <path d="M68 50c-15 0-23 12-23 23s8 23 23 23 23-12 23-23-8-23-23-23Z"/>
+      <path d="M68 50c0 17-8 23-23 23m23-23c0 17 8 23 23 23m-23 23c0-17-8-23-23-23m23 23c0-17 8-23 23-23"/>
+      <path d="M8 144h120M144 8v120" className="muggu-guide"/>
+    </g>
+  </g>;
+}
+
+function MugguFrame({ letter = false }) {
+  return <svg className={letter ? 'letter-muggu' : 'birthday-muggu'} viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
+    <g className="muggu-frame-lines" fill="none" stroke="currentColor" strokeLinecap="round">
+      <path d="M198 36H1002M198 764H1002"/><path d="M36 198V602M1164 198V602"/>
+    </g>
+    <MugguCorner transform="translate(32 32)"/><MugguCorner transform="translate(1168 32) scale(-1 1)"/>
+    <MugguCorner transform="translate(32 768) scale(1 -1)"/><MugguCorner transform="translate(1168 768) scale(-1 -1)"/>
+    {!letter && <g className="muggu-centre-mark" fill="none" stroke="currentColor"><circle cx="600" cy="400" r="5"/><circle cx="600" cy="400" r="17" strokeDasharray="1 11"/></g>}
   </svg>;
+}
+
+const burstColours = ['#f5c974', '#b95a4e', '#df9376', '#6f3437', '#f7e7c5'];
+const burstPieces = (run) => Array.from({ length: 38 }, (_, index) => {
+  const seed = (index * 47 + run * 71) % 101;
+  return { colour: burstColours[(index + run) % burstColours.length], delay: `${(seed % 18) * 0.035}s`, left: `${3 + ((seed * 9 + index * 13) % 94)}%`, rotate: `${(seed * 31) % 180}deg`, size: `${6 + (seed % 8)}px`, drift: `${-42 + ((seed * 7) % 85)}px`, shape: index % 5 === 0 ? 'is-petal' : index % 3 === 0 ? 'is-ribbon' : '' };
+});
+
+function OpeningBurst({ active, run, reduced }) {
+  const pieces = useMemo(() => burstPieces(run), [run]);
+  if (!active || reduced) return null;
+  return <div className="birthday-opening-burst" aria-hidden="true" key={run}>{pieces.map((piece, index) => <i className={piece.shape} key={`${run}-${index}`} style={{ '--burst-colour': piece.colour, '--burst-delay': piece.delay, '--burst-left': piece.left, '--burst-rotate': piece.rotate, '--burst-size': piece.size, '--burst-drift': piece.drift }}/>)}</div>;
 }
 
 function BirthdayEnvelope({ onOpen, disabled }) {
@@ -95,7 +120,7 @@ function MakeWishPanel({ onClose }) {
 }
 
 function BirthdayExperience({ data, onExitPreview }) {
-  const reduced = useReducedMotion(); const [stage, setStage] = useState('intro'); const [writtenCharacters, setWrittenCharacters] = useState(0); const [makerOpen, setMakerOpen] = useState(false);
+  const reduced = useReducedMotion(); const [stage, setStage] = useState('intro'); const [writtenCharacters, setWrittenCharacters] = useState(0); const [makerOpen, setMakerOpen] = useState(false); const [burstActive, setBurstActive] = useState(false); const [burstRun, setBurstRun] = useState(0);
   const timers = useRef([]); const { muted, paper, celebrate, toggle, clear: clearAudio } = useBirthdayAudio();
   const paragraphs = data.message.split(/\n\s*\n/).filter(Boolean).slice(0, 4); const totalCharacters = Array.from(paragraphs.join('')).length;
   const clearTimers = () => { timers.current.forEach(window.clearTimeout); timers.current = []; };
@@ -103,16 +128,16 @@ function BirthdayExperience({ data, onExitPreview }) {
   useEffect(() => { later(() => setStage('envelope'), reduced ? 0 : 500); return () => clearTimers(); }, [reduced]);
   useEffect(() => {
     if (stage !== 'writing') return undefined;
-    if (reduced) { setWrittenCharacters(totalCharacters); setStage('complete'); celebrate(); return undefined; }
+    if (reduced) { setWrittenCharacters(totalCharacters); setStage('complete'); return undefined; }
     setWrittenCharacters(0);
-    const interval = window.setInterval(() => { setWrittenCharacters(current => { const next = Math.min(current + 1, totalCharacters); if (next === totalCharacters) { window.clearInterval(interval); later(() => { setStage('complete'); celebrate(); }, 360); } return next; }); }, 18);
+    const interval = window.setInterval(() => { setWrittenCharacters(current => { const next = Math.min(current + 1, totalCharacters); if (next === totalCharacters) { window.clearInterval(interval); later(() => setStage('complete'), 360); } return next; }); }, 18);
     return () => window.clearInterval(interval);
   }, [stage, totalCharacters, reduced, celebrate]);
-  const open = () => { if (stage !== 'envelope') return; paper(); setStage('opening'); later(() => setStage('letter'), reduced ? 80 : 780); later(() => setStage('writing'), reduced ? 130 : 1240); };
-  const readNow = () => { clearTimers(); setWrittenCharacters(totalCharacters); setStage('complete'); celebrate(); };
-  const replay = () => { clearTimers(); clearAudio(); setWrittenCharacters(0); setStage('intro'); later(() => setStage('envelope'), reduced ? 0 : 500); };
+  const open = () => { if (stage !== 'envelope') return; paper(); setStage('opening'); later(() => { setBurstRun(current => current + 1); setBurstActive(true); celebrate(); later(() => setBurstActive(false), 10000); }, reduced ? 0 : 420); later(() => setStage('letter'), reduced ? 80 : 780); later(() => setStage('writing'), reduced ? 130 : 1240); };
+  const readNow = () => { clearTimers(); setWrittenCharacters(totalCharacters); setStage('complete'); };
+  const replay = () => { clearTimers(); clearAudio(); setBurstActive(false); setWrittenCharacters(0); setStage('intro'); later(() => setStage('envelope'), reduced ? 0 : 500); };
   const share = async () => { try { if (navigator.share) await navigator.share({ title: 'A birthday surprise is waiting for you 🎂', url: window.location.href }); else await navigator.clipboard?.writeText(window.location.href); } catch { /* A cancelled share is not an error. */ } };
-  return <main className={`birthday-page stage-${stage}`}><MugguFrame/>{onExitPreview && <button className="birthday-preview-exit" type="button" onClick={onExitPreview}><FiArrowLeft/> Edit surprise</button>}<section className="birthday-scene" aria-labelledby="birthday-recipient"><p className="birthday-kicker">A little something for</p><h1 id="birthday-recipient">{data.recipientName}</h1><p className="birthday-quiet-note">From {data.senderName}</p><div className="birthday-object"><BirthdayEnvelope onOpen={open} disabled={stage !== 'envelope'}/><BirthdayLetter data={data} stage={stage} writtenCharacters={writtenCharacters}/></div>{stage === 'complete' && <div className="birthday-complete"><p className="birthday-final">Happy Birthday, {data.recipientName}</p><button type="button" className="birthday-make-wish" onClick={() => setMakerOpen(true)}><FiGift/> Make a wish / Try yours</button></div>}</section><RecipientToolbar audio={{ muted, toggle }} stage={stage} onReadNow={readNow} onReplay={replay} onShare={share}/>{makerOpen && <MakeWishPanel onClose={() => setMakerOpen(false)}/>}</main>;
+  return <main className={`birthday-page stage-${stage}`}><MugguFrame/><OpeningBurst active={burstActive} run={burstRun} reduced={reduced}/>{onExitPreview && <button className="birthday-preview-exit" type="button" onClick={onExitPreview}><FiArrowLeft/> Edit surprise</button>}<section className="birthday-scene" aria-labelledby="birthday-recipient"><p className="birthday-kicker">A little something for</p><h1 id="birthday-recipient">{data.recipientName}</h1><p className="birthday-quiet-note">From {data.senderName}</p><div className="birthday-object"><BirthdayEnvelope onOpen={open} disabled={stage !== 'envelope'}/><BirthdayLetter data={data} stage={stage} writtenCharacters={writtenCharacters}/></div>{stage === 'complete' && <div className="birthday-complete"><p className="birthday-final">Happy Birthday, {data.recipientName}</p><button type="button" className="birthday-make-wish" onClick={() => setMakerOpen(true)}><FiGift/> Make a wish / Try yours</button></div>}</section><RecipientToolbar audio={{ muted, toggle }} stage={stage} onReadNow={readNow} onReplay={replay} onShare={share}/>{makerOpen && <MakeWishPanel onClose={() => setMakerOpen(false)}/>}</main>;
 }
 
 function BirthdayCreator() {
