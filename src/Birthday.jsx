@@ -79,19 +79,22 @@ function BorderMotif({ transform }) {
 }
 
 function MugguFrame({ letter = false }) {
-  return <svg className={letter ? 'letter-muggu' : 'birthday-muggu'} viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
+  const height = letter ? 1100 : 800;
+  const lowerCorner = height - 38;
+  const lowerRule = height - 22;
+  const lowerInnerRule = height - 33;
+  return <svg className={letter ? 'letter-muggu' : 'birthday-muggu'} viewBox={`0 0 1200 ${height}`} preserveAspectRatio={letter ? 'none' : undefined} aria-hidden="true" focusable="false">
     <g className="muggu-frame-lines" fill="none" stroke="currentColor" strokeLinecap="round">
-      <rect x="22" y="22" width="1156" height="756"/><rect x="33" y="33" width="1134" height="734"/>
-      <path d="M188 22H575m50 0h387M188 778H575m50 0h387"/>
-      <path d="M600 11 611 22 600 33 589 22ZM600 767l11 11-11 11-11-11Z"/>
+      <rect x="22" y="22" width="1156" height={height - 44}/><rect x="33" y="33" width="1134" height={height - 66}/>
+      <path d={`M188 22H575m50 0h387M188 ${lowerRule}H575m50 0h387`}/>
+      <path d={`M600 11 611 22 600 33 589 22ZM600 ${lowerInnerRule}l11 11-11 11-11-11Z`}/>
     </g>
     <MugguCorner transform="translate(38 38)"/><MugguCorner transform="translate(1162 38) scale(-1 1)"/>
-    <MugguCorner transform="translate(38 762) scale(1 -1)"/><MugguCorner transform="translate(1162 762) scale(-1 -1)"/>
-    <BorderMotif transform="translate(43 238)"/><BorderMotif transform="translate(1157 238)"/>
-    <BorderMotif transform="translate(43 522)"/><BorderMotif transform="translate(1157 522)"/>
+    <MugguCorner transform={`translate(38 ${lowerCorner}) scale(1 -1)`}/><MugguCorner transform={`translate(1162 ${lowerCorner}) scale(-1 -1)`}/>
+    <BorderMotif transform={`translate(43 ${Math.round(height * 0.3)})`}/><BorderMotif transform={`translate(1157 ${Math.round(height * 0.3)})`}/>
+    <BorderMotif transform={`translate(43 ${Math.round(height * 0.64)})`}/><BorderMotif transform={`translate(1157 ${Math.round(height * 0.64)})`}/>
   </svg>;
-}
-const burstColours = ['#f5c974', '#b95a4e', '#df9376', '#6f3437', '#f7e7c5'];
+}const burstColours = ['#f5c974', '#b95a4e', '#df9376', '#6f3437', '#f7e7c5'];
 const burstPieces = (run) => Array.from({ length: 38 }, (_, index) => {
   const seed = (index * 47 + run * 71) % 101;
   return { colour: burstColours[(index + run) % burstColours.length], delay: `${(seed % 18) * 0.035}s`, left: `${3 + ((seed * 9 + index * 13) % 94)}%`, rotate: `${(seed * 31) % 180}deg`, size: `${6 + (seed % 8)}px`, drift: `${-42 + ((seed * 7) % 85)}px`, shape: index % 5 === 0 ? 'is-petal' : index % 3 === 0 ? 'is-ribbon' : '' };
