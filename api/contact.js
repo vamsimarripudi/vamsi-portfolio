@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { createEmailEvent, createEnquiry } from './lib/track.js';
+import { createEmailEvent, createEnquiry, handleBirthdayLink } from './lib/track.js';
 
 const DEFAULT_RECIPIENT = 'enquiry.portfolio@vamsimarripudi.tech';
 const SITE_URL = 'https://vamsimarripudi.tech';
@@ -122,6 +122,7 @@ const sendEmail = async ({ apiKey, from, to, replyTo, email, tags }) => {
 };
 
 export default async function handler(req, res) {
+  if (req.query?.birthday === '1') return handleBirthdayLink(req, res);
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');

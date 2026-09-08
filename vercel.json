@@ -14,6 +14,7 @@
       ]
     }
   ],
+  "rewrites": [{ "source": "/api/birthday", "destination": "/api/contact?birthday=1" }],
   "crons": [{ "path": "/api/track/cron/followups", "schedule": "0 8 * * *" }],
   "redirects": [
     {

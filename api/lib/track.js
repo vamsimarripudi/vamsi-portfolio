@@ -216,3 +216,80 @@ export const listEnquiries = async ({ query: searchText = '', status = '', inten
     LIMIT ${pageSize} OFFSET ${(currentPage - 1) * pageSize}`;
   return { items: rows, total: rows[0]?.total || 0, page: currentPage, limit: pageSize };
 };
+
+// Birthday links share the existing serverless backend so the Hobby deployment stays
+// within Vercel's bundled-function limit while retaining the public /api/birthday route.
+const BIRTHDAY_LINK_TTL_DAYS = 90;
+const BIRTHDAY_LINK_PATTERN = /^[A-Za-z0-9_-]{8,16}$/;
+const BIRTHDAY_LINK_MAX_PER_HOUR = 12;
+const birthdayLinkAttempts = new Map();
+const cleanBirthdayText = (value, max) => typeof value === 'string' ? Array.from(value, (character) => {
+  const code = character.charCodeAt(0);
+  return code === 10 || code === 13 ? character : (code < 32 || code === 127 ? ' ' : character);
+}).join('').trim().slice(0, max) : '';
+const normalizeBirthdayPayload = (value = {}) => {
+  const recipientName = cleanBirthdayText(value.recipientName, 60).replace(/\s+/g, ' ');
+  const senderName = cleanBirthdayText(value.senderName, 60).replace(/\s+/g, ' ') || 'Vamsi';
+  const message = cleanBirthdayText(value.message, 520);
+  return recipientName && message ? { recipientName, senderName, message } : null;
+};
+const birthdayLinkClientKey = (req) => String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+const takeBirthdayLinkSlot = (key) => {
+  const now = Date.now();
+  const recent = (birthdayLinkAttempts.get(key) || []).filter((time) => now - time < 60 * 60 * 1000);
+  if (recent.length >= BIRTHDAY_LINK_MAX_PER_HOUR) return false;
+  recent.push(now);
+  birthdayLinkAttempts.set(key, recent);
+  return true;
+};
+const ensureBirthdayLinkTable = async (database) => {
+  await database`CREATE TABLE IF NOT EXISTS birthday_share_links (
+    id VARCHAR(16) PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL
+  )`;
+  await database`CREATE INDEX IF NOT EXISTS birthday_share_links_expires_idx ON birthday_share_links (expires_at)`;
+  await database`DELETE FROM birthday_share_links WHERE expires_at <= NOW()`;
+};
+const newBirthdayLinkId = () => randomBytes(8).toString('base64url').slice(0, 11);
+
+export const handleBirthdayLink = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!['GET', 'POST'].includes(req.method)) {
+    res.setHeader('Allow', 'GET, POST');
+    return json(res, 405, { ok: false, message: 'Method not allowed.' });
+  }
+  try {
+    if (req.method === 'GET') {
+      const id = String(req.query?.id || '');
+      if (!BIRTHDAY_LINK_PATTERN.test(id)) return json(res, 404, { ok: false, message: 'This birthday link is unavailable.' });
+      const database = query();
+      await ensureBirthdayLinkTable(database);
+      const rows = await database`SELECT payload_json FROM birthday_share_links WHERE id = ${id} AND expires_at > NOW() LIMIT 1`;
+      if (!rows[0]) return json(res, 404, { ok: false, message: 'This birthday link is unavailable or has expired.' });
+      return json(res, 200, { ok: true, data: JSON.parse(rows[0].payload_json) });
+    }
+    assertSameOrigin(req);
+    if (!takeBirthdayLinkSlot(birthdayLinkClientKey(req))) return json(res, 429, { ok: false, message: 'Please wait before creating another birthday link.' });
+    let body;
+    try { body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body; } catch { return json(res, 400, { ok: false, message: 'Please check your birthday message.' }); }
+    const data = normalizeBirthdayPayload(body);
+    if (!data) return json(res, 400, { ok: false, message: 'Add a name and message before creating the link.' });
+    const database = query();
+    await ensureBirthdayLinkTable(database);
+    const expiresAt = new Date(Date.now() + BIRTHDAY_LINK_TTL_DAYS * 24 * 60 * 60 * 1000);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const id = newBirthdayLinkId();
+      try {
+        await database`INSERT INTO birthday_share_links (id, payload_json, expires_at) VALUES (${id}, ${JSON.stringify(data)}, ${expiresAt})`;
+        return json(res, 201, { ok: true, id, expiresAt: expiresAt.toISOString() });
+      } catch (error) { if (error?.code !== '23505') throw error; }
+    }
+    return json(res, 503, { ok: false, message: 'Please try creating your birthday link again.' });
+  } catch (error) {
+    if (error instanceof TrackError) return json(res, error.status, { ok: false, message: error.message });
+    console.error('birthday_link.error', { code: error?.message || 'UNKNOWN' });
+    return json(res, 503, { ok: false, message: 'Birthday links are temporarily unavailable. Please try again shortly.' });
+  }
+};
