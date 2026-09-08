@@ -7,7 +7,8 @@
 3. **Rate-limit entries:** Delete automatically through in-memory expiry after at most 15 minutes.
 4. **Duplicate-submission fingerprints:** Delete automatically through in-memory expiry after at most 10 minutes.
 5. **Local browser values:** Theme and optional game score remain on the visitor’s device until they clear browser data. The site does not receive these values.
-6. **Provider logs:** Vercel, Neon, and Resend retention are controlled by the applicable account configuration and provider service. The owner must review those settings at least annually and after a provider change.
+6. **Birthday share links:** Recipient, sender, and message data are available through an unlisted opaque link for no more than 90 days. Expired rows are removed during birthday-link API activity.
+7. **Provider logs:** Vercel, Neon, and Resend retention are controlled by the applicable account configuration and provider service. The owner must review those settings at least annually and after a provider change.
 
 ## Operational owner task
 

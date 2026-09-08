@@ -12,6 +12,7 @@
 | Website hosting | Standard request and technical data handled by hosting infrastructure | Deliver and secure the website | Vercel | Provider/account retention settings |
 | Theme preference | `theme` value | Remember light, dark, or system theme | Browser `localStorage` only | Until the visitor clears browser data or changes the preference |
 | Signal Runner score | `vm-signal-runner-best` numeric score | Remember an optional local game high score | Browser `localStorage` only | Until the visitor clears browser data |
+| Birthday share links | Recipient and sender names, and the birthday message | Create an unlisted, opaque short link for a birthday surprise | Vercel Function and Neon PostgreSQL irthday_share_links table | Available for up to 90 days; expired records are removed during birthday-link API activity |
 
 ## Explicit exclusions found in source review
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BIRTHDAY_LIMITS, decodeBirthdayPayload, DEFAULT_BIRTHDAY_MESSAGE, encodeBirthdayPayload, normalizeBirthdayData } from '../src/birthday-utils.js';
+import { BIRTHDAY_LIMITS, birthdayShareIdIsValid, decodeBirthdayPayload, DEFAULT_BIRTHDAY_MESSAGE, encodeBirthdayPayload, normalizeBirthdayData } from '../src/birthday-utils.js';
 
 test('birthday payloads preserve Unicode text and safely round-trip', () => {
   const source = { recipientName: 'సతీష్ 🎂', senderName: 'వంశీ', message: 'మీకు పుట్టినరోజు శుభాకాంక్షలు!\n\nHave a beautiful year.' };
@@ -23,4 +23,10 @@ test('birthday links preserve the supported Unicode message size', () => {
   const message = '✨'.repeat(Math.floor(BIRTHDAY_LIMITS.message / 2));
   const decoded = decodeBirthdayPayload(encodeBirthdayPayload({ recipientName: 'Riya', senderName: 'Vamsi', message }));
   assert.equal(decoded?.message, message);
+});
+test('birthday short-link IDs accept only opaque URL-safe identifiers', () => {
+  assert.equal(birthdayShareIdIsValid('Zk3bN90r_Q1'), true);
+  assert.equal(birthdayShareIdIsValid('tiny'), false);
+  assert.equal(birthdayShareIdIsValid('birthday message'), false);
+  assert.equal(birthdayShareIdIsValid('../secret'), false);
 });

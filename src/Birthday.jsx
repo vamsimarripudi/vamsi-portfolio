@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiArrowLeft, FiCopy, FiEdit3, FiGift, FiMusic, FiPause, FiPlay, FiRotateCcw, FiShare2, FiX } from 'react-icons/fi';
-import { BIRTHDAY_LIMITS, birthdayShareUrl, decodeBirthdayPayload, normalizeBirthdayData, randomBirthdayMessage } from './birthday-utils.js';
+import { BIRTHDAY_LIMITS, birthdayShareIdIsValid, birthdayShortShareUrl, decodeBirthdayPayload, normalizeBirthdayData, randomBirthdayMessage } from './birthday-utils.js';
 import './Birthday.css';
 
 const setBirthdayMeta = () => {
@@ -12,6 +12,13 @@ const setBirthdayMeta = () => {
   set('meta[property="og:description"]', 'A small handwritten birthday surprise, made especially for you.');
   set('meta[name="twitter:title"]', 'A birthday surprise is waiting for you 🎂');
   set('meta[name="twitter:description"]', 'A small handwritten birthday surprise, made especially for you.');
+};
+
+const createShortBirthdayLink = async (data) => {
+  const response = await fetch('/api/birthday', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !birthdayShareIdIsValid(payload.id)) throw new Error(payload.message || 'Your birthday link could not be created.');
+  return birthdayShortShareUrl(payload.id);
 };
 
 const useReducedMotion = () => {
@@ -126,12 +133,13 @@ function RecipientToolbar({ audio, stage, onReadNow, onReplay, onShare }) {
 }
 
 function MakeWishPanel({ onClose }) {
-  const [recipientName, setRecipientName] = useState(''); const [senderName, setSenderName] = useState(''); const [message, setMessage] = useState(randomBirthdayMessage); const [notice, setNotice] = useState('');
-  const data = normalizeBirthdayData({ recipientName, senderName, message }); const link = data.recipientName ? birthdayShareUrl(data) : '';
-  const copy = async () => { try { await navigator.clipboard.writeText(link); setNotice('Your birthday link is ready to share.'); } catch { setNotice('Copy your link from the field below.'); } };
-  return <section className="make-wish-panel" role="dialog" aria-modal="true" aria-labelledby="make-wish-title"><button type="button" className="make-wish-close" onClick={onClose} aria-label="Close"><FiX/></button><p className="creator-eyebrow">make a little moment</p><h2 id="make-wish-title">Who are you celebrating?</h2><p>Write the feeling you want them to open. Their link is private and shareable.</p><label>Their name<input value={recipientName} onChange={event => setRecipientName(event.target.value)} maxLength={BIRTHDAY_LIMITS.recipientName} placeholder="Manohar" autoFocus/></label><label>From<input value={senderName} onChange={event => setSenderName(event.target.value)} maxLength={BIRTHDAY_LIMITS.senderName} placeholder="Satish"/></label><label>Your note<textarea value={message} onChange={event => setMessage(event.target.value)} maxLength={BIRTHDAY_LIMITS.message} rows="5"/></label>{link && <><input className="make-wish-link" value={link} readOnly aria-label="Your shareable birthday link"/><button className="birthday-primary" type="button" onClick={copy}><FiCopy/> Copy my birthday link</button></>}{notice && <p className="creator-notice" role="status">{notice}</p>}</section>;
+  const [recipientName, setRecipientName] = useState(''); const [senderName, setSenderName] = useState(''); const [message, setMessage] = useState(randomBirthdayMessage); const [notice, setNotice] = useState(''); const [link, setLink] = useState(''); const [busy, setBusy] = useState(false);
+  const data = normalizeBirthdayData({ recipientName, senderName, message });
+  const update = (setter) => (event) => { setter(event.target.value); setLink(''); setNotice(''); };
+  const create = async () => { if (!data.recipientName) { setNotice('Add their name before creating the link.'); return; } setBusy(true); setNotice(''); try { setLink(await createShortBirthdayLink(data)); setNotice('Your short birthday link is ready.'); } catch (error) { setNotice(error.message); } finally { setBusy(false); } };
+  const copy = async () => { try { await navigator.clipboard.writeText(link); setNotice('Your short birthday link is ready to share.'); } catch { setNotice('Copy your link from the field below.'); } };
+  return <section className="make-wish-panel" role="dialog" aria-modal="true" aria-labelledby="make-wish-title"><button type="button" className="make-wish-close" onClick={onClose} aria-label="Close"><FiX/></button><p className="creator-eyebrow">make a little moment</p><h2 id="make-wish-title">Who are you celebrating?</h2><p>Write the feeling you want them to open. Their link is private and shareable.</p><label>Their name<input value={recipientName} onChange={update(setRecipientName)} maxLength={BIRTHDAY_LIMITS.recipientName} placeholder="Manohar" autoFocus/></label><label>From<input value={senderName} onChange={update(setSenderName)} maxLength={BIRTHDAY_LIMITS.senderName} placeholder="Satish"/></label><label>Your note<textarea value={message} onChange={update(setMessage)} maxLength={BIRTHDAY_LIMITS.message} rows="5"/></label>{!link && <button className="birthday-primary" type="button" onClick={create} disabled={busy}>{busy ? 'Creating short link…' : 'Create short birthday link'}</button>}{link && <><input className="make-wish-link" value={link} readOnly aria-label="Your short shareable birthday link"/><button className="birthday-primary" type="button" onClick={copy}><FiCopy/> Copy my birthday link</button></>}{notice && <p className="creator-notice" role="status">{notice}</p>}</section>;
 }
-
 function BirthdayExperience({ data, onExitPreview }) {
   const reduced = useReducedMotion(); const [stage, setStage] = useState('intro'); const [writtenCharacters, setWrittenCharacters] = useState(0); const [makerOpen, setMakerOpen] = useState(false); const [burstActive, setBurstActive] = useState(false); const [burstRun, setBurstRun] = useState(0);
   const timers = useRef([]); const { muted, paper, celebrate, toggle, clear: clearAudio } = useBirthdayAudio();
@@ -154,18 +162,37 @@ function BirthdayExperience({ data, onExitPreview }) {
 }
 
 function BirthdayCreator() {
-  const [form, setForm] = useState(() => ({ recipientName: '', senderName: 'Vamsi', message: randomBirthdayMessage() })); const [previewing, setPreviewing] = useState(false); const [notice, setNotice] = useState('');
-  const data = normalizeBirthdayData(form); const valid = Boolean(data.recipientName && data.message); const link = valid ? birthdayShareUrl(data) : '';
-  const update = (key, value) => { setForm(current => ({ ...current, [key]: value })); setNotice(''); };
+  const [form, setForm] = useState(() => ({ recipientName: '', senderName: 'Vamsi', message: randomBirthdayMessage() })); const [previewing, setPreviewing] = useState(false); const [notice, setNotice] = useState(''); const [link, setLink] = useState(''); const [busy, setBusy] = useState(false);
+  const data = normalizeBirthdayData(form); const valid = Boolean(data.recipientName && data.message);
+  const update = (key, value) => { setForm(current => ({ ...current, [key]: value })); setLink(''); setNotice(''); };
   const preview = () => { if (!valid) { setNotice('Add their name before previewing the surprise.'); return; } setPreviewing(true); };
+  const create = async () => { if (!valid) { setNotice('Add their name before creating the link.'); return; } setBusy(true); setNotice(''); try { setLink(await createShortBirthdayLink(data)); setNotice('Your short birthday link is ready.'); } catch (error) { setNotice(error.message); } finally { setBusy(false); } };
   const copy = async () => { try { await navigator.clipboard.writeText(link); setNotice('Birthday link copied.'); } catch { setNotice('Copy the link from the field below.'); } };
   const share = async () => { try { if (navigator.share) await navigator.share({ title: 'A birthday surprise is waiting for you 🎂', text: 'I made a little birthday surprise for you 🎂', url: link }); else setNotice('Use WhatsApp or copy the link.'); } catch { /* User cancelled sharing. */ } };
   if (previewing) return <BirthdayExperience data={data} onExitPreview={() => setPreviewing(false)}/>;
-  return <main className="birthday-creator"><MugguFrame/><section className="birthday-creator-card"><p className="creator-eyebrow">Vamsi Marripudi / birthday note</p><h1>Create a birthday surprise</h1><p className="creator-intro">A handwritten little moment they can open anywhere.</p><form onSubmit={(event) => { event.preventDefault(); preview(); }}><label>Birthday person’s name<input value={form.recipientName} onChange={event => update('recipientName', event.target.value)} maxLength={BIRTHDAY_LIMITS.recipientName} autoComplete="name" placeholder="Their name" required/></label><label>From<input value={form.senderName} onChange={event => update('senderName', event.target.value)} maxLength={BIRTHDAY_LIMITS.senderName} placeholder="Vamsi"/></label><label>Your personal note<textarea value={form.message} onChange={event => update('message', event.target.value)} maxLength={BIRTHDAY_LIMITS.message} rows="6"/></label><div className="creator-actions"><button className="birthday-primary" type="submit">Preview surprise</button><button className="birthday-secondary" type="button" onClick={() => update('message', randomBirthdayMessage())}>Another message</button></div></form>{notice && <p className="creator-notice" role="status">{notice}</p>}{link && <section className="birthday-share-panel" aria-label="Share birthday surprise"><label>Shareable link<input value={link} readOnly aria-label="Shareable birthday link"/></label><div><button type="button" onClick={copy}><FiCopy/> Copy link</button><a href={`https://wa.me/?text=${encodeURIComponent(`I made a little birthday surprise for you 🎂 Open it here: ${link}`)}`} target="_blank" rel="noreferrer">WhatsApp</a><button type="button" onClick={share}><FiShare2/> Share</button></div></section>}</section></main>;
+  return <main className="birthday-creator"><MugguFrame/><section className="birthday-creator-card"><p className="creator-eyebrow">Vamsi Marripudi / birthday note</p><h1>Create a birthday surprise</h1><p className="creator-intro">A handwritten little moment they can open anywhere.</p><form onSubmit={(event) => { event.preventDefault(); preview(); }}><label>Birthday person’s name<input value={form.recipientName} onChange={event => update('recipientName', event.target.value)} maxLength={BIRTHDAY_LIMITS.recipientName} autoComplete="name" placeholder="Their name" required/></label><label>From<input value={form.senderName} onChange={event => update('senderName', event.target.value)} maxLength={BIRTHDAY_LIMITS.senderName} placeholder="Vamsi"/></label><label>Your personal note<textarea value={form.message} onChange={event => update('message', event.target.value)} maxLength={BIRTHDAY_LIMITS.message} rows="6"/></label><div className="creator-actions"><button className="birthday-primary" type="submit">Preview surprise</button><button className="birthday-secondary" type="button" onClick={create} disabled={busy}>{busy ? 'Creating short link…' : 'Create short link'}</button><button className="birthday-secondary" type="button" onClick={() => update('message', randomBirthdayMessage())}>Another message</button></div></form>{notice && <p className="creator-notice" role="status">{notice}</p>}{link && <section className="birthday-share-panel" aria-label="Share birthday surprise"><label>Short shareable link<input value={link} readOnly aria-label="Short shareable birthday link"/></label><div><button type="button" onClick={copy}><FiCopy/> Copy link</button><a href={`https://wa.me/?text=${encodeURIComponent(`I made a little birthday surprise for you 🎂 Open it here: ${link}`)}`} target="_blank" rel="noreferrer">WhatsApp</a><button type="button" onClick={share}><FiShare2/> Share</button></div></section>}</section></main>;
 }
-
 export default function BirthdayPage() {
-  const recipientData = useMemo(() => decodeBirthdayPayload(new URLSearchParams(window.location.search).get('b')), []);
+  const shareId = useMemo(() => {
+    const part = window.location.pathname.split('/').filter(Boolean).at(-1);
+    return birthdayShareIdIsValid(part) ? part : '';
+  }, []);
+  const legacyRecipientData = useMemo(() => decodeBirthdayPayload(new URLSearchParams(window.location.search).get('b')), []);
+  const [remote, setRemote] = useState(() => shareId ? { state: 'loading', data: null, message: '' } : { state: 'idle', data: null, message: '' });
   useEffect(() => { setBirthdayMeta(); const robots = document.createElement('meta'); robots.name = 'robots'; robots.content = 'noindex, nofollow'; robots.dataset.birthday = 'true'; document.head.appendChild(robots); return () => robots.remove(); }, []);
+  useEffect(() => {
+    if (!shareId) return undefined;
+    const controller = new AbortController();
+    fetch(`/api/birthday?id=${encodeURIComponent(shareId)}`, { signal: controller.signal }).then(async (response) => {
+      const payload = await response.json().catch(() => ({}));
+      const data = normalizeBirthdayData(payload.data || {});
+      if (!response.ok || !payload.ok || !data.recipientName) throw new Error(payload.message || 'This birthday link is unavailable.');
+      setRemote({ state: 'ready', data, message: '' });
+    }).catch((error) => { if (error.name !== 'AbortError') setRemote({ state: 'error', data: null, message: error.message || 'This birthday link is unavailable.' }); });
+    return () => controller.abort();
+  }, [shareId]);
+  if (shareId && remote.state === 'loading') return <main className="birthday-creator"><section className="birthday-creator-card"><p className="creator-eyebrow">birthday surprise</p><h1>Opening your letter…</h1></section></main>;
+  if (shareId && remote.state === 'error') return <main className="birthday-creator"><section className="birthday-creator-card"><p className="creator-eyebrow">birthday surprise</p><h1>This link is unavailable.</h1><p className="creator-intro">{remote.message}</p></section></main>;
+  const recipientData = shareId ? remote.data : legacyRecipientData;
   return recipientData ? <BirthdayExperience data={recipientData}/> : <BirthdayCreator/>;
 }

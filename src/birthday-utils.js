@@ -70,3 +70,5 @@ export const decodeBirthdayPayload = (value) => {
 };
 
 export const birthdayShareUrl = (value) => `${window.location.origin}/birthday?b=${encodeURIComponent(encodeBirthdayPayload(value))}`;
+export const birthdayShortShareUrl = (id) => `${window.location.origin}/birthday/${encodeURIComponent(id)}`;
+export const birthdayShareIdIsValid = (value) => /^[A-Za-z0-9_-]{8,16}$/.test(String(value || ''));
