@@ -29,6 +29,7 @@ const useReducedMotion = () => {
 function useBirthdayAudio() {
   const envelopeRef = useRef(null);
   const applauseRef = useRef(null);
+  const envelopeStopTimerRef = useRef(null);
   const mutedRef = useRef(false);
   const [muted, setMuted] = useState(false);
   useEffect(() => { mutedRef.current = muted; }, [muted]);
@@ -37,7 +38,7 @@ function useBirthdayAudio() {
     applauseRef.current = new Audio('/sounds/birthday-applause.mp3');
     envelopeRef.current.preload = 'auto'; envelopeRef.current.volume = 0.34;
     applauseRef.current.preload = 'auto'; applauseRef.current.volume = 0.26;
-    return () => [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } });
+    return () => { if (envelopeStopTimerRef.current) window.clearTimeout(envelopeStopTimerRef.current); [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } }); };
   }, []);
   const playSound = useCallback((reference) => {
     if (mutedRef.current || !reference.current) return;
@@ -46,10 +47,12 @@ function useBirthdayAudio() {
   }, []);
   const paper = useCallback(() => {
     playSound(envelopeRef);
+    if (envelopeStopTimerRef.current) window.clearTimeout(envelopeStopTimerRef.current);
+    envelopeStopTimerRef.current = window.setTimeout(() => { const sound = envelopeRef.current; if (sound) { sound.pause(); sound.currentTime = 0; } }, 700);
   }, [playSound]);
   const celebrate = useCallback(() => playSound(applauseRef), [playSound]);
   const toggle = useCallback(() => setMuted(current => !current), []);
-  const clear = useCallback(() => [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } }), []);
+  const clear = useCallback(() => { if (envelopeStopTimerRef.current) window.clearTimeout(envelopeStopTimerRef.current); [envelopeRef.current, applauseRef.current].forEach((sound) => { if (sound) { sound.pause(); sound.currentTime = 0; } }); }, []);
   return { muted, paper, celebrate, toggle, clear };
 }
 
