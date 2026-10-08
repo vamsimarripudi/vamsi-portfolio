@@ -14,6 +14,33 @@ const routes=[
 ['get','/api/v1/status','getStatus','Current status and upcoming teasers'],
 ['get','/api/v1/realtime/stream','streamEvents','Replayable Server-Sent Events'],
 ['post','/api/v1/analytics/event','recordAnalyticsEvent','Record allowed first-party event'],
+['post','/api/v1/auth/register','registerMember','Register private member and email a one-time verification link'],
+['post','/api/v1/auth/login','loginMember','Sign in a verified member'],
+['post','/api/v1/auth/admin/login','loginStaff','Sign in a Studio role, with authenticator verification when enabled'],
+['post','/api/v1/auth/admin/register','registerInvitedStaff','Redeem a signed, expiring, owner-issued invitation'],
+['post','/api/v1/auth/mfa/setup','beginMfa','Start encrypted authenticator enrolment'],
+['post','/api/v1/auth/mfa/activate','activateMfa','Verify TOTP and obtain one-time recovery codes'],
+['get','/api/v1/auth/session','getIdentitySession','Read current member or staff session'],
+['post','/api/v1/auth/logout','logoutIdentity','Revoke identity session and clear both cookie scopes'],
+['post','/api/v1/auth/email/verify','verifyIdentityEmail','Verify single-use email token'],
+['post','/api/v1/auth/email/resend','resendIdentityEmail','Resend a short-lived verification token'],
+['post','/api/v1/auth/email/change','requestIdentityEmailChange','Request a verified account email change'],
+['post','/api/v1/auth/email/confirm','confirmIdentityEmailChange','Approve a one-time email change and revoke old sessions'],
+['post','/api/v1/auth/password/forgot','requestPasswordReset','Issue generic reset acknowledgment without account enumeration'],
+['post','/api/v1/auth/password/reset','resetIdentityPassword','Reset password with single-use token and revoke sessions'],
+['post','/api/v1/auth/password/change','changeIdentityPassword','Change password and revoke all sessions'],
+['get','/api/v1/me','readPrivateProfile','Get current private member/staff profile'],
+['patch','/api/v1/me','updatePrivateProfile','Update display name, bio and private preferences'],
+['get','/api/v1/me/preferences','getPrivatePreferences','Read member preference settings'],
+['patch','/api/v1/me/preferences','updatePrivatePreferences','Update language and notifications settings'],
+['get','/api/v1/me/sessions','listIdentitySessions','List current account sessions'],
+['delete','/api/v1/me/sessions/{sessionId}','revokeIdentitySession','Revoke an account session'],
+['get','/api/v1/me/bookmarks','listIdentityBookmarks','List privately bookmarked published posts'],
+['post','/api/v1/me/bookmarks','createIdentityBookmark','Save a published post privately'],
+['delete','/api/v1/me/bookmarks/{postId}','deleteIdentityBookmark','Remove a saved post'],
+['post','/api/v1/me/export','exportIdentityData','Export personal profile/bookmark/session metadata'],
+['post','/api/v1/me/deletion','requestIdentityDeletion','Submit a reviewed account-deletion request'],
+['post','/api/v1/admin/invitations','inviteStudioAccount','Owner-only invitation for admin, editor or moderator'],
 ['post','/api/v1/admin/login','signInOwner','Owner login and session cookie'],
 ['post','/api/v1/admin/logout','signOutOwner','Revoke owner session'],
 ['get','/api/v1/admin/overview','getOwnerOverview','Owner dashboard summary'],
@@ -46,11 +73,12 @@ const json={'application/json':{schema:{type:'object'}}};
 const reply=(description)=>({description,content:json});
 const paths={};
 for(const [method,url,id,summary] of routes){
- const op={operationId:id,summary,tags:[url.includes('/admin/')?'Owner':'Public'],responses:{'200':reply('Success'),'400':reply('Invalid input'),'401':reply('Authentication required'),'403':reply('Forbidden'),'404':reply('Not found'),'429':reply('Too many requests')}};
+ const op={operationId:id,summary,tags:[url.includes('/me')?'Account':url.includes('/auth/')?'Identity':url.includes('/admin/')?'Owner':'Public'],responses:{'200':reply('Success'),'400':reply('Invalid input'),'401':reply('Authentication required'),'403':reply('Forbidden'),'404':reply('Not found'),'429':reply('Too many requests')}};
  const placeholders=[...url.matchAll(/\{(\w+)\}/g)].map(m=>({in:'path',name:m[1],required:true,schema:{type:'string'}}));
  if(placeholders.length)op.parameters=placeholders;
- if(url.includes('/admin/')&&id!=='signInOwner')op.security=[{ownerSession:[]}];
- if(['post','put','patch'].includes(method)&&!['signOutOwner','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
+ if(url.startsWith('/api/v1/me'))op.security=[{memberSession:[]},{ownerSession:[]}];
+ if(url.includes('/admin/')&&!['signInOwner','loginStaff','registerInvitedStaff'].includes(id))op.security=[{ownerSession:[]}];
+ if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
  if(id==='uploadMedia')op.requestBody={required:true,content:{'image/png':{schema:{type:'string',format:'binary'}},'image/jpeg':{schema:{type:'string',format:'binary'}},'video/mp4':{schema:{type:'string',format:'binary'}}}};
  if(id==='createPost')op.responses['201']=reply('Created; Location header points to resource');
  if(id==='getReadiness')op.responses['503']=reply('Storage unavailable');
@@ -59,7 +87,7 @@ for(const [method,url,id,summary] of routes){
 }
 export const openApiDocument=(baseUrl)=>({
  openapi:'3.1.0',
- info:{title:"Vamsi's Corner REST API",version:'1.0.0',description:'Versioned same-origin JSON API with legacy compatibility. Owner session is HttpOnly/Secure/SameSite=Strict. Mutations require matching Origin. Post DELETE is reversible archival. PUT and DELETE reactions are idempotent; POST toggle is legacy.'},
- servers:[{url:baseUrl}],tags:[{name:'Public'},{name:'Owner'}],paths,
- components:{securitySchemes:{ownerSession:{type:'apiKey',in:'cookie',name:'corner_session'}}},
+ info:{title:"Vamsi's Corner REST API",version:'1.1.0',description:'Additive role-scoped identity and private profiles; public registration stays disabled until verified email delivery is configured. Invitations are owner-only, staff requires MFA, member and Studio cookies are separate. All mutations enforce same-origin CSRF controls. Legacy publishing routes remain compatible.'},
+ servers:[{url:baseUrl}],tags:[{name:'Public'},{name:'Identity'},{name:'Account'},{name:'Owner'}],paths,
+ components:{securitySchemes:{ownerSession:{type:'apiKey',in:'cookie',name:'corner_session'},memberSession:{type:'apiKey',in:'cookie',name:'corner_member_session'}}},
 });

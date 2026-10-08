@@ -1,0 +1,157 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { Store } from '../src/store.mjs';
+import { passwordHash, passwordVerify } from '../src/auth.mjs';
+import { IdentityService, identityInternals, privilegedRole, staffPermission } from '../src/identity.mjs';
+
+const ownerEmail = 'owner-test@corner.example';
+const ownerPassword = 'One-safe-owner-passphrase#2026';
+const memberPassword = 'Long-Strong-Member-Passphrase#2026';
+const invitePassword = 'Long-Strong-Staff-Passphrase#2026';
+const tokenFromMail = (folder, subject) => {
+  const messages = fs.readFileSync(folder, 'utf8').trim().split('\n').map(line=>JSON.parse(line));
+  const mail = messages.filter(x=>x.subject.includes(subject)).at(-1);
+  assert.ok(mail, 'Expected test email: '+subject);
+  const url = mail.text.match(/https?:\/\/[^\s]+/)?.[0];
+  assert.ok(url, 'Email includes verification URL');
+  return {token: new URL(url).hash.slice(1).replace(/^token=/, ''), mail};
+};
+const fixture = t => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'corner-identity-safe-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const emailFile=path.join(dir,'test-mails.jsonl');
+  fs.writeFileSync(emailFile,'',{mode:0o600});
+  const store=new Store(path.join(dir,'database.sqlite'));
+  t.after(()=>store.close());
+  store.bootstrap(ownerEmail,passwordHash(ownerPassword));
+  const env={SITE_URL:'https://example.test/corner',NODE_ENV:'test',CORNER_AUTH_TEST_OUTBOX:emailFile,CORNER_AUTH_REGISTRATION_ENABLED:'1',SESSION_SECRET:crypto.randomBytes(36).toString('hex')};
+  return {dir,emailFile,store,identity:new IdentityService(store,{env}),env};
+};
+
+test('role migration is additive, registration is opt-in and members cannot receive owner permissions', async t=>{
+  const {store,identity,emailFile,env}=fixture(t);
+  const owner=store.owner();
+  const previousSession=crypto.randomBytes(32).toString('hex');
+  store.createSession(owner,previousSession);
+  assert.equal(store.session(previousSession).role,'owner');
+  store.exec('INSERT INTO users(id,email,display_name,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?)','x','x@corner.example','X','hash',new Date().toISOString(),new Date().toISOString());
+  assert.equal(store.one('SELECT role FROM users WHERE id=?','x').role,'member','omitting role must never produce owner');
+  env.CORNER_AUTH_REGISTRATION_ENABLED='0';
+  await assert.rejects(identity.registerMember({name:'Test Member',email:'new@corner.example',password:memberPassword}),{code:'REGISTRATION_DISABLED'});
+  env.CORNER_AUTH_REGISTRATION_ENABLED='1';
+  await identity.registerMember({name:'Test Member',email:'new@corner.example',password:memberPassword,role:'owner'});
+  const member=identity.findByEmail('new@corner.example');
+  assert.equal(member.role,'member');
+  assert.equal(store.owner().id,owner.id);
+  assert.ok(store.session(previousSession),'original owner session preserved by migration');
+  await assert.rejects(Promise.resolve().then(()=>identity.loginMember({email:member.email,password:memberPassword})),{code:'EMAIL_NOT_VERIFIED'});
+  const token=tokenFromMail(emailFile,'Verify').token;
+  assert.deepEqual(identity.verifyEmail({token}),{verified:true});
+  assert.throws(()=>identity.verifyEmail({token}),{code:'TOKEN_INVALID'},'verification token only once');
+  const result=identity.loginMember({email:member.email,password:memberPassword});
+  assert.equal(result.user.verified,true);
+  assert.equal(result.user.role,'member');
+  assert.equal(store.session(result.token).role,'member');
+  assert.equal(privilegedRole('member'),false);
+  assert.equal(staffPermission('member','/api/admin/posts','POST'),false);
+  assert.equal(staffPermission('editor','/api/admin/posts','POST'),true);
+  assert.equal(staffPermission('moderator','/api/admin/posts','GET'),false);
+  assert.equal(staffPermission('moderator','/api/admin/comments','GET'),true);
+});
+
+test('profile, preferences, saved posts, account export and password recovery',async t=>{
+  const {store,identity,emailFile}=fixture(t);
+  await identity.registerMember({name:'New Member',email:'member@corner.example',password:memberPassword});
+  identity.verifyEmail({token:tokenFromMail(emailFile,'Verify').token});
+  const member=identity.findByEmail('member@corner.example');
+  const session=identity.loginMember({email:member.email,password:memberPassword});
+  const updated=identity.updateProfile(member,{displayName:'Another Name',bio:'Very short bio',locale:'te',emailUpdates:true,role:'owner'});
+  assert.equal(updated.displayName,'Another Name');
+  assert.equal(updated.role,'member');
+  assert.equal(updated.locale,'te');
+  assert.equal(updated.visibility,'private');
+  const post=store.createPost({title:'A verified public note',body:'Published content',type:'tech_note'},store.owner().id);
+  store.publish(post.id,store.owner().id);
+  assert.deepEqual(identity.addBookmark(member,post.id),{saved:true,postId:post.id});
+  assert.equal(identity.bookmarks(member).length,1);
+  identity.removeBookmark(member,post.id);
+  assert.equal(identity.bookmarks(member).length,0);
+  assert.equal(identity.exportData(member).account.email,'member@corner.example');
+  assert.equal(identity.requestPrivacy(member,'deletion').state,'requested');
+  assert.equal(identity.requestPrivacy(member,'deletion').state,'requested','idempotent request');
+  await identity.forgotPassword({email:'member@corner.example'});
+  const resetToken=tokenFromMail(emailFile,'Reset').token;
+  identity.resetPassword({token:resetToken,password:'New-Verified-Passphrase#2026'});
+  assert.throws(()=>identity.resetPassword({token:resetToken,password:'Again-Strong-Passphrase#2026'}),{code:'TOKEN_INVALID'});
+  assert.equal(store.session(session.token),null,'reset revokes earlier sessions');
+  assert.throws(()=>identity.loginMember({email:member.email,password:memberPassword}),{code:'AUTH_FAILED'});
+  const recovered=identity.loginMember({email:member.email,password:'New-Verified-Passphrase#2026'});
+  assert.ok(recovered.token);
+  await identity.requestEmailChange(member,{newEmail:'replacement@corner.example',currentPassword:'New-Verified-Passphrase#2026'});
+  const emailToken=tokenFromMail(emailFile,'Confirm your new Corner email').token;
+  assert.equal(identity.confirmEmailChange({token:emailToken}).email,'replacement@corner.example');
+  assert.throws(()=>identity.confirmEmailChange({token:emailToken}),{code:'TOKEN_INVALID'});
+  assert.equal(store.session(recovered.token),null,'verified email change revokes all sessions');
+  assert.ok(identity.loginMember({email:'replacement@corner.example',password:'New-Verified-Passphrase#2026'}).token);
+
+});
+
+test('invitation-only staff registration enforces MFA, replay protection and one owner', async t=>{
+  const {identity,store,emailFile}=fixture(t);
+  const owner=store.owner();
+  await assert.rejects(identity.invite(owner,{email:'staff@corner.example',role:'editor'}),{code:'MFA_REQUIRED'});
+  const setupOwner=identity.beginMfa({actor:owner});
+  const ownerCode=identityInternals.totpAt(setupOwner.secret,Math.floor(Date.now()/30000));
+  identity.activateMfa({challenge:setupOwner.challenge,code:ownerCode});
+  await assert.rejects(identity.invite({role:'member',id:'x'},{email:'staff@corner.example',role:'admin'}),{code:'OWNER_REQUIRED'});
+  await assert.rejects(identity.invite(owner,{email:'staff@corner.example',role:'owner'}),{code:'ROLE_INVALID'});
+  await identity.invite(owner,{email:'staff@corner.example',role:'editor'});
+  const invite=tokenFromMail(emailFile,'invitation').token;
+  const staff=identity.registerStaff({email:'staff@corner.example',name:'Trusted Editor',password:invitePassword,token:invite,role:'owner'});
+  assert.equal(staff.mfaSetupRequired,true);
+  assert.equal(identity.findByEmail('staff@corner.example').role,'editor');
+  assert.throws(()=>identity.registerStaff({email:'staff2@corner.example',name:'Other',password:invitePassword,token:invite}),{code:'INVITE_INVALID'});
+  const pending=identity.loginAdmin({email:'staff@corner.example',password:invitePassword});
+  assert.equal(pending.mfaSetupRequired,true);
+  assert.equal(pending.token,undefined);
+  const begin=identity.beginMfa({challenge:pending.challenge});
+  const code=identityInternals.totpAt(begin.secret,Math.floor(Date.now()/30000));
+  const enabled=identity.activateMfa({challenge:begin.challenge,code});
+  assert.equal(enabled.user.mfaEnabled,true);
+  assert.equal(enabled.recoveryCodes.length,8);
+  assert.throws(()=>identity.activateMfa({challenge:begin.challenge,code}),{code:'CHALLENGE_EXPIRED'});
+  assert.throws(()=>identity.loginAdmin({email:'staff@corner.example',password:invitePassword}),{code:'MFA_REQUIRED'});
+  assert.throws(()=>identity.loginAdmin({email:'staff@corner.example',password:invitePassword,code}),{code:'MFA_INVALID'},'replaying same TOTP step rejected');
+  const verified=identity.loginAdmin({email:'staff@corner.example',password:invitePassword,code:enabled.recoveryCodes[0]});
+  assert.equal(verified.user.role,'editor');
+  assert.ok(store.session(verified.token));
+  assert.throws(()=>identity.loginAdmin({email:'staff@corner.example',password:invitePassword,code:enabled.recoveryCodes[0]}),{code:'MFA_INVALID'},'recovery code single-use');
+  assert.throws(()=>identity.beginMfa({actor:{role:'member',id:owner.id}}),{code:'AUTH_REQUIRED'});
+  assert.equal(store.owner().id,owner.id,'staff enrollment leaves owner unchanged');
+});
+
+test('existing owner password self-service change persists after restart unless configured hash changes',t=>{
+  const {store,identity}=fixture(t),owner=store.owner(),originalConfigHash=owner.password_hash,firstConfig=store.setting('identity.owner.bootstrap_fingerprint');
+  assert.ok(firstConfig);
+  identity.changePassword(owner,{currentPassword:ownerPassword,newPassword:'Durable-Self-Service-Passphrase#2026'});
+  const oldHash=store.owner().password_hash;
+  assert.ok(passwordVerify('Durable-Self-Service-Passphrase#2026',oldHash));
+  assert.equal(store.bootstrap(ownerEmail,originalConfigHash),false,'bootstrapping original environment does not revert self-service change');
+  assert.equal(store.owner().password_hash,oldHash);
+  const newConfigHash=passwordHash('Credential-Rotated-Via-Railway#2026');
+  store.bootstrap(ownerEmail,newConfigHash);
+  assert.equal(store.owner().password_hash,newConfigHash,'new deployment setting explicitly rotates');
+  assert.equal(store.setting('identity.owner.bootstrap_fingerprint'),crypto.createHash('sha256').update(newConfigHash).digest('hex'));
+});
+
+test('public email registration remains closed by default even if mail is configured',async t=>{
+  const {identity,env}=fixture(t);
+  delete env.CORNER_AUTH_REGISTRATION_ENABLED;
+  assert.equal(identity.canRegister(),false);
+  await assert.rejects(identity.registerMember({name:'A Member',email:'a@example.net',password:memberPassword}),{code:'REGISTRATION_DISABLED'});
+});

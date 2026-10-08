@@ -84,14 +84,42 @@
   }
   async function analytics(){let summary=await api('/corner/api/admin/analytics/summary');root.innerHTML=`<section class="admin-grid">${[['Views',summary.page_view||0],['Story opens',summary.post_open||0],['Shares',summary.share||0],['Published',summary.published||0]].map(([label,value])=>`<div class="admin-kpi"><p>${label}</p><strong>${Number(value)}</strong></div>`).join('')}</section><section class="admin-section"><div class="admin-surface"><h2>Lean by default.</h2><p>Counts from the past 7 days. No third-party analytics tracker and no public visitor leaderboard.</p>${summary.top?.length?`<p>Top stories: ${summary.top.map(x=>esc(x.post_id)+' ('+x.visits+')').join(' · ')}</p>`:''}</div></section>`}
   async function settings(){let s=await api('/corner/api/admin/settings');root.innerHTML=`<section class="admin-section"><header><h2>The essentials.</h2></header><form class="admin-form admin-surface" id="settings-editor"><label>Site title<input name="title" value="${esc(s.title)}"></label><label>Short descriptor<input name="descriptor" value="${esc(s.descriptor)}"></label><label>Site timezone<input name="timezone" value="${esc(s.timezone)}"></label><div class="editor-checks"><label><input type="checkbox" name="commentsDefault" ${s.commentsDefault?'checked':''}> Comments by default</label><label><input type="checkbox" name="reactionsDefault" ${s.reactionsDefault?'checked':''}> Reactions by default</label></div><button type="submit">Save settings</button></form></section><section class="admin-section"><header><h2>Site status.</h2></header><button class="admin-secondary" id="settings-status">Update current status ↗</button></section>`;
-    $('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/settings','PUT',{title:f.elements.title.value,descriptor:f.elements.descriptor.value,timezone:f.elements.timezone.value,commentsDefault:f.elements.commentsDefault.checked,reactionsDefault:f.elements.reactionsDefault.checked});toast('Settings saved.','success')}catch(err){toast(err.message,'error')}};
+    if(initial.ownerRole==='owner'){const invite=document.createElement('a');invite.className='admin-secondary';invite.textContent='Invite a studio collaborator ↗';invite.href='/corner/admin/invite';invite.style.display='inline-flex';invite.style.marginTop='18px';root.append(invite)}$('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/settings','PUT',{title:f.elements.title.value,descriptor:f.elements.descriptor.value,timezone:f.elements.timezone.value,commentsDefault:f.elements.commentsDefault.checked,reactionsDefault:f.elements.reactionsDefault.checked});toast('Settings saved.','success')}catch(err){toast(err.message,'error')}};
   }
   function statusEditor(){let s=initial.status||{};root.innerHTML=`<section class="admin-section"><header><h2>A short note for right now.</h2></header><form id="now-form" class="admin-form admin-surface"><div class="editor-inline"><label>Label<input name="label" maxlength="55" placeholder="Building something new" value="${esc(s.label||'')}"></label><label>Symbol<input name="icon" maxlength="8" placeholder="✳" value="${esc(s.icon||'✳')}"></label></div><label>Detail (optional)<textarea name="detail" maxlength="115" placeholder="One line, if needed.">${esc(s.detail||'')}</textarea></label><label><input type="checkbox" name="isActive" ${s.label?'checked':''}> Show this on the public site</label><button type="submit">Update right now ↗</button></form></section>`;
     $('#now-form').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/status','PUT',{label:f.elements.label.value,detail:f.elements.detail.value,icon:f.elements.icon.value,isActive:f.elements.isActive.checked});toast('Your status is live.','success');showView('overview')}catch(err){toast(err.message,'error')}};
   }
-  const login=$('#admin-login');if(login){login.onsubmit=async event=>{event.preventDefault();const btn=login.querySelector('button[type=submit]');btn.disabled=true;$('#login-message').textContent='Checking secure access…';try{await api('/corner/api/admin/login','POST',{email:login.elements.email.value,password:login.elements.password.value});location.reload()}catch(err){$('#login-message').textContent=err.message}finally{btn.disabled=false}};return;}
+  const login=$('#admin-login');
+  if(login){
+    const mfaField=login.querySelector('.admin-mfa-field');
+    if(mfaField)mfaField.hidden=true;
+    login.onsubmit=async event=>{
+      event.preventDefault();const btn=login.querySelector('button[type=submit]');
+      btn.disabled=true;$('#login-message').textContent='Checking secure access…';
+      try{
+        const result=await api('/corner/api/v1/auth/admin/login','POST',{
+          email:login.elements.email.value,password:login.elements.password.value,
+          code:login.elements.code?.value||''
+        });
+        if(result.mfaSetupRequired){
+          try{sessionStorage.setItem('corner-mfa-challenge',result.challenge)}catch{}
+          location.assign('/corner/admin/mfa');return;
+        }
+        if(result.authenticated){location.reload();return}
+        throw new Error('Secure sign-in is not complete.');
+      }catch(err){
+        if(err.code==='MFA_REQUIRED'){
+          if(mfaField){mfaField.hidden=false;mfaField.querySelector('input')?.focus();}
+          btn.textContent='Verify and open the Corner';
+          $('#login-message').textContent='Enter the code from your authenticator app.';
+          return;
+        }
+        $('#login-message').textContent=err.message;
+      }finally{btn.disabled=false}
+    };return;
+  }
   if(!root)return;
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>showView(b.dataset.adminView));
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
-  showView('overview');
+  showView(initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
 })();

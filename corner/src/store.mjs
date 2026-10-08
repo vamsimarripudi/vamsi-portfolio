@@ -33,31 +33,43 @@ export class Store{
   owner(){return this.one("SELECT * FROM users WHERE role='owner' AND disabled_at IS NULL LIMIT 1")}
   bootstrap(email,hash){
     if(!email||!hash)return false;
+    // Track the hash supplied by the deployment separately from the current
+    // account hash. A user-initiated password change must survive restarts;
+    // changing ADMIN_PASSWORD_HASH on Railway remains an explicit rotation.
+    const fingerprint=sha(hash);
+    const recorded=this.setting('identity.owner.bootstrap_fingerprint',null);
     const previous=this.owner();
     if(previous){
       if(previous.email!==email)throw Error('Configured owner email does not match the existing owner. Explicit migration is required.');
-      if(previous.password_hash!==hash){
+      if(recorded&&recorded!==fingerprint){
         this.transaction(()=>{
           const stamp=now();
           this.exec('UPDATE users SET password_hash=?,updated_at=? WHERE id=?',hash,stamp,previous.id);
           this.exec('UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL',stamp,previous.id);
           this.audit(previous.id,'owner.password_rotated','user',previous.id);
+          this.saveSetting('identity.owner.bootstrap_fingerprint',fingerprint);
         });
       }
+      // Existing deployments without this marker are adopted without
+      // overwriting credentials that may already have been changed in-app.
+      if(!recorded)this.saveSetting('identity.owner.bootstrap_fingerprint',fingerprint);
       return false;
     }
     const stamp=now();
-    this.exec('INSERT INTO users(id,email,display_name,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?)',uid('usr'),email,'Vamsi',hash,stamp,stamp);
+    this.transaction(()=>{
+      this.exec('INSERT INTO users(id,email,display_name,role,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',uid('usr'),email,'Vamsi','owner',hash,stamp,stamp);
+      this.saveSetting('identity.owner.bootstrap_fingerprint',fingerprint);
+    });
     return true;
   }
   findOwner(email){return this.one("SELECT * FROM users WHERE role='owner' AND email=? AND disabled_at IS NULL",email)}
-  createSession(user,token,ip='',agent=''){
-    let stamp=now(),expires=new Date(Date.now()+8*3600000).toISOString();
+  createSession(user,token,ip='',agent='',maxAgeHours=8){
+    let stamp=now(),expires=new Date(Date.now()+Math.min(Math.max(maxAgeHours,1),24*30)*3600000).toISOString();
     this.exec('INSERT INTO sessions(id,user_id,token_hash,created_at,expires_at,ip_hash,user_agent_hash) VALUES(?,?,?,?,?,?,?)',uid('sess'),user.id,sha(token),stamp,expires,sha(ip).slice(0,22),sha(agent).slice(0,22));
     this.exec('UPDATE users SET last_login_at=? WHERE id=?',stamp,user.id);this.audit(user.id,'session.started','session',null);
     return expires;
   }
-  session(token){if(!token)return null;return this.one('SELECT users.id,users.email,users.role,sessions.expires_at FROM sessions JOIN users ON users.id=sessions.user_id WHERE sessions.token_hash=? AND sessions.revoked_at IS NULL AND sessions.expires_at>? AND users.disabled_at IS NULL',sha(token),now())}
+  session(token){if(!token)return null;return this.one('SELECT users.id,users.email,users.display_name,users.role,sessions.expires_at FROM sessions JOIN users ON users.id=sessions.user_id WHERE sessions.token_hash=? AND sessions.revoked_at IS NULL AND sessions.expires_at>? AND users.disabled_at IS NULL',sha(token),now())}
   revokeSession(token){this.exec('UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL',now(),sha(token))}
   audit(actor,action,type,id,meta={}){this.exec('INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,metadata,occurred_at) VALUES(?,?,?,?,?,?,?)',uid('audit'),actor||null,action,type||null,id||null,JSON.stringify(meta),now())}
   emit(type,entityId,version=1,payload={}){

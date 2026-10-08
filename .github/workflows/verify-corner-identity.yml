@@ -1,0 +1,115 @@
+name: Verify Corner identity and account routing
+on:
+  push:
+    paths:
+      - 'corner/**'
+      - '.github/workflows/verify-corner-identity.yml'
+  pull_request:
+    paths:
+      - 'corner/**'
+      - '.github/workflows/verify-corner-identity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Portfolio and Corner regression suite
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          cd corner
+          npm run check
+      - name: Install Chromium for responsive account test
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Run isolated account browser acceptance
+        run: |
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import { spawn } from 'node:child_process';
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import os from 'node:os';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+          import { passwordHash } from './corner/src/auth.mjs';
+          const origin='http://127.0.0.1:4181';
+          const directory=fs.mkdtempSync(path.join(os.tmpdir(),'corner-account-browser-'));
+          const outbox=path.join(directory,'test-mails.jsonl');fs.writeFileSync(outbox,'');
+          const env={...process.env,HOST:'127.0.0.1',PORT:'4181',DB_PATH:path.join(directory,'test.sqlite'),DATA_DIR:directory,
+            NODE_ENV:'test',SITE_URL:origin+'/corner',CORNER_BASE_PATH:'/corner',DEMO_CONTENT:'0',
+            CORNER_AUTH_REGISTRATION_ENABLED:'1',CORNER_AUTH_TEST_OUTBOX:outbox,
+            ADMIN_EMAIL:'owner-e2e@example.test',ADMIN_PASSWORD_HASH:passwordHash('Synthetic-Owner-E2E-Passphrase#2026'),
+            SESSION_SECRET:crypto.randomBytes(48).toString('hex')};
+          const server=spawn(process.execPath,['--no-warnings','src/server.mjs'],{cwd:'corner',env,stdio:'ignore'});
+          const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const sizes=[{width:320,height:690},{width:375,height:812},{width:768,height:1024},{width:1366,height:768}];
+          const email='verified-e2e@example.test',pass='Strong-Test-Member-Passphrase#2026';
+          try{
+            let ready=false;for(let i=0;i<65;i++){
+              try{if((await fetch(origin+'/corner/api/health')).ok){ready=true;break}}catch{}
+              await sleep(100);
+            }
+            assert.equal(ready,true,'isolated test instance ready');
+            for(const viewport of sizes){
+              const page=await browser.newPage({viewport});
+              const response=await page.goto(origin+'/corner/register',{waitUntil:'networkidle'});
+              assert.equal(response.status(),200);
+              assert.equal(await page.locator('form[data-account-form="register"]').count(),1);
+              const layout=await page.evaluate(()=>({client:document.documentElement.scrollWidth,view:innerWidth}));
+              assert.ok(layout.client<=layout.view+1,'no horizontal overflow '+viewport.width);
+              const paper=await page.locator('.account-card').evaluate(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color}));
+              assert.equal(paper.background,'rgb(255, 255, 255)');
+              assert.equal(paper.color,'rgb(0, 0, 0)');
+              const passField=page.locator('form[data-account-form="register"] input[type="password"]');
+              assert.equal(await passField.isVisible(),false,'email-first progressive reveal');
+              await page.locator('form[data-account-form="register"] input[name="email"]').fill(email);
+              assert.equal(await passField.isVisible(),true,'valid email reveals password');
+              await page.close();
+              console.log('PASS account viewport '+viewport.width+'×'+viewport.height);
+            }
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            await page.goto(origin+'/corner/register',{waitUntil:'networkidle'});
+            const form=page.locator('form[data-account-form="register"]');
+            await form.locator('input[name="name"]').fill('Synthetic Browser Member');
+            await form.locator('input[name="email"]').fill(email);
+            await form.locator('input[name="password"]').fill(pass);
+            await form.locator('button[type="submit"]').click();
+            await page.getByText('Check your email for a verification link.').waitFor();
+            const messages=fs.readFileSync(outbox,'utf8').trim().split('\n').map(s=>JSON.parse(s));
+            assert.equal(messages.length,1,'exactly one test verification message');
+            const url=messages[0].text.match(/https?:\/\/\S+/)?.[0];
+            assert.ok(url);
+            await page.goto(url,{waitUntil:'networkidle'});
+            await page.locator('form[data-account-form="verify"] button[type="submit"]').click();
+            await page.getByText('Email verified. You can sign in now.').waitFor();
+            await page.goto(origin+'/corner/login',{waitUntil:'networkidle'});
+            const login=page.locator('form[data-account-form="login"]');
+            await login.locator('input[name="email"]').fill(email);
+            await login.locator('input[name="password"]').fill(pass);
+            await login.locator('button[type="submit"]').click();
+            await page.waitForURL('**/corner/profile',{timeout:12000});
+            await page.getByText('Signed in as '+email).waitFor();
+            assert.match((await page.locator('body').textContent()),/Your quiet space/);
+            await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
+            await page.getByText('Active sessions.').waitFor();
+            await page.locator('[data-account-logout]').click();
+            await page.waitForURL('**/corner/login',{timeout:12000});
+            await page.close();
+            console.log('PASS authenticated browser registration, verification, session, profile, navigation and logout');
+          }finally{await browser.close();server.kill('SIGTERM');await sleep(130);fs.rmSync(directory,{recursive:true,force:true})}
+          JS

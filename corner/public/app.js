@@ -65,6 +65,27 @@
   }
   const postId=initial.postId;
   if(initial.page==='detail'&&!initial.demo&&postId){let stream=new EventSource('/corner/api/realtime/stream?since='+encodeURIComponent(initial.eventCursor||0));stream.addEventListener('reaction.updated',event=>{try{let r=JSON.parse(event.data);if(r.entityId!==postId)return;$$('.reactions button').forEach(button=>{let n=$('span',button);if(n)n.textContent=r.payload?.counts?.[button.dataset.reaction]||0})}catch{/* ignore malformed or non-critical browser events */}});stream.addEventListener('comment.created',event=>{try{if(JSON.parse(event.data).entityId===postId)toast('The conversation was updated.')}catch{/* ignore malformed or non-critical browser events */}});window.addEventListener('pagehide',()=>stream.close(),{once:true});}
+  // Optional member bookmarks: guests retain anonymous reading and reactions.
+  const bookmark=$('[data-bookmark-post]');
+  if(bookmark&&initial.page==='detail'&&!initial.demo&&postId){
+    const getJson=async(url,init={})=>{const reply=await fetch(url,{credentials:'same-origin',cache:'no-store',...init});const body=await reply.json().catch(()=>({}));if(!reply.ok)throw Error(body.error?.message||'Could not update bookmarks');return body.data};
+    getJson('/corner/api/v1/auth/session').then(async session=>{
+      if(!session?.authenticated||session.scope!=='member')return;
+      bookmark.hidden=false;
+      const saved=await getJson('/corner/api/v1/me/bookmarks');
+      let active=saved.some(p=>p.id===postId);
+      const draw=()=>{bookmark.textContent=active?'Saved to your profile ★':'Save for later ☆';bookmark.setAttribute('aria-pressed',String(active))};
+      draw();
+      bookmark.addEventListener('click',async()=>{
+        bookmark.disabled=true;
+        try{
+          if(active)await getJson('/corner/api/v1/me/bookmarks/'+encodeURIComponent(postId),{method:'DELETE'});
+          else await getJson('/corner/api/v1/me/bookmarks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({postId})});
+          active=!active;draw();
+        }catch(err){toast(err.message,'error')}finally{bookmark.disabled=false}
+      });
+    }).catch(()=>{});
+  }
   // First-party, short-retention statistics. The identifier cookie is only used for abuse reduction.
   if(initial.page==='feed'||initial.page==='detail')request('/corner/api/analytics/event',{type:initial.page==='detail'?'post_open':'page_view',path:location.pathname,postId:postId||null,device:innerWidth<768?'mobile':innerWidth<1024?'tablet':'desktop'}).catch(()=>{});
 })();

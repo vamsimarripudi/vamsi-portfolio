@@ -1,7 +1,7 @@
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'owner', password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member', password_hash TEXT NOT NULL,
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL, last_login_at TEXT, disabled_at TEXT
 );
 CREATE TABLE IF NOT EXISTS sessions (
