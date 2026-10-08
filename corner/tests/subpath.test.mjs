@@ -4,8 +4,16 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import net from 'node:net';
 import { passwordHash } from '../src/auth.mjs';
 const FIXED_TEST_OWNER_HASH=passwordHash('a-VeryLongSyntheticTestPassword!2026');
+async function unusedPort(){
+ const socket=net.createServer();
+ await new Promise((resolve,reject)=>socket.listen(0,'127.0.0.1',e=>e?reject(e):resolve()));
+ const port=socket.address().port;
+ await new Promise(resolve=>socket.close(resolve));
+ return port;
+}
 
 async function start(port, dir) {
   const child = spawn(process.execPath, ['--no-warnings', 'src/server.mjs'], {
@@ -18,7 +26,7 @@ async function start(port, dir) {
   });
   for (let i = 0; i < 45; i++) {
     if (child.exitCode !== null) throw Error('service failed to start');
-    try { let res = await fetch(`http://127.0.0.1:${port}/corner/api/health`); if (res.ok) return child; }
+    try { let res = await fetch(`http://127.0.0.1:${port}/corner/api/health`,{headers:{connection:'close'}}); if (res.ok) return child; }
     catch {}
     await new Promise(r => setTimeout(r, 100));
   }
@@ -27,7 +35,7 @@ async function start(port, dir) {
 
 test('portfolio subpath: HTML, API, sessions, assets, private content, persistence', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'corner-subpath-'));
-  const port = 19000 + Math.floor(Math.random() * 1000), host = `http://127.0.0.1:${port}`;
+  const port = await unusedPort(), host = `http://127.0.0.1:${port}`;
   let child;
   try {
     child = await start(port, dir);
@@ -60,7 +68,22 @@ test('portfolio subpath: HTML, API, sessions, assets, private content, persisten
     assert.equal((await fetch(host + '/corner/api/posts')).status, 200);
     child.kill('SIGTERM');await new Promise(r=>child.once('exit',r));
     child = await start(port, dir);
-    const persisted = await fetch(host + '/corner/api/admin/overview', { headers: { Cookie: sessionCookie } });
+    // Undici may briefly retain a pooled socket from the terminated generation
+    // of the server at the same host:port. Retry only transport failures, never
+    // assertion/status failures; use a fresh connection after the restart.
+    let persisted;
+    for (let attempt=0;attempt<10;attempt++){
+      try {
+        persisted=await fetch(host + '/corner/api/admin/overview', {
+          headers: { Cookie: sessionCookie, connection:'close' },
+          signal:AbortSignal.timeout(2500)
+        });
+        break;
+      } catch (error) {
+        if (attempt===9) throw error;
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+    }
     assert.equal(persisted.status, 200, 'session state survives service restart on persistent directory');
     console.log('PASS: /corner static, SSR, API, auth cookie scope, CSRF, restart persistence');
   } finally {
