@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Neon context and environment secrets
+.neon
+.env
+.env.*
+!.env.example
