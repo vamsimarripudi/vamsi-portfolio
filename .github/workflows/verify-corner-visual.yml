@@ -1,0 +1,133 @@
+name: Verify Corner responsive design and contrast
+on:
+  push:
+    branches:
+      - feat/corner-responsive-magic-20261008
+  pull_request:
+    paths:
+      - "corner/public/**"
+      - "corner/src/ui.mjs"
+      - "corner/src/server.mjs"
+      - "corner/tests/design-contract.test.mjs"
+      - ".github/workflows/verify-corner-visual.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - name: Checkout portfolio
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Use Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install tests and browser
+        run: |
+          npm ci
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Start isolated Corner fixture
+        run: |
+          mkdir -p "$RUNNER_TEMP/corner-visual-data"
+          cd corner
+          CORNER_BASE_PATH=/corner \
+          SITE_URL=http://127.0.0.1:4141/corner \
+          NODE_ENV=development \
+          DEMO_CONTENT=1 \
+          DATA_DIR="$RUNNER_TEMP/corner-visual-data" \
+          HOST=127.0.0.1 PORT=4141 \
+          nohup node src/server.mjs > "$RUNNER_TEMP/corner-visual-server.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4141/corner/api/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/corner-visual-server.log"
+          exit 1
+      - name: Playwright visual and accessibility constraints
+        run: |
+          mkdir -p screenshots
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import assert from 'node:assert/strict';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const sizes=[
+            {w:320,h:720,name:'phone-small'},
+            {w:375,h:812,name:'phone'},
+            {w:430,h:932,name:'phone-large'},
+            {w:768,h:1024,name:'tablet-portrait'},
+            {w:1024,h:768,name:'laptop-compact'},
+            {w:1366,h:768,name:'laptop'},
+            {w:1920,h:1080,name:'desktop-wide'}
+          ];
+          const origin='http://127.0.0.1:4141';
+          const checkInk=async (page,selector)=>{
+            return page.locator(selector).first().evaluate(el=>{
+              const style=getComputedStyle(el);
+              return {background:style.backgroundColor,color:style.color,display:style.display};
+            });
+          };
+          try{
+            for(const v of sizes){
+              const page=await browser.newPage({viewport:{width:v.w,height:v.h},deviceScaleFactor:1});
+              const r=await page.goto(origin+'/corner',{waitUntil:'networkidle'});
+              assert.equal(r.status(),200,'Corner '+v.name);
+              assert.equal(await page.locator('link[href="/corner/magic.css"]').count(),1,'magic.css linked');
+              const stylesheet=await page.request.get(origin+'/corner/magic.css');
+              assert.equal(stylesheet.status(),200,'magic.css served');
+              const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,window:innerWidth}));
+              assert.ok(width.scroll<=width.window+1,'No horizontal overflow at '+v.w+': '+JSON.stringify(width));
+              for(const selector of ['.brand-mark','.icon-button','.header-admin']){
+                const css=await checkInk(page,selector);
+                assert.equal(css.background,'rgb(0, 0, 0)',selector+' black tile at '+v.w);
+                assert.equal(css.color,'rgb(255, 255, 255)',selector+' white glyph at '+v.w);
+                assert.notEqual(css.display,'none',selector+' visible at '+v.w);
+              }
+              const now=await checkInk(page,'.now-panel');
+              assert.equal(now.background,'rgb(255, 255, 255)','status card white at '+v.w);
+              assert.equal(now.color,'rgb(9, 9, 9)','status card ink black at '+v.w);
+              const cards=await page.locator('.story').count();
+              assert.ok(cards>=1,'Demo content renders cards at '+v.w);
+              const card=await checkInk(page,'.story');
+              assert.equal(card.background,'rgb(255, 255, 255)','story background white at '+v.w);
+              assert.equal(card.color,'rgb(9, 9, 9)','story type black at '+v.w);
+              if(v.name==='laptop'){
+                const rect=await page.locator('.hero-intro').boundingBox();
+                assert.ok(rect.y<180,'Laptop hero starts near header, not below large empty strip');
+              }
+              if(['phone','tablet-portrait','laptop','desktop-wide'].includes(v.name)){
+                await page.screenshot({path:'screenshots/'+v.name+'.png',fullPage:true,animations:'disabled'});
+              }
+              await page.close();
+              console.log('PASS /corner '+v.name+' '+v.w+'×'+v.h+' / icons, cards, readability, overflow');
+            }
+            const admin=await browser.newPage({viewport:{width:390,height:844}});
+            const res=await admin.goto(origin+'/corner/admin',{waitUntil:'networkidle'});
+            assert.equal(res.status(),200,'admin login');
+            const form=await checkInk(admin,'.signin-box');
+            assert.equal(form.background,'rgb(255, 255, 255)','admin login card white');
+            assert.equal(form.color,'rgb(9, 9, 9)','admin login black text');
+            const field=await checkInk(admin,'.signin-box input');
+            assert.equal(field.background,'rgb(255, 255, 255)','input background white');
+            assert.equal(field.color,'rgb(0, 0, 0)','input text black');
+            await admin.screenshot({path:'screenshots/admin-phone.png',fullPage:true,animations:'disabled'});
+            await admin.close();
+            const quiet=await browser.newPage({viewport:{width:375,height:812},reducedMotion:'reduce'});
+            await quiet.goto(origin+'/corner',{waitUntil:'networkidle'});
+            const ani=await quiet.locator('.hero-content h1').evaluate(el=>getComputedStyle(el).animationName);
+            assert.equal(ani,'none','reduced-motion removes hero animation');
+            await quiet.close();
+            console.log('PASS admin high contrast + reduced-motion');
+          }finally{await browser.close()}
+          JS
+      - name: Upload responsive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-responsive-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
