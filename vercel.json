@@ -6,21 +6,60 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:; upgrade-insecure-requests" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' mailto:; upgrade-insecure-requests"
+        }
       ]
     }
   ],
-  "rewrites": [{ "source": "/api/birthday", "destination": "/api/contact?birthday=1" }],
-  "crons": [{ "path": "/api/track/cron/followups", "schedule": "0 8 * * *" }],
+  "rewrites": [
+    {
+      "source": "/corner",
+      "destination": "https://corner-web-production-2600.up.railway.app/corner"
+    },
+    {
+      "source": "/corner/:path*",
+      "destination": "https://corner-web-production-2600.up.railway.app/corner/:path*"
+    },
+    {
+      "source": "/api/birthday",
+      "destination": "/api/contact?birthday=1"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/track/cron/followups",
+      "schedule": "0 8 * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.vamsimarripudi.me" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.vamsimarripudi.me"
+        }
+      ],
       "destination": "https://vamsimarripudi.me/$1",
       "permanent": true
     }
-  ]}
+  ]
+}
