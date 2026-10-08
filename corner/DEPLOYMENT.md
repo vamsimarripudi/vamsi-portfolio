@@ -68,7 +68,9 @@ Daily scheduled backup time: **02:30 UTC / 08:00 IST**, catch-up on service star
 
 Recovery procedure: use an isolated deployment or maintenance window, download a verified offsite snapshot (manifest and referenced objects), verify every file's SHA-256, stop the primary app, and run `node scripts/restore.mjs /path/to/snapshot --confirm` with correctly scoped `DATA_DIR`. **Never restore over the live running database.** Every daily backup already performs an isolated restore rehearsal, not a destructive production restore.
 
-Keep the current single-writer instance and persistent volume; keep S3 credentials private. Additional browser security and authenticated owner acceptance are separate from storage validation.
+Keep the current single-writer instance and persistent volume; keep S3 credentials private. At 05:00 UTC daily, GitHub Actions verifies the public non-sensitive `backupFresh` boolean returned by `/corner/api/v1/ready`. It turns false when backups are disabled, missing, invalid, dated in the future, or more than 26 hours old, which raises a visible failed CI check. This does not expose bucket names, credentials, snapshot timestamps or filenames. GitHub failure notifications depend on the repository owner's notification settings. The standard HTTP readiness status remains based on SQLite and filesystem availability, so a backup alert cannot itself restart the service.
+
+Additional browser security and authenticated owner acceptance are separate from storage validation.
 
 ## Operational limitations
 Cost depends on Railway plan. Single persistent instance, outage on service shutdown. On-volume backups do not cover volume deletion; configure offsite backup and alerting. Test browser accessibility and performance independently before declaring 100% production readiness.

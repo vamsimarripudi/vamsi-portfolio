@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import { once } from 'node:events';
 import { Store } from '../src/store.mjs';
 import { S3Bucket } from '../src/s3-client.mjs';
-import { createVerifiedOffsiteBackup, pruneOldBackups, startOffsiteScheduler } from '../src/offsite-backup.mjs';
+import { backupFresh, createVerifiedOffsiteBackup, pruneOldBackups, startOffsiteScheduler } from '../src/offsite-backup.mjs';
 
 async function fixture(t) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'corner-offsite-qa-'));
@@ -115,4 +115,21 @@ test('credentials and object keys fail closed',async(t)=>{
   assert.throws(()=>storage.urlFor('../escape'),/Unsafe/);
   assert.throws(()=>new S3Bucket({endpoint:'http://example.com',bucket:'bucket',accessKeyId:'x',secretAccessKey:'y'}),/HTTPS/);
   await assert.rejects(pruneOldBackups(storage,{retainDays:2}),/Retention/);
+});
+
+test('public backup freshness detects missed daily offsite backups without exposing credentials',()=>{
+  const entries=new Map();
+  const store={setting:(key,defaultValue)=>entries.has(key)?entries.get(key):defaultValue};
+  const at=new Date('2026-10-09T05:00:00Z');
+  const enabled={CORNER_BACKUP_ENABLED:'1'};
+  assert.equal(backupFresh(store,{env:enabled,at}),false,'missing backup is unhealthy');
+  entries.set('backup.lastSuccess','2026-10-08T02:30:00Z');
+  assert.equal(backupFresh(store,{env:enabled,at}),false,'missed daily backup must fail');
+  entries.set('backup.lastSuccess','2026-10-09T02:31:00Z');
+  assert.equal(backupFresh(store,{env:enabled,at}),true,'current daily backup is fresh');
+  assert.equal(backupFresh(store,{env:{},at}),false,'disabled backups never pass a monitoring check');
+  entries.set('backup.lastSuccess','2026-10-10T02:31:00Z');
+  assert.equal(backupFresh(store,{env:enabled,at}),false,'future-dated backups cannot pass');
+  entries.set('backup.lastSuccess','invalid');
+  assert.equal(backupFresh(store,{env:enabled,at}),false,'invalid timestamps cannot pass');
 });
