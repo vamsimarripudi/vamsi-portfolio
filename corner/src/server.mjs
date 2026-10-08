@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
-import { startOffsiteScheduler } from './offsite-backup.mjs';
+import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage } from './ui.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -119,7 +119,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/ready'&&method==='GET'){
     let database=false,storage=false;
     try{database=store.one('SELECT 1 AS ok')?.ok===1;fs.accessSync(path.dirname(config.dbPath),fs.constants.W_OK);storage=true}catch{}
-    return json(res,{data:{ready:database&&storage,database,storage},meta:{}},database&&storage?200:503);
+    return json(res,{data:{ready:database&&storage,database,storage,backupFresh:backupFresh(store)},meta:{}},database&&storage?200:503);
   }
   if(pathName==='/api/openapi.json'&&method==='GET')return json(res,openApiDocument(config.siteUrl),200,{'cache-control':'public,max-age=300'});
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}

@@ -83,6 +83,16 @@ export async function pruneOldBackups(storage, {now = new Date(), retainDays = 3
   return pruned;
 }
 
+/** Public, non-sensitive backup freshness for external availability monitoring. */
+export function backupFresh(store, { env = process.env, at = new Date(), maxAgeHours = 26 } = {}) {
+  if (env.CORNER_BACKUP_ENABLED !== '1') return false;
+  if (!(at instanceof Date) || !Number.isFinite(at.valueOf())) return false;
+  if (!(Number.isFinite(maxAgeHours) && maxAgeHours > 0)) return false;
+  const lastSuccess = Date.parse(store.setting('backup.lastSuccess', '') || '');
+  const age = at.valueOf() - lastSuccess;
+  return Number.isFinite(age) && age >= 0 && age < maxAgeHours * 60 * 60 * 1000;
+}
+
 export function startOffsiteScheduler(store, {env = process.env, now = () => new Date(), intervalMs = 60000, log = console, runBackup = createVerifiedOffsiteBackup, makeStorage = bucketFromEnv, startupDelayMs = 16000} = {}) {
   if (env.CORNER_BACKUP_ENABLED !== '1') return () => {};
   const hour = Number(env.CORNER_BACKUP_UTC_HOUR ?? 2);
