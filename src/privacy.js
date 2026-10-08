@@ -1,7 +1,7 @@
 export const PRIVACY = {
   operator: 'Vamsi Marripudi',
-  contactEmail: 'enquiry.portfolio@vamsimarripudi.tech',
-  siteUrl: 'https://vamsimarripudi.tech',
+  contactEmail: 'connect@vamsimarripudi.me',
+  siteUrl: 'https://vamsimarripudi.me',
   lastUpdated: '24 August 2026',
   version: '1.1',
 };
@@ -9,7 +9,7 @@ export const PRIVACY = {
 export const privacySections = [
   {
     title: 'What this notice covers',
-    body: 'This notice explains how vamsimarripudi.tech handles personal information when you browse the site, email Vamsi, or submit the contact form. It applies to the public website, not to third-party websites linked from it.',
+    body: 'This notice explains how vamsimarripudi.me handles personal information when you browse the site, email Vamsi, or submit the contact form. It applies to the public website, not to third-party websites linked from it.',
   },
   {
     title: 'Information provided through contact',
@@ -37,7 +37,7 @@ export const privacySections = [
   },
   {
     title: 'Your privacy questions and requests',
-    body: 'You can ask about the information connected with your enquiry, request correction or deletion where feasible, or raise a privacy concern by emailing enquiry.portfolio@vamsimarripudi.tech with “Privacy request” in the subject. Vamsi will verify the request where necessary and respond using the contact details provided. This contact path is available now; statutory rights and timelines depend on the law applicable at the time of the request.',
+    body: 'You can ask about the information connected with your enquiry, request correction or deletion where feasible, or raise a privacy concern by emailing connect@vamsimarripudi.me with “Privacy request” in the subject. Vamsi will verify the request where necessary and respond using the contact details provided. This contact path is available now; statutory rights and timelines depend on the law applicable at the time of the request.',
   },
   {
     title: 'Updates to this notice',

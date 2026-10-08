@@ -1,11 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
-export const TRACK_OWNER_EMAIL = 'enquiry.portfolio@vamsimarripudi.tech';
+export const TRACK_OWNER_EMAIL = 'connect@vamsimarripudi.me';
 export const TRACK_STATUSES = ['NEW', 'ACKNOWLEDGED', 'REVIEWING', 'REPLIED', 'FOLLOW_UP_DUE', 'WAITING_ON_CONTACT', 'COMPLETED', 'CLOSED', 'SPAM', 'ERASURE_PENDING', 'ERASED'];
 export const TRACK_PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'];
 
-const SITE_URL = 'https://vamsimarripudi.tech';
+const SITE_URL = 'https://vamsimarripudi.me';
 const SESSION_COOKIE = 'vm_track_session';
 
 export class TrackError extends Error {
@@ -150,7 +150,7 @@ export const sendResend = async ({ to, subject, text, html, replyTo, idempotency
   return payload.id || payload.data?.id || null;
 };
 
-export const emailShell = ({ preheader, body }) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f5f5f3;color:#171816;font-family:Arial,Helvetica,sans-serif"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${preheader}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border:1px solid #deded8;border-radius:14px"><tr><td style="padding:24px 30px;border-bottom:1px solid #deded8"><strong style="font-size:20px;letter-spacing:-1px">VM<span style="color:#db4c2f">.</span></strong><span style="margin-left:12px;font-size:13px"><strong>Vamsi Marripudi</strong><br>Founder Engineer</span></td></tr>${body}<tr><td style="padding:18px 30px;border-top:1px solid #deded8;color:#64665f;font-size:12px;line-height:18px"><a href="${SITE_URL}" style="color:#171816">vamsimarripudi.tech</a> · <a href="${SITE_URL}/privacy" style="color:#171816">Privacy Notice</a> · <a href="mailto:${TRACK_OWNER_EMAIL}" style="color:#171816">${TRACK_OWNER_EMAIL}</a></td></tr></table></td></tr></table></body></html>`;
+export const emailShell = ({ preheader, body }) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f5f5f3;color:#171816;font-family:Arial,Helvetica,sans-serif"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${preheader}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border:1px solid #deded8;border-radius:14px"><tr><td style="padding:24px 30px;border-bottom:1px solid #deded8"><strong style="font-size:20px;letter-spacing:-1px">VM<span style="color:#db4c2f">.</span></strong><span style="margin-left:12px;font-size:13px"><strong>Vamsi Marripudi</strong><br>Founder Engineer</span></td></tr>${body}<tr><td style="padding:18px 30px;border-top:1px solid #deded8;color:#64665f;font-size:12px;line-height:18px"><a href="${SITE_URL}" style="color:#171816">vamsimarripudi.me</a> · <a href="${SITE_URL}/privacy" style="color:#171816">Privacy Notice</a> · <a href="mailto:${TRACK_OWNER_EMAIL}" style="color:#171816">${TRACK_OWNER_EMAIL}</a></td></tr></table></td></tr></table></body></html>`;
 
 export const escapeHtml = (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 

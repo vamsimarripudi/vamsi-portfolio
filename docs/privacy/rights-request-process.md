@@ -2,7 +2,7 @@
 
 ## Intake
 
-Receive requests at `enquiry.portfolio@vamsimarripudi.tech` with **Privacy request** in the subject. Record the date, request type, contact email, and reference ID if supplied; do not copy more message content than necessary into any tracking note.
+Receive requests at `connect@vamsimarripudi.me` with **Privacy request** in the subject. Record the date, request type, contact email, and reference ID if supplied; do not copy more message content than necessary into any tracking note.
 
 ## Verify and assess
 

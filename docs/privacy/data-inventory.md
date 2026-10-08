@@ -1,7 +1,7 @@
 # Data inventory
 
 **Owner:** Vamsi Marripudi  
-**Privacy contact:** enquiry.portfolio@vamsimarripudi.tech  
+**Privacy contact:** connect@vamsimarripudi.me  
 **Reviewed:** 24 August 2026
 
 | Processing activity | Data | Purpose | Storage / recipient | Retention |
