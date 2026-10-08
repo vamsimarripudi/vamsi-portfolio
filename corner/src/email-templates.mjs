@@ -94,35 +94,27 @@ export function renderCornerLetter({
   ].join('');
   return {subject:normal(subject),html,text};
 }
-const welcome={
- Vamsi:{
-  quote:'Every meaningful beginning starts with a small, honest thought.',
-  paragraphs:[
-   'I made this little corner for the thoughts that do not need an audience to be meaningful — the things I build, the lessons that stay, and the small wins that deserve to be remembered.',
-   'A personal space should feel like opening a favourite notebook: familiar, unhurried, and always ready for one more page. Here’s to all the stories still waiting to be written.'
-  ],
-  note:'May we never overlook the quiet moments that make life beautiful. Every little step belongs to the story.'
- },
- Jaya:{
-  quote:'The loveliest memories often begin as ordinary days.',
-  paragraphs:[
-   'Welcome to my little corner of the internet. I wanted this place to feel different from the rush of a feed — somewhere a thoughtful note, a happy moment, or a small celebration can simply stay.',
-   'I’m glad I get to share its beginning with you. I hope that whenever you visit, you find something warm, thoughtful, or worth smiling about.'
-  ],
-  note:'Some words are meant to travel quietly from one heart to another. This little letter is one of them.'
- }
-};
-export function welcomePreviewFor(name){
- const key=String(name||'').trim(),copy=welcome[key];
- if(!copy)throw Error('Unknown welcome preview recipient');
+export function welcomeLetterFor(profileOrName, { actionUrl = BASE } = {}) {
+ const source = typeof profileOrName === 'string'
+   ? profileOrName
+   : profileOrName?.display_name ?? profileOrName?.displayName ?? profileOrName?.name;
+ const name = normal(source).replace(/\s+/g,' ').slice(0,60) || 'there';
  return renderCornerLetter({
-   kind:'welcome',recipientName:key,
-   subject:'A letter for '+key+' — from Vamsi’s heart | Vamsi’s Corner',
+   kind:'welcome',recipientName:name,
+   subject:'A letter for '+name+' — from Vamsi’s heart | Vamsi’s Corner',
    eyebrow:'A PERSONAL WELCOME · LETTER NO. 01',
-   title:'Some things are worth keeping.',...copy,
-   actionUrl:BASE,actionLabel:'Step into the Corner'
+   title:'Some things are worth keeping.',
+   quote:'Every meaningful beginning starts with a small, honest thought.',
+   paragraphs:[
+     'Welcome to my little corner of the internet — a quiet place for ideas, stories, things I build, and moments worth celebrating.',
+     'I wanted this space to feel less like a feed and more like opening a familiar notebook. Come by whenever you like; there is always room for another thoughtful moment.'
+   ],
+   noteLabel:'FROM VAMSI’S HEART',
+   note:'May we keep noticing the little things that make a day meaningful. Every small step belongs to the story.',
+   actionUrl,actionLabel:'Step into the Corner'
  });
 }
+export const welcomePreviewFor = (name) => welcomeLetterFor({displayName:name});
 const actions={
  'verify-email':{eyebrow:'YOUR PRIVATE CORNER · EMAIL VERIFICATION',title:'A place to begin.',
    quote:'Every little beginning deserves a moment of welcome.',
