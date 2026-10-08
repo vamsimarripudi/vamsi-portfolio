@@ -166,6 +166,23 @@ export class Store{
     else this.exec('INSERT INTO reactions(id,post_id,reaction_type,actor_key,created_at,updated_at) VALUES(?,?,?,?,?,?)',uid('react'),postId,type,actor,now(),now());
     const counts=this.getReactions(postId);this.emit('reaction.updated',postId,post.version,{counts});return {counts,yours:prev?.reaction_type===type?null:type};
   }
+  // Idempotent REST reaction mutation. Legacy POST continues to toggle for the existing UI.
+  setReaction(postId,type,actor){
+    const post=this.getPostById(postId);
+    if(!post||!post.allow_reactions)throw httpError(404,'Reactions unavailable.');
+    if(type!==null&&!REACTIONS.includes(type))throw httpError(400,'Invalid reaction');
+    const previous=this.one('SELECT * FROM reactions WHERE post_id=? AND actor_key=?',postId,actor);
+    const unchanged=type===null?!previous:previous?.reaction_type===type;
+    if(unchanged)return {counts:this.getReactions(postId),yours:type};
+    this.transaction(()=>{
+      if(type===null)this.exec('DELETE FROM reactions WHERE post_id=? AND actor_key=?',postId,actor);
+      else if(previous)this.exec('UPDATE reactions SET reaction_type=?,updated_at=? WHERE id=?',type,now(),previous.id);
+      else this.exec('INSERT INTO reactions(id,post_id,reaction_type,actor_key,created_at,updated_at) VALUES(?,?,?,?,?,?)',uid('react'),postId,type,actor,now(),now());
+    });
+    const counts=this.getReactions(postId);
+    this.emit('reaction.updated',postId,post.version,{counts});
+    return {counts,yours:type};
+  }
   getComments(postId){if(!this.getPostById(postId))throw httpError(404,'Post not found');return this.all("SELECT id,author_name,body,created_at FROM comments WHERE post_id=? AND state='approved' ORDER BY created_at ASC LIMIT 200",postId)}
   comment(postId,name,body){const post=this.getPostById(postId);if(!post||!post.allow_comments)throw httpError(404,'Comments are closed');const cleanName=pureText(name,60),cleanBody=pureText(body,1000);if(cleanName.length<2||cleanBody.length<3||cleanBody.length>1000)throw httpError(400,'Name and a short comment are required');let id=uid('comment'),stamp=now();this.exec('INSERT INTO comments(id,post_id,author_name,body,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',id,postId,cleanName,cleanBody,'pending',stamp,stamp);return {id,state:'pending',message:'Thanks. Your comment is awaiting review.'};}
   pendingComments(state='pending'){if(!['pending','approved','hidden','deleted'].includes(state))throw httpError(400,'Invalid moderation filter');return this.all('SELECT comments.*,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id WHERE comments.state=? ORDER BY comments.created_at DESC LIMIT 100',state)}
