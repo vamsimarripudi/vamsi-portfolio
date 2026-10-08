@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
+import { startOffsiteScheduler } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage } from './ui.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -227,7 +228,7 @@ async function api(req,res,pathName,url){
     const removed=store.deleteMedia(mediaEdit[1],owner.id);
     fs.rmSync(path.join(config.uploads,removed.storage_key),{force:true});return ok(res,{deleted:true,id:removed.id});
   }
-  if(pathName==='/api/admin/ops'&&method==='GET')return ok(res,{api:true,database:true,scheduler:{next:store.upcoming()[0]||null,overdue:store.one("SELECT count(*) AS n FROM posts WHERE state='scheduled' AND scheduled_at<=?",date()).n,lastSuccess:store.setting('scheduler.lastSuccess',null),lastError:store.setting('scheduler.lastError',null)},events:store.one('SELECT count(*) AS n FROM realtime_events').n,media:store.one('SELECT count(*) AS n FROM media').n});
+  if(pathName==='/api/admin/ops'&&method==='GET')return ok(res,{api:true,database:true,scheduler:{next:store.upcoming()[0]||null,overdue:store.one("SELECT count(*) AS n FROM posts WHERE state='scheduled' AND scheduled_at<=?",date()).n,lastSuccess:store.setting('scheduler.lastSuccess',null),lastError:store.setting('scheduler.lastError',null)},backup:{enabled:process.env.CORNER_BACKUP_ENABLED==='1',lastSuccess:store.setting('backup.lastSuccess',null),lastAttempt:store.setting('backup.lastAttempt',null),lastError:store.setting('backup.lastError',null)},events:store.one('SELECT count(*) AS n FROM realtime_events').n,media:store.one('SELECT count(*) AS n FROM media').n});
   throw httpError(404,'Endpoint not found','NOT_FOUND');
 }
 async function route(req,res){
@@ -269,6 +270,7 @@ export function createServer(){return http.createServer((req,res)=>{route(req,re
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null)}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
-  const shutdown=()=>{clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
+  const stopOffsiteBackups=startOffsiteScheduler(store);
+  const shutdown=()=>{stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }

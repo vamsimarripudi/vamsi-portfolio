@@ -4,14 +4,17 @@
   "private": true,
   "type": "module",
   "description": "A deliberately small, live personal publishing space",
-  "engines": { "node": ">=22.13.0" },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "node --no-warnings src/server.mjs",
     "start": "NODE_ENV=production node --no-warnings src/server.mjs",
     "worker": "node --no-warnings src/worker.mjs",
     "test": "node --no-warnings --test tests/*.test.mjs",
-    "check": "node --check src/server.mjs && node --check src/ui.mjs && node --check src/domain.mjs && node --check src/store.mjs && node --check src/openapi.mjs && node --check public/app.js && node --check public/admin.js && node --no-warnings --test tests/*.test.mjs",
+    "check": "node --check src/server.mjs && node --check src/ui.mjs && node --check src/domain.mjs && node --check src/store.mjs && node --check src/s3-client.mjs && node --check src/offsite-backup.mjs && node --check src/openapi.mjs && node --check public/app.js && node --check public/admin.js && node --no-warnings --test tests/*.test.mjs",
     "setup": "node --no-warnings scripts/setup.mjs",
-    "backup": "node --no-warnings scripts/backup.mjs"
+    "backup": "node --no-warnings scripts/backup.mjs",
+    "backup:offsite": "node --no-warnings src/offsite-backup.mjs"
   }
 }
