@@ -106,7 +106,7 @@ jobs:
             await page.getByText('Signed in as '+email).waitFor();
             assert.match((await page.locator('body').textContent()),/Your quiet space/);
             await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
-            await page.getByText('Active sessions.').waitFor();
+            await page.getByRole('heading', { name: 'Active sessions.', exact: true }).waitFor();
             await page.locator('[data-account-logout]').click();
             await page.waitForURL('**/corner/login',{timeout:12000});
             await page.close();
