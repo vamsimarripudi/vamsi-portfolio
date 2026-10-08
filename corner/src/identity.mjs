@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { passwordHash, passwordVerify, freshToken } from './auth.mjs';
+import { transactionalCornerEmail } from './email-templates.mjs';
 import { uid, now, sha, pureText, httpError } from './domain.mjs';
 
 const schema=fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'identity-schema.sql'),'utf8');
@@ -74,8 +75,9 @@ export class IdentityService{
   }
   async emailLink(to,subject,basePath,token,fragment,reference){
     const destination=(this.env.SITE_URL||'http://localhost:4141').replace(/\/$/,'')+'/'+basePath+'#token='+encodeURIComponent(token);
-    const text=`${subject}\n\nOpen this secure link:\n${destination}\n\nThis link expires soon. If you did not request it, you can ignore this email.`;
-    await this.sender({to,subject,text,html:`<p>${safe(subject)}</p><p><a href="${safe(destination)}">Continue to Vamsi's Corner</a></p><p>If you did not request this, ignore the message.</p>`,reference});
+    const recipientName=this.findByEmail(to)?.display_name||'there';
+    const letter=transactionalCornerEmail({subject,recipientName,actionUrl:destination,flow:basePath});
+    await this.sender({to,...letter,reference});
   }
   getProfile(userId){return this.store.one('SELECT * FROM identity_profiles WHERE user_id=?',userId)}
   account(userId){return this.store.one('SELECT * FROM users WHERE id=? AND disabled_at IS NULL',userId)}

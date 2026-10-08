@@ -144,3 +144,7 @@ restarts even while that configuration remains unchanged. Owner email updates
 require an explicit controlled deployment migration to avoid a bootstrap
 mismatch; member and invited staff email updates use verified, single-use
 links that revoke old sessions.
+
+## Branded, accessible Corner transactional emails
+
+The shared `src/email-templates.mjs` renderer supplies rich HTML and plain text for account verification, password reset, staff invitations and email changes. It uses a black editorial masthead, white rounded letter content, warm background, personal quote, and black/white footer, without remote images, scripts or external font dependencies. Action-token links are the first URL in plain text, preserving existing verification and recovery clients. `welcomePreviewFor('Vamsi')` and `welcomePreviewFor('Jaya')` generate two individually written, signed preview letters without creating accounts or automatically sending. Production tests must use the configured Resend service without exposing credentials.
