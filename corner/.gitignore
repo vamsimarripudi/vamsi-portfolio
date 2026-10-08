@@ -1,0 +1,13 @@
+.env.local
+.env
+.env.*
+!.env.example
+node_modules/
+data/*.sqlite
+data/*.sqlite-*
+data/uploads/
+backups/
+*.log
+.DS_Store
+coverage/
+.tmp/
