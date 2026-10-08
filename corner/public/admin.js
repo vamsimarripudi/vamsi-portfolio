@@ -102,7 +102,7 @@
           code:login.elements.code?.value||''
         });
         if(result.mfaSetupRequired){
-          try{sessionStorage.setItem('corner-mfa-challenge',result.challenge)}catch{}
+          try{sessionStorage.setItem('corner-mfa-challenge',result.challenge)}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
           location.assign('/corner/admin/mfa');return;
         }
         if(result.authenticated){location.reload();return}

@@ -11,7 +11,7 @@
   const isEmail=(value)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value||''));
   const response=(form,text,wrong=false)=>{const el=first('[data-account-response]',form);if(el){el.textContent=text;el.dataset.error=String(wrong);el.dataset.success=String(!wrong)}};
   let token='';
-  try{const params=new URLSearchParams(location.hash.replace(/^#/,''));token=params.get('token')||''}catch{}
+  try{const params=new URLSearchParams(location.hash.replace(/^#/,''));token=params.get('token')||''}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
   if(location.hash){history.replaceState(history.state,'',location.pathname+location.search)}
   many('[data-fragment-token]').forEach(field=>{field.value=token});
   async function api(name,method='GET',body){
@@ -36,7 +36,7 @@
     }
   }
   let challenge='';
-  try{challenge=sessionStorage.getItem('corner-mfa-challenge')||''}catch{}
+  try{challenge=sessionStorage.getItem('corner-mfa-challenge')||''}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
   const mfaForm=first('form[data-account-form=mfa-activate]');
   if(mfaForm){
     const setup=first('[data-mfa-secret]'),key=first('[data-secret]');
@@ -45,7 +45,7 @@
     }else if(!challenge)response(mfaForm,'Your setup session has expired. Sign in to the studio again.',true);
     if(challenge||initial.account?.role==='owner')api('auth/mfa/setup','POST',challenge?{challenge}:{challenge:''}).then(result=>{
       setup.hidden=false;key.textContent=result.secret;challenge=result.challenge;
-      try{sessionStorage.setItem('corner-mfa-challenge',challenge)}catch{}
+      try{sessionStorage.setItem('corner-mfa-challenge',challenge)}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
     }).catch(error=>response(mfaForm,error.message,true));
   }
   for(const form of many('form[data-account-form]')){
@@ -70,11 +70,11 @@
         if(kind==='login'){location.assign(base+'/profile');return}
         if(kind==='admin-register'){
           response(form,'Account created. Sign in to the studio to enrol an authenticator.');
-          try{sessionStorage.removeItem('corner-mfa-challenge')}catch{}
+          try{sessionStorage.removeItem('corner-mfa-challenge')}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
           return;
         }
         if(kind==='mfa-activate'){
-          try{sessionStorage.removeItem('corner-mfa-challenge')}catch{}
+          try{sessionStorage.removeItem('corner-mfa-challenge')}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
           first('[data-mfa-secret]',form).hidden=false;
           const panel=first('[data-mfa-secret]',form);
           panel.replaceChildren();
