@@ -6,7 +6,7 @@ import './Resilience.css';
 
 const ToastContext = createContext(null);
 const SignalRunner = lazy(() => import('./SignalRunner.jsx'));
-const EMAIL = 'enquiry.portfolio@vamsimarripudi.tech';
+const EMAIL = 'connect@vamsimarripudi.me';
 const timeoutByVariant = { success: 4800, info: 4000, warning: 7200, error: 8200, loading: 0, offline: 0 };
 
 const iconByVariant = { success: FiCheck, info: FiInfo, warning: FiAlertTriangle, error: FiAlertCircle, loading: FiInfo, offline: FiWifiOff };

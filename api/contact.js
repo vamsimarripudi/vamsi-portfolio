@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createEmailEvent, createEnquiry, handleBirthdayLink } from './lib/track.js';
 
-const DEFAULT_RECIPIENT = 'enquiry.portfolio@vamsimarripudi.tech';
-const SITE_URL = 'https://vamsimarripudi.tech';
+const DEFAULT_RECIPIENT = 'connect@vamsimarripudi.me';
+const SITE_URL = 'https://vamsimarripudi.me';
 const MAX_REQUESTS = 3;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
@@ -70,8 +70,8 @@ const emailShell = ({ preheaderText, body }) => `<!doctype html>
           ${body}
           <tr><td style="padding:20px 32px 26px;border-top:1px solid #deded8;color:#64665f;font-size:12px;line-height:18px;">
             <strong style="color:#171816;">Vamsi Marripudi</strong> · Founder Engineer<br>
-            <a href="${SITE_URL}" style="color:#171816;text-decoration:underline;">vamsimarripudi.tech</a> · <a href="${SITE_URL}/privacy" style="color:#171816;text-decoration:underline;">Privacy Notice</a> · <a href="mailto:${DEFAULT_RECIPIENT}" style="color:#171816;text-decoration:underline;overflow-wrap:anywhere;">${DEFAULT_RECIPIENT}</a>
-            <div style="margin-top:10px;">${escapeHtml('You received this message because you contacted Vamsi through vamsimarripudi.tech.')}</div>
+            <a href="${SITE_URL}" style="color:#171816;text-decoration:underline;">vamsimarripudi.me</a> · <a href="${SITE_URL}/privacy" style="color:#171816;text-decoration:underline;">Privacy Notice</a> · <a href="mailto:${DEFAULT_RECIPIENT}" style="color:#171816;text-decoration:underline;overflow-wrap:anywhere;">${DEFAULT_RECIPIENT}</a>
+            <div style="margin-top:10px;">${escapeHtml('You received this message because you contacted Vamsi through vamsimarripudi.me.')}</div>
           </td></tr>
         </table>
       </td></tr>
@@ -106,7 +106,7 @@ const confirmationEmail = (entry) => ({
   text: `Hi ${entry.name},\n\nThank you for reaching out. Your enquiry has been received successfully and is now in my review queue.\n\nReference: ${entry.referenceId}\nEnquiry type: ${entry.reason}\n\nI’ll review the details you shared and reply directly to this email thread as soon as practical. You do not need to submit the form again.\n\nRegards,\nVamsi Marripudi\nFounder Engineer\n${SITE_URL}\n${DEFAULT_RECIPIENT}`,
   html: emailShell({
     preheaderText: 'Your enquiry has been received successfully.',
-    body: `<tr><td style="padding:32px;"><h1 style="margin:0 0 16px;color:#171816;font-size:28px;line-height:34px;letter-spacing:-.5px;">Enquiry received</h1><p style="margin:0 0 20px;color:#171816;font-size:15px;line-height:23px;">Hi ${escapeHtml(entry.name)},</p><p style="margin:0 0 24px;color:#4f514b;font-size:15px;line-height:23px;">Thank you for reaching out. Your enquiry has been received successfully and is now in my review queue.</p>${card('Reference', entry.referenceId)}<div style="height:12px;line-height:12px;">&nbsp;</div>${card('Enquiry type', entry.reason)}<p style="margin:24px 0;color:#4f514b;font-size:15px;line-height:23px;">I’ll review the details you shared and reply directly to this email thread as soon as practical. You do not need to submit the form again.</p>${button(SITE_URL, 'Visit vamsimarripudi.tech')}</td></tr>`,
+    body: `<tr><td style="padding:32px;"><h1 style="margin:0 0 16px;color:#171816;font-size:28px;line-height:34px;letter-spacing:-.5px;">Enquiry received</h1><p style="margin:0 0 20px;color:#171816;font-size:15px;line-height:23px;">Hi ${escapeHtml(entry.name)},</p><p style="margin:0 0 24px;color:#4f514b;font-size:15px;line-height:23px;">Thank you for reaching out. Your enquiry has been received successfully and is now in my review queue.</p>${card('Reference', entry.referenceId)}<div style="height:12px;line-height:12px;">&nbsp;</div>${card('Enquiry type', entry.reason)}<p style="margin:24px 0;color:#4f514b;font-size:15px;line-height:23px;">I’ll review the details you shared and reply directly to this email thread as soon as practical. You do not need to submit the form again.</p>${button(SITE_URL, 'Visit vamsimarripudi.me')}</td></tr>`,
   }),
 });
 

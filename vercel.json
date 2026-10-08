@@ -19,8 +19,8 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.vamsimarripudi.tech" }],
-      "destination": "https://vamsimarripudi.tech/$1",
+      "has": [{ "type": "host", "value": "www.vamsimarripudi.me" }],
+      "destination": "https://vamsimarripudi.me/$1",
       "permanent": true
     }
   ]}

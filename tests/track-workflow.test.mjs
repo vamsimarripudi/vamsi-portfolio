@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { TRACK_OWNER_EMAIL, availableTransitions, canTransition, cleanHeader, emailIsValid } from '../api/lib/track.js';
 
 test('the private tracker has one fixed authorized owner', () => {
-  assert.equal(TRACK_OWNER_EMAIL, 'enquiry.portfolio@vamsimarripudi.tech');
+  assert.equal(TRACK_OWNER_EMAIL, 'connect@vamsimarripudi.me');
 });
 
 test('workflow transitions prevent invalid state jumps', () => {

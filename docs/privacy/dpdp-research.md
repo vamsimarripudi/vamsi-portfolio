@@ -1,7 +1,7 @@
 # DPDP research and implementation baseline
 
 **Reviewed:** 24 August 2026  
-**Scope:** vamsimarripudi.tech public website and contact channel  
+**Scope:** vamsimarripudi.me public website and contact channel  
 **Status:** operational guidance, not legal advice or a statement of full legal compliance.
 
 ## Official source position

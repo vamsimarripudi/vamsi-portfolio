@@ -27,8 +27,8 @@ export default async function handler(req, res) {
           to: TRACK_OWNER_EMAIL,
           replyTo: TRACK_OWNER_EMAIL,
           subject,
-          text: `A follow-up is due for ${enquiry.reference_id}.\n\n${enquiry.name} · ${enquiry.email}\n${enquiry.intent}\n${enquiry.subject || 'No subject'}\n\nOpen the private tracker: https://vamsimarripudi.tech/track/enquiries/${enquiry.reference_id}`,
-          html: emailShell({ preheader: `Follow-up due for ${enquiry.reference_id}.`, body: `<tr><td style="padding:30px"><p style="margin:0 0 10px;color:#64665f;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Follow-up due</p><h1 style="margin:0 0 12px;font-size:25px">${enquiry.reference_id}</h1><p style="line-height:1.6;color:#4f514b">${enquiry.name} · ${enquiry.intent}</p><p><a href="https://vamsimarripudi.tech/track/enquiries/${enquiry.reference_id}" style="display:inline-block;padding:12px 16px;background:#171816;color:#fff;text-decoration:none">Open Enquiry Tracker</a></p></td></tr>` }),
+          text: `A follow-up is due for ${enquiry.reference_id}.\n\n${enquiry.name} · ${enquiry.email}\n${enquiry.intent}\n${enquiry.subject || 'No subject'}\n\nOpen the private tracker: https://vamsimarripudi.me/track/enquiries/${enquiry.reference_id}`,
+          html: emailShell({ preheader: `Follow-up due for ${enquiry.reference_id}.`, body: `<tr><td style="padding:30px"><p style="margin:0 0 10px;color:#64665f;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Follow-up due</p><h1 style="margin:0 0 12px;font-size:25px">${enquiry.reference_id}</h1><p style="line-height:1.6;color:#4f514b">${enquiry.name} · ${enquiry.intent}</p><p><a href="https://vamsimarripudi.me/track/enquiries/${enquiry.reference_id}" style="display:inline-block;padding:12px 16px;background:#171816;color:#fff;text-decoration:none">Open Enquiry Tracker</a></p></td></tr>` }),
           idempotencyKey: `track-follow-up-${enquiry.id}-${new Date(enquiry.follow_up_at).toISOString()}`,
           tags: [{ name: 'type', value: 'track-follow-up' }, { name: 'reference', value: enquiry.reference_id }],
         });

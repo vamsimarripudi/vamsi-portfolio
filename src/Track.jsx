@@ -4,7 +4,7 @@ import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiClock, FiExternalLink, Fi
 import { useToast } from './Resilience.jsx';
 import './Track.css';
 
-const OWNER = 'enquiry.portfolio@vamsimarripudi.tech';
+const OWNER = 'connect@vamsimarripudi.me';
 const statuses = ['NEW', 'ACKNOWLEDGED', 'REVIEWING', 'REPLIED', 'FOLLOW_UP_DUE', 'WAITING_ON_CONTACT', 'COMPLETED', 'CLOSED', 'SPAM', 'ERASURE_PENDING', 'ERASED'];
 const priorities = ['NORMAL', 'HIGH', 'URGENT'];
 const intents = ['Engineering opportunity', 'Product discussion', 'Collaboration', 'Technical conversation', 'Other'];
