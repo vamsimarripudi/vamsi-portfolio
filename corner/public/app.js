@@ -51,7 +51,7 @@
     try{let response=await fetch('/corner/api/posts?category='+encodeURIComponent(initial.category||'Latest')+'&cursor='+encodeURIComponent(loadMore.dataset.cursor));let data=await response.json();if(!response.ok)throw Error('Load failed');const container=$('#stories');container?.insertAdjacentHTML('beforeend',data.data.map(renderCard).join(''));if(data.meta.nextCursor){loadMore.dataset.cursor=data.meta.nextCursor;loadMore.textContent='More from the corner ↓';loadMore.disabled=false;}else loadMore.remove();}
     catch{toast('Could not load more updates. Try again.','error');loadMore.textContent='Try again ↓';loadMore.disabled=false;}
   });
-  let pending=0,seenVersion=new Map();const badge=$('[data-new-updates]');
+  let pending=0;const badge=$('[data-new-updates]');
   const revealButton=$('[data-apply-updates]');
   function showUpdate(message){pending++;if(badge){badge.hidden=false;$('span',badge).textContent=`${pending} new ${pending===1?'update':'updates'}`;}else if(!initial.demo&&message)toast(message)}
   revealButton?.addEventListener('click',()=>{pending=0;badge.hidden=true;location.assign((initial.category&&initial.category!=='Latest')?'/corner/category/'+initial.category.toLowerCase():'#feed');if(initial.category==='Latest')location.reload()});
@@ -59,12 +59,12 @@
     const onEvent=(event)=>{try{const data=JSON.parse(event.data),key=data.entityId;let previous=lastByEntity.get(key)||0;if(data.version<previous)return;lastByEntity.set(key,data.version);
       if(data.type==='post.published'||data.type==='post.updated'||data.type==='post.archived')showUpdate('A new note is ready.');
       if(data.type==='status.updated'){const status=data.payload?.status;let current=$('.now-status strong');if(current)current.textContent=status?.label||'Keeping a little corner alive.';}
-    }catch{} };
+    }catch{/* ignore malformed or non-critical browser events */} };
     ['post.published','post.updated','post.archived','status.updated'].forEach(kind=>stream.addEventListener(kind,onEvent));
     window.addEventListener('pagehide',()=>stream.close(),{once:true});
   }
   const postId=initial.postId;
-  if(initial.page==='detail'&&!initial.demo&&postId){let stream=new EventSource('/corner/api/realtime/stream?since='+encodeURIComponent(initial.eventCursor||0));stream.addEventListener('reaction.updated',event=>{try{let r=JSON.parse(event.data);if(r.entityId!==postId)return;$$('.reactions button').forEach(button=>{let n=$('span',button);if(n)n.textContent=r.payload?.counts?.[button.dataset.reaction]||0})}catch{}});stream.addEventListener('comment.created',event=>{try{if(JSON.parse(event.data).entityId===postId)toast('The conversation was updated.')}catch{}});window.addEventListener('pagehide',()=>stream.close(),{once:true});}
+  if(initial.page==='detail'&&!initial.demo&&postId){let stream=new EventSource('/corner/api/realtime/stream?since='+encodeURIComponent(initial.eventCursor||0));stream.addEventListener('reaction.updated',event=>{try{let r=JSON.parse(event.data);if(r.entityId!==postId)return;$$('.reactions button').forEach(button=>{let n=$('span',button);if(n)n.textContent=r.payload?.counts?.[button.dataset.reaction]||0})}catch{/* ignore malformed or non-critical browser events */}});stream.addEventListener('comment.created',event=>{try{if(JSON.parse(event.data).entityId===postId)toast('The conversation was updated.')}catch{/* ignore malformed or non-critical browser events */}});window.addEventListener('pagehide',()=>stream.close(),{once:true});}
   // First-party, short-retention statistics. The identifier cookie is only used for abuse reduction.
   if(initial.page==='feed'||initial.page==='detail')request('/corner/api/analytics/event',{type:initial.page==='detail'?'post_open':'page_view',path:location.pathname,postId:postId||null,device:innerWidth<768?'mobile':innerWidth<1024?'tablet':'desktop'}).catch(()=>{});
 })();
