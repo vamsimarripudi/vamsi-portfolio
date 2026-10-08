@@ -169,7 +169,25 @@ export class Store{
   onThisDay(){const stamp=now(),today=stamp.slice(5,10),currentYear=Number(stamp.slice(0,4));return this.all("SELECT * FROM posts WHERE state='published' AND substr(published_at,6,5)=? AND CAST(substr(published_at,1,4) AS INTEGER)<? ORDER BY published_at DESC LIMIT 2",today,currentYear).map(publicPost)}
   // Future wishes are private unless the owner explicitly enables a teaser.
   upcoming(publicOnly=false){return this.all(`SELECT title,emoji,scheduled_at,timezone FROM posts WHERE state='scheduled' AND scheduled_at>? ${publicOnly?'AND upcoming_public=1':''} ORDER BY scheduled_at ASC LIMIT 3`,now())}
-  search(q,limit=30){q=pureText(q,100);if(!q)return [];const wildcard='%'+q.replace(/[\\%_]/g,'\\$&')+'%';return this.all(`SELECT * FROM posts WHERE state='published' AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\') ORDER BY published_at DESC LIMIT ?`,wildcard,wildcard,wildcard,wildcard,clamp(Number(limit)||30,1,60)).map(publicPost)}
+search(q,options={}){
+    const settings=typeof options==='number'?{limit:options}:options||{};
+    const query=pureText(q,100);
+    const category=String(settings.category||'').trim();
+    const year=String(settings.year||'').trim();
+    const tag=pureText(settings.tag||'',40);
+    const limit=clamp(Number(settings.limit)||30,1,60);
+    const offset=clamp(Number(settings.offset)||0,0,10000);
+    if(category&&!['Wishes','Builds','Notes','Journal','Moments','Latest'].includes(category))throw httpError(400,'Invalid category');
+    if(year&&!/^(19|20)\d{2}$/.test(year))throw httpError(400,'Invalid archive year');
+    const clauses=["state='published'"],params=[];
+    const escaped=(value)=>'%'+value.replace(/[\\%_]/g,'\\  search(q,limit=30){q=pureText(q,100);if(!q)return [];const wildcard='%'+q.replace(/[\\%_]/g,'\\$&')+'%';return this.all(`SELECT * FROM posts WHERE state='published' AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\') ORDER BY published_at DESC LIMIT ?`,wildcard,wildcard,wildcard,wildcard,clamp(Number(limit)||30,1,60)).map(publicPost)}')+'%';
+    if(query){const wildcard=escaped(query);clauses.push("(title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')");params.push(wildcard,wildcard,wildcard,wildcard)}
+    if(category&&category!=='Latest'){clauses.push('category=?');params.push(category)}
+    if(year){clauses.push("substr(published_at,1,4)=?");params.push(year)}
+    if(tag){clauses.push("tags LIKE ? ESCAPE '\\'");params.push(escaped(tag))}
+    if(!query&&!category&&!year&&!tag)return [];
+    return this.all('SELECT * FROM posts WHERE '+clauses.join(' AND ')+' ORDER BY published_at DESC,id DESC LIMIT ? OFFSET ?',...params,limit,offset).map(publicPost);
+  }
   getReactions(postId){return Object.fromEntries(this.all('SELECT reaction_type,count(*) AS total FROM reactions WHERE post_id=? GROUP BY reaction_type',postId).map(r=>[r.reaction_type,r.total]))}
   changeReaction(postId,type,actor){const post=this.getPostById(postId);if(!post||!post.allow_reactions)throw httpError(404,'Reactions unavailable.');if(!REACTIONS.includes(type))throw httpError(400,'Invalid reaction');
     const prev=this.one('SELECT * FROM reactions WHERE post_id=? AND actor_key=?',postId,actor);
