@@ -42,8 +42,33 @@ Add `/corner` -> `https://<railway-domain>/corner` and `/corner/:path*` -> `http
 - Upload supported image, verify /corner/media/* including Range video response.
 - Reboot service, verify post data, login session, media and scheduler persist.
 
-## Backups
-Run `node scripts/backup.mjs /data/backups/<timestamp>` for a checksummed snapshot of the SQLite database and all uploaded media. Backups stored on same volume are **not offsite disaster recovery**. Export snapshots offsite and rehearse restore with `node scripts/restore.mjs <folder> --confirm` only with the service stopped.
+## Verified private offsite backups
+
+The Railway **corner-private-backups** bucket in Singapore is independent of the SQLite/media volume at `/data`.
+`corner/src/offsite-backup.mjs` takes an online SQLite backup plus a copy of all uploads, sends every file to the bucket with AWS Signature V4, reads each copy back, validates SHA-256 and rehearses a restore in a *new temporary directory*. It writes the remote `manifest.json` **last**, only after the rehearsal passes. It never restores into the live database.
+
+Configure these Railway service variables using **references**, not pasted secrets:
+
+```env
+CORNER_BACKUP_ENABLED=1
+CORNER_BACKUP_S3_ENDPOINT=${{corner-private-backups.ENDPOINT}}
+CORNER_BACKUP_S3_BUCKET=${{corner-private-backups.BUCKET}}
+CORNER_BACKUP_S3_REGION=${{corner-private-backups.REGION}}
+CORNER_BACKUP_S3_URL_STYLE=virtual-host
+CORNER_BACKUP_S3_ACCESS_KEY_ID=${{corner-private-backups.ACCESS_KEY_ID}}
+CORNER_BACKUP_S3_SECRET_ACCESS_KEY=${{corner-private-backups.SECRET_ACCESS_KEY}}
+CORNER_BACKUP_UTC_HOUR=2
+CORNER_BACKUP_UTC_MINUTE=30
+CORNER_BACKUP_RETENTION_DAYS=30
+```
+
+Daily scheduled backup time: **02:30 UTC / 08:00 IST**, catch-up on service startup after the configured UTC time. Failures retry no more frequently than every 30 minutes. Retention expires completed copies after 30 days but always keeps the two most recent verified backups. Partial backups without a manifest are not considered complete and should be cleaned manually if necessary.
+
+`/corner/api/admin/ops` (authenticated owner only) includes `backup.lastSuccess`, `backup.lastAttempt` and `backup.lastError`. Railway logs include `corner.backup.verified` and `corner.backup.failed`. The `backup:offsite` script supports a manual one-shot run inside the application container.
+
+Recovery procedure: use an isolated deployment or maintenance window, download a verified offsite snapshot (manifest and referenced objects), verify every file's SHA-256, stop the primary app, and run `node scripts/restore.mjs /path/to/snapshot --confirm` with correctly scoped `DATA_DIR`. **Never restore over the live running database.** Every daily backup already performs an isolated restore rehearsal, not a destructive production restore.
+
+Keep the current single-writer instance and persistent volume; keep S3 credentials private. Additional browser security and authenticated owner acceptance are separate from storage validation.
 
 ## Operational limitations
 Cost depends on Railway plan. Single persistent instance, outage on service shutdown. On-volume backups do not cover volume deletion; configure offsite backup and alerting. Test browser accessibility and performance independently before declaring 100% production readiness.
