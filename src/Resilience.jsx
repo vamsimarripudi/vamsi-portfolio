@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Component, createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiAlertCircle, FiAlertTriangle, FiCheck, FiInfo, FiWifiOff, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiAlertTriangle, FiArrowUpRight, FiCheckCircle, FiInfo, FiLoader, FiWifiOff, FiX } from 'react-icons/fi';
 import './Resilience.css';
 
 const ToastContext = createContext(null);
@@ -9,7 +9,7 @@ const SignalRunner = lazy(() => import('./SignalRunner.jsx'));
 const EMAIL = 'connect@vamsimarripudi.me';
 const timeoutByVariant = { success: 4800, info: 4000, warning: 7200, error: 8200, loading: 0, offline: 0 };
 
-const iconByVariant = { success: FiCheck, info: FiInfo, warning: FiAlertTriangle, error: FiAlertCircle, loading: FiInfo, offline: FiWifiOff };
+const iconByVariant = { success: FiCheckCircle, info: FiInfo, warning: FiAlertTriangle, error: FiAlertCircle, loading: FiLoader, offline: FiWifiOff };
 
 export const normalizeAppError = (error) => {
   const status = Number(error?.status);
@@ -33,8 +33,8 @@ export function ToastProvider({ children }) {
   const show = useCallback((options) => {
     const id = options.id || `toast-${crypto.randomUUID?.() || Date.now()}`;
     const variant = options.variant || 'info';
-    const toast = { id, variant, title: options.title, description: options.description, action: options.action };
     const duration = options.duration ?? timeoutByVariant[variant] ?? timeoutByVariant.info;
+    const toast = { id, variant, title: options.title, description: options.description, action: options.action, duration };
     const previousTimer = timers.current.get(id);
     if (previousTimer) window.clearTimeout(previousTimer);
     setToasts((items) => {
@@ -71,12 +71,52 @@ export function useToast() {
 }
 
 function ToastViewport({ toasts, dismiss }) {
-  const labels = { success: 'Saved', info: 'Update', warning: 'Attention', error: 'Action required', loading: 'Working', offline: 'Network' };
-  return <div className="toast-viewport" aria-label="Notifications">{toasts.map((toast) => {
-    const Icon = iconByVariant[toast.variant] || FiInfo;
-    const isAlert = toast.variant === 'error' || toast.variant === 'offline';
-    return <section key={toast.id} className={`toast toast-${toast.variant}`} role={isAlert ? 'alert' : 'status'} aria-live={isAlert ? 'assertive' : 'polite'} aria-atomic="true"><span className="toast-icon" aria-hidden="true"><Icon/></span><div className="toast-content"><span className="toast-kind">{labels[toast.variant] || 'Update'}</span><strong>{toast.title}</strong>{toast.description && <p>{toast.description}</p>}{toast.action && <button type="button" className="toast-action" onClick={() => { toast.action.onClick?.(); dismiss(toast.id); }}>{toast.action.label}</button>}</div><button type="button" className="toast-close" aria-label={`Dismiss ${toast.title}`} onClick={() => dismiss(toast.id)}><FiX/></button></section>;
-  })}</div>;
+  const labels = { success: 'Success', info: 'Information', warning: 'Heads up', error: 'Action needed', loading: 'In progress', offline: 'Connection' };
+  return (
+    <div className="toast-viewport" aria-label="Notifications">
+      {toasts.map((toast) => {
+        const Icon = iconByVariant[toast.variant] || FiInfo;
+        const isAlert = toast.variant === 'error' || toast.variant === 'offline';
+        return (
+          <section
+            key={toast.id}
+            className={'toast toast-' + toast.variant}
+            role={isAlert ? 'alert' : 'status'}
+            aria-live={isAlert ? 'assertive' : 'polite'}
+            aria-atomic="true"
+          >
+            <span className="toast-icon" aria-hidden="true"><Icon /></span>
+            <div className="toast-content">
+              <span className="toast-kind">{labels[toast.variant] || 'Update'}</span>
+              <strong>{toast.title}</strong>
+              {toast.description && <p>{toast.description}</p>}
+              {toast.action && (
+                <button type="button" className="toast-action" onClick={() => { toast.action.onClick?.(); dismiss(toast.id); }}>
+                  {toast.action.label} <FiArrowUpRight aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              className="toast-close"
+              aria-label={'Dismiss ' + (toast.title || 'notification')}
+              onClick={() => dismiss(toast.id)}
+            >
+              <FiX aria-hidden="true" />
+            </button>
+            {toast.duration > 0 && (
+              <span
+                key={toast.variant}
+                className="toast-progress"
+                aria-hidden="true"
+                style={{ '--toast-duration': toast.duration + 'ms' }}
+              />
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
 }
 export function NetworkWatcher() {
   const toast = useToast();
