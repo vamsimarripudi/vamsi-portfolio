@@ -2,7 +2,11 @@ name: Verify portfolio + Corner integration
 on:
   push:
     branches:
+      - master
+      - test/corner-operational-acceptance-20261008
       - feat/vamsis-corner-integrated-20261008
+  schedule:
+    - cron: '15 3 * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,4 +48,31 @@ jobs:
           const sitemap=readFileSync('public/sitemap.xml','utf8');
           assert.ok(sitemap.includes('https://vamsimarripudi.me/corner'));
           console.log('Integration configuration verified.');
+          JS
+      - name: Live production public-route and authentication-boundary smoke
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const origin='https://vamsimarripudi.me';
+          const fetchSafe=async (path)=>{
+            const response=await fetch(origin+path,{signal:AbortSignal.timeout(18000),headers:{'cache-control':'no-cache'}});
+            return response;
+          };
+          const home=await fetchSafe('/corner');
+          assert.equal(home.status,200,'Corner public URL');
+          const page=await home.text();
+          assert.match(page,/Thoughts, updates/,'server-rendered public feed');
+          assert.match(page,/\/corner\/style\.css/,'assets preserve subpath');
+          const health=await fetchSafe('/corner/api/health');
+          assert.equal(health.status,200,'Corner health endpoint');
+          const payload=await health.json();
+          assert.equal(payload?.data?.database,'connected','production database ready');
+          const feed=await fetchSafe('/corner/api/posts');
+          assert.equal(feed.status,200,'published feed endpoint');
+          assert.ok(Array.isArray((await feed.json())?.data),'feed JSON shape');
+          const admin=await fetchSafe('/corner/admin');
+          assert.equal(admin.status,200,'owner console login page');
+          const unauthorized=await fetchSafe('/corner/api/admin/overview');
+          assert.equal(unauthorized.status,401,'unauthenticated access is rejected');
+          console.log('Production /corner: SSR, assets, DB, feed, login and authorization boundary verified');
           JS
