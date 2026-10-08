@@ -441,3 +441,15 @@ body::before{opacity:.19;mix-blend-mode:multiply}
   .brand-mark,.icon-button,.header-admin,.hero-link>span,.read-link>span,
   .story,.story::before,.now-panel,.now-panel::after,.art-orbit,.card-media img{transition:none!important}
 }
+/* Native cross-document transitions keep SSR routes accessible and fast. */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:corner-route-out .13s ease both}
+::view-transition-new(root){animation:corner-route-in .22s cubic-bezier(.16,1,.3,1) both}
+@keyframes corner-route-out{to{opacity:.78}}
+@keyframes corner-route-in{from{opacity:.55;transform:translate3d(0,5px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@media(prefers-reduced-motion:reduce){@view-transition{navigation:none}::view-transition-old(root),::view-transition-new(root){animation:none!important}}
+@media(max-width:767px){.category-account{font-weight:730;color:#000}.admin-mfa-field{margin-top:3px}}
+
+/* Member discovery and save-for-later remain unobtrusive on the reader. */
+.post-share [data-bookmark-post]{margin-right:1.2rem}
+.post-share [data-bookmark-post]:not([hidden]){display:inline-flex;gap:.4rem;align-items:center}

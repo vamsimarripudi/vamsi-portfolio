@@ -5,6 +5,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
+import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
+import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
+import { accountPage } from './identity-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage } from './ui.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
@@ -12,6 +15,7 @@ import { openApiDocument } from './openapi.mjs';
 import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText, sha, clamp, secureEqual, isValidTimeZone } from './domain.mjs';
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
+const identity=new IdentityService(store);
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -34,7 +38,7 @@ function visitor(req,res){let cookies=cookieHeader(req),cookie=cookies.corner_vi
   if(!actor){actor=crypto.randomBytes(20).toString('base64url');let sig=crypto.createHmac('sha256',signKey).update(actor).digest('hex').slice(0,24);res.setHeader('set-cookie',anonCookie(actor+'.'+sig));}
   return actor;
 }
-function requireOwner(req){const token=decodeURIComponent(cookieHeader(req).corner_session||'');let owner=store.session(token);if(!owner)throw httpError(401,'Owner session required','AUTH_REQUIRED');return owner;}
+function requireOwner(req,pathname,method){let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}const user=store.session(token);if(!user)throw httpError(401,'Studio session required','AUTH_REQUIRED');if(!privilegedRole(user.role)||!staffPermission(user.role,pathname,method))throw httpError(403,'This account cannot access that studio action.','ROLE_FORBIDDEN');if(user.role!=='owner'&&!store.one('SELECT enabled_at FROM identity_mfa WHERE user_id=? AND enabled_at IS NOT NULL',user.id))throw httpError(403,'Set up authenticator verification first.','MFA_REQUIRED');return user;}
 function sourceIp(req){if(config.trustProxy&&req.headers['x-forwarded-for'])return String(req.headers['x-forwarded-for']).split(',')[0].trim();return req.socket.remoteAddress||'unknown';}
 function limit(req,kind,max,seconds){let actor=sha(sourceIp(req)).slice(0,22);if(!store.rateLimit(kind+':'+actor,max,seconds))throw httpError(429,'Please wait before trying again.','RATE_LIMIT');}
 function checkOrigin(req){if(!['POST','PATCH','PUT','DELETE'].includes(req.method))return;
@@ -47,7 +51,7 @@ async function readBody(req,max=110000){
   const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>max)throw httpError(413,'Request too large');chunks.push(chunk)}return Buffer.concat(chunks)
 }
 async function readJSON(req,max=110000){if(!(req.headers['content-type']||'').includes('application/json'))throw httpError(415,'Expected JSON');let data;try{data=JSON.parse((await readBody(req,max)).toString('utf8')||'{}')}catch{throw httpError(400,'Malformed JSON')}if(!data||typeof data!=='object'||Array.isArray(data))throw httpError(400,'Expected object');return data}
-function page(res,html,status=200){if(config.basePath)html=html.replace(/(href|src|action)=(["'])\/(?!\/)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=0, must-revalidate','x-content-type-options':'nosniff'})}
+function page(res,html,status=200,privatePage=false){if(config.basePath)html=html.replace(/(href|src|action)=(["'])\/(?!\/)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':privatePage?'private, no-store, max-age=0':'public, max-age=0, must-revalidate','vary':'Cookie','x-content-type-options':'nosniff'})}
 function isBot(req){return /bot|crawler|spider|preview|curl/i.test(req.headers['user-agent']||'')}
 function safetyHeaders(res){
   res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','strict-origin-when-cross-origin');res.setHeader('x-frame-options','DENY');
@@ -95,7 +99,7 @@ function mediaFile(req,res,key){
   if(!/^[a-zA-Z0-9_-]{6,80}\.(png|jpg|webp|gif|mp4|webm)$/.test(key))throw httpError(404,'Not found');
   const media=store.one('SELECT * FROM media WHERE storage_key=?',key);if(!media)throw httpError(404,'Not found');
   const visible=store.one("SELECT id FROM posts WHERE (id=? OR parent_post_id=?) AND state='published' LIMIT 1",media.owner_id,media.owner_id);
-  if(!visible){let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}if(!store.session(token))throw httpError(404,'Not found')}
+  if(!visible){let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}const viewer=store.session(token);if(!viewer||!privilegedRole(viewer.role)||!staffPermission(viewer.role,'/api/admin/media','GET'))throw httpError(404,'Not found')}
   const filename=path.resolve(config.uploads,key);
   if(!filename.startsWith(config.uploads+path.sep)||!fs.existsSync(filename))throw httpError(404,'Not found');
   const stat=fs.statSync(filename);
@@ -111,9 +115,11 @@ function mediaFile(req,res,key){
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
 function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
-function adminRouteState(owner){return adminPage({owner,status:store.currentStatus()})}
+function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
+const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
+  if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
   if(pathName==='/api/ready'&&method==='GET'){
@@ -152,13 +158,13 @@ async function api(req,res,pathName,url){
   if(commentMatch&&method==='GET')return ok(res,store.getComments(commentMatch[1]));
   if(commentMatch&&method==='POST'){limit(req,'comment',4,3600);const data=await readJSON(req,10000);return ok(res,store.comment(commentMatch[1],data.name,data.body))}
   if(pathName==='/api/admin/login'&&method==='POST'){
-    limit(req,'login',7,900);let body=await readJSON(req,5000);
-    const user=store.findOwner(String(body.email||'').trim().toLowerCase());if(!user||!passwordVerify(String(body.password||''),user.password_hash))throw httpError(401,'Email or password not recognized.','AUTH_FAILED');
-    const token=freshToken(),expires=store.createSession(user,token,sourceIp(req),req.headers['user-agent']||'');res.setHeader('set-cookie',adminCookie(token));return ok(res,{authenticated:true,expires});
+    limit(req,'staff-login',7,900);const result=identity.loginAdmin(await readJSON(req,5000),sourceIp(req),req.headers['user-agent']||'');
+    if(result.token){res.setHeader('set-cookie',adminCookie(result.token));return ok(res,{authenticated:true,expires:result.expires,user:result.user});}
+    return ok(res,result);
   }
   if(pathName==='/api/admin/logout'&&method==='POST'){let token=decodeURIComponent(cookieHeader(req).corner_session||'');if(token)store.revokeSession(token);res.setHeader('set-cookie',adminCookie('',0));return ok(res,{authenticated:false})}
   if(!pathName.startsWith('/api/admin/'))throw httpError(404,'API route not found','NOT_FOUND');
-  const owner=requireOwner(req);if(method!=='GET')limit(req,'admin',130,60);
+  const owner=requireOwner(req,pathName,method);if(method!=='GET')limit(req,'admin',130,60);
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName==='/api/admin/posts'&&method==='GET')return ok(res,store.allAdminPosts(url.searchParams.get('state')||'all'));
   if(pathName==='/api/admin/posts'&&method==='POST'){
@@ -248,15 +254,30 @@ async function route(req,res){
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return mediaFile(req,res,pathname.split('/').at(-1));}
-    if(['/style.css','/magic.css','/app.js','/admin.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/magic.css','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
-    if(pathname==='/admin'){let token=decodeURIComponent(cookieHeader(req).corner_session||'');return page(res,adminRouteState(store.session(token)))}
+    if(pathname==='/admin'){
+      let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
+      const session=store.session(token);
+      const staff=session&&privilegedRole(session.role)?session:null;
+      return page(res,adminRouteState(staff),200,true);
+    }
+    if(['/login','/register','/verify-email','/resend-verification','/forgot-password','/reset-password','/confirm-email','/profile','/settings/security','/admin/register','/admin/mfa','/admin/invite'].includes(pathname)){
+      const cookies=cookieHeader(req);
+      const readToken=(name)=>{try{return decodeURIComponent(cookies[name]||'')}catch{return ''}};
+      const staff=store.session(readToken('corner_session'));
+      const member=store.session(readToken('corner_member_session'));
+      const actor=staff&&privilegedRole(staff.role)?staff:member?.role==='member'?member:null;
+      const valid=!!actor&&(actor.role==='member'?!!identity.getProfile(actor.id)?.verified_at:privilegedRole(actor.role));
+      if(pathname==='/admin/invite'&&(!valid||actor.role!=='owner'))throw httpError(403,'Owner account required.','OWNER_REQUIRED');
+      return page(res,accountPage({type:pathname,user:valid?identity.safeMe(identity.account(actor.id)):null,registrationOpen:identity.canRegister()}),200,true);
+    }
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
     if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
-    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site may store anonymous, first-party session identifiers to prevent duplicate reactions and reduce abuse. We use essential owner-session cookies for the private publishing console. We do not sell visitor data or run third-party advertising trackers.</p><p>Comments, if enabled, collect the display name and the words you submit so they may be moderated and displayed. Server-side analytics measure visits and engagement using short, pseudonymous identifiers; raw events are removed after 90 days.</p><p>Contact: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. You may ask for correction or removal of submitted content.</p>'}));
-    if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
+    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
+    if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>Members are responsible for protecting their account credentials and the content they submit. Registered profiles are private by default and do not grant publishing or moderation access. Studio access is invitation-only and subject to additional verification.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
     if(pathname==='/now')return page(res,simplePage({path:'/now',title:'Now',lead:store.currentStatus()?.label||'A little space for what is current.',body:`<p>${escapeHtml(store.currentStatus()?.detail||'When a status is shared it will appear here.')}</p>`}));
     throw httpError(404,'Page not found','NOT_FOUND');
   }catch(err){
