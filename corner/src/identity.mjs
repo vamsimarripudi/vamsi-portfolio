@@ -73,9 +73,9 @@ export class IdentityService{
     });
     return token;
   }
-  async emailLink(to,subject,basePath,token,fragment,reference){
+  async emailLink(to,subject,basePath,token,fragment,reference,{userId}={}){
     const destination=(this.env.SITE_URL||'http://localhost:4141').replace(/\/$/,'')+'/'+basePath+'#token='+encodeURIComponent(token);
-    const recipientName=this.findByEmail(to)?.display_name||'there';
+    const recipientName=(userId?this.account(userId):this.findByEmail(to))?.display_name||'there';
     const letter=transactionalCornerEmail({subject,recipientName,actionUrl:destination,flow:basePath});
     await this.sender({to,...letter,reference});
   }
@@ -171,7 +171,7 @@ export class IdentityService{
     if(email===row.email)return {accepted:true,message:'The address is already up to date.'};
     if(this.store.one('SELECT 1 FROM users WHERE email=?',email))throw httpError(409,'That email address cannot be used.','EMAIL_CONFLICT');
     const token=this.issueToken(row.id,email,'change-email',20);
-    await this.emailLink(email,'Confirm your new Corner email','confirm-email',token,'change-email','corner-email-change-'+row.id+'-'+Date.now());
+    await this.emailLink(email,'Confirm your new Corner email','confirm-email',token,'change-email','corner-email-change-'+row.id+'-'+Date.now(),{userId:row.id});
     this.store.audit(actor.id,'email.change.requested','user',actor.id);
     return {accepted:true,message:'Check the new email address to confirm the change.'};
   }

@@ -45,6 +45,8 @@ test('role migration is additive, registration is opt-in and members cannot rece
   await assert.rejects(identity.registerMember({name:'Test Member',email:'new@corner.example',password:memberPassword}),{code:'REGISTRATION_DISABLED'});
   env.CORNER_AUTH_REGISTRATION_ENABLED='1';
   await identity.registerMember({name:'Test Member',email:'new@corner.example',password:memberPassword,role:'owner'});
+  const verifyMail=tokenFromMail(emailFile,'Verify').mail;
+  assert.match(verifyMail.text,/Dear Test Member,/,'verification greets the registered profile name');
   const member=identity.findByEmail('new@corner.example');
   assert.equal(member.role,'member');
   assert.equal(store.owner().id,owner.id);
@@ -85,6 +87,7 @@ test('profile, preferences, saved posts, account export and password recovery',a
   assert.equal(identity.requestPrivacy(member,'deletion').state,'requested');
   assert.equal(identity.requestPrivacy(member,'deletion').state,'requested','idempotent request');
   await identity.forgotPassword({email:'member@corner.example'});
+  assert.match(tokenFromMail(emailFile,'Reset').mail.text,/Dear Another Name,/,'recovery reflects a profile edit');
   const resetToken=tokenFromMail(emailFile,'Reset').token;
   identity.resetPassword({token:resetToken,password:'New-Verified-Passphrase#2026'});
   assert.throws(()=>identity.resetPassword({token:resetToken,password:'Again-Strong-Passphrase#2026'}),{code:'TOKEN_INVALID'});
@@ -93,6 +96,7 @@ test('profile, preferences, saved posts, account export and password recovery',a
   const recovered=identity.loginMember({email:member.email,password:'New-Verified-Passphrase#2026'});
   assert.ok(recovered.token);
   await identity.requestEmailChange(member,{newEmail:'replacement@corner.example',currentPassword:'New-Verified-Passphrase#2026'});
+  assert.match(tokenFromMail(emailFile,'Confirm your new Corner email').mail.text,/Dear Another Name,/,'new email address gets the existing profile name');
   const emailToken=tokenFromMail(emailFile,'Confirm your new Corner email').token;
   assert.equal(identity.confirmEmailChange({token:emailToken}).email,'replacement@corner.example');
   assert.throws(()=>identity.confirmEmailChange({token:emailToken}),{code:'TOKEN_INVALID'});
