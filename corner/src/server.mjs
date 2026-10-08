@@ -131,7 +131,14 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}
   if(/^\/api\/posts\/[a-z0-9-]+$/.test(pathName)&&method==='GET'){
     let slug=pathName.split('/').at(-1);let post=store.getPost(slug);if(!post)throw httpError(404,'Post not found');return ok(res,{post,media:store.listMedia(post.id),reactions:store.getReactions(post.id),comments:post.allow_comments?store.getComments(post.id):[]});}
-  if(pathName==='/api/search'&&method==='GET'){limit(req,'search',45,60);return ok(res,store.search(url.searchParams.get('q')||''))}
+  if(pathName==='/api/search'&&method==='GET'){
+    limit(req,'search',45,60);
+    return ok(res,store.search(url.searchParams.get('q')||'',{
+      category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',
+      tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||30,
+      offset:url.searchParams.get('offset')||0
+    }));
+  }
   if(pathName==='/api/status'&&method==='GET')return ok(res,{status:store.currentStatus(),upcoming:store.upcoming(true)});
   if(pathName==='/api/analytics/event'&&method==='POST'){
     limit(req,'analytics',100,60);let body=await readJSON(req,10000),actor=visitor(req,res);let p=String(body.path||'/');if(!/^\/[a-zA-Z0-9/_-]{0,255}$/.test(p))p='/';store.analytics(body.type,body.postId||null,p,sha(actor).slice(0,24),body.device||'unknown');return ok(res,{accepted:true});

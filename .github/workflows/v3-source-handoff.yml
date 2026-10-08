@@ -1,0 +1,20 @@
+name: V3 source handoff (temporary)
+on:
+  push:
+    branches:
+      - feat/corner-v3-phase1-discovery
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Archive code without secrets or runtime data
+        run: |
+          tar -czf /tmp/corner-v3-source.tar.gz --exclude='corner/data' --exclude='corner/.env.local' --exclude='corner/node_modules' corner
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corner-v3-source-handoff
+          path: /tmp/corner-v3-source.tar.gz
+          retention-days: 1
