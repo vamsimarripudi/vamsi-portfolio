@@ -7,6 +7,7 @@ import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage } from './ui.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
+import { openApiDocument } from './openapi.mjs';
 import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText, sha, clamp, secureEqual, isValidTimeZone } from './domain.mjs';
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
@@ -23,6 +24,7 @@ const log=(severity,fields)=>console[severity](JSON.stringify({at:date(),app:'co
 function end(res,status,body,headers={}){res.writeHead(status,headers);res.end(body)}
 function json(res,data,status=200,headers={}){end(res,status,JSON.stringify(data),{'content-type':jsonType,'cache-control':'no-store','x-content-type-options':'nosniff',...headers})}
 function ok(res,data,meta={}){json(res,{data,meta})}
+function created(res,data,location){json(res,{data,meta:{}},201,{location})}
 function cookieHeader(req){return Object.fromEntries((req.headers.cookie||'').split(';').map(s=>{let i=s.indexOf('=');return i<0?[]:[s.slice(0,i).trim(),s.slice(i+1).trim()] }).filter(x=>x.length===2))}
 const adminCookie=(token,age=8*3600)=>`corner_session=${encodeURIComponent(token)}; Path=${config.basePath||'/'}; HttpOnly; SameSite=Strict; Max-Age=${age}${config.prod?'; Secure':''}`;
 const anonCookie=(id)=>`corner_visitor=${id}; Path=${config.basePath||'/'}; HttpOnly; SameSite=Lax; Max-Age=31536000${config.prod?'; Secure':''}`;
@@ -112,6 +114,13 @@ function adminRouteState(owner){return adminPage({owner,status:store.currentStat
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
+  if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
+  if(pathName==='/api/ready'&&method==='GET'){
+    let database=false,storage=false;
+    try{database=store.one('SELECT 1 AS ok')?.ok===1;fs.accessSync(path.dirname(config.dbPath),fs.constants.W_OK);storage=true}catch{}
+    return json(res,{data:{ready:database&&storage,database,storage},meta:{}},database&&storage?200:503);
+  }
+  if(pathName==='/api/openapi.json'&&method==='GET')return json(res,openApiDocument(config.siteUrl),200,{'cache-control':'public,max-age=300'});
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}
   if(/^\/api\/posts\/[a-z0-9-]+$/.test(pathName)&&method==='GET'){
     let slug=pathName.split('/').at(-1);let post=store.getPost(slug);if(!post)throw httpError(404,'Post not found');return ok(res,{post,media:store.listMedia(post.id),reactions:store.getReactions(post.id),comments:post.allow_comments?store.getComments(post.id):[]});}
@@ -136,6 +145,8 @@ async function api(req,res,pathName,url){
   }
   const reactMatch=pathName.match(/^\/api\/posts\/([A-Za-z0-9_-]+)\/reactions$/);
   if(reactMatch&&method==='POST'){limit(req,'reaction',45,60);const data=await readJSON(req,9000),actor=visitor(req,res);return ok(res,store.changeReaction(reactMatch[1],data.reaction,actor));}
+  if(reactMatch&&method==='PUT'){limit(req,'reaction',45,60);const data=await readJSON(req,9000),actor=visitor(req,res);return ok(res,store.setReaction(reactMatch[1],data.reaction,actor));}
+  if(reactMatch&&method==='DELETE'){limit(req,'reaction',45,60);const actor=visitor(req,res);return ok(res,store.setReaction(reactMatch[1],null,actor));}
   const commentMatch=pathName.match(/^\/api\/posts\/([A-Za-z0-9_-]+)\/comments$/);
   if(commentMatch&&method==='GET')return ok(res,store.getComments(commentMatch[1]));
   if(commentMatch&&method==='POST'){limit(req,'comment',4,3600);const data=await readJSON(req,10000);return ok(res,store.comment(commentMatch[1],data.name,data.body))}
@@ -149,11 +160,16 @@ async function api(req,res,pathName,url){
   const owner=requireOwner(req);if(method!=='GET')limit(req,'admin',130,60);
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName==='/api/admin/posts'&&method==='GET')return ok(res,store.allAdminPosts(url.searchParams.get('state')||'all'));
-  if(pathName==='/api/admin/posts'&&method==='POST'){let data=await readJSON(req);return ok(res,store.createPost(data,owner.id))}
+  if(pathName==='/api/admin/posts'&&method==='POST'){
+    const data=await readJSON(req),post=store.createPost(data,owner.id);
+    if(req.cornerApiV1)return created(res,post,(config.basePath||'')+'/api/v1/admin/posts/'+post.id);
+    return ok(res,post);
+  }
   const adminPost=pathName.match(/^\/api\/admin\/posts\/([A-Za-z0-9_-]+)(?:\/(publish|archive|restore|schedule|duplicate))?$/);
   if(adminPost){const [,id,action]=adminPost;
     if(method==='GET'&&!action){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');return ok(res,{post:p,media:store.listMedia(id)})}
     if(method==='PATCH'&&!action)return ok(res,store.savePost(id,await readJSON(req),owner.id));
+    if(method==='DELETE'&&!action)return ok(res,{...store.archive(id,owner.id),softDeleted:true,restorable:true});
     if(method==='POST'&&action==='publish')return ok(res,store.publish(id,owner.id));
     if(method==='POST'&&action==='archive')return ok(res,store.archive(id,owner.id));
     if(method==='POST'&&action==='restore')return ok(res,store.restore(id,owner.id));
@@ -169,6 +185,15 @@ async function api(req,res,pathName,url){
   }
   if(pathName==='/api/admin/status'&&method==='PUT')return ok(res,store.updateStatus(await readJSON(req),owner.id));
   if(pathName==='/api/admin/comments'&&method==='GET')return ok(res,store.pendingComments(url.searchParams.get('state')||'pending'));
+  const commentResource=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)$/);
+  if(commentResource){
+    if(method==='GET'){
+      const comment=store.one('SELECT comments.*,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id WHERE comments.id=?',commentResource[1]);
+      if(!comment)throw httpError(404,'Comment not found');return ok(res,comment);
+    }
+    if(method==='PATCH'){const data=await readJSON(req,4000);return ok(res,store.moderate(commentResource[1],data.state,owner.id))}
+    if(method==='DELETE')return ok(res,store.moderate(commentResource[1],'deleted',owner.id));
+  }
   const mod=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)\/(approve|hide|delete)$/);
   if(mod&&method==='POST')return ok(res,store.moderate(mod[1],{approve:'approved',hide:'hidden',delete:'deleted'}[mod[2]],owner.id));
   if(pathName==='/api/admin/analytics/summary'&&method==='GET'){
@@ -193,6 +218,10 @@ async function api(req,res,pathName,url){
     store.audit(owner.id,'media.uploaded','media',item.id,{size:item.size_bytes});return ok(res,{...item,url:(config.basePath||'')+'/media/'+file});
   }
   const mediaEdit=pathName.match(/^\/api\/admin\/media\/([A-Za-z0-9_-]+)$/);
+  if(mediaEdit&&method==='GET'){
+    const record=store.one('SELECT * FROM media WHERE id=?',mediaEdit[1]);
+    if(!record)throw httpError(404,'Media not found');return ok(res,record);
+  }
   if(mediaEdit&&method==='PATCH')return ok(res,store.updateMedia(mediaEdit[1],await readJSON(req),owner.id));
   if(mediaEdit&&method==='DELETE'){
     const removed=store.deleteMedia(mediaEdit[1],owner.id);
@@ -202,12 +231,17 @@ async function api(req,res,pathName,url){
   throw httpError(404,'Endpoint not found','NOT_FOUND');
 }
 async function route(req,res){
-  const started=Date.now();safetyHeaders(res);let pathname='';
+  const started=Date.now();safetyHeaders(res);res.setHeader('x-request-id',crypto.randomUUID());let pathname='';
   try{
     if(!req.headers.host)throw httpError(400,'Host header required');
     const url=new URL(req.url||'/',`http://${req.headers.host}`);
     if(config.basePath){if(url.pathname===config.basePath)url.pathname='/';else if(url.pathname.startsWith(config.basePath+'/'))url.pathname=url.pathname.slice(config.basePath.length);else throw httpError(404,'Route not found');}
     pathname=url.pathname;
+    if(pathname==='/api/v1'||pathname==='/api/v1/'){
+      if(req.method!=='GET')throw httpError(405,'Method not allowed');
+      return ok(res,{version:'1',status:'stable',openapi:(config.basePath||'')+'/api/v1/openapi.json',legacySupported:true,storageMode:'single-writer'});
+    }
+    if(pathname.startsWith('/api/v1/')){req.cornerApiV1=true;pathname='/api/'+pathname.slice('/api/v1/'.length)}
     checkOrigin(req);
     if(pathname.startsWith('/api/'))return await api(req,res,pathname,url);
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});

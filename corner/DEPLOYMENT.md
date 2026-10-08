@@ -47,3 +47,7 @@ Run `node scripts/backup.mjs /data/backups/<timestamp>` for a checksummed snapsh
 
 ## Operational limitations
 Cost depends on Railway plan. Single persistent instance, outage on service shutdown. On-volume backups do not cover volume deletion; configure offsite backup and alerting. Test browser accessibility and performance independently before declaring 100% production readiness.
+
+## REST v1 and scale-out path
+
+The versioned API is available at `/corner/api/v1`, with OpenAPI at `/corner/api/v1/openapi.json` and a storage readiness endpoint at `/corner/api/v1/ready`. Original `/corner/api/*` routes remain backwards compatible. See [`docs/REST_V1_AND_SCALING.md`](docs/REST_V1_AND_SCALING.md) for the request/response contract and the guarded migration to a horizontally load-balanced PostgreSQL/object-storage architecture. **Do not increase Railway replicas while the current SQLite/media volume is the source of truth.**

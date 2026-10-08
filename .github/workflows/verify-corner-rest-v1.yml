@@ -1,0 +1,50 @@
+name: Verify Corner REST API and portfolio integration
+on:
+  push:
+    paths:
+      - "corner/**"
+      - "vercel.json"
+      - ".github/workflows/verify-corner-rest-v1.yml"
+  pull_request:
+    paths:
+      - "corner/**"
+      - "vercel.json"
+      - ".github/workflows/verify-corner-rest-v1.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install portfolio dependencies
+        run: npm ci
+      - name: Portfolio lint
+        run: npm run lint
+      - name: Portfolio unit tests
+        run: npm test
+      - name: Portfolio build
+        run: npm run build
+      - name: Corner API, media, scheduling, backup and REST v1 tests
+        working-directory: corner
+        run: npm run check
+      - name: Scale-safety and route guard
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const railway=JSON.parse(readFileSync('corner/railway.json','utf8'));
+          const app=JSON.parse(readFileSync('vercel.json','utf8'));
+          assert.equal(railway.deploy.numReplicas,1,'Local SQLite requires exactly one backend writer');
+          assert.ok(app.rewrites.some(x=>x.source==='/corner'));
+          assert.ok(app.rewrites.some(x=>x.source==='/corner/:path*'));
+          console.log('Scale-safety and Corner routing checks passed.');
+          JS
