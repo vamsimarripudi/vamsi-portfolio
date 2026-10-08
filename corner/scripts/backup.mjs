@@ -9,7 +9,7 @@ if(!fs.existsSync(config.dbPath))throw Error('Database not initialized yet; star
 if(fs.existsSync(target))throw Error('Backup destination already exists: '+target);
 fs.mkdirSync(target,{recursive:true});
 const source=new DatabaseSync(config.dbPath);
-try { await backup({source,destination:path.join(target,'corner.sqlite')}); }
+try { await backup(source,path.join(target,'corner.sqlite')); }
 finally { source.close(); }
 const mediaSrc=config.uploads,mediaDest=path.join(target,'uploads');
 if(fs.existsSync(mediaSrc))fs.cpSync(mediaSrc,mediaDest,{recursive:true,force:false});
