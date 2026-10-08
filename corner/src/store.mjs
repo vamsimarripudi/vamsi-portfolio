@@ -171,17 +171,19 @@ export class Store{
   upcoming(publicOnly=false){return this.all(`SELECT title,emoji,scheduled_at,timezone FROM posts WHERE state='scheduled' AND scheduled_at>? ${publicOnly?'AND upcoming_public=1':''} ORDER BY scheduled_at ASC LIMIT 3`,now())}
 search(q,options={}){
     const settings=typeof options==='number'?{limit:options}:options||{};
-    const query=pureText(q,100);
-    const category=String(settings.category||'').trim();
-    const year=String(settings.year||'').trim();
-    const tag=pureText(settings.tag||'',40);
+    const query=pureText(q,100),category=String(settings.category||'').trim();
+    const year=String(settings.year||'').trim(),tag=pureText(settings.tag||'',40);
     const limit=clamp(Number(settings.limit)||30,1,60);
     const offset=clamp(Number(settings.offset)||0,0,10000);
     if(category&&!['Wishes','Builds','Notes','Journal','Moments','Latest'].includes(category))throw httpError(400,'Invalid category');
     if(year&&!/^(19|20)\d{2}$/.test(year))throw httpError(400,'Invalid archive year');
     const clauses=["state='published'"],params=[];
-    const escaped=(value)=>'%'+value.replace(/[\\%_]/g,'\\  search(q,limit=30){q=pureText(q,100);if(!q)return [];const wildcard='%'+q.replace(/[\\%_]/g,'\\$&')+'%';return this.all(`SELECT * FROM posts WHERE state='published' AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\') ORDER BY published_at DESC LIMIT ?`,wildcard,wildcard,wildcard,wildcard,clamp(Number(limit)||30,1,60)).map(publicPost)}')+'%';
-    if(query){const wildcard=escaped(query);clauses.push("(title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')");params.push(wildcard,wildcard,wildcard,wildcard)}
+    const escaped=(value)=>'%'+value.replace(/[\\%_]/g,'\\$&')+'%';
+    if(query){
+      const wildcard=escaped(query);
+      clauses.push("(title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')");
+      params.push(wildcard,wildcard,wildcard,wildcard);
+    }
     if(category&&category!=='Latest'){clauses.push('category=?');params.push(category)}
     if(year){clauses.push("substr(published_at,1,4)=?");params.push(year)}
     if(tag){clauses.push("tags LIKE ? ESCAPE '\\'");params.push(escaped(tag))}
