@@ -31,7 +31,25 @@ export class Store{
   setting(key,fallback=''){const r=this.one('SELECT value FROM settings WHERE key=?',key);return r?JSON.parse(r.value):fallback}
   saveSetting(key,value){this.exec('INSERT INTO settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at',key,JSON.stringify(value),now());return value}
   owner(){return this.one("SELECT * FROM users WHERE role='owner' AND disabled_at IS NULL LIMIT 1")}
-  bootstrap(email,hash){if(!email||!hash||this.owner())return false;let stamp=now();this.exec('INSERT INTO users(id,email,display_name,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?)',uid('usr'),email,'Vamsi',hash,stamp,stamp);return true}
+  bootstrap(email,hash){
+    if(!email||!hash)return false;
+    const previous=this.owner();
+    if(previous){
+      if(previous.email!==email)throw Error('Configured owner email does not match the existing owner. Explicit migration is required.');
+      if(previous.password_hash!==hash){
+        this.transaction(()=>{
+          const stamp=now();
+          this.exec('UPDATE users SET password_hash=?,updated_at=? WHERE id=?',hash,stamp,previous.id);
+          this.exec('UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL',stamp,previous.id);
+          this.audit(previous.id,'owner.password_rotated','user',previous.id);
+        });
+      }
+      return false;
+    }
+    const stamp=now();
+    this.exec('INSERT INTO users(id,email,display_name,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?)',uid('usr'),email,'Vamsi',hash,stamp,stamp);
+    return true;
+  }
   findOwner(email){return this.one("SELECT * FROM users WHERE role='owner' AND email=? AND disabled_at IS NULL",email)}
   createSession(user,token,ip='',agent=''){
     let stamp=now(),expires=new Date(Date.now()+8*3600000).toISOString();
