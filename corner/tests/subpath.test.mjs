@@ -5,6 +5,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { passwordHash } from '../src/auth.mjs';
+const FIXED_TEST_OWNER_HASH=passwordHash('a-VeryLongSyntheticTestPassword!2026');
 
 async function start(port, dir) {
   const child = spawn(process.execPath, ['--no-warnings', 'src/server.mjs'], {
@@ -12,7 +13,7 @@ async function start(port, dir) {
     env: { ...process.env, NODE_ENV: 'production', HOST: '127.0.0.1', PORT: String(port),
       SITE_URL: `http://127.0.0.1:${port}/corner`, CORNER_BASE_PATH: '/corner', DATA_DIR: dir,
       SESSION_SECRET: 'subpath-suite-secret-' + 'b'.repeat(50), ADMIN_EMAIL: 'owner@example.com',
-      ADMIN_PASSWORD_HASH: passwordHash('a-VeryLongSyntheticTestPassword!2026'), DEMO_CONTENT: '0' },
+      ADMIN_PASSWORD_HASH: FIXED_TEST_OWNER_HASH, DEMO_CONTENT: '0' },
     stdio: 'ignore',
   });
   for (let i = 0; i < 45; i++) {
