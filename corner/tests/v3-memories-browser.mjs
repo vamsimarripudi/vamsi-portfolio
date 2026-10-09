@@ -55,6 +55,8 @@ try{
    const response=await page.goto(origin+'/corner'+url,{waitUntil:'domcontentloaded'});
    assert.equal(response.status(),200,width+' '+url);
    await page.locator('.v3m-content').first().waitFor();
+   const h1=await page.locator('main h1').count();
+   assert.equal(h1,1,'Phase 2 page must have exactly one H1 and no repeated hero '+width+' '+url);
    const w=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}));
    assert.ok(w.scroll<=w.viewport+1,'Horizontal overflow '+width+' '+url+': '+JSON.stringify(w));
    assert.deepEqual(errors,[],width+' '+url+' no JS errors');
