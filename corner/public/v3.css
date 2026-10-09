@@ -20,3 +20,17 @@
 .simple-page .simple-text:has(.v3-content){max-width:1120px}
 @media(max-width:1450px){.v3-filter{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.v3-filter{grid-template-columns:1fr}}
+
+/* Harmonize the existing SSR legal/simple-page wrapper with icon-first V3 forms. */
+.simple-page:has(.v3-content) h1,.simple-page:has([data-v3]) h1{font:500 clamp(2.9rem,8.4vw,5.3rem)/1.05 Georgia,serif;letter-spacing:-.065em;color:#0a0a0a}
+.simple-page:has([data-v3]) .simple-text{max-width:760px}
+.simple-text>form[data-v3],.simple-text>.v3-follow,.simple-text>[data-v3-confirm],.simple-text>[data-v3-unsubscribe]{
+  display:grid;gap:16px;max-width:680px;padding:clamp(20px,4vw,35px);
+  margin:24px 0;background:#fff;color:#000;border:1px solid #d9d4cc;border-radius:19px
+}
+.simple-text>form[data-v3] label,.simple-text [data-v3] label{display:grid;gap:8px;font-size:.83rem;font-weight:650}
+.simple-text [data-v3] label:has([type=checkbox]){display:flex;align-items:start;gap:11px;line-height:1.5}
+.simple-text [data-v3] label [type=checkbox]{width:18px;min-height:18px;flex:none;accent-color:#000;margin:4px 0}
+.simple-text [data-v3] button{display:inline-flex;align-items:center;justify-content:center;justify-self:start;min-height:46px;padding:11px 18px;background:#000;border:1px solid #000;border-radius:11px;color:#fff;font-weight:700}
+.simple-text [data-v3] .v3-feedback{min-height:1.4rem;font-size:.82rem;color:#151515}
+@media(max-width:520px){.simple-text [data-v3] button{width:100%}}
