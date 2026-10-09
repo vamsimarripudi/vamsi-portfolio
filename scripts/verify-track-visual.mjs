@@ -32,6 +32,16 @@ try{
   assert.ok(state.headingWidth<=width,'Heading fits viewport '+width);
   assert.ok(state.refreshTop<state.titleTop,'Refresh control stays above heading '+width);
   if(width<=430)assert.ok(state.headingSize<=56,'Mobile heading sizing '+width);
+  if(width<=760){
+    const cells=await page.locator('.track-table-wrap tbody tr td').count();
+    assert.equal(cells,7,'Every field stays on the mobile record card');
+    const action=page.locator('.track-table-wrap td[data-label="Action"] button');
+    const bounds=await action.boundingBox();
+    assert.ok(bounds && bounds.x+44<=width+1,'Mobile open-record action is visible '+width);
+    const statusCell=page.locator('.track-table-wrap td[data-label="Status"]');
+    const statusBox=await statusCell.boundingBox();
+    assert.ok(statusBox && statusBox.width>75,'Mobile status remains readable '+width);
+  }
   assert.notEqual(state.background,state.buttonText,'Text must contrast with card background');
   assert.deepEqual(errors,[],'No browser exceptions '+width);
   if([375,1440].includes(width))await page.screenshot({path:'/tmp/track-'+width+'.png',fullPage:true});
