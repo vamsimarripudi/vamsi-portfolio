@@ -17,7 +17,7 @@ const dateAfter=(hours)=>new Date(Date.now()+hours*3600000).toISOString();
 const validTopics=['all','notes','moments','wishes','builds'];
 const flag=(env,name)=>env[name]==='1';
 const content=(v,len)=>pureText(v,len).replace(/\s+/g,' ').trim();
-const emailKey=(env)=>crypto.createHash('sha256').update('v3-follow:'+String(env.SESSION_SECRET||'')).digest();
+const emailKey=(env)=>crypto.createHash('sha256').update('v3-follow-storage:'+String(env.CORNER_V3_FOLLOW_ENCRYPTION_KEY||'')).digest();
 const normalizedHash=(mail,env)=>crypto.createHmac('sha256',emailKey(env)).update(mail).digest('hex');
 const encrypt=(mail,env)=>{
   const nonce=crypto.randomBytes(12),cipher=crypto.createCipheriv('aes-256-gcm',emailKey(env),nonce);
@@ -30,7 +30,7 @@ export class V3Engagement{
     this.store=store;
     this.env=env;
     this.sendMail=sendMail||null;
-    if(this.enabled('FOLLOW')&&String(env.SESSION_SECRET||'').length<32)throw new Error('Strong SESSION_SECRET required before enabling follower email storage');
+    if(this.enabled('FOLLOW')&&String(env.CORNER_V3_FOLLOW_ENCRYPTION_KEY||'').length<32)throw new Error('Dedicated CORNER_V3_FOLLOW_ENCRYPTION_KEY (32+ chars) is required before enabling follows');
     store.db.exec(schema);
   }
   enabled(feature){return flag(this.env,'CORNER_V3_'+feature)}
@@ -100,7 +100,7 @@ export class V3Engagement{
     if(!['weekly','instant'].includes(frequency))throw httpError(400,'Invalid frequency.','INVALID_FREQUENCY');
     const normalizedTopics=[...new Set(topics)];
     const emailHash=normalizedHash(address,this.env),existing=this.store.one('SELECT * FROM v3_follows WHERE email_hash=?',emailHash);
-    if(existing?.state==='active')return {accepted:true,message:'If eligible, a verification email has been sent.'};
+    if(existing?.state==='active'||existing?.state==='bounced')return {accepted:true,message:'If eligible, a verification email has been sent.'};
     const id=existing?.id||uid('follow'),token=crypto.randomBytes(32).toString('base64url'),time=now();
     const insert=()=>this.store.exec('INSERT INTO v3_follows(id,email_hash,email_cipher,topics,frequency,state,consent_version,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
       id,emailHash,encrypt(address,this.env),JSON.stringify(normalizedTopics),frequency,'pending','v3.0',time,time,time);
@@ -118,7 +118,7 @@ export class V3Engagement{
       // Don't reveal provider details or account existence publicly.
       throw httpError(502,'Verification email could not be sent. Please try again.','MAIL_FAILED');
     }
-    return {accepted:true,message:'Check your email to confirm your subscription.'};
+    return {accepted:true,message:'If eligible, a verification email has been sent.'};
   }
   verifyFollow(token){
     this.assertEnabled('FOLLOW');

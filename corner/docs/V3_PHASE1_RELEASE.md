@@ -13,7 +13,7 @@ Security:
 - Server-enforced role checks and MFA for non-owner moderators.
 - One-time expiring verification and unsubscribe tokens, hashed in SQLite.
 - No newsletter campaign sending in Phase 1; personal wish emails remain out of scope.
-- Strong session secret required if follow is enabled.
+- A stable, dedicated `CORNER_V3_FOLLOW_ENCRYPTION_KEY` of at least 32 random characters is required if following is enabled. Store in Railway secrets; do not rotate without a re-encryption migration. Generic signup responses avoid revealing subscriber existence. Bounced recipients are suppressed.
 - Additive SQLite migration on app startup; no existing table altered.
 - User account export includes V3 contributions.
 - Existing admin, public posts, realtime, scheduling, offsite backup behavior retained.

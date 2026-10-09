@@ -5,13 +5,16 @@ import { V3Engagement } from '../src/v3-engagement.mjs';
 test('V3 follows use one-use verification and unsubscribe', async t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
  const sent=[];
- const v3=new V3Engagement(store,{env:{SESSION_SECRET:'long-v3-secret-for-email-encryption-more-than-32-characters',SITE_URL:'https://example.test/corner',CORNER_V3_FOLLOW:'1'},sendMail:async mail=>sent.push(mail)});
+ const v3=new V3Engagement(store,{env:{CORNER_V3_FOLLOW_ENCRYPTION_KEY:'separate-long-random-test-key-for-v3-subscribers-2026',SESSION_SECRET:'session-secret-stays-unrelated-to-encrypted-email',SITE_URL:'https://example.test/corner',CORNER_V3_FOLLOW:'1'},sendMail:async mail=>sent.push(mail)});
  await assert.rejects(v3.follow({email:'reader@example.test'}),{code:'CONSENT_REQUIRED'});
  const pending=await v3.follow({email:'reader@example.test',consent:true,topics:['notes']});
  assert.equal(pending.accepted,true);
  assert.equal(sent.length,1);
  const verify=new URL(sent[0].text.match(/https?:\/\/[^\s]+/)[0]).hash.split('=')[1];
  assert.equal(v3.verifyFollow(verify).verified,true);
+ const again=await v3.follow({email:'reader@example.test',consent:true,topics:['notes']});
+ assert.deepEqual(again,pending,'public response does not reveal existing subscription');
+ assert.equal(sent.length,1,'already active subscriber receives no duplicate email');
  assert.throws(()=>v3.verifyFollow(verify),{code:'TOKEN_INVALID'});
  await v3.requestUnsubscribe({email:'reader@example.test'});
  assert.equal(sent.length,2);
