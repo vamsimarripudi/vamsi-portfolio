@@ -9,6 +9,7 @@ import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
 import { V3Memories } from './v3-memories.mjs';
 import {WishesStudio} from './v3-wishes.mjs';
+import {WishDelivery} from './v3-wish-delivery.mjs';
 import {wishesRoutes} from './v3-wishes-routes.mjs';
 import {wishesStudioPage} from './v3-wishes-ui.mjs';
 import {sanitizeImage} from './media-privacy.mjs';
@@ -32,6 +33,7 @@ const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 const memories=new V3Memories(store);
 const wishes=new WishesStudio(store);
+const wishDelivery=new WishDelivery(store,{sendMail:mail=>identity.sender(mail)});
 const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
@@ -144,7 +146,7 @@ function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(ow
 const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
-const handleWishes=wishesRoutes({wishes,readJSON,ok,requireOwner,limit});
+const handleWishes=wishesRoutes({wishes,delivery:wishDelivery,readJSON,ok,requireOwner,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(await handleV3(req,res,pathName,url))return;
@@ -333,7 +335,7 @@ async function route(req,res){
       try{actor=requireOwner(req,'/api/admin/posts','GET')}
       catch(error){if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error}
       wishes.requireOwner(actor);
-      return page(res,wishesStudioPage(wishes,actor),200,true);
+      return page(res,wishesStudioPage(wishes,actor,wishDelivery),200,true);
     }
     if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||'',cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/moments'&&memories.enabled())return page(res,albumsPage(memories));
@@ -365,7 +367,7 @@ async function route(req,res){
 export function createServer(){return http.createServer((req,res)=>{route(req,res).catch(err=>{log('error',{where:'unhandled',message:err?.message});if(!res.headersSent)json(res,{error:{code:'INTERNAL_ERROR',message:'Unexpected error'}},500);else res.end()})})}
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
-  const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null)}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
+  const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.

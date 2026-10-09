@@ -3,3 +3,11 @@
 Implementation: owner-only Wishes Studio behind `CORNER_V3_WISHES=0` default. Reuses the pre-existing tested per-post scheduling/recurrence engine, with drafts, private previews, optimistic edit checks, manual publishing, duplication, and archival.
 
 All owner mutations require an authenticated owner and same-origin checks. No email is sent from wish publication or a private preview. RSS/Atom publication feeds were completed earlier and remain unaffected. Real owner acceptance and email delivery remain separate gates.
+
+## Consent-aware delivery outbox
+
+- `CORNER_V3_WISH_DELIVERY=0` remains OFF by default. Only a second explicit owner action on a **published** wish queues messages, never draft save, preview or scheduling.
+- Queue recipients are restricted to already verified `v3_follows` with `state=active`, `wishes` or `all` topics, and frequency `instant` or `weekly`. Email addresses stay encrypted in SQLite; list/history responses are aggregate-only. Delivery rechecks active consent and published post state immediately before send.
+- A durable additive `v3-0004-wish-delivery` checksum-verified migration, unique post/subscriber pair, leased outbox, bounded batches, stable Resend idempotency references and exponential retry replace fire-and-forget email. A Monday 08:00 UTC weekly digest groups pending weekly wishes.
+- Messages have an expiring per-recipient one-time unsubscribe token and clear opt-in disclosure. Disabling any of the three `WISHES`, `FOLLOW`, or `WISH_DELIVERY` flags stops dispatch.
+- Actual Resend delivery and unsubscribe acceptance are **not yet externally verified**, and no subscriber is automatically enrolled. Do not enable paid/provider delivery until the opt-in sender, consent flow and production owner review are accepted.

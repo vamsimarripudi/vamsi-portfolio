@@ -79,4 +79,14 @@
    catch(e){notes(editorStatus,e.message);button.disabled=false}
   }));
  }
+
+ root.querySelectorAll('[data-v3w-notify]').forEach(button=>button.addEventListener('click',async()=>{
+  if(!confirm('Queue this published wish for verified opt-in subscribers only?'))return;
+  button.disabled=true;
+  try{
+   const result=await call('/'+encodeURIComponent(button.dataset.v3wNotify)+'/notify','POST',{confirm:true});
+   notes(editorStatus,result.queued+' opted-in deliveries queued. No email is sent without consent.');
+   button.textContent='Queued: '+result.queued;
+  }catch(e){notes(editorStatus,e.message);button.disabled=false}
+ }));
 })();

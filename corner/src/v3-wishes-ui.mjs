@@ -1,13 +1,14 @@
 import {basePage,header,footer,escapeHtml} from './ui.mjs';
 const e=escapeHtml;
-const item=(p)=>'<article class="v3w-item"><div><span class="v3w-state">'+e(p.state)+'</span><h3>'+e(p.title)+'</h3><small>'+e(p.scheduled_at||p.published_at||'Not scheduled')+'</small></div><div class="v3w-item-actions">'+
+const item=(p,deliveryAvailable=false)=>'<article class="v3w-item"><div><span class="v3w-state">'+e(p.state)+'</span><h3>'+e(p.title)+'</h3><small>'+e(p.scheduled_at||p.published_at||'Not scheduled')+'</small></div><div class="v3w-item-actions">'+
  '<button type="button" data-v3w-edit="'+e(JSON.stringify(p))+'" aria-label="Edit '+e(p.title)+'">Edit</button>'+
  '<button type="button" data-v3w-duplicate="'+e(p.id)+'">Copy</button>'+
  (p.state==='draft'||p.state==='scheduled'?'<button type="button" data-v3w-publish="'+e(p.id)+'">Publish</button>':'')+
+ (p.state==='published'&&deliveryAvailable?'<button type="button" data-v3w-notify="'+e(p.id)+'">Notify opt-ins</button>':'')+
  (p.state!=='archived'?'<button type="button" data-v3w-archive="'+e(p.id)+'">Archive</button>':'')+'</div></article>';
-export function wishesStudioPage(wishes,actor){
+export function wishesStudioPage(wishes,actor,delivery=null){
  wishes.requireOwner(actor);
- const records=wishes.list(actor),drafts=records.filter(p=>p.state==='draft').length;
+ const deliveryAvailable=!!delivery?.enabled(),records=wishes.list(actor),drafts=records.filter(p=>p.state==='draft').length;
  const scheduled=records.filter(p=>p.state==='scheduled').length;
  const live=records.filter(p=>p.state==='published').length;
  const editor='<form class="v3w-form" data-v3w-form><h2>Compose a wish</h2>'+
@@ -33,11 +34,11 @@ export function wishesStudioPage(wishes,actor){
   '<small>No preview or draft sends email. Publication is an explicit owner action.</small></section>';
  const list='<section class="v3w-panel"><div class="v3w-section-title"><div><span class="v3w-overline">EDITORIAL WORKFLOW</span>'+
   '<h2>Wish library</h2></div><span>'+records.length+' total</span></div>'+
-  (records.length?records.map(item).join(''):'<div class="v3w-empty"><span aria-hidden="true">✳</span><p>No wishes yet. Save your first draft.</p></div>')+'</section>';
+  (records.length?records.map(p=>item(p,deliveryAvailable)).join(''):'<div class="v3w-empty"><span aria-hidden="true">✳</span><p>No wishes yet. Save your first draft.</p></div>')+'</section>';
  const body=header()+'<main id="content" class="shell v3w-page" data-wish-studio>'+
   '<a href="/admin" class="v3w-back">← Studio</a><div class="v3w-heading"><span class="v3w-overline">THE CORNER / PRIVATE STUDIO</span>'+
   '<h1>Wishes<span>.</span></h1><p>Write with intention. Schedule quietly. Publish when ready.</p></div>'+
-  '<div class="v3w-statline"><span>'+drafts+' drafts</span><span>'+scheduled+' scheduled</span><span>'+live+' published</span></div>'+
+  '<div class="v3w-statline"><span>'+drafts+' drafts</span><span>'+scheduled+' scheduled</span><span>'+live+' published</span><span>'+(deliveryAvailable?'OPT-IN MAIL READY':'EMAIL UPDATES OFF')+'</span></div>'+
   '<div class="v3w-grid"><div>'+editor+schedule+'</div>'+preview+'</div>'+list+'</main>'+footer();
  return basePage({title:'Wishes Studio',path:'/admin/v3/wishes',content:body,noindex:true,initial:{page:'wishes'}});
 }
