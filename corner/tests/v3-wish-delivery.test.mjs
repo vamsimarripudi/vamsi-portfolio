@@ -94,6 +94,10 @@ test('consent-filtered campaigns include eligible followers after hundreds of un
   'INSERT INTO v3_follows(id,email_hash,email_cipher,topics,frequency,state,consent_version,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)');
  for(let n=0;n<510;n++)insert.run(
   'nonwish_'+String(n).padStart(4,'0'),'hash_unrelated_'+n,'encrypted_stub','["notes"]','weekly','active','v3.0',stamp,stamp,stamp);
+ // JSON strings and objects are syntactically valid but never constitute
+ // a valid topics array; malformed legacy rows must not consume the quota.
+ for(let n=0;n<510;n++)insert.run(
+  'scalar_'+String(n).padStart(4,'0'),'hash_scalar_'+n,'encrypted_stub','"wishes"','instant','active','v3.0',stamp,stamp,stamp);
  insert.run('zzzz_eligible','hash_unique_opt_in','encrypted_stub','["wishes"]','instant','active','v3.0',stamp,stamp,stamp);
  insert.run('zzzz_invalid','hash_invalid_topics','encrypted_stub','not-json','weekly','active','v3.0',stamp,stamp,stamp);
  const post=wishes.create(owner,{title:'A safe greeting',body:'For a special occasion'});
