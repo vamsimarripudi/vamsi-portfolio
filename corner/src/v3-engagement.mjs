@@ -136,6 +136,37 @@ export class V3Engagement{
     });
     return {verified:activated};
   }
+  async requestUnsubscribe({email}={}){
+    this.assertEnabled('FOLLOW');
+    const address=safeEmail(email),idHash=normalizedHash(address,this.env);
+    const row=this.store.one("SELECT * FROM v3_follows WHERE email_hash=? AND state='active'",idHash);
+    if(!row)return {accepted:true};
+    if(!this.sendMail)throw httpError(503,'Email is unavailable.','MAIL_UNAVAILABLE');
+    const token=crypto.randomBytes(32).toString('base64url'),time=now();
+    this.store.transaction(()=>{
+      this.store.exec("UPDATE v3_follow_tokens SET consumed_at=? WHERE follow_id=? AND purpose='unsubscribe' AND consumed_at IS NULL",time,row.id);
+      this.store.exec("INSERT INTO v3_follow_tokens(id,follow_id,purpose,token_hash,expires_at,created_at) VALUES(?,?,?,?,?,?)",uid('token'),row.id,'unsubscribe',hashToken(token),dateAfter(24),time);
+    });
+    const link=(this.env.SITE_URL||'http://localhost:4141').replace(/\/$/,'')+'/follow/unsubscribe#token='+encodeURIComponent(token);
+    await this.sendMail({to:address,subject:'Manage your Vamsi’s Corner subscription',text:'Open this link to unsubscribe from publication updates: '+link+'\nThe link expires in 24 hours.',reference:'corner-v3-unsubscribe-'+row.id+'-'+time});
+    return {accepted:true};
+  }
+  unsubscribeFollow(token){
+    this.assertEnabled('FOLLOW');
+    const time=now(),hash=hashToken(String(token||''));
+    if(String(token||'').length<30)throw httpError(400,'Invalid or expired link.','TOKEN_INVALID');
+    let result;
+    this.store.transaction(()=>{
+      const row=this.store.one("SELECT * FROM v3_follow_tokens WHERE token_hash=? AND purpose='unsubscribe' AND consumed_at IS NULL AND expires_at>?",hash,time);
+      if(!row)throw httpError(400,'Invalid or expired link.','TOKEN_INVALID');
+      this.store.exec('UPDATE v3_follow_tokens SET consumed_at=? WHERE id=?',time,row.id);
+      this.store.exec("UPDATE v3_follows SET state='unsubscribed',updated_at=?,revoked_at=? WHERE id=?",time,time,row.follow_id);
+      this.store.exec("UPDATE v3_follow_tokens SET consumed_at=? WHERE follow_id=? AND consumed_at IS NULL",time,row.follow_id);
+      this.store.exec("INSERT INTO v3_follow_consent(id,follow_id,event,notice_version,recorded_at) VALUES(?,?,?,?,?)",uid('consent'),row.follow_id,'unsubscribed','v3.0',time);
+      result={unsubscribed:true};
+    });
+    return result;
+  }
   reading(actor,postId,progress){
     this.assertEnabled('READING');
     if(!actor||actor.role!=='member')throw httpError(401,'Member login required.','AUTH_REQUIRED');
