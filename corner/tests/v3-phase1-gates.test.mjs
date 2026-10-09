@@ -12,7 +12,7 @@ import { applyV3Migrations } from '../src/v3-migrations.mjs';
 import { guestbookModerationPage,followPage,searchPage } from '../src/v3-ui.mjs';
 import { passwordHash } from '../src/auth.mjs';
 
-const flags={SESSION_SECRET:'test-only-phase1-session-key-longer-than-32-characters',CORNER_V3_SEARCH:'1',CORNER_V3_GUESTBOOK:'1',CORNER_V3_READING:'1',CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_KEY:'test-stable-follow-key-of-sufficient-length-2026',SESSION_SECRET:'strong-session-secret-for-unit-test-2026'};
+const flags={CORNER_V3_SEARCH:'1',CORNER_V3_GUESTBOOK:'1',CORNER_V3_READING:'1',CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_KEY:'test-stable-follow-key-of-sufficient-length-2026',SESSION_SECRET:'strong-session-secret-for-unit-test-2026'};
 const seed=store=>{
   const p=store.createPost({title:'Published memory',body:'Publicly readable note',type:'tech_note',tags:['Life']},'test');
   store.publish(p.id,'test');return p;
