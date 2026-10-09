@@ -33,7 +33,7 @@ test('separate encryption key survives session rotation and bounces suppress sen
  const v3=new V3Engagement(store,{env:originalEnv,sendMail:async item=>sent.push(item)});
  const first=await v3.follow({email:'rotated@example.test',consent:true});
  assert.equal(first.accepted,true);
- const link=new URL(sent[0].text.match(/https?:\\/\\/[^\\s]+/)[0]);
+ const link=new URL(sent[0].text.split('opening ')[1].split(String.fromCharCode(10))[0]);
  v3.verifyFollow(link.hash.slice(7));
  const afterRotation=new V3Engagement(store,{env:{...originalEnv,SESSION_SECRET:'second-session-secret-after-rotation'},sendMail:async item=>sent.push(item)});
  const existing=await afterRotation.follow({email:'rotated@example.test',consent:true});
