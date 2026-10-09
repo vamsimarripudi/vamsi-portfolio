@@ -12,6 +12,12 @@ All owner mutations require an authenticated owner and same-origin checks. No em
 - Messages have an expiring per-recipient one-time unsubscribe token and clear opt-in disclosure. Disabling any of the three `WISHES`, `FOLLOW`, or `WISH_DELIVERY` flags stops dispatch.
 - Actual Resend delivery and unsubscribe acceptance are **not yet externally verified**, and no subscriber is automatically enrolled. Do not enable paid/provider delivery until the opt-in sender, consent flow and production owner review are accepted.
 
+## Subscriber eligibility and delivery capacity
+
+- Campaign selection scans all active subscriptions for `all`/`wishes` JSON topics in SQLite before applying the 500-recipient cap, rather than discarding eligible recipients because the first 501 active subscriptions were unrelated.
+- Malformed legacy topic JSON fails closed, and exceeding the campaign cap refuses the entire batch before inserting anything. Verified opt-in, explicit owner approval, encrypted addresses, idempotency and unsubscribe rules remain unchanged.
+- Sending stays disabled in production until stable follow-key configuration and real provider/consent acceptance are verified.
+
 ## Resend provider reconciliation (Phase 3 hardening)
 
 - Signed Resend webhooks use the raw body plus `svix-id`, `svix-timestamp` and `svix-signature` HMAC verification (five-minute timestamp tolerance), with replay-id deduplication. Only delivery state identifiers are persisted; no raw webhook bodies or subscriber emails are stored.
