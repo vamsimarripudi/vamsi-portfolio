@@ -86,3 +86,34 @@ test('weekly opt-in waits until next weekly digest window and retains one recipi
  assert.equal(sent.length,2);
  assert.match(sent[1].subject,/weekly/i);
 });
+
+test('consent-filtered campaigns include eligible followers after hundreds of unrelated active subscribers',t=>{
+ const {store,wishes,delivery}=setup(t);
+ const stamp=new Date().toISOString();
+ const insert=store.db.prepare(
+  'INSERT INTO v3_follows(id,email_hash,email_cipher,topics,frequency,state,consent_version,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)');
+ for(let n=0;n<510;n++)insert.run(
+  'nonwish_'+String(n).padStart(4,'0'),'hash_unrelated_'+n,'encrypted_stub','["notes"]','weekly','active','v3.0',stamp,stamp,stamp);
+ insert.run('zzzz_eligible','hash_unique_opt_in','encrypted_stub','["wishes"]','instant','active','v3.0',stamp,stamp,stamp);
+ insert.run('zzzz_invalid','hash_invalid_topics','encrypted_stub','not-json','weekly','active','v3.0',stamp,stamp,stamp);
+ const post=wishes.create(owner,{title:'A safe greeting',body:'For a special occasion'});
+ wishes.publish(owner,post.id);
+ const result=delivery.enqueue(owner,post.id,{confirm:true});
+ assert.equal(result.queued,1,'The eligible subscriber must not be omitted by unrelated active followers');
+ assert.equal(result.skipped,0);
+ assert.equal(store.one("SELECT follow_id FROM v3_wish_outbox").follow_id,'zzzz_eligible');
+ assert.equal(delivery.snapshot(owner).queued,1);
+});
+test('campaigns refuse over 500 eligible recipients without partially queuing messages',t=>{
+ const {store,wishes,delivery}=setup(t);
+ const stamp=new Date().toISOString();
+ const insert=store.db.prepare(
+  'INSERT INTO v3_follows(id,email_hash,email_cipher,topics,frequency,state,consent_version,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)');
+ for(let n=0;n<501;n++)insert.run(
+  'verified_'+String(n).padStart(4,'0'),'eligible_hash_'+n,'encrypted_stub','["all"]','instant','active','v3.0',stamp,stamp,stamp);
+ const post=wishes.create(owner,{title:'A happy message',body:'Hope the day goes well'});
+ wishes.publish(owner,post.id);
+ assert.throws(()=>delivery.enqueue(owner,post.id,{confirm:true}),{code:'RECIPIENT_LIMIT'});
+ assert.equal(store.one('SELECT COUNT(*) n FROM v3_wish_outbox').n,0,'Capacity limits must be atomic');
+});
+
