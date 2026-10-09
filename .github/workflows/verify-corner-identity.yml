@@ -29,6 +29,7 @@ jobs:
           npm run lint
           npm test
           npm run build
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
           cd corner
           npm run check
       - name: Install Chromium for responsive account test

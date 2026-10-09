@@ -27,6 +27,7 @@ test('Phase 2 real HTTP: private owner APIs, public-only content, CSRF and Now h
  assert.equal((await call('/admin/v3/memories')).status,401);
  assert.equal((await call('/api/v1/admin/v3/memories')).status,401);
  assert.equal((await call('/api/v1/admin/v3/milestones','POST',{title:'New moment',occurredOn:'2026-10-09',state:'published'})).status,401);
+ assert.equal((await call('/api/v1/admin/v3/memories/backup-audit','POST',{})).status,401);
  const auth=await call('/api/v1/admin/login','POST',{email:env.ADMIN_EMAIL,password:'Track-Strong-Owner-Passphrase-2026!'});
  assert.equal(auth.status,200);
  const cookie=auth.headers.get('set-cookie')?.split(';')[0];assert.ok(cookie);

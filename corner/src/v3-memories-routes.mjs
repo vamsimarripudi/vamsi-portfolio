@@ -1,4 +1,5 @@
 import { httpError } from './domain.mjs';
+import {auditLatestOffsiteMigration} from './v3-restore-audit.mjs';
 const id=/^[a-z]+_[0-9a-f-]{36}$/i;
 export function memoriesRoutes({memories,readJSON,ok,limit,requireOwner}){
  const owner=(req,method)=>{
@@ -25,6 +26,13 @@ export function memoriesRoutes({memories,readJSON,ok,limit,requireOwner}){
      !path.startsWith('/api/admin/v3/milestones')&&
      !path.startsWith('/api/admin/v3/albums')&&
      !path.startsWith('/api/admin/v3/collections'))return false;
+  if(path==='/api/admin/v3/memories/backup-audit'){
+   if(method!=='POST')throw httpError(405,'Method not allowed.','METHOD_NOT_ALLOWED');
+   const actor=requireOwner(req,'/api/admin/settings','GET');
+   if(actor.role!=='owner')throw httpError(403,'Owner access required.','OWNER_REQUIRED');
+   limit(req,'v3-backup-audit',3,3600);
+   ok(res,await auditLatestOffsiteMigration());return true;
+  }
   const actor=owner(req,method);
   if(path==='/api/admin/v3/memories'&&method==='GET'){ok(res,{
    milestones:memories.adminMilestones(actor),albums:memories.adminAlbums(actor),

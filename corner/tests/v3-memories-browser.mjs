@@ -72,6 +72,12 @@ try{
     assert.equal(decoded.naturalHeight,84,'Gallery dimensions match fixture '+width+' '+url);
     assert.ok(decoded.alt?.length>3,'Gallery has descriptive alt text '+width+' '+url);
     assert.ok(decoded.src.includes('/corner/media/'),'Gallery uses the media endpoint '+width+' '+url);
+    const variant=url==='/moments'?'card':'tile';
+    assert.ok(decoded.src.includes('?variant='+variant),'Gallery uses bounded WebP photo variants');
+    const encoded=await page.request.get(decoded.src);
+    assert.equal(encoded.status(),200);
+    assert.match(encoded.headers()['content-type'],/^image\/webp/,'Preview is WebP');
+    assert.ok((await encoded.body()).length<=(variant==='card'?300000:160000),'Preview fits byte budget');
    }
    assert.deepEqual(errors,[],width+' '+url+' no JS errors');
    if((width===375||width===1366)&&['/timeline','/moments','/collections'].includes(url)){

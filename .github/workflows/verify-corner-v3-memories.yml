@@ -4,6 +4,10 @@ on:
     paths:
       - 'corner/src/v3-memories*'
       - 'corner/src/media-privacy.mjs'
+      - 'corner/src/v3-image-derivatives.mjs'
+      - 'corner/src/v3-restore-audit.mjs'
+      - 'corner/tests/v3-image-derivatives.test.mjs'
+      - 'corner/tests/v3-real-backup-audit.test.mjs'
       - 'corner/public/v3-memories.*'
       - 'corner/tests/v3-memories-browser.mjs'
       - '.github/workflows/verify-corner-v3-memories.yml'
@@ -11,6 +15,10 @@ on:
     paths:
       - 'corner/src/v3-memories*'
       - 'corner/src/media-privacy.mjs'
+      - 'corner/src/v3-image-derivatives.mjs'
+      - 'corner/src/v3-restore-audit.mjs'
+      - 'corner/tests/v3-image-derivatives.test.mjs'
+      - 'corner/tests/v3-real-backup-audit.test.mjs'
       - 'corner/public/v3-memories.*'
       - 'corner/tests/v3-memories-browser.mjs'
       - '.github/workflows/verify-corner-v3-memories.yml'
@@ -27,6 +35,8 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Install Corner image processor
+        run: npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
       - name: Verify current Corner unit and API regressions
         working-directory: corner
         run: npm run check

@@ -9,6 +9,7 @@ import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
 import { V3Memories } from './v3-memories.mjs';
 import {sanitizeImage} from './media-privacy.mjs';
+import {ImageDerivatives} from './v3-image-derivatives.mjs';
 import { memoriesRoutes } from './v3-memories-routes.mjs';
 import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
 import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
@@ -25,6 +26,7 @@ store.bootstrap(config.adminEmail,config.adminHash);
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 const memories=new V3Memories(store);
+const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -104,7 +106,7 @@ function imageDimensions(buf,mime){
   }catch{}
   return null;
 }
-function mediaFile(req,res,key){
+async function mediaFile(req,res,key,variant=''){
   if(!/^[a-zA-Z0-9_-]{6,80}\.(png|jpg|webp|gif|mp4|webm)$/.test(key))throw httpError(404,'Not found');
   const media=store.one('SELECT * FROM media WHERE storage_key=?',key);if(!media)throw httpError(404,'Not found');
   const visible=store.one("SELECT id FROM posts WHERE (id=? OR parent_post_id=?) AND state='published' LIMIT 1",media.owner_id,media.owner_id);
@@ -112,7 +114,15 @@ function mediaFile(req,res,key){
   const filename=path.resolve(config.uploads,key);
   if(!filename.startsWith(config.uploads+path.sep)||!fs.existsSync(filename))throw httpError(404,'Not found');
   const stat=fs.statSync(filename);
-  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=31536000,immutable':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
+  if(variant){
+    if(!memories.enabled()||!visible||!memories.allowedMedia(media.id))throw httpError(404,'Photograph unavailable.','NOT_FOUND');
+    limit(req,'v3-image-preview',120,60);
+    const image=await imageDerivatives.preview({filename,key,variant});
+    const headers={'content-type':image.mime,'cache-control':'public,max-age=60,must-revalidate','etag':image.etag,'x-content-type-options':'nosniff'};
+    if(req.headers['if-none-match']===image.etag)return end(res,304,'',headers);
+    return end(res,200,req.method==='HEAD'?'':image.bytes,{...headers,'content-length':image.bytes.length});
+  }
+  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=60,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
   const range=req.headers.range?.match(/^bytes=(\d*)-(\d*)$/);
   if(req.headers.range&&!range)throw httpError(416,'Unsupported media range');
   if(range){const start=range[1]?Number(range[1]):Math.max(0,stat.size-Number(range[2]||0));const endByte=range[1]?(range[2]?Number(range[2]):stat.size-1):stat.size-1;
@@ -267,7 +277,7 @@ async function route(req,res){
     if(pathname.startsWith('/api/'))return await api(req,res,pathname,url);
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
-    if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return mediaFile(req,res,pathname.split('/').at(-1));}
+    if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){

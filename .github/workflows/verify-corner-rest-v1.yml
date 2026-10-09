@@ -33,6 +33,8 @@ jobs:
         run: npm test
       - name: Portfolio build
         run: npm run build
+      - name: Install Corner image processor
+        run: npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
       - name: Corner API, media, scheduling, backup and REST v1 tests
         working-directory: corner
         run: npm run check

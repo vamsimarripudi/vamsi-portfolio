@@ -88,6 +88,7 @@ const routes=[
 ["get","/api/v1/memories/collections/{slug}","getReadingCollection","Read series"],
 ["get","/api/v1/memories/now/history","getPublicNowHistory","Published Now history"],
 ["get","/api/v1/admin/v3/memories","getOwnerMemories","Memories Studio data"],
+["post","/api/v1/admin/v3/memories/backup-audit","auditOwnerOffsiteBackup","Isolated private offsite backup migration rehearsal"],
 ["get","/api/v1/admin/v3/milestones","getOwnerMilestones","Owner milestones"],
 ["post","/api/v1/admin/v3/milestones","createMilestone","Create milestone"],
 ["patch","/api/v1/admin/v3/milestones/{id}","editMilestone","Edit milestone"],
@@ -118,7 +119,7 @@ for(const [method,url,id,summary] of routes){
  }
  if(url.startsWith('/api/v1/me'))op.security=[{memberSession:[]},{ownerSession:[]}];
  if(url.includes('/admin/')&&!['signInOwner','loginStaff','registerInvitedStaff'].includes(id))op.security=[{ownerSession:[]}];
- if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
+ if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost','auditOwnerOffsiteBackup'].includes(id))op.requestBody={required:true,content:json};
  if(id==='uploadMedia')op.requestBody={required:true,content:{'image/png':{schema:{type:'string',format:'binary'}},'image/jpeg':{schema:{type:'string',format:'binary'}},'video/mp4':{schema:{type:'string',format:'binary'}}}};
  if(id==='createPost')op.responses['201']=reply('Created; Location header points to resource');
  if(id==='getReadiness')op.responses['503']=reply('Storage unavailable');

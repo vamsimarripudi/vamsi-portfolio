@@ -32,7 +32,7 @@ export class V3Engagement{
     this.env=env;
     this.sendMail=sendMail||null;
     if(this.enabled('FOLLOW')&&String(env.SESSION_SECRET||'').length<32)throw new Error('Strong SESSION_SECRET required before enabling follower email storage');
-    applyV3Migrations(store);
+    applyV3Migrations(store,{env});
   }
   enabled(feature){return flag(this.env,'CORNER_V3_'+feature)}
   assertEnabled(feature){if(!this.enabled(feature))throw httpError(404,'This feature is not available.','FEATURE_DISABLED')}

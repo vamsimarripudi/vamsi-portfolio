@@ -42,3 +42,11 @@ Physical thumbnail generation/resizing is not yet included. Images are lazy-load
 
 - CI now snapshots a disposable Phase 1 SQLite database with a published story and uploaded file, verifies manifest checksums, restores into an isolated directory, applies migration `v3-0003-memories`, validates SQLite integrity, and confirms existing content/media survive.
 - This synthetic rehearsal **does not** demonstrate migration safety for a fresh copy of the private production snapshot. Keep real backup-restore acceptance and gallery derivative performance gates open.
+
+## Server-side previews and production data-safety gate
+
+- Photographs are served as metadata-free WebP derivatives in fixed widths: tile 440px (160 KiB max), card 720px (300 KB max), viewer 1600px (950 KB max). Sharp decodes and strips sensitive metadata, and over-budget conversions fail closed. Up to 32 MiB of generated previews are cached in process, not stored alongside original media or private backups.
+- Media publication state is rechecked on each HTTP request. Originals and previews revalidate after 60 seconds, reducing stale caching when archived. New tests assert decoded images actually use the optimized endpoints.
+- Production start-up while `CORNER_V3_MEMORIES=0` skips migration `v3-0003-memories`. The migration only runs when explicitly enabled, preserving the existing schema until a real backup rehearsal succeeds.
+- An **owner-only, Origin-protected** POST `/corner/api/v1/admin/v3/memories/backup-audit` can rehearse the latest complete offsite Railway snapshot on an isolated temporary filesystem, verifying SHA256 file hashes, SQLite integrity/foreign keys and preserved record counts before and after Phase 2 migration. Results contain summary only, never PII or original snapshot bytes.
+- CI tests this workflow with a synthetic offsite bucket; the actual private Railway snapshot must still be rehearsed from the deployed service before enabling public Memories. Flag remains OFF and draft PR remains unmerged until validation.
