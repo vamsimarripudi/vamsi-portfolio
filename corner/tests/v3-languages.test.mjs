@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Store} from '../src/store.mjs';
+import {V3Engagement} from '../src/v3-engagement.mjs';
+import {V3Languages} from '../src/v3-languages.mjs';
+import {languageStudioPage} from '../src/v3-languages-ui.mjs';
+
+const actor={id:'owner',role:'owner'},disabled={CORNER_V3_LANGUAGES:'0'};
+const enabled={CORNER_V3_LANGUAGES:'1',SESSION_SECRET:'language-tests-use-a-long-enough-secret'};
+test('language variants are disabled by default with no schema mutation',t=>{
+ const store=new Store(':memory:');t.after(()=>store.close());
+ const l=new V3Languages(store,{env:disabled});
+ assert.throws(()=>l.list(actor),{code:'FEATURE_DISABLED'});
+ assert.equal(store.one("SELECT name FROM sqlite_master WHERE name='v3_language_variants'"),null);
+});
+test('owner-reviewed translations require explicit approval, current source and correct role',t=>{
+ const store=new Store(':memory:');t.after(()=>store.close());
+ new V3Engagement(store,{env:enabled});
+ const langs=new V3Languages(store,{env:enabled});
+ const original=store.createPost({title:'A personal note',body:'A beginning of something great.'},actor.id);
+ const published=store.publish(original.id,actor.id);
+ assert.throws(()=>langs.save({id:'member',role:'member'},{postId:published.id,language:'te',title:'అందమైన నోటు',body:'ఇది ఒక ప్రారంభం'}),{code:'OWNER_REQUIRED'});
+ assert.throws(()=>langs.save(actor,{postId:published.id,language:'xx',title:'Other',body:'Wrong locale'}),{code:'INVALID_LANGUAGE'});
+ assert.deepEqual(langs.localize(store.getPost(published.slug),'te').available,['en']);
+ const drafted=langs.save(actor,{postId:published.id,language:'te',title:'తెలుగు శీర్షిక',excerpt:'చిన్న నోటు',body:'ఇది ఒక కొత్త ప్రారంభం'});
+ assert.equal(drafted.state,'draft');
+ assert.deepEqual(langs.available(store.getPost(published.slug)),['en']);
+ assert.throws(()=>langs.review(actor,published.id,'te',{publish:true}),{code:'REVIEW_REQUIRED'});
+ assert.equal(langs.review(actor,published.id,'te',{publish:true,confirm:true,revision:drafted.revision}).state,'published');
+ assert.throws(()=>langs.review(actor,published.id,'te',{publish:true,confirm:true,revision:drafted.revision}),{code:'VERSION_CONFLICT'});
+ assert.ok(langs.available(store.getPost(published.slug)).includes('te'));
+ const translated=langs.localize(store.getPost(published.slug),'te');
+ assert.equal(translated.language,'te');assert.match(translated.post.title,/తెలుగు/);
+ assert.match(languageStudioPage(langs,actor),/Languages/);
+ assert.throws(()=>langs.save(actor,{postId:published.id,language:'te',title:'Stale change',body:'Changed',revision:1}),{code:'VERSION_CONFLICT'});
+ const fresh=langs.list(actor)[0];
+ assert.equal(langs.save(actor,{postId:published.id,language:'te',title:'Revised translation',body:'Carefully reviewed again',revision:fresh.revision}).state,'draft');
+ assert.equal(langs.localize(store.getPost(published.slug),'te').language,'en');
+ const after=langs.list(actor)[0];assert.equal(after.needsReview,false);
+ langs.review(actor,published.id,'te',{confirm:true,publish:true,revision:after.revision});
+ store.archive(published.id,actor.id);
+ assert.equal(langs.available(store.getPost(published.slug)).length,1);
+});
+test('editing the original source hides translations until fresh manual approval',t=>{
+ const s=new Store(':memory:');t.after(()=>s.close());
+ new V3Engagement(s,{env:enabled});
+ const l=new V3Languages(s,{env:enabled});
+ let p=s.createPost({title:'A new story',body:'Original published words.'},actor.id);p=s.publish(p.id,actor.id);
+ l.save(actor,{postId:p.id,language:'hi',title:'एक नई कहानी',body:'शब्दों का एक नया रूप'});
+ l.review(actor,p.id,'hi',{confirm:true,revision:l.list(actor)[0].revision});
+ assert.equal(l.localize(s.getPost(p.slug),'hi').language,'hi');
+ s.savePost(p.id,{title:'New edited story',body:'Changed words',version:p.version},actor.id);
+ assert.equal(l.localize(s.getPost(p.slug),'hi').language,'en');
+ assert.equal(l.list(actor)[0].needsReview,true);
+ assert.throws(()=>l.review(actor,p.id,'hi',{confirm:true,revision:l.list(actor)[0].revision}),{code:'SOURCE_NOT_REVIEWED'});
+});

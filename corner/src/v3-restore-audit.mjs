@@ -9,6 +9,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {bucketFromEnv} from './s3-client.mjs';
 import {Store} from './store.mjs';
 import {applyV3Migrations} from './v3-migrations.mjs';
+import {V3Languages} from './v3-languages.mjs';
 const run=promisify(execFile);
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
@@ -65,12 +66,16 @@ export async function auditLatestOffsiteMigration({storage=bucketFromEnv(),maxAg
   try{
    const versions=applyV3Migrations(upgraded,{env:{NODE_ENV:'test',CORNER_V3_MEMORIES:'1'}});
    if(!versions.includes('v3-0003-memories'))throw new Error('Phase 2 migration not applied');
+   // Phase 4 is independently rehearsed on the same isolated copy, never the live DB.
+   new V3Languages(upgraded,{env:{NODE_ENV:'test',CORNER_V3_LANGUAGES:'1'}});
+   if(!upgraded.one("SELECT version FROM v3_schema_migrations WHERE version='v3-0005-languages'"))
+    throw new Error('Phase 4 language migration not applied');
    if(upgraded.db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw new Error('Upgraded SQLite integrity failed');
    if(upgraded.db.prepare('PRAGMA foreign_key_check').all().length)throw new Error('Upgraded SQLite foreign keys invalid');
    const after=counts(upgraded.db);
    for(const [table,n] of Object.entries(before))if(after[table]!==n)throw new Error('Existing records changed during isolated migration: '+table);
   }finally{upgraded.close()}
-  return {verified:true,source:'completed offsite backup',rehearsed:true,phase2Migration:true,
+  return {verified:true,source:'completed offsite backup',rehearsed:true,phase2Migration:true,phase4LanguagesMigration:true,
    sqliteIntegrity:'ok',foreignKeys:'ok',dataPreserved:true,filesVerified:names.length,
    bytesVerified:transferred,backupCreatedAt:manifest.createdAt,completedAt:clock().toISOString()};
  }finally{fs.rmSync(tmp,{recursive:true,force:true})}

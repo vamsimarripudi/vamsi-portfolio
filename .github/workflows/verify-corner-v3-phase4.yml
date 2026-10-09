@@ -1,0 +1,58 @@
+name: Verify Corner V3 Phase 4 privacy, languages and accessibility
+on:
+  push:
+    paths:
+      - 'corner/src/v3-insights*'
+      - 'corner/src/v3-languages*'
+      - 'corner/src/v3-language-schema.sql'
+      - 'corner/public/v3-phase4.*'
+      - 'corner/tests/v3-insights*'
+      - 'corner/tests/v3-languages*'
+      - 'corner/tests/v3-phase4*'
+      - '.github/workflows/verify-corner-v3-phase4.yml'
+  pull_request:
+    paths:
+      - 'corner/src/v3-insights*'
+      - 'corner/src/v3-languages*'
+      - 'corner/src/v3-language-schema.sql'
+      - 'corner/public/v3-phase4.*'
+      - 'corner/tests/v3-insights*'
+      - 'corner/tests/v3-languages*'
+      - 'corner/tests/v3-phase4*'
+      - '.github/workflows/verify-corner-v3-phase4.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build and test all phases and API security
+        run: |
+          npm ci
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm run lint
+          npm test
+          npm run build
+          cd corner && npm run check
+      - name: Install browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Private owner Insights, language review and five responsive sizes
+        working-directory: corner
+        run: node --no-warnings tests/v3-phase4-browser.mjs
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-v3-phase4-responsive
+          path: /tmp/corner-v3-phase4-*.png
+          retention-days: 3
+          if-no-files-found: ignore
