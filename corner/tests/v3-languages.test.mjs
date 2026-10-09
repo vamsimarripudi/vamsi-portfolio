@@ -26,7 +26,8 @@ test('owner-reviewed translations require explicit approval, current source and 
  assert.equal(drafted.state,'draft');
  assert.deepEqual(langs.available(store.getPost(published.slug)),['en']);
  assert.throws(()=>langs.review(actor,published.id,'te',{publish:true}),{code:'REVIEW_REQUIRED'});
- assert.equal(langs.review(actor,published.id,'te',{publish:true,confirm:true}).state,'published');
+ assert.equal(langs.review(actor,published.id,'te',{publish:true,confirm:true,revision:drafted.revision}).state,'published');
+ assert.throws(()=>langs.review(actor,published.id,'te',{publish:true,confirm:true,revision:drafted.revision}),{code:'VERSION_CONFLICT'});
  assert.ok(langs.available(store.getPost(published.slug)).includes('te'));
  const translated=langs.localize(store.getPost(published.slug),'te');
  assert.equal(translated.language,'te');assert.match(translated.post.title,/తెలుగు/);
@@ -36,7 +37,7 @@ test('owner-reviewed translations require explicit approval, current source and 
  assert.equal(langs.save(actor,{postId:published.id,language:'te',title:'Revised translation',body:'Carefully reviewed again',revision:fresh.revision}).state,'draft');
  assert.equal(langs.localize(store.getPost(published.slug),'te').language,'en');
  const after=langs.list(actor)[0];assert.equal(after.needsReview,false);
- langs.review(actor,published.id,'te',{confirm:true,publish:true});
+ langs.review(actor,published.id,'te',{confirm:true,publish:true,revision:after.revision});
  store.archive(published.id,actor.id);
  assert.equal(langs.available(store.getPost(published.slug)).length,1);
 });
@@ -46,10 +47,10 @@ test('editing the original source hides translations until fresh manual approval
  const l=new V3Languages(s,{env:enabled});
  let p=s.createPost({title:'A new story',body:'Original published words.'},actor.id);p=s.publish(p.id,actor.id);
  l.save(actor,{postId:p.id,language:'hi',title:'एक नई कहानी',body:'शब्दों का एक नया रूप'});
- l.review(actor,p.id,'hi',{confirm:true});
+ l.review(actor,p.id,'hi',{confirm:true,revision:l.list(actor)[0].revision});
  assert.equal(l.localize(s.getPost(p.slug),'hi').language,'hi');
  s.savePost(p.id,{title:'New edited story',body:'Changed words',version:p.version},actor.id);
  assert.equal(l.localize(s.getPost(p.slug),'hi').language,'en');
  assert.equal(l.list(actor)[0].needsReview,true);
- assert.throws(()=>l.review(actor,p.id,'hi',{confirm:true}),{code:'SOURCE_NOT_REVIEWED'});
+ assert.throws(()=>l.review(actor,p.id,'hi',{confirm:true,revision:l.list(actor)[0].revision}),{code:'SOURCE_NOT_REVIEWED'});
 });

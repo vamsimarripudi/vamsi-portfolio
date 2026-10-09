@@ -26,3 +26,7 @@ Phase 4 is an additive implementation following the Phase 3 merge. Flags default
 
 - CI enforces total first-party baseline CSS below **90 KB** and JS below **24 KB** (uncompressed) and optional Wishes below **18 KB**, Phase 4 below **13 KB**. Owner-only assets must not load on regular public pages; third-party analytics script tags are disallowed.
 - Gallery continues enforcing server-side physical WebP dimensions/bytes and strict variant names. Synthetic responsive acceptance checks 320, 375, 768, 1366 and 1920 pixels, keyboard navigation, and reduced motion. These CI budgets are not a claim of real-device Core Web Vitals measurement.
+
+## Optimistic review safety
+
+Language publish and revoke operations require the translation revision visible when the owner initiated approval. An out-of-date browser tab receives HTTP 409, instead of approving or revoking a translation altered elsewhere. Every accepted review returns the new revision. Source-article version checks and explicit human approval remain unchanged.

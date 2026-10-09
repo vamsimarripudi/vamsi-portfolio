@@ -60,12 +60,18 @@ test('Phase 4 actual HTTP: owner-private insights and human-reviewed translation
  assert.equal((await call('/api/v1/admin/v3/languages',{method:'POST',cookie,body:draft,originHeader:false})).status,403);
  const created=await call('/api/v1/admin/v3/languages',{method:'POST',cookie,body:draft});
  assert.equal(created.status,200);
- assert.equal((await created.json()).data.state,'draft');
+ const createdData=(await created.json()).data;
+ assert.equal(createdData.state,'draft');
+ assert.equal(createdData.revision,1);
  const hidden=await call('/post/'+published.slug+'?lang=te');
  assert.doesNotMatch(await hidden.text(),/తెలుగు శీర్షిక/,'Draft must not be in public HTML');
  const review=await call('/api/v1/admin/v3/languages/'+published.id+'/te/publish',
-  {method:'POST',cookie,body:{confirm:true}});
- assert.equal(review.status,200);assert.equal((await review.json()).data.state,'published');
+  {method:'POST',cookie,body:{confirm:true,revision:createdData.revision}});
+ assert.equal(review.status,200);
+ const reviewed=(await review.json()).data;
+ assert.equal(reviewed.state,'published');
+ assert.equal(reviewed.revision,2);
+ assert.equal((await call('/api/v1/admin/v3/languages/'+published.id+'/te/revoke',{method:'POST',cookie,body:{confirm:true,revision:createdData.revision}})).status,409,'A stale tab cannot revoke approved changes');
  const translated=await call('/post/'+published.slug+'?lang=te');
  const html=await translated.text();
  assert.equal(translated.status,200);
@@ -77,7 +83,7 @@ test('Phase 4 actual HTTP: owner-private insights and human-reviewed translation
  const api=await call('/api/v1/posts/'+published.slug+'?lang=te');
  assert.equal((await api.json()).data.post.title,'తెలుగు శీర్షిక');
  const revoke=await call('/api/v1/admin/v3/languages/'+published.id+'/te/revoke',
-  {method:'POST',cookie,body:{confirm:true}});
+  {method:'POST',cookie,body:{confirm:true,revision:reviewed.revision}});
  assert.equal(revoke.status,200);
  const restored=await call('/post/'+published.slug+'?lang=te');
  assert.doesNotMatch(await restored.text(),/తెలుగు శీర్షిక/,'Revocation is immediate');

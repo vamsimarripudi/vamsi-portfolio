@@ -70,12 +70,14 @@ export class V3Languages{
   });
   return {id,postId:post.id,language:lang,state:'draft',revision:prior?prior.revision+1:1};
  }
- review(actor,postId,requested,{confirm=false,publish=true}={}){
+ review(actor,postId,requested,{confirm=false,publish=true,revision}={}){
   this.owner(actor);
   if(confirm!==true)throw httpError(400,'Explicit review confirmation required.','REVIEW_REQUIRED');
   const lang=language(requested),post=this.getSource(postId);
   const variant=this.store.one('SELECT * FROM v3_language_variants WHERE post_id=? AND language=?',post.id,lang);
   if(!variant)throw httpError(404,'Translation not found.','VARIANT_NOT_FOUND');
+  if(!Number.isSafeInteger(Number(revision))||Number(revision)!==variant.revision)
+   throw httpError(409,'This reviewed draft changed. Reload before approving.','VERSION_CONFLICT');
   if(publish&&(post.state!=='published'||variant.source_version!==post.version))
    throw httpError(409,'Review the latest published source before approving this translation.','SOURCE_NOT_REVIEWED');
   const stamp=now();
@@ -84,7 +86,7 @@ export class V3Languages{
     publish?'published':'draft',publish?stamp:null,publish?actor.id:null,stamp,variant.id);
    this.store.audit(actor.id,publish?'v3.language.published':'v3.language.revoked','post',post.id,{language:lang});
   });
-  return {id:variant.id,state:publish?'published':'draft',language:lang};
+  return {id:variant.id,state:publish?'published':'draft',language:lang,revision:variant.revision+1};
  }
  available(post){
   if(!this.enabled()||!post?.id)return ['en'];

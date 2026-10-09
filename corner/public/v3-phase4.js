@@ -45,7 +45,7 @@
    const [postId,lang]=btn.dataset['v3Language'+action[0].toUpperCase()+action.slice(1)].split(':');
    if(!confirm(action==='publish'?'Publish this reviewed translation?':'Unpublish this translation?'))return;
    btn.disabled=true;
-   try{await send('/'+encodeURIComponent(postId)+'/'+lang+'/'+action,{confirm:true});location.reload()}
+   try{await send('/'+encodeURIComponent(postId)+'/'+lang+'/'+action,{confirm:true,revision:Number(btn.dataset.v3LanguageRevision)});location.reload()}
    catch(e){note(e.message);btn.disabled=false}
   }));
  }

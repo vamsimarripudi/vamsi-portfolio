@@ -16,7 +16,7 @@ export function languageRoutes({languages,requireOwner,readJSON,ok,limit}){
   const match=path.match(/^\/api\/admin\/v3\/languages\/(post_[0-9a-f-]{36})\/(te|hi)\/(publish|revoke)$/i);
   if(match&&method==='POST'){
    const body=await readJSON(req,2000);
-   ok(res,languages.review(actor,match[1],match[2],{confirm:body.confirm,publish:match[3]==='publish'}));return true;
+   ok(res,languages.review(actor,match[1],match[2],{confirm:body.confirm,publish:match[3]==='publish',revision:body.revision}));return true;
   }
   throw httpError(405,'Language operation not permitted.','METHOD_NOT_ALLOWED');
  };

@@ -17,7 +17,7 @@ export function languageStudioPage(languages,actor){
  const rows=records.map(row=>'<article class="v3a-locale-row"><div><strong>'+e(row.title)+'</strong>'+
   '<small>'+e(row.sourceTitle)+' · '+e(row.language.toUpperCase())+' · '+e(row.state)+(row.needsReview?' · source changed':'')+'</small></div>'+
   '<div class="v3a-actions"><button type="button" data-v3-language-edit="'+e(JSON.stringify(row))+'">Edit</button>'+
-  (row.state!=='published'?'<button type="button" data-v3-language-publish="'+e(row.postId)+':'+e(row.language)+'">Review & publish</button>':'<button type="button" data-v3-language-revoke="'+e(row.postId)+':'+e(row.language)+'">Unpublish</button>')+'</div></article>').join('');
+  (row.state!=='published'?'<button type="button" data-v3-language-publish="'+e(row.postId)+':'+e(row.language)+'" data-v3-language-revision="'+e(row.revision)+'">Review & publish</button>':'<button type="button" data-v3-language-revoke="'+e(row.postId)+':'+e(row.language)+'" data-v3-language-revision="'+e(row.revision)+'">Unpublish</button>')+'</div></article>').join('');
  const html=header()+'<main id="content" class="shell v3a-page"><a class="v3a-back" href="/admin">← Studio</a>'+
   '<p class="v3a-eyebrow">OWNER / HUMAN REVIEW</p><h1>Languages<span>.</span></h1><p class="v3a-lead">Translate the meaning, then approve every word. Nothing publishes automatically.</p>'+
   '<div class="v3a-layout"><section class="v3a-panel">'+form+'</section>'+
