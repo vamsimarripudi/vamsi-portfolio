@@ -21,3 +21,8 @@ Phase 4 is an additive implementation following the Phase 3 merge. Flags default
 - Flags `CORNER_V3_INSIGHTS=0` and `CORNER_V3_LANGUAGES=0` are default-OFF. Enabling Languages applies only an additive checksum-verified `v3-0005-languages` schema.
 - Telugu and Hindi variants require an owner-created draft, explicit human review, and an independent publish action. Any source-article edit or archive immediately hides reviewed translations until reapproval. Article language and hreflang metadata update only on approved variants.
 - Owner Insights use existing first-party events and suppress segments smaller than five. No external tracking, demographic guesses, or raw session identifiers are exposed.
+
+## Explicit asset and media budgets
+
+- CI enforces total first-party baseline CSS below **90 KB** and JS below **24 KB** (uncompressed) and optional Wishes below **18 KB**, Phase 4 below **13 KB**. Owner-only assets must not load on regular public pages; third-party analytics script tags are disallowed.
+- Gallery continues enforcing server-side physical WebP dimensions/bytes and strict variant names. Synthetic responsive acceptance checks 320, 375, 768, 1366 and 1920 pixels, keyboard navigation, and reduced motion. These CI budgets are not a claim of real-device Core Web Vitals measurement.
