@@ -1,0 +1,52 @@
+name: Verify Corner V3 Wishes Studio & opt-in delivery
+on:
+  push:
+    paths:
+      - 'corner/src/v3-wish*'
+      - 'corner/public/v3-wishes.*'
+      - 'corner/tests/v3-wish*'
+      - 'corner/tests/v3-wishes*'
+      - '.github/workflows/verify-corner-v3-wishes.yml'
+  pull_request:
+    paths:
+      - 'corner/src/v3-wish*'
+      - 'corner/public/v3-wishes.*'
+      - 'corner/tests/v3-wish*'
+      - 'corner/tests/v3-wishes*'
+      - '.github/workflows/verify-corner-v3-wishes.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wishes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies and verify Corner
+        run: |
+          npm ci
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm run lint
+          npm test
+          npm run build
+          cd corner && npm run check
+      - name: Install browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Verify owner pages, accessibility and responsive layouts
+        working-directory: corner
+        run: node --no-warnings tests/v3-wishes-browser.mjs
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-v3-wishes-responsive
+          path: /tmp/corner-v3-wishes-*.png
+          retention-days: 3
+          if-no-files-found: ignore
