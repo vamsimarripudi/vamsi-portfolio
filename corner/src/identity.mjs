@@ -303,7 +303,12 @@ export class IdentityService{
   }
   sessions(actor){return this.store.all('SELECT id,created_at,expires_at,revoked_at FROM sessions WHERE user_id=? ORDER BY created_at DESC LIMIT 50',actor.id)}
   revokeSession(actor,sessionId){const affected=this.store.exec('UPDATE sessions SET revoked_at=? WHERE id=? AND user_id=? AND revoked_at IS NULL',now(),sessionId,actor.id);return {revoked:affected.changes===1}}
-  bookmarks(actor){return this.store.all("SELECT posts.id,posts.slug,posts.title,posts.type,identity_bookmarks.created_at AS saved_at FROM identity_bookmarks JOIN posts ON posts.id=identity_bookmarks.post_id WHERE identity_bookmarks.user_id=? AND posts.state='published' ORDER BY identity_bookmarks.created_at DESC LIMIT 200",actor.id)}
+  bookmarks(actor){
+    // V2-only stores have no V3 columns; preserve legacy reads during rollout.
+    const hasReading=this.store.all('PRAGMA table_info(identity_bookmarks)').some(c=>c.name==='progress');
+    const extra=hasReading?',identity_bookmarks.progress AS reading_progress,identity_bookmarks.progress_updated_at AS reading_progress_updated_at':'';
+    return this.store.all("SELECT posts.id,posts.slug,posts.title,posts.type,identity_bookmarks.created_at AS saved_at"+extra+" FROM identity_bookmarks JOIN posts ON posts.id=identity_bookmarks.post_id WHERE identity_bookmarks.user_id=? AND posts.state='published' ORDER BY identity_bookmarks.created_at DESC LIMIT 200",actor.id);
+  }
   addBookmark(actor,postId){const post=this.store.getPostById(postId);if(!post)throw httpError(404,'Published post not found.');this.store.exec('INSERT OR IGNORE INTO identity_bookmarks(user_id,post_id,created_at) VALUES(?,?,?)',actor.id,postId,now());return {saved:true,postId}}
   removeBookmark(actor,postId){this.store.exec('DELETE FROM identity_bookmarks WHERE user_id=? AND post_id=?',actor.id,postId);return {saved:false,postId}}
   requestPrivacy(actor,type){if(!['export','deletion'].includes(type))throw httpError(400,'Unsupported privacy request.');const row=this.store.one("SELECT id FROM identity_privacy_requests WHERE user_id=? AND request_type=? AND state IN ('requested','reviewing')",actor.id,type);if(row)return {requestId:row.id,state:'requested'};const id=uid('rights');this.store.exec('INSERT INTO identity_privacy_requests(id,user_id,request_type,requested_at) VALUES(?,?,?,?)',id,actor.id,type,now());this.store.audit(actor.id,'privacy.'+type+'.requested','user',actor.id);return {requestId:id,state:'requested'}}

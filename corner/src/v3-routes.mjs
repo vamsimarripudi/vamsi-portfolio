@@ -41,7 +41,7 @@ export function v3Routes({v3,store,identity,readJSON,ok,limit}){
     if(path==='/api/search/advanced'&&method==='GET'&&v3.enabled('SEARCH')){limit(req,'v3-search',60,60);ok(res,v3.search({
       q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',
       year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',
-      limit:url.searchParams.get('limit')||20,offset:url.searchParams.get('offset')||0
+      limit:url.searchParams.get('limit')||20,offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''
     }));return true;}
     if(path==='/api/archive'&&method==='GET'){limit(req,'v3-archive',60,60);ok(res,v3.archive(url.searchParams.get('year')||''));return true;}
     return false;

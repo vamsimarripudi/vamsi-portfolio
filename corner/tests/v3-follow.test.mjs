@@ -5,7 +5,7 @@ import { V3Engagement } from '../src/v3-engagement.mjs';
 test('V3 follows use one-use verification and unsubscribe', async t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
  const sent=[];
- const v3=new V3Engagement(store,{env:{SESSION_SECRET:'long-v3-secret-for-email-encryption-more-than-32-characters',SITE_URL:'https://example.test/corner',CORNER_V3_FOLLOW:'1'},sendMail:async mail=>sent.push(mail)});
+ const v3=new V3Engagement(store,{env:{SESSION_SECRET:'long-v3-secret-for-email-encryption-more-than-32-characters',SITE_URL:'https://example.test/corner',CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_KEY:'long-stable-follow-key-for-tests-only-2026'},sendMail:async mail=>sent.push(mail)});
  await assert.rejects(v3.follow({email:'reader@example.test'}),{code:'CONSENT_REQUIRED'});
  const pending=await v3.follow({email:'reader@example.test',consent:true,topics:['notes']});
  assert.equal(pending.accepted,true);

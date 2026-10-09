@@ -17,9 +17,9 @@
     });
   }
   const guest=document.querySelector('[data-v3="guestbook"]');
-  if(guest)bind(guest,'guestbook',f=>({name:f.get('name'),message:f.get('message'),consent:f.get('consent')==='on'}),()=> 'Thank you. Your note is awaiting review.');
+  if(guest)bind(guest,'guestbook',f=>({name:f.get('name'),message:f.get('message'),honeypot:f.get('website'),consent:f.get('consent')==='on'}),()=> 'Thank you. Your note is awaiting review.');
   const follow=document.querySelector('[data-v3="follow"]');
-  if(follow)bind(follow,'follow',f=>({email:f.get('email'),frequency:f.get('frequency'),topics:['all'],consent:f.get('consent')==='on'}),data=>data.message||'Check your email.');
+  if(follow)bind(follow,'follow',f=>({email:f.get('email'),frequency:f.get('frequency'),topics:f.getAll('topics').length?f.getAll('topics'):['all'],consent:f.get('consent')==='on'}),data=>data.message||'Check your email.');
   const confirm=document.querySelector('[data-v3-verify]');
   if(confirm)confirm.addEventListener('click',async()=>{
     const status=document.querySelector('[data-v3-confirm] .v3-feedback');
@@ -42,6 +42,19 @@
     catch(error){status.textContent=error.message;}
     finally{unsubscribe.disabled=false;}
   });
+  document.querySelectorAll('[data-v3-moderate]').forEach(button=>button.addEventListener('click',async()=>{
+    const card=button.closest('[data-v3-review]'),feedback=card.querySelector('.v3-feedback');
+    const controls=[...card.querySelectorAll('button')];
+    controls.forEach(control=>control.disabled=true);feedback.textContent='Saving review…';
+    try{
+      const res=await fetch(base+'/api/v1/admin/v3/guestbook/'+encodeURIComponent(button.dataset.v3Id),{
+        method:'PATCH',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({state:button.dataset.v3Moderate})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error?.message||'Please try again.');
+      card.remove();
+    }catch(error){feedback.textContent=error.message;controls.forEach(control=>control.disabled=false);}
+  }));
   const savePosition=document.querySelector('[data-v3-save-progress]');
   if(savePosition)savePosition.addEventListener('click',async()=>{
     savePosition.disabled=true;
@@ -58,4 +71,19 @@
     }catch(error){savePosition.textContent=error.message;}
     finally{savePosition.disabled=false;}
   });
+  if(savePosition){
+    const id=savePosition.dataset.postId;
+    fetch(base+'/api/v1/me/reading/'+encodeURIComponent(id),{credentials:'same-origin'}).then(async response=>{
+      if(!response.ok)return;
+      const data=await response.json(),position=data.data?.progress||0;
+      if(!position||position>=100)return;
+      const resume=document.createElement('button');resume.type='button';
+      resume.className='v3-resume';resume.textContent='Resume at '+position+'% ↗';
+      resume.addEventListener('click',()=>{
+        const height=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
+        window.scrollTo({top:Math.round(height*position/100),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+      });
+      savePosition.insertAdjacentElement('beforebegin',resume);
+    }).catch(()=>{});
+  }
 })();
