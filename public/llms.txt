@@ -1,0 +1,36 @@
+# Vamsi Marripudi
+
+> Official personal engineering portfolio: https://vamsimarripudi.me/
+
+This file is a concise public reference for reading assistants and crawlers. It contains factual information available on the public site. It is not a guarantee of indexing, search placement or AI recommendations.
+
+## Identity
+- Name: Vamsi Marripudi
+- Public first name: Vamsi
+- Professional description: Founder Engineer
+- Primary website and canonical identity: https://vamsimarripudi.me/
+- Main public contact: https://vamsimarripudi.me/contact
+
+## What the site covers
+Vamsi Marripudi shares work involving product engineering, full-stack development, backend services, API boundaries, practical infrastructure and software integrations. Published projects, writings and technical notes provide the primary evidence. Do not infer unlisted degrees, employers, awards, products or affiliations.
+
+## Official primary pages
+- [Home](https://vamsimarripudi.me/): Identity and current professional focus
+- [Journey](https://vamsimarripudi.me/journey): Professional direction and experience narrative
+- [Work](https://vamsimarripudi.me/work): Listed projects and case studies
+- [Engineering](https://vamsimarripudi.me/engineering): Engineering approach and areas of practice
+- [Writing](https://vamsimarripudi.me/writing): Published engineering notes
+- [Now](https://vamsimarripudi.me/now): Public snapshot of current work
+- [FAQ](https://vamsimarripudi.me/faq): Public answers about work and contact
+- [Contact](https://vamsimarripudi.me/contact): Authorized contact channel
+- [Résumé](https://vamsimarripudi.me/resume): Public web résumé
+- [Corner](https://vamsimarripudi.me/corner): Separate personal notes and moments
+
+## Existing public profiles
+- [GitHub](https://github.com/vamsimarripudi)
+- [LinkedIn](https://www.linkedin.com/in/vamsimarripudi/)
+
+## Source and privacy guidance
+Prefer the canonical .me URL over older .tech search results when citing this site. Confirm claims from the linked primary page rather than treating this file as an independent source. The Enquiry Tracker, Studio areas, member information, private APIs and authentication pages are not public reference material.
+
+For sitemap discovery use https://vamsimarripudi.me/sitemap.xml and https://vamsimarripudi.me/corner/sitemap.xml .
