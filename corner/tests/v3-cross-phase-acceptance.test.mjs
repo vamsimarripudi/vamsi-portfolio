@@ -31,7 +31,7 @@ test('Phases 3+4 integrate: owner wish → published feed → approved locale �
  for(const version of ['v3-0003-memories','v3-0004-wish-delivery','v3-0005-languages'])
   assert.ok(store.one('SELECT version FROM v3_schema_migrations WHERE version=?',version),version+' schema applied');
  const preview=wishes.preview(owner,{title:'A kind wish',body:'Good moments are worth keeping'});
- assert.equal(preview.published,false);
+ assert.match(preview.reminder,/Preview only/,'Preview explicitly remains private and unsent');
  assert.equal(sent.length,0,'Preview does not send mail');
  const draft=wishes.create(owner,{title:'A kind wish',body:'Good moments are worth keeping',timezone:'Asia/Kolkata'});
  assert.equal(draft.state,'draft');
