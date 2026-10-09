@@ -32,6 +32,22 @@ export class V3Engagement{
     this.env=env;
     this.sendMail=sendMail||null;
     if(this.enabled('FOLLOW')&&String(env.SESSION_SECRET||'').length<32)throw new Error('Strong SESSION_SECRET required before enabling follower email storage');
+    // First production activation must be backed by a recent, independently
+    // verified offsite restore. Subsequent restarts must not depend on that
+    // timestamp once the migration is recorded.
+    if(env.NODE_ENV==='production'&&this.enabled('MEMORIES')){
+      const table=store.one("SELECT name FROM sqlite_master WHERE type='table' AND name='v3_schema_migrations'");
+      const applied=table?store.one("SELECT version FROM v3_schema_migrations WHERE version='v3-0003-memories'"):null;
+      if(!applied){
+        const lastAudit=Date.parse(store.setting('v3.phase2.restoreAuditLastSuccess','')||'');
+        const backup=Date.parse(store.setting('v3.phase2.restoreAuditBackupCreatedAt','')||'');
+        const age=Date.now()-lastAudit,backupAge=Date.now()-backup;
+        if(!Number.isFinite(lastAudit)||!Number.isFinite(backup)||
+           age<0||age>36*60*60*1000||
+           backupAge<0||backupAge>36*60*60*1000||backup>lastAudit)
+          throw new Error('Phase 2 requires a fresh verified real offsite backup restore before first production activation');
+      }
+    }
     applyV3Migrations(store,{env});
   }
   enabled(feature){return flag(this.env,'CORNER_V3_'+feature)}
