@@ -17,7 +17,7 @@ export function guestbookPage(v3) {
   return simplePage({title:'Guestbook',lead:'A little place for kind words.',path:'/guestbook',body:form+'<section class="v3-guestbook">'+messages+'</section>'});
 }
 export function followPage(){
-  const body='<section class="v3-follow"><h2>Follow this corner</h2><p>Updates you choose, only after email confirmation. Unsubscribe any time.</p><form data-v3="follow"><label>Email<input type="email" name="email" maxlength="254" required></label><label>Frequency<select name="frequency"><option value="weekly">Weekly</option><option value="instant">On publication</option></select></label><label><input name="consent" type="checkbox" required> I opt in to publication updates.</label><button type="submit">Confirm my email ↗</button><p class="v3-feedback" role="status"></p></form></section>';
+  const body='<section class="v3-follow"><h2>Follow this corner</h2><p>Updates you choose, only after email confirmation. Unsubscribe any time.</p><form data-v3="follow"><label>Email<input type="email" name="email" maxlength="254" required></label><label>Frequency<select name="frequency"><option value="weekly">Weekly</option><option value="instant">On publication</option></select></label><label><input name="consent" type="checkbox" required> I opt in to publication updates.</label><button type="submit">Confirm my email ↗</button><p class="v3-feedback" role="status"></p></form><hr><form data-v3="unsub-request"><label>Email<input type="email" name="email" required></label><button type="submit">Send an unsubscribe link</button><p class="v3-feedback" role="status"></p></form></section>';
   return simplePage({title:'Follow',lead:'Stay close to the little things.',path:'/follow',body});
 }
 export function followConfirmPage(){
