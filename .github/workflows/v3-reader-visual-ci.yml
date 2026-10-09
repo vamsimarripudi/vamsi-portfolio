@@ -1,0 +1,73 @@
+name: Verify Corner V3 reader layout
+on:
+  push:
+    branches:
+      - feat/corner-v3-phase1-reader-polish-20261009
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install browser
+        run: |
+          npm ci
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Start isolated Corner
+        run: |
+          mkdir -p "$RUNNER_TEMP/corner-v3-browser"
+          cd corner
+          NODE_ENV=test CORNER_BASE_PATH=/corner CORNER_V3_SEARCH=1 \
+          SITE_URL=http://127.0.0.1:4141/corner HOST=127.0.0.1 PORT=4141 \
+          DB_PATH="$RUNNER_TEMP/corner-v3-browser/test.sqlite" DATA_DIR="$RUNNER_TEMP/corner-v3-browser" \
+          SESSION_SECRET=long-synthetic-browser-ci-secret-2026-non-prod \
+          nohup node --no-warnings src/server.mjs > "$RUNNER_TEMP/v3-browser.log" 2>&1 &
+          for i in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:4141/corner/api/health >/dev/null && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/v3-browser.log"
+          exit 1
+      - name: Check responsive and accessible pages
+        run: |
+          mkdir -p screenshots
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import assert from 'node:assert/strict';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const sizes=[[320,720],[375,812],[768,1024],[1366,768],[1920,1080]];
+          try{
+            for(const [width,height] of sizes){
+              const page=await browser.newPage({viewport:{width,height},reducedMotion:'reduce'});
+              for(const kind of ['search','archive']){
+                const resp=await page.goto('http://127.0.0.1:4141/corner/'+kind,{waitUntil:'networkidle'});
+                assert.equal(resp.status(),200);
+                assert.equal(await page.locator('.v3-explorer').count(),1,kind+' container');
+                const dims=await page.evaluate(()=>({content:document.documentElement.scrollWidth,viewport:innerWidth}));
+                assert.ok(dims.content<=dims.viewport+1,JSON.stringify({kind,width,...dims}));
+                if(kind==='search'){
+                  assert.equal(await page.locator('.v3-explore-form input[name=q]').count(),1);
+                  const values=await page.locator('.v3-explore-form').evaluate(x=>({color:getComputedStyle(x).color,bg:getComputedStyle(x).backgroundColor}));
+                  assert.equal(values.bg,'rgb(255, 255, 255)');
+                  assert.equal(values.color,'rgb(10, 10, 10)');
+                }
+                if(width===375||width===1366)await page.screenshot({path:'screenshots/'+kind+'-'+width+'.png',fullPage:true,animations:'disabled'});
+              }
+              console.log('PASS V3 reader width '+width+'px');
+              await page.close();
+            }
+          }finally{await browser.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corner-v3-reader-screenshots
+          path: screenshots/
+          retention-days: 3
