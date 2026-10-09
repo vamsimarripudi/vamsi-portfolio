@@ -28,6 +28,8 @@ export function v3Routes({v3,store,identity,readJSON,ok,limit}){
     if(moderate&&method==='PATCH'){limit(req,'v3-moderate',60,60);const user=permittedModerator(req);const payload=await readJSON(req,1500);ok(res,v3.manageGuestbook(user,{id:moderate[1],state:payload.state}));return true;}
     if(path==='/api/follow'&&method==='POST'){limit(req,'v3-follow',4,3600);const data=await readJSON(req,3500);ok(res,await v3.follow(data));return true;}
     if(path==='/api/follow/verify'&&method==='POST'){limit(req,'v3-verify',12,3600);const data=await readJSON(req,2000);ok(res,v3.verifyFollow(data.token));return true;}
+    if(path==='/api/follow/unsubscribe/request'&&method==='POST'){limit(req,'v3-unsubscribe-request',4,3600);const data=await readJSON(req,2000);ok(res,await v3.requestUnsubscribe(data));return true;}
+    if(path==='/api/follow/unsubscribe'&&method==='POST'){limit(req,'v3-unsubscribe',12,3600);const data=await readJSON(req,2000);ok(res,v3.unsubscribeFollow(data.token));return true;}
     const reading=path.match(/^\/api\/me\/reading\/([A-Za-z0-9_-]+)$/);
     if(reading&&['GET','PUT','DELETE'].includes(method)){
       const member=verifiedMember(req);
