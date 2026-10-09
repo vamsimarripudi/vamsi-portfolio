@@ -27,3 +27,7 @@
 For each case record non-sensitive tester ID, build SHA, platform and viewport, steps, expected/observed result, PASS/FAIL, screenshot, defect severity and retest. No passwords, OTPs, private emails, follower lists or user content belong in public tickets.
 
 **Release vocabulary:** code complete = merged + green CI + deployed with deliberate flags. User-accepted = genuine tester evidence and sign-off. Provider-verified = proven real consent/send/opt-out; these are separate gates.
+
+## Cross-phase isolated lifecycle acceptance
+
+CI now executes the integrated owner wish → explicit publication → RSS/Atom → human-approved Telugu translation → double-opt-in email → one-time unsubscribe → private owner Insights flow in one disposable SQLite database. It proves that drafts never enter feeds, publishing does not automatically send, a verified subscriber receives one manually queued campaign, opt-out blocks future deliveries, and source archival hides localized text. Production Resend acceptance and owner-authenticated real-device review remain independent gates, not implied by a mocked sender.
