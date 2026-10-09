@@ -5,6 +5,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
+import { V3Engagement } from './v3-engagement.mjs';
+import { v3Routes } from './v3-routes.mjs';
+import { searchPage, archivePage, guestbookPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
 import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
 import { accountPage } from './identity-ui.mjs';
@@ -16,6 +19,7 @@ import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText,
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const identity=new IdentityService(store);
+const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -117,8 +121,10 @@ function mediaFile(req,res,key){
 function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
+const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
+  if(await handleV3(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -254,7 +260,7 @@ async function route(req,res){
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return mediaFile(req,res,pathname.split('/').at(-1));}
-    if(['/style.css','/magic.css','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/magic.css','/v3.css','/v3.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -272,11 +278,17 @@ async function route(req,res){
       if(pathname==='/admin/invite'&&(!valid||actor.role!=='owner'))throw httpError(403,'Owner account required.','OWNER_REQUIRED');
       return page(res,accountPage({type:pathname,user:valid?identity.safeMe(identity.account(actor.id)):null,registrationOpen:identity.canRegister()}),200,true);
     }
+    if(pathname==='/guestbook'&&v3.enabled('GUESTBOOK'))return page(res,guestbookPage(v3));
+    if(pathname==='/follow'&&v3.enabled('FOLLOW'))return page(res,followPage());
+    if(pathname==='/follow/confirm'&&v3.enabled('FOLLOW'))return page(res,followConfirmPage());
+    if(pathname==='/follow/unsubscribe'&&v3.enabled('FOLLOW'))return page(res,unsubscribePage());
+    if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||''));
+    if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
     if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
-    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
+    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members. Optional V3 features include a moderated guestbook (display name and message), double-opt-in publication subscriptions (encrypted email address and consent history), and reading progress saved only when a verified member requests it. Subscription emails include an opt-out process; account creation alone never enrolls anyone.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
     if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>Members are responsible for protecting their account credentials and the content they submit. Registered profiles are private by default and do not grant publishing or moderation access. Studio access is invitation-only and subject to additional verification.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
     if(pathname==='/now')return page(res,simplePage({path:'/now',title:'Now',lead:store.currentStatus()?.label||'A little space for what is current.',body:`<p>${escapeHtml(store.currentStatus()?.detail||'When a status is shared it will appear here.')}</p>`}));
     throw httpError(404,'Page not found','NOT_FOUND');

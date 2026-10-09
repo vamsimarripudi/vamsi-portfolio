@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Store } from '../src/store.mjs';
+import { V3Engagement } from '../src/v3-engagement.mjs';
+test('V3 follows use one-use verification and unsubscribe', async t=>{
+ const store=new Store(':memory:');t.after(()=>store.close());
+ const sent=[];
+ const v3=new V3Engagement(store,{env:{SESSION_SECRET:'long-v3-secret-for-email-encryption-more-than-32-characters',SITE_URL:'https://example.test/corner',CORNER_V3_FOLLOW:'1'},sendMail:async mail=>sent.push(mail)});
+ await assert.rejects(v3.follow({email:'reader@example.test'}),{code:'CONSENT_REQUIRED'});
+ const pending=await v3.follow({email:'reader@example.test',consent:true,topics:['notes']});
+ assert.equal(pending.accepted,true);
+ assert.equal(sent.length,1);
+ const verify=new URL(sent[0].text.match(/https?:\/\/[^\s]+/)[0]).hash.split('=')[1];
+ assert.equal(v3.verifyFollow(verify).verified,true);
+ assert.throws(()=>v3.verifyFollow(verify),{code:'TOKEN_INVALID'});
+ await v3.requestUnsubscribe({email:'reader@example.test'});
+ assert.equal(sent.length,2);
+ const token=new URL(sent[1].text.match(/https?:\/\/[^\s]+/)[0]).hash.split('=')[1];
+ assert.equal(v3.unsubscribeFollow(token).unsubscribed,true);
+ assert.throws(()=>v3.unsubscribeFollow(token),{code:'TOKEN_INVALID'});
+ assert.equal(store.one('SELECT state FROM v3_follows').state,'unsubscribed');
+ assert.ok(!store.one('SELECT email_cipher FROM v3_follows').email_cipher.includes('reader@example.test'));
+});
