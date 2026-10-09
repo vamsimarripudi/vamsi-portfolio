@@ -23,3 +23,6 @@ export function followPage(){
 export function followConfirmPage(){
   return simplePage({title:'Confirm following',lead:'Finish the email opt-in.',path:'/follow/confirm',body:'<section data-v3-confirm><button type="button" data-v3-verify>Confirm subscription ↗</button><p class="v3-feedback" role="status"></p></section>'});
 }
+export function unsubscribePage(){
+  return simplePage({title:'Unsubscribe',lead:'Choose which notes reach your inbox.',path:'/follow/unsubscribe',body:'<section data-v3-unsubscribe><p>Use the link from your email to confirm.</p><button type="button" data-v3-unsubscribe-button>Unsubscribe ↗</button><p class="v3-feedback" role="status"></p></section>'});
+}
