@@ -11,6 +11,7 @@ import { V3Memories } from './v3-memories.mjs';
 import {sanitizeImage} from './media-privacy.mjs';
 import {ImageDerivatives} from './v3-image-derivatives.mjs';
 import { memoriesRoutes } from './v3-memories-routes.mjs';
+import {auditLatestOffsiteMigration} from './v3-restore-audit.mjs';
 import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
 import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
@@ -336,6 +337,25 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null)}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
-  const shutdown=()=>{stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
+  // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
+  // isolated restore. Never enable Phase 2 automatically.
+  let shuttingDown=false;
+  const restoreAuditTimer=config.prod&&process.env.CORNER_BACKUP_ENABLED==='1'&&process.env.CORNER_V3_MEMORIES!=='1'
+    ?setTimeout(()=>{
+      void auditLatestOffsiteMigration().then(report=>{
+       if(shuttingDown)return;
+       store.saveSetting('v3.phase2.restoreAuditLastSuccess',report.completedAt);
+       store.saveSetting('v3.phase2.restoreAuditBackupCreatedAt',report.backupCreatedAt);
+       store.saveSetting('v3.phase2.restoreAuditLastError',null);
+       log('info',{event:'corner.v3.restore_audit.verified',files:report.filesVerified,integrity:report.sqliteIntegrity,phase2Migration:report.phase2Migration});
+      }).catch(error=>{
+       if(shuttingDown)return;
+       const reason=String(error?.message||'Unknown failure').slice(0,120);
+       try{store.saveSetting('v3.phase2.restoreAuditLastError',reason)}catch{}
+       log('error',{event:'corner.v3.restore_audit.failed',reason});
+      });
+    },25000):null;
+
+  const shutdown=()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }

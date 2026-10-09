@@ -50,3 +50,7 @@ Physical thumbnail generation/resizing is not yet included. Images are lazy-load
 - Production start-up while `CORNER_V3_MEMORIES=0` skips migration `v3-0003-memories`. The migration only runs when explicitly enabled, preserving the existing schema until a real backup rehearsal succeeds.
 - An **owner-only, Origin-protected** POST `/corner/api/v1/admin/v3/memories/backup-audit` can rehearse the latest complete offsite Railway snapshot on an isolated temporary filesystem, verifying SHA256 file hashes, SQLite integrity/foreign keys and preserved record counts before and after Phase 2 migration. Results contain summary only, never PII or original snapshot bytes.
 - CI tests this workflow with a synthetic offsite bucket; the actual private Railway snapshot must still be rehearsed from the deployed service before enabling public Memories. Flag remains OFF and draft PR remains unmerged until validation.
+
+## Automated Railway offsite rehearsal
+
+On production boot with `CORNER_BACKUP_ENABLED=1` and `CORNER_V3_MEMORIES=0`, the service schedules a one-time read-only rehearsal of the latest real private backup after 25 seconds. It verifies the manifest, restores an isolated copy, applies Phase 2 migration and compares record counts. Only summary results are saved privately and reported as sanitized Railway logs (`corner.v3.restore_audit.verified` or `.failed`). The live database and memories feature flag remain unchanged. Confirm a verified result on Railway before enabling Phase 2.
