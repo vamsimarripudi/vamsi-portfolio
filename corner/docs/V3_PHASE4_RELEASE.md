@@ -15,3 +15,9 @@ Phase 4 is an additive implementation following the Phase 3 merge. Flags default
 ## Performance and accessibility
 
 - Preserve the icon-first responsive typography and no-dependency frontend. Add CI asset budget checks, responsive layout and keyboard validation. No new third-party analytics.
+
+## Staged data/privacy boundaries
+
+- Flags `CORNER_V3_INSIGHTS=0` and `CORNER_V3_LANGUAGES=0` are default-OFF. Enabling Languages applies only an additive checksum-verified `v3-0005-languages` schema.
+- Telugu and Hindi variants require an owner-created draft, explicit human review, and an independent publish action. Any source-article edit or archive immediately hides reviewed translations until reapproval. Article language and hreflang metadata update only on approved variants.
+- Owner Insights use existing first-party events and suppress segments smaller than five. No external tracking, demographic guesses, or raw session identifiers are exposed.

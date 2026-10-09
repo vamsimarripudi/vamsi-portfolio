@@ -1,0 +1,47 @@
+/* V3 Phase 4 — Classic Minimal / Icon First. No third-party design system. */
+.v3a-page{padding-block:clamp(22px,4vw,62px);color:#111}
+.v3a-page *{box-sizing:border-box}
+.v3a-back{display:inline-flex;min-height:44px;align-items:center;margin-bottom:18px;color:#111;font-size:.79rem;text-decoration:underline;text-underline-offset:4px}
+.v3a-eyebrow{font:700 .67rem/1.4 ui-monospace,SFMono-Regular,monospace;letter-spacing:.13em;color:#5d574f}
+.v3a-page h1{font:500 clamp(3rem,8vw,6rem)/1.04 Georgia,serif;letter-spacing:-.065em;margin:12px 0}
+.v3a-page h1 span{color:#a18b77}
+.v3a-lead{color:#554d44;font-size:.94rem;max-width:58ch;line-height:1.6}
+.v3a-periods{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0}
+.v3a-periods a{padding:11px 17px;border-radius:11px;border:1px solid #c5bfb5;background:#fff;color:#111;font-size:.79rem;font-weight:700}
+.v3a-periods a[aria-current=page]{background:#111;color:#fff;border-color:#111}
+.v3a-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}
+.v3a-kpi,.v3a-panel{border:1px solid #d9d4cc;background:#fff;border-radius:17px;min-width:0;padding:clamp(18px,3vw,26px)}
+.v3a-kpi{display:grid;gap:15px}.v3a-kpi span{font-size:.7rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase}
+.v3a-kpi strong{font:500 clamp(2rem,4vw,3.4rem)/1 Georgia,serif}
+.v3a-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.v3a-panel h2,.v3a-form h2{font:500 1.7rem/1.2 Georgia,serif;margin:0 0 16px}
+.v3a-panel>small,.v3a-privacy{color:#625b52;font-size:.75rem;line-height:1.5}
+.v3a-trend{display:flex;align-items:end;gap:6px;height:170px;border-bottom:1px solid #bdb6ad;margin:20px 0}
+.v3a-bar{height:100%;display:flex;align-items:end;justify-content:end;flex-direction:column;gap:5px;flex:1;min-width:0}
+.v3a-pillar{display:block;width:100%;background:#111;border-radius:4px 4px 0 0;min-height:3px}
+.v3a-bar small{font-size:.55rem;color:#555}
+.v3a-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.v3a-top{padding:0;margin:0;list-style:none}
+.v3a-top li{display:flex;align-items:start;gap:10px;padding:12px 0;border-bottom:1px solid #e3ded6;font-size:.8rem}
+.v3a-top li span{color:#65605a}.v3a-top li a{color:#111;min-width:0;flex:1;text-decoration:underline;overflow-wrap:anywhere}
+.v3a-form{display:grid;gap:14px}
+.v3a-form label{display:grid;gap:7px;font-size:.78rem;font-weight:750}
+.v3a-form input,.v3a-form select,.v3a-form textarea{width:100%;min-height:44px;border:1px solid #a9a49b;background:#fff;color:#111;padding:10px 12px;border-radius:10px;font:400 .89rem/1.5 system-ui,sans-serif}
+.v3a-form textarea{resize:vertical}
+.v3a-form button,.v3a-actions button{min-height:44px;border:1px solid #111;background:#111;color:#fff;border-radius:11px;padding:10px 14px;font-size:.79rem;font-weight:750;cursor:pointer}
+.v3a-actions{display:flex;gap:9px;flex-wrap:wrap}
+.v3a-actions button:not([type=submit]){background:#fff;color:#111}
+.v3a-form [role=status]{font-size:.79rem;min-height:1.5rem}
+.v3a-preview{white-space:pre-wrap;overflow-wrap:anywhere;color:#24211f;line-height:1.6;font-size:.86rem}
+.v3a-locale-row{display:flex;align-items:start;justify-content:space-between;gap:12px;border-top:1px solid #e2dcd3;padding:14px 0}
+.v3a-locale-row>div:first-child{min-width:0}
+.v3a-locale-row strong,.v3a-locale-row small{display:block;overflow-wrap:anywhere}
+.v3a-locale-row strong{font:500 1.2rem/1.2 Georgia,serif}
+.v3a-locale-row small{margin-top:7px;color:#625b52;font-size:.72rem}
+.v3a-language-picker{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 21px}
+.v3a-language-picker a{display:inline-flex;align-items:center;min-height:44px;padding:9px 15px;border-radius:11px;border:1px solid #b9b3aa;background:#fff;color:#111;font-size:.84rem;text-decoration:none}
+.v3a-language-picker a[aria-current=page]{background:#111;color:#fff;border-color:#111}
+.v3a-page :focus-visible,.v3a-language-picker :focus-visible{outline:3px solid #111;outline-offset:3px}
+@media(max-width:860px){.v3a-layout{grid-template-columns:1fr}}
+@media(max-width:500px){.v3a-kpis{grid-template-columns:1fr}.v3a-panel,.v3a-kpi{padding:17px}.v3a-locale-row{display:block}.v3a-locale-row .v3a-actions{margin-top:12px}}
+@media(prefers-reduced-motion:reduce){.v3a-page *,.v3a-language-picker *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
