@@ -24,3 +24,23 @@ test('V3 follows use one-use verification and unsubscribe', async t=>{
  assert.equal(store.one('SELECT state FROM v3_follows').state,'unsubscribed');
  assert.ok(!store.one('SELECT email_cipher FROM v3_follows').email_cipher.includes('reader@example.test'));
 });
+
+test('separate encryption key survives session rotation and bounces suppress sending',async t=>{
+ const store=new Store(':memory:');t.after(()=>store.close());
+ const sent=[];
+ const originalEnv={CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_ENCRYPTION_KEY:'a-fixed-dedicated-secret-at-least-32-chars-2026',SESSION_SECRET:'first-session-secret-2026',SITE_URL:'https://example.test/corner'};
+ assert.throws(()=>new V3Engagement(store,{env:{CORNER_V3_FOLLOW:'1',SESSION_SECRET:'first-session-secret-2026'}}),/dedicated/i);
+ const v3=new V3Engagement(store,{env:originalEnv,sendMail:async item=>sent.push(item)});
+ const first=await v3.follow({email:'rotated@example.test',consent:true});
+ assert.equal(first.accepted,true);
+ const link=new URL(sent[0].text.match(/https?:\\/\\/[^\\s]+/)[0]);
+ v3.verifyFollow(link.hash.slice(7));
+ const afterRotation=new V3Engagement(store,{env:{...originalEnv,SESSION_SECRET:'second-session-secret-after-rotation'},sendMail:async item=>sent.push(item)});
+ const existing=await afterRotation.follow({email:'rotated@example.test',consent:true});
+ assert.deepEqual(existing,first);
+ assert.equal(sent.length,1,'existing email recognized with a rotated session secret');
+ store.exec("UPDATE v3_follows SET state='bounced'");
+ const bounce=await afterRotation.follow({email:'rotated@example.test',consent:true});
+ assert.deepEqual(bounce,first);
+ assert.equal(sent.length,1,'suppressed bounced address receives no email');
+});
