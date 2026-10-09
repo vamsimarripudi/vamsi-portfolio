@@ -9,6 +9,12 @@ import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
 import { V3Memories } from './v3-memories.mjs';
 import {WishesStudio} from './v3-wishes.mjs';
+import {V3Insights} from './v3-insights.mjs';
+import {insightRoutes} from './v3-insights-routes.mjs';
+import {insightsPage} from './v3-insights-ui.mjs';
+import {V3Languages} from './v3-languages.mjs';
+import {languageRoutes} from './v3-languages-routes.mjs';
+import {languageStudioPage} from './v3-languages-ui.mjs';
 import {WishDelivery} from './v3-wish-delivery.mjs';
 import {wishesRoutes} from './v3-wishes-routes.mjs';
 import {wishesStudioPage} from './v3-wishes-ui.mjs';
@@ -33,6 +39,8 @@ const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 const memories=new V3Memories(store);
 const wishes=new WishesStudio(store);
+const insights=new V3Insights(store);
+const languages=new V3Languages(store);
 const wishDelivery=new WishDelivery(store,{sendMail:mail=>identity.sender(mail)});
 const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
@@ -147,11 +155,15 @@ const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limi
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
 const handleWishes=wishesRoutes({wishes,delivery:wishDelivery,readJSON,ok,requireOwner,limit});
+const handleInsights=insightRoutes({insights,requireOwner,ok,limit});
+const handleLanguages=languageRoutes({languages,requireOwner,readJSON,ok,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(await handleV3(req,res,pathName,url))return;
   if(await handleMemories(req,res,pathName,url))return;
   if(await handleWishes(req,res,pathName,url))return;
+  if(await handleInsights(req,res,pathName,url))return;
+  if(await handleLanguages(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -163,7 +175,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/openapi.json'&&method==='GET')return json(res,openApiDocument(config.siteUrl),200,{'cache-control':'public,max-age=300'});
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}
   if(/^\/api\/posts\/[a-z0-9-]+$/.test(pathName)&&method==='GET'){
-    let slug=pathName.split('/').at(-1);let post=store.getPost(slug);if(!post)throw httpError(404,'Post not found');return ok(res,{post,media:store.listMedia(post.id),reactions:store.getReactions(post.id),comments:post.allow_comments?store.getComments(post.id):[]});}
+    let slug=pathName.split('/').at(-1);let post=store.getPost(slug);if(!post)throw httpError(404,'Post not found');const localized=languages.localize(post,url.searchParams.get('lang')||'en');return ok(res,{post:localized.post,availableLanguages:localized.available,media:store.listMedia(post.id),reactions:store.getReactions(post.id),comments:post.allow_comments?store.getComments(post.id):[]});}
   if(pathName==='/api/search'&&method==='GET'){limit(req,'search',45,60);return ok(res,store.search(url.searchParams.get('q')||''))}
   if(pathName==='/api/status'&&method==='GET')return ok(res,{status:store.currentStatus(),upcoming:store.upcoming(true)});
   if(pathName==='/api/analytics/event'&&method==='POST'){
@@ -297,7 +309,7 @@ async function route(req,res){
       return end(res,200,req.method==='HEAD'?'':feed.xml,{...headers,'content-length':Buffer.byteLength(feed.xml)});
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
-    if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -330,6 +342,18 @@ async function route(req,res){
       }
       return page(res,memoriesStudioPage(memories,user),200,true);
     }
+    if(pathname==='/admin/v3/insights'&&insights.enabled()){
+      let actor;
+      try{actor=requireOwner(req,'/api/admin/analytics/summary','GET')}
+      catch(error){if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error}
+      return page(res,insightsPage(insights,actor,{days:url.searchParams.get('days')||7}),200,true);
+    }
+    if(pathname==='/admin/v3/languages'&&languages.enabled()){
+      let actor;
+      try{actor=requireOwner(req,'/api/admin/settings','GET')}
+      catch(error){if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error}
+      return page(res,languageStudioPage(languages,actor),200,true);
+    }
     if(pathname==='/admin/v3/wishes'&&wishes.enabled()){
       let actor;
       try{actor=requireOwner(req,'/api/admin/posts','GET')}
@@ -350,7 +374,7 @@ async function route(req,res){
     if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
-    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
+    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);const localized=languages.localize(post,url.searchParams.get('lang')||'en');return page(res,detailPage({post:localized.post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next,languages:localized.available,activeLanguage:localized.language}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
     if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members. Optional V3 features include a moderated guestbook (display name and message), double-opt-in publication subscriptions (encrypted email address and consent history), and reading progress saved only when a verified member requests it. Phase 2 allows the owner to publish milestones, gallery photographs, reading collections and public Now history. New JPEG, PNG and WebP photos have optional embedded location metadata stripped before storage. Legacy photos with metadata remain ineligible for the gallery. Private story media is never listed. Subscription emails include an opt-out process; account creation alone never enrolls anyone.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
     if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>Members are responsible for protecting their account credentials and the content they submit. Registered profiles are private by default and do not grant publishing or moderation access. Studio access is invitation-only and subject to additional verification.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
