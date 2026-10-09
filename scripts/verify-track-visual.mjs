@@ -47,25 +47,27 @@ try{
     const rect=button.getBoundingClientRect();
     const header=button.closest('.track-header').getBoundingClientRect();
     const brand=document.querySelector('.track-header .track-brand').getBoundingClientRect();
-    const caption=button.querySelector('.track-logout-label');
+    const icon=button.querySelector('svg');
     return {
-      label:caption?.textContent?.trim(),display:getComputedStyle(button).display,
-      fontSize:parseFloat(getComputedStyle(button).fontSize),
-      labelFontSize:caption?parseFloat(getComputedStyle(caption).fontSize):0,
+      accessibleName:button.getAttribute('aria-label'),
+      visibleText:button.textContent.trim(),
+      title:button.getAttribute('title'),
+      display:getComputedStyle(button).display,
       x:rect.x,right:rect.right,top:rect.top,width:rect.width,height:rect.height,
       brandRight:brand.right,headerRight:header.right,
+      iconWidth:icon?.getBoundingClientRect().width||0
     };
   });
-  if(width<=760){
-    assert.equal(signout.label,'Sign out','Visible mobile action label at '+width);
-    assert.equal(signout.display,'flex','Mobile sign out uses centered horizontal layout at '+width);
-    assert.ok(signout.labelFontSize>=10,'Sign out text must not be visually hidden at '+width);
-    assert.ok(signout.width>=88&&signout.height>=44,'Accessible sign out target at '+width);
-    assert.ok(signout.x>=signout.brandRight+6,'Brand and sign out never overlap at '+width);
-    assert.ok(signout.right<=width-12,'Sign out respects right screen inset at '+width);
-    assert.ok(signout.headerRight<=width+1,'Header does not extend outside viewport at '+width);
-    console.log('PASS /track sign out '+width+'px '+JSON.stringify(signout));
-  }
+  assert.equal(signout.accessibleName,'Sign out','Owner button retains an accessible label');
+  assert.equal(signout.visibleText,'','Sign out must be icon-only');
+  assert.equal(signout.title,'Sign out','Desktop hover tooltip retains meaning');
+  assert.equal(signout.display,'grid','Sign out icon must be centered');
+  assert.ok(signout.width>=44&&signout.height>=44,'Sign out has an accessible touch target at '+width);
+  assert.ok(signout.iconWidth>=17,'Logout icon is visible at '+width);
+  assert.ok(signout.x>=signout.brandRight+6,'Brand and sign out do not overlap at '+width);
+  assert.ok(signout.right<=width-12,'Sign out respects right viewport inset at '+width);
+  assert.ok(signout.headerRight<=width+1,'Header is inside viewport at '+width);
+  console.log('PASS /track icon-only sign out '+width+'px '+JSON.stringify(signout));
   assert.deepEqual(errors,[],'No browser exceptions '+width);
   if([375,1440].includes(width))await page.screenshot({path:'/tmp/track-'+width+'.png',fullPage:true});
   console.log('PASS /track '+width+'px '+JSON.stringify(state));
