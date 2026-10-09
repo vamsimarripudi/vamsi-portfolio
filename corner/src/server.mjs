@@ -312,7 +312,14 @@ async function route(req,res){
       return page(res,guestbookModerationPage(v3,moderator),200,true);
     }
     if(pathname==='/admin/v3/memories'&&memories.enabled()){
-      const user=requireOwner(req,'/api/admin/settings','GET');
+      let user;
+      try{user=requireOwner(req,'/api/admin/settings','GET');}
+      catch(error){
+        // Render the established owner sign-in experience for a signed-out browser.
+        // Retain the 401 status, private cache policy, and owner permission checks.
+        if(error?.status===401)return page(res,adminRouteState(null),401,true);
+        throw error;
+      }
       return page(res,memoriesStudioPage(memories,user),200,true);
     }
     if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||'',cursor:url.searchParams.get('cursor')||''}));
