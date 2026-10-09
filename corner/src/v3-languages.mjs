@@ -16,6 +16,14 @@ export class V3Languages{
    const checksum=sha(schema);
    const prior=store.one('SELECT checksum FROM v3_schema_migrations WHERE version=?',version);
    if(prior&&prior.checksum!==checksum)throw Error('Language variant schema has changed after migration');
+   if(!prior&&env.NODE_ENV==='production'){
+    const last=Date.parse(store.setting('v3.phase4.restoreAuditLastSuccess','')||'');
+    const backup=Date.parse(store.setting('v3.phase4.restoreAuditBackupCreatedAt','')||'');
+    const age=Date.now()-last,backupAge=Date.now()-backup;
+    if(!Number.isFinite(last)||!Number.isFinite(backup)||age<0||
+       age>36*60*60*1000||backupAge<0||backupAge>36*60*60*1000||backup>last)
+      throw new Error('Phase 4 language migration requires a fresh verified offsite restore rehearsal');
+   }
    if(!prior)store.transaction(()=>{
     store.db.exec(schema);
     store.exec('INSERT INTO v3_schema_migrations(version,checksum,applied_at) VALUES(?,?,?)',version,checksum,now());

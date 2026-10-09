@@ -34,3 +34,9 @@ Language publish and revoke operations require the translation revision visible 
 ## Owner Studio discoverability
 
 The existing responsive Studio sidebar now lists Memories, Wishes, Insights and Languages when their feature flags are enabled, and only for an authenticated owner role. Standard editors, moderators and signed-out visitors never receive owner-only navigation links. The existing `admin-v3-link` class preserves the locked visual design; a dedicated regression test covers roles and OFF flags.
+
+## Verified production Phase 4 language-migration gate
+
+- Before first production use of `CORNER_V3_LANGUAGES=1`, the exact `v3-0005-languages` migration must be applied successfully to a **real, private offsite backup copy** and the audit timestamps must be within 36 hours. This rehearsal checks original row counts, SQLite integrity and foreign keys, while never writing the live database.
+- Railway automatically attempts that isolated rehearsal after an OFF-flag deployment with backups enabled; it records only timestamps and safe aggregate audit results. First activation **fails closed** if the proof is absent or stale; already migrated installations can restart normally.
+- `CORNER_V3_INSIGHTS` is read-only and owner-only. Optional real email sending remains separately gated on verified opt-in/Resend acceptance; never send to real subscribers merely to satisfy CI.

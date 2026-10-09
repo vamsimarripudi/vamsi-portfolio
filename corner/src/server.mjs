@@ -396,18 +396,23 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.
   let shuttingDown=false;
-  const restoreAuditTimer=config.prod&&process.env.CORNER_BACKUP_ENABLED==='1'&&process.env.CORNER_V3_MEMORIES!=='1'
+  const restoreAuditTimer=config.prod&&process.env.CORNER_BACKUP_ENABLED==='1'&&(process.env.CORNER_V3_MEMORIES!=='1'||process.env.CORNER_V3_LANGUAGES!=='1')
     ?setTimeout(()=>{
       void auditLatestOffsiteMigration().then(report=>{
        if(shuttingDown)return;
        store.saveSetting('v3.phase2.restoreAuditLastSuccess',report.completedAt);
        store.saveSetting('v3.phase2.restoreAuditBackupCreatedAt',report.backupCreatedAt);
        store.saveSetting('v3.phase2.restoreAuditLastError',null);
-       log('info',{event:'corner.v3.restore_audit.verified',files:report.filesVerified,integrity:report.sqliteIntegrity,phase2Migration:report.phase2Migration});
+       if(report.phase4LanguagesMigration){
+        store.saveSetting('v3.phase4.restoreAuditLastSuccess',report.completedAt);
+        store.saveSetting('v3.phase4.restoreAuditBackupCreatedAt',report.backupCreatedAt);
+        store.saveSetting('v3.phase4.restoreAuditLastError',null);
+       }
+       log('info',{event:'corner.v3.restore_audit.verified',files:report.filesVerified,integrity:report.sqliteIntegrity,phase2Migration:report.phase2Migration,phase4LanguagesMigration:report.phase4LanguagesMigration});
       }).catch(error=>{
        if(shuttingDown)return;
        const reason=String(error?.message||'Unknown failure').slice(0,120);
-       try{store.saveSetting('v3.phase2.restoreAuditLastError',reason)}catch{}
+       try{store.saveSetting('v3.phase2.restoreAuditLastError',reason);store.saveSetting('v3.phase4.restoreAuditLastError',reason)}catch{}
        log('error',{event:'corner.v3.restore_audit.failed',reason});
       });
     },25000):null;
