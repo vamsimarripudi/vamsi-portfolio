@@ -30,4 +30,16 @@
     catch(error){status.textContent=error.message;}
     finally{confirm.disabled=false;}
   });
+  const unsubscribeRequest=document.querySelector('[data-v3="unsub-request"]');
+  if(unsubscribeRequest)bind(unsubscribeRequest,'follow/unsubscribe/request',f=>({email:f.get('email')}),()=> 'If subscribed, an unsubscribe link is on its way.');
+  const unsubscribe=document.querySelector('[data-v3-unsubscribe-button]');
+  if(unsubscribe)unsubscribe.addEventListener('click',async()=>{
+    const status=document.querySelector('[data-v3-unsubscribe] .v3-feedback');
+    const token=new URLSearchParams(location.hash.slice(1)).get('token');
+    if(!token){status.textContent='Missing unsubscribe token.';return;}
+    unsubscribe.disabled=true;
+    try{await submit('follow/unsubscribe',{token});history.replaceState(null,'',location.pathname);status.textContent='You have been unsubscribed.';}
+    catch(error){status.textContent=error.message;}
+    finally{unsubscribe.disabled=false;}
+  });
 })();
