@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Store} from '../src/store.mjs';
+import {V3Engagement} from '../src/v3-engagement.mjs';
+test('V3 private progress is owned by the member and only for published posts',t=>{
+ const store=new Store(':memory:');t.after(()=>store.close());
+ const env={SESSION_SECRET:'test-only-v3-secret-for-private-progress',CORNER_V3_READING:'1'};
+ const v3=new V3Engagement(store,{env});
+ const stamp=new Date().toISOString();
+ for(const id of ['u1','u2'])store.exec('INSERT INTO users(id,email,display_name,role,password_hash,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',id,id+'@test.invalid',id,'member','hash',stamp,stamp);
+ const draft=store.createPost({title:'Private draft',type:'journal',body:'Personal writing'},'owner');
+ assert.throws(()=>v3.reading({id:'u1',role:'member'},draft.id,42),{code:'NOT_FOUND'});
+ store.publish(draft.id,'owner');
+ assert.equal(v3.reading({id:'u1',role:'member'},draft.id,55).progress,55);
+ assert.equal(v3.reading({id:'u2',role:'member'},draft.id).progress,0);
+ assert.throws(()=>v3.reading(null,draft.id,20),{code:'AUTH_REQUIRED'});
+ assert.throws(()=>v3.reading({id:'u1',role:'member'},draft.id,101),{code:'INVALID_PROGRESS'});
+ assert.equal(v3.reading({id:'u1',role:'member'},draft.id,null).progress,0);
+ env.CORNER_V3_READING='0';
+ assert.throws(()=>v3.reading({id:'u1',role:'member'},draft.id),{code:'FEATURE_DISABLED'});
+});
