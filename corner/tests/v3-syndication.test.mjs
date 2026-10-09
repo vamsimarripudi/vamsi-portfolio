@@ -57,7 +57,7 @@ test('live RSS and Atom support published-only responses, ETags and HEAD after a
  for(const [pathname,mime] of [['rss.xml','application/rss+xml'],['atom.xml','application/atom+xml']]){
   const url=base+'/corner/'+pathname;
   const response=await fetch(url);
-  assert.equal(response.status,200);assert.match(response.headers.get('content-type')||'',new RegExp(mime.replaceAll('/','\\/')));
+  assert.equal(response.status,200);assert.ok((response.headers.get('content-type')||'').startsWith(mime),'Correct XML feed MIME type');
   assert.match(response.headers.get('cache-control')||'',/max-age=0/);
   const xml=await response.text();
   assert.match(xml,/Syndicated post/);assert.doesNotMatch(xml,/Private scheduled draft/);
