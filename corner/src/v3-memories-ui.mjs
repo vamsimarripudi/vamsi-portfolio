@@ -1,6 +1,11 @@
 import {simplePage,basePage,header,footer,escapeHtml} from './ui.mjs';
 const e=escapeHtml;
 const asset=(key)=>'/media/'+encodeURIComponent(key);
+const dimensions=(media)=>{
+ const width=Number(media.width),height=Number(media.height);
+ return Number.isSafeInteger(width)&&Number.isSafeInteger(height)&&width>0&&height>0&&width<=20000&&height<=20000
+  ?' width="'+width+'" height="'+height+'"':'';
+};
 const empty=(title)=>'<div class="v3m-empty"><span class="v3m-tile" aria-hidden="true">✳</span><h2>'+e(title)+'</h2><p>More memories will find their place here.</p></div>';
 const hero=(kicker,title,lead)=>'<header class="v3m-hero"><p class="eyebrow">'+e(kicker)+'</p><h1>'+e(title)+'<span>.</span></h1><p>'+e(lead)+'</p></header>';
 export function timelinePage(memories,query={}){
@@ -14,13 +19,13 @@ export function timelinePage(memories,query={}){
 export function albumsPage(memories){
  const rows=memories.albums().map(a=>{
   const first=a.images[0];
-  return '<a class="v3m-album" href="/moments/'+encodeURIComponent(a.slug)+'"><img loading="lazy" decoding="async" src="'+asset(first.storageKey)+'" alt="'+e(first.alt||a.title)+'"><div><span>'+a.images.length+' photos</span><h2>'+e(a.title)+'</h2><p>'+e(a.summary)+'</p></div></a>';
+  return '<a class="v3m-album" href="/moments/'+encodeURIComponent(a.slug)+'"><img loading="lazy" decoding="async" src="'+asset(first.storageKey)+'" alt="'+e(first.alt||a.title)+'"'+dimensions(first)+'><div><span>'+a.images.length+' photos</span><h2>'+e(a.title)+'</h2><p>'+e(a.summary)+'</p></div></a>';
  }).join('');
  return simplePage({title:'Moments Gallery',path:'/moments',lead:'Photographs and little memories.',body:'<div class="v3m-content">'+'<section class="v3m-albums" aria-label="Public albums">'+(rows||empty('More to remember'))+'</section></div>'});
 }
 export function albumPage(memories,slug){
  const a=memories.album(slug);
- const items=a.images.map((m,i)=>'<button type="button" class="v3m-photo" data-v3m-photo data-src="'+e(asset(m.storageKey))+'" data-alt="'+e(m.alt||a.title)+'" data-caption="'+e(m.caption||'')+'" aria-label="Enlarge '+e(m.alt||'photo '+(i+1))+'"><img loading="lazy" decoding="async" src="'+asset(m.storageKey)+'" alt="'+e(m.alt||a.title)+'"></button>').join('');
+ const items=a.images.map((m,i)=>'<button type="button" class="v3m-photo" data-v3m-photo data-src="'+e(asset(m.storageKey))+'" data-alt="'+e(m.alt||a.title)+'" data-caption="'+e(m.caption||'')+'" aria-label="Enlarge '+e(m.alt||'photo '+(i+1))+'"><img loading="lazy" decoding="async" src="'+asset(m.storageKey)+'" alt="'+e(m.alt||a.title)+'"'+dimensions(m)+'></button>).join('');
  const dialog='<dialog class="v3m-lightbox" data-v3m-lightbox aria-label="Photograph"><button type="button" data-v3m-close aria-label="Close photograph">×</button><figure><img alt=""><figcaption></figcaption></figure></dialog>';
  return simplePage({title:a.title,path:'/moments/'+a.slug,lead:a.summary||'Moments worth holding close.',body:'<div class="v3m-content"><a class="v3m-back" href="/moments">← All albums</a>'+'<div class="v3m-gallery" aria-label="Album photographs">'+items+'</div>'+dialog+'</div>'});
 }

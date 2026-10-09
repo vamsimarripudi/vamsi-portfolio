@@ -19,7 +19,11 @@ const asIds=(value,max=40)=>{
  return [...new Set(value)];
 };
 export class V3Memories{
- constructor(store,{env=process.env}={}){this.store=store;this.env=env}
+ constructor(store,{env=process.env,readImage=fs.readFileSync}={}){
+  this.store=store;this.env=env;this.readImage=readImage;
+  // Bounded per-process scan cache; published visibility remains checked on every request.
+  this.mediaPrivacyCache=new Map();
+ }
  enabled(){return this.env.CORNER_V3_MEMORIES==='1'}
  check(){if(!this.enabled())throw httpError(404,'Feature is unavailable.','FEATURE_DISABLED')}
  owner(user){this.check();if(user?.role!=='owner')throw httpError(403,'Owner access required.','OWNER_REQUIRED')}
@@ -58,18 +62,37 @@ export class V3Memories{
   });
   return this.store.one('SELECT * FROM v3_milestones WHERE id=?',key);
  }
+ privacySafeMedia(media){
+  if(this.store.location===':memory:')return true;
+  const key=media.storageKey??media.storage_key,mime=media.mimeType??media.mime_type;
+  if(!/^[A-Za-z0-9_-]{6,80}\.(?:jpg|png|webp)$/.test(String(key||'')))return false;
+  const file=path.join(config.uploads,key);
+  try{
+   const stat=fs.statSync(file);
+   if(!stat.isFile()||stat.size===0||stat.size>8*1024*1024)return false;
+   const cacheKey=media.id+':'+key+':'+mime;
+   const version=[stat.dev,stat.ino,stat.size,stat.mtimeMs,stat.ctimeMs].join(':');
+   const prior=this.mediaPrivacyCache.get(cacheKey);
+   if(prior?.version===version){
+    this.mediaPrivacyCache.delete(cacheKey);
+    this.mediaPrivacyCache.set(cacheKey,prior);
+    return prior.safe;
+   }
+   const safe=!imageHasPrivateMetadata(this.readImage(file),mime);
+   this.mediaPrivacyCache.delete(cacheKey);
+   this.mediaPrivacyCache.set(cacheKey,{version,safe});
+   if(this.mediaPrivacyCache.size>256)this.mediaPrivacyCache.delete(this.mediaPrivacyCache.keys().next().value);
+   return safe;
+  }catch{return false;}
+ }
  allowedMedia(mediaId){
+  // Cached safe files never bypass the published-post authorization boundary.
   const media=this.store.one("SELECT m.id,m.storage_key,m.mime_type,m.alt_text,m.caption,m.focal_x,m.focal_y,p.slug AS post_slug FROM media m JOIN posts p ON p.id=m.owner_id WHERE m.id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type IN ('image/jpeg','image/png','image/webp')",mediaId);
-  if(!media)return null;
-  if(this.store.location===':memory:')return media;
-  if(!/^[A-Za-z0-9_-]{6,80}\.(?:jpg|png|webp)$/.test(media.storage_key))return null;
-  const file=path.join(config.uploads,media.storage_key);
-  try{if(!fs.existsSync(file)||imageHasPrivateMetadata(fs.readFileSync(file),media.mime_type))return null;}catch{return null}
-  return media;
+  return media&&this.privacySafeMedia(media)?media:null;
  }
  allowedPost(postId){return this.store.getPostById(postId)}
  albumImages(id){
-  return this.store.all("SELECT m.id,m.storage_key AS storageKey,m.mime_type AS mimeType,m.alt_text AS alt,m.caption,m.focal_x AS focalX,m.focal_y AS focalY,p.slug AS postSlug FROM v3_album_items a JOIN media m ON m.id=a.media_id JOIN posts p ON p.id=m.owner_id WHERE a.album_id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type IN ('image/jpeg','image/png','image/webp') ORDER BY a.sort_order,a.media_id LIMIT 60",id).filter(m=>this.allowedMedia(m.id));
+  return this.store.all("SELECT m.id,m.storage_key AS storageKey,m.mime_type AS mimeType,m.alt_text AS alt,m.caption,m.focal_x AS focalX,m.focal_y AS focalY,m.width,m.height,p.slug AS postSlug FROM v3_album_items a JOIN media m ON m.id=a.media_id JOIN posts p ON p.id=m.owner_id WHERE a.album_id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type IN ('image/jpeg','image/png','image/webp') ORDER BY a.sort_order,a.media_id LIMIT 60",id).filter(m=>this.privacySafeMedia(m));
  }
  collectionPosts(id){
   return this.store.all("SELECT p.id,p.slug,p.title,p.excerpt,p.category,p.published_at AS publishedAt FROM v3_collection_items c JOIN posts p ON p.id=c.post_id WHERE c.collection_id=? AND p.state='published' ORDER BY c.sort_order,c.post_id LIMIT 60",id);
@@ -135,7 +158,18 @@ export class V3Memories{
   return {id:key,slug,state,postIds};
  }
  nowHistory({limit=40}={}){
-  this.check();return this.store.all("SELECT version,label,detail,icon,changed_at AS changedAt FROM v3_now_history WHERE is_active=1 AND label<>'' AND (active_from IS NULL OR active_from<=?) AND (active_until IS NULL OR active_until>?) ORDER BY changed_at DESC LIMIT ?",now(),now(),clamp(Number(limit)||40,1,100));
+  this.check();
+  // Expired public updates remain in history; entries superseded before scheduled activation do not.
+  const sql="WITH snapshots AS ("+
+    " SELECT version,label,detail,icon,is_active,active_from,active_until,changed_at,"+
+    " LEAD(changed_at) OVER (ORDER BY version) AS superseded_at FROM v3_now_history)"+
+    " SELECT version,label,detail,icon,changed_at AS changedAt FROM snapshots"+
+    " WHERE is_active=1 AND label<>''"+
+    " AND (active_from IS NULL OR (active_from<=? AND (superseded_at IS NULL OR active_from<superseded_at)))"+
+    " AND (active_until IS NULL OR active_until>changed_at)"+
+    " AND (active_from IS NULL OR active_until IS NULL OR active_until>active_from)"+
+    " ORDER BY version DESC LIMIT ?";
+  return this.store.all(sql,now(),clamp(Number(limit)||40,1,100));
  }
  adminNowHistory(user){this.owner(user);return this.store.all('SELECT * FROM v3_now_history ORDER BY version DESC LIMIT 100')}
  recordNow(user,data){

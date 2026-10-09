@@ -24,3 +24,10 @@ Archived posts remove associated images from public albums automatically.
 
 ## Known limitation
 Physical thumbnail generation/resizing is not yet included. Images are lazy-loaded but full-size, so final gallery performance/Core Web Vitals acceptance remains open.
+## Privacy-safe gallery caching and Now history corrections
+
+- Bounded 256-entry per-process media inspection cache keyed by image identity and disk fingerprint; invalidated on file changes.
+- Album queries avoid duplicate media database lookups; published-post checks remain enforced even when an image was previously cached.
+- Keep original image geometry on gallery cards to reduce layout shifts.
+- Expired genuinely public Now updates remain historical; scheduled snapshots superseded before activation stay private.
+- Three new regression tests. Full-size image bandwidth and physical thumbnail derivatives are still unoptimized; feature remains OFF pending isolated backup restore and acceptance.
