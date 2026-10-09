@@ -1,6 +1,8 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
 Disallow: /corner/admin
 Disallow: /corner/api/admin/
+Disallow: /api/track/
+Disallow: /api/contact
 Sitemap: https://vamsimarripudi.me/sitemap.xml
 Sitemap: https://vamsimarripudi.me/corner/sitemap.xml
