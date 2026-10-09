@@ -21,7 +21,7 @@ test('owner wish draft, preview, optimistic locking and scheduled publication ar
  assert.match(html,/data-wish-studio/);assert.match(html,/PRIVATE PREVIEW/);
  assert.match(html,/v3w-form/);assert.doesNotMatch(html,/script[^>]+onerror=/);
  const before=s.all("SELECT * FROM posts WHERE state='published'");
- assert.equal(w.preview(owner,{title:'Private wish',body:'Hello there'}).reminder.includes('nothing'),false);
+ assert.match(w.preview(owner,{title:'Private wish',body:'Hello there'}).reminder,/nothing has been published/i);
  assert.equal(s.all("SELECT * FROM posts WHERE state='published'").length,before.length);
  assert.throws(()=>w.update(owner,draft.id,{...draft,title:'Overwritten',version:999}),{code:'VERSION_CONFLICT'});
  const updated=w.update(owner,draft.id,{title:'An edited celebration',body:'Something lovely is coming soon',timezone:'UTC',version:draft.version});
