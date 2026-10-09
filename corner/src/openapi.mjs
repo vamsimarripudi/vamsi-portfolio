@@ -110,7 +110,12 @@ for(const [method,url,id,summary] of routes){
  if(placeholders.length)op.parameters=placeholders;
  if(id==='listLifeTimeline'){
   op.parameters=[
-   {in:'query',name:'year',required:false,schema:{type:'string',pattern:'^(19|20)\\d{2}
+   {in:'query',name:'year',required:false,schema:{type:'string',description:'Four-digit publication year'}},
+   {in:'query',name:'kind',required:false,schema:{type:'string',enum:['personal','build','work','learning','celebration']}},
+   {in:'query',name:'cursor',required:false,schema:{type:'string',maxLength:256}},
+   {in:'query',name:'limit',required:false,schema:{type:'integer',minimum:1,maximum:60,default:30}}
+  ];
+ }
  if(url.startsWith('/api/v1/me'))op.security=[{memberSession:[]},{ownerSession:[]}];
  if(url.includes('/admin/')&&!['signInOwner','loginStaff','registerInvitedStaff'].includes(id))op.security=[{ownerSession:[]}];
  if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
