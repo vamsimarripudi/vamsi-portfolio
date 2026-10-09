@@ -43,6 +43,29 @@ try{
     assert.ok(statusBox && statusBox.width>75,'Mobile status remains readable '+width);
   }
   assert.notEqual(state.background,state.buttonText,'Text must contrast with card background');
+  const signout=await page.locator('.track-header .track-logout').evaluate(button=>{
+    const rect=button.getBoundingClientRect();
+    const header=button.closest('.track-header').getBoundingClientRect();
+    const brand=document.querySelector('.track-header .track-brand').getBoundingClientRect();
+    const caption=button.querySelector('.track-logout-label');
+    return {
+      label:caption?.textContent?.trim(),display:getComputedStyle(button).display,
+      fontSize:parseFloat(getComputedStyle(button).fontSize),
+      labelFontSize:caption?parseFloat(getComputedStyle(caption).fontSize):0,
+      x:rect.x,right:rect.right,top:rect.top,width:rect.width,height:rect.height,
+      brandRight:brand.right,headerRight:header.right,
+    };
+  });
+  if(width<=760){
+    assert.equal(signout.label,'Sign out','Visible mobile action label at '+width);
+    assert.equal(signout.display,'flex','Mobile sign out uses centered horizontal layout at '+width);
+    assert.ok(signout.labelFontSize>=10,'Sign out text must not be visually hidden at '+width);
+    assert.ok(signout.width>=88&&signout.height>=44,'Accessible sign out target at '+width);
+    assert.ok(signout.x>=signout.brandRight+6,'Brand and sign out never overlap at '+width);
+    assert.ok(signout.right<=width-12,'Sign out respects right screen inset at '+width);
+    assert.ok(signout.headerRight<=width+1,'Header does not extend outside viewport at '+width);
+    console.log('PASS /track sign out '+width+'px '+JSON.stringify(signout));
+  }
   assert.deepEqual(errors,[],'No browser exceptions '+width);
   if([375,1440].includes(width))await page.screenshot({path:'/tmp/track-'+width+'.png',fullPage:true});
   console.log('PASS /track '+width+'px '+JSON.stringify(state));
