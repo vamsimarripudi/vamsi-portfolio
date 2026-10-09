@@ -12,7 +12,7 @@ import { applyV3Migrations } from '../src/v3-migrations.mjs';
 import { guestbookModerationPage,followPage,searchPage } from '../src/v3-ui.mjs';
 import { passwordHash } from '../src/auth.mjs';
 
-const flags={SESSION_SECRET:'test-only-phase1-session-key-longer-than-32-characters',CORNER_V3_SEARCH:'1',CORNER_V3_GUESTBOOK:'1',CORNER_V3_READING:'1',CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_KEY:'test-stable-follow-key-of-sufficient-length-2026'};
+const flags={SESSION_SECRET:'test-only-phase1-session-key-longer-than-32-characters',CORNER_V3_SEARCH:'1',CORNER_V3_GUESTBOOK:'1',CORNER_V3_READING:'1',CORNER_V3_FOLLOW:'1',CORNER_V3_FOLLOW_KEY:'test-stable-follow-key-of-sufficient-length-2026',SESSION_SECRET:'strong-session-secret-for-unit-test-2026'};
 const seed=store=>{
   const p=store.createPost({title:'Published memory',body:'Publicly readable note',type:'tech_note',tags:['Life']},'test');
   store.publish(p.id,'test');return p;
@@ -62,7 +62,7 @@ test('moderation page escapes notes, follow topics are configurable, missing key
   assert.match(html,/&lt;svg/);assert.doesNotMatch(html,/<svg onload/);
   assert.match(html,/data-v3-moderate="approved"/);
   assert.match(followPage(),/name="topics"/);
-  const locked=new V3Engagement(s,{env:{CORNER_V3_FOLLOW:'1'},sendMail:async()=>{}});
+  const locked=new V3Engagement(s,{env:{CORNER_V3_FOLLOW:'1',SESSION_SECRET:'strong-session-secret-for-unit-test-2026'},sendMail:async()=>{}});
   await assert.rejects(locked.follow({email:'user@example.org',consent:true}),{code:'FOLLOW_KEY_UNAVAILABLE'});
 });
 test('real HTTP V3: CSRF, moderation, hidden pending notes and one-use email opt-in',async t=>{
