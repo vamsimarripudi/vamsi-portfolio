@@ -5,6 +5,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
+import { V3Engagement } from './v3-engagement.mjs';
+import { v3Routes } from './v3-routes.mjs';
+import { searchPage, archivePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
 import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
 import { accountPage } from './identity-ui.mjs';
@@ -16,6 +19,7 @@ import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText,
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const identity=new IdentityService(store);
+const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -117,8 +121,10 @@ function mediaFile(req,res,key){
 function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
+const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
+  if(await handleV3(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -272,6 +278,8 @@ async function route(req,res){
       if(pathname==='/admin/invite'&&(!valid||actor.role!=='owner'))throw httpError(403,'Owner account required.','OWNER_REQUIRED');
       return page(res,accountPage({type:pathname,user:valid?identity.safeMe(identity.account(actor.id)):null,registrationOpen:identity.canRegister()}),200,true);
     }
+    if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||''));
+    if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
     if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
