@@ -31,3 +31,9 @@ Physical thumbnail generation/resizing is not yet included. Images are lazy-load
 - Keep original image geometry on gallery cards to reduce layout shifts.
 - Expired genuinely public Now updates remain historical; scheduled snapshots superseded before activation stay private.
 - Three new regression tests. Full-size image bandwidth and physical thumbnail derivatives are still unoptimized; feature remains OFF pending isolated backup restore and acceptance.
+
+## Timeline discovery at scale
+
+- Published milestones are now keyset/cursor-paginated with a server-capped page size, stable ordering, and invalid-cursor rejection. Drafts and posts archived after linking remain private.
+- Year and category remain selected across navigation and next-page links, with an accessible More milestones action. Public REST v1 accepts optional `year`, `kind`, `cursor`, `limit`.
+- Acceptance regression covers 76 milestones, published-only filtering and pagination without duplicate records.

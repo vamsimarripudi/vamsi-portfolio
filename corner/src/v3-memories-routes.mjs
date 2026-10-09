@@ -9,7 +9,7 @@ export function memoriesRoutes({memories,readJSON,ok,limit,requireOwner}){
  return async(req,res,path,url)=>{
   const method=req.method||'GET';
   const publicRoutes={
-   '/api/memories/timeline':()=>memories.timeline({year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||''}),
+   '/api/memories/timeline':()=>memories.timeline({year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||'',cursor:url.searchParams.get('cursor')||'',limit:url.searchParams.get('limit')||30}),
    '/api/memories/albums':()=>memories.albums(),
    '/api/memories/collections':()=>memories.collections(),
    '/api/memories/now/history':()=>memories.nowHistory()

@@ -294,7 +294,7 @@ async function route(req,res){
       const user=requireOwner(req,'/api/admin/settings','GET');
       return page(res,memoriesStudioPage(memories,user),200,true);
     }
-    if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||''}));
+    if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||'',cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/moments'&&memories.enabled())return page(res,albumsPage(memories));
     if(pathname.startsWith('/moments/')&&memories.enabled())return page(res,albumPage(memories,decodeURIComponent(pathname.slice(9))));
     if(pathname==='/collections'&&memories.enabled())return page(res,collectionsPage(memories));

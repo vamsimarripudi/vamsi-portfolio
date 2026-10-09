@@ -32,14 +32,28 @@ export class V3Memories{
   while(this.store.one('SELECT id FROM '+table+' WHERE slug=?',slug))slug=stem+'-'+n++;
   return slug;
  }
- timeline({year='',kind='',limit=100}={}){
+ timeline({year='',kind='',limit=30,cursor=''}={}){
   this.check();
   const y=String(year||''),k=String(kind||'');
   if(y&&!/^(19|20)\d{2}$/.test(y))throw httpError(400,'Invalid year.','INVALID_YEAR');
   if(k&&!kinds.includes(k))throw httpError(400,'Invalid category.','INVALID_KIND');
-  const items=this.store.all("SELECT m.id,m.title,m.summary,m.occurred_on AS occurredOn,m.kind,p.slug AS postSlug FROM v3_milestones m LEFT JOIN posts p ON p.id=m.post_id WHERE m.state='published' AND (m.post_id IS NULL OR p.state='published') AND (?='' OR substr(m.occurred_on,1,4)=?) AND (?='' OR m.kind=?) ORDER BY m.occurred_on DESC,m.id DESC LIMIT ?",y,y,k,k,clamp(Number(limit)||100,1,100));
-  const years=this.store.all("SELECT substr(m.occurred_on,1,4) year,count(*) total FROM v3_milestones m LEFT JOIN posts p ON p.id=m.post_id WHERE m.state='published' AND (m.post_id IS NULL OR p.state='published') GROUP BY year ORDER BY year DESC LIMIT 40");
-  return {items,years};
+  const take=clamp(Math.floor(Number(limit)||30),1,60);
+  let after=null;
+  if(cursor){
+   if(typeof cursor!=='string'||cursor.length>256)throw httpError(400,'Invalid page cursor.','INVALID_CURSOR');
+   try{
+    const data=JSON.parse(Buffer.from(cursor,'base64url').toString('utf8'));
+    if(!Array.isArray(data)||data.length!==2||!/^milestone_[0-9a-f-]{36}$/i.test(data[1]))throw Error('Bad cursor');
+    isoDay(data[0]);after=data;
+   }catch{throw httpError(400,'Invalid page cursor.','INVALID_CURSOR')}
+  }
+  const pagination=after?' AND (m.occurred_on<? OR (m.occurred_on=? AND m.id<?))':'';
+  const args=[y,y,k,k];if(after)args.push(after[0],after[0],after[1]);
+  const rows=this.store.all("SELECT m.id,m.title,m.summary,m.occurred_on AS occurredOn,m.kind,p.slug AS postSlug FROM v3_milestones m LEFT JOIN posts p ON p.id=m.post_id WHERE m.state='published' AND (m.post_id IS NULL OR p.state='published') AND (?='' OR substr(m.occurred_on,1,4)=?) AND (?='' OR m.kind=?)"+pagination+" ORDER BY m.occurred_on DESC,m.id DESC LIMIT ?",...args,take+1);
+  const items=rows.slice(0,take),last=items.at(-1);
+  const nextCursor=rows.length>take&&last?Buffer.from(JSON.stringify([last.occurredOn,last.id])).toString('base64url'):null;
+  const years=this.store.all("SELECT substr(m.occurred_on,1,4) year,count(*) total FROM v3_milestones m LEFT JOIN posts p ON p.id=m.post_id WHERE m.state='published' AND (m.post_id IS NULL OR p.state='published') AND (?='' OR m.kind=?) GROUP BY year ORDER BY year DESC LIMIT 40",k,k);
+  return {items,years,nextCursor};
  }
  adminMilestones(user){this.owner(user);return this.store.all('SELECT * FROM v3_milestones ORDER BY occurred_on DESC,created_at DESC LIMIT 200')}
  milestone(user,data={},id=''){

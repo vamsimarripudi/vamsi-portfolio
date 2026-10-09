@@ -61,3 +61,6 @@
 @media(max-width:720px){.v3m-albums,.v3m-collections,.v3m-form-grid,.v3m-admin-grids{grid-template-columns:1fr}.v3m-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.v3m-event{grid-template-columns:1fr;gap:8px}.v3m-content{padding-inline:0}.v3m-hero h1{font-size:clamp(2.6rem,12vw,3.75rem)}}
 @media(max-width:380px){.v3m-gallery{grid-template-columns:1fr}.v3m-series-item{grid-template-columns:30px minmax(0,1fr) 24px}.v3m-collection{padding:15px}}
 @media(prefers-reduced-motion:reduce){.v3m-album,.v3m-collection,.v3m-photo{transition:none;transform:none!important}}
+
+.v3m-more{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:18px 0 5px;padding:11px 19px;border-radius:11px;border:1px solid #000;background:#000;color:#fff;font-size:.82rem;font-weight:700;text-decoration:none}
+.v3m-more:focus-visible{outline:3px solid #000;outline-offset:4px}

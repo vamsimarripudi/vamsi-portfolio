@@ -10,11 +10,19 @@ const empty=(title)=>'<div class="v3m-empty"><span class="v3m-tile" aria-hidden=
 const hero=(kicker,title,lead)=>'<header class="v3m-hero"><p class="eyebrow">'+e(kicker)+'</p><h1>'+e(title)+'<span>.</span></h1><p>'+e(lead)+'</p></header>';
 export function timelinePage(memories,query={}){
  const data=memories.timeline(query);
- const years='<nav class="v3m-years" aria-label="Years"><a href="/timeline"'+(!query.year?' aria-current="page"':'')+'>All</a>'+data.years.map(y=>'<a href="/timeline?year='+e(y.year)+'"'+(query.year===y.year?' aria-current="page"':'')+'>'+e(y.year)+'</a>').join('')+'</nav>';
+ const href=({year='',kind='',cursor=''}={})=>{
+  const params=new URLSearchParams();
+  if(year)params.set('year',year);
+  if(kind)params.set('kind',kind);
+  if(cursor)params.set('cursor',cursor);
+  return '/timeline'+(params.size?'?'+params.toString():'');
+ };
+ const years='<nav class="v3m-years" aria-label="Years"><a href="'+e(href({kind:query.kind}))+'"'+(!query.year?' aria-current="page"':'')+'>All</a>'+data.years.map(y=>'<a href="'+e(href({year:y.year,kind:query.kind}))+'"'+(query.year===y.year?' aria-current="page"':'')+'>'+e(y.year)+'</a>').join('')+'</nav>';
  const kinds=['personal','build','work','learning','celebration'];
- const filters='<form action="/timeline" method="get" class="v3m-filters"><label>Category<select name="kind"><option value="">All moments</option>'+kinds.map(k=>'<option value="'+k+'"'+(k===query.kind?' selected':'')+'>'+e(k.slice(0,1).toUpperCase()+k.slice(1))+'</option>').join('')+'</select></label><button type="submit">Filter ↗</button></form>';
+ const filters='<form action="/timeline" method="get" class="v3m-filters"><input type="hidden" name="year" value="'+e(query.year||'')+'"><label>Category<select name="kind"><option value="">All moments</option>'+kinds.map(k=>'<option value="'+k+'"'+(k===query.kind?' selected':'')+'>'+e(k.slice(0,1).toUpperCase()+k.slice(1))+'</option>').join('')+'</select></label><button type="submit">Filter ↗</button></form>';
  const items=data.items.map(m=>'<article class="v3m-event"><time datetime="'+e(m.occurredOn)+'">'+e(m.occurredOn)+'</time><div><span class="v3m-kind">'+e(m.kind)+'</span><h2>'+e(m.title)+'</h2>'+(m.summary?'<p>'+e(m.summary)+'</p>':'')+(m.postSlug?'<a href="/post/'+encodeURIComponent(m.postSlug)+'">Read story ↗</a>':'')+'</div></article>').join('');
- return simplePage({path:'/timeline',title:'Life Timeline',lead:'A living record of the moments that mattered.',body:'<div class="v3m-content">'+years+filters+'<section class="v3m-timeline" aria-label="Published milestones">'+(items||empty('A little ahead of us'))+'</section></div>'});
+ const next=data.nextCursor?'<a class="v3m-more" rel="next" href="'+e(href({year:query.year,kind:query.kind,cursor:data.nextCursor}))+'">More milestones ↓</a>':'';
+ return simplePage({path:'/timeline',title:'Life Timeline',lead:'A living record of the moments that mattered.',body:'<div class="v3m-content">'+years+filters+'<section class="v3m-timeline" aria-label="Published milestones">'+(items||empty('A little ahead of us'))+'</section>'+next+'</div>'});
 }
 export function albumsPage(memories){
  const rows=memories.albums().map(a=>{
