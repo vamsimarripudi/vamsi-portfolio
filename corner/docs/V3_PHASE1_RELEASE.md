@@ -13,8 +13,8 @@ Security:
 - Server-enforced role checks and MFA for non-owner moderators.
 - One-time expiring verification and unsubscribe tokens, hashed in SQLite.
 - No newsletter campaign sending in Phase 1; personal wish emails remain out of scope.
-- Strong session secret required if follow is enabled.
-- Additive SQLite migration on app startup; no existing table altered.
+- FOLLOW requires a strong `SESSION_SECRET` and a separate, stable `CORNER_V3_FOLLOW_KEY` (minimum 32 characters). Keep the follow key unchanged across session-secret rotation, restarts and deploys; a key rotation needs an explicit consent-preserving migration.
+- Versioned, checksummed SQLite migrations run transactionally at startup. The hardened release adds private `progress` and `progress_updated_at` columns to the existing `identity_bookmarks` table and backfills from `v3_reading_positions`; it drops no tables and deletes no existing content.
 - User account export includes V3 contributions.
 - Existing admin, public posts, realtime, scheduling, offsite backup behavior retained.
 
@@ -28,3 +28,12 @@ Production gate:
 7. Roll back by disabling flags before code rollback; never drop migration tables.
 
 Known future work: Phase 2 albums/timeline/collections; Phase 3 Wishes Studio + opt-in delivery queue + RSS/Atom; Phase 4 reviewed languages, insights and performance.
+
+## Phase 0/1 hardening follow-up — October 9, 2026
+
+- Migrations `v3-0001-engagement` and `v3-0002-bookmark-progress` are additive and checksum-verified; a changed historical migration fails closed. Rehearse the upgrade and isolated restore against a copy of the production SQLite database before enabling additional features.
+- Existing member bookmarks are retained. Explicitly saved reading positions join the same private bookmark records; drafts remain inaccessible through public or member reading APIs.
+- Advanced discovery now supports opaque cursor pagination; archive year lists can page beyond 40 stories. Guestbook names are optional and remain moderated. Bounced follower addresses remain suppressed.
+- `CORNER_V3_SEARCH` is already reachable on the public domain as of October 9. `CORNER_V3_GUESTBOOK` and `CORNER_V3_FOLLOW` returned HTTP 404; leave them disabled until owner acceptance. `CORNER_V3_READING` requires separate authenticated verification.
+- Public `/corner/api/ready` returned `backupFresh=true` and Railway reported the Phase 1 baseline deployment healthy. This freshness check is not, by itself, proof of a newly performed isolated restore on production data.
+- Do not merge the hardening PR or claim final production completion until its exact HEAD CI passes, review and backup/restore gates are met, and the new deployment revision is verified. Vercel's recorded production artifact did not yet correspond to the latest GitHub master at the time of this checkpoint.
