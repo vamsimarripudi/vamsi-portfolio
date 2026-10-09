@@ -64,6 +64,8 @@ export class IdentityService{
       body:JSON.stringify({from:this.env.CORNER_AUTH_FROM_EMAIL,to:[to],subject,text,html})
     });
     if(!response.ok)throw httpError(502,'Account email could not be delivered. Please try again.','EMAIL_DELIVERY_FAILED');
+    const provider=await response.json();
+    return {id:typeof provider?.id==='string'?provider.id:null};
   }
   issueToken(userId,email,purpose,minutes){
     const token=freshToken(),created=now();
