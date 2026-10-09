@@ -1,11 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { uid, now, sha, pureText, httpError, clamp } from './domain.mjs';
+import { uid, now, sha, pureText, httpError, clamp, encodeCursor } from './domain.mjs';
 import { publicPost } from './store.mjs';
+import { applyV3Migrations } from './v3-migrations.mjs';
 
-const schema=fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'v3-schema.sql'),'utf8');
 const emailRule=/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const safeEmail=(v)=>{
   const value=String(v??'').trim().toLowerCase();
@@ -17,7 +14,11 @@ const dateAfter=(hours)=>new Date(Date.now()+hours*3600000).toISOString();
 const validTopics=['all','notes','moments','wishes','builds'];
 const flag=(env,name)=>env[name]==='1';
 const content=(v,len)=>pureText(v,len).replace(/\s+/g,' ').trim();
-const emailKey=(env)=>crypto.createHash('sha256').update('v3-follow:'+String(env.SESSION_SECRET||'')).digest();
+const emailKey=(env)=>{
+  const secret=String(env.CORNER_V3_FOLLOW_KEY||'');
+  if(secret.length<32)throw httpError(503,'Email following is not configured.','FOLLOW_KEY_UNAVAILABLE');
+  return crypto.createHash('sha256').update('corner:v3:follow:v1:'+secret).digest();
+};
 const normalizedHash=(mail,env)=>crypto.createHmac('sha256',emailKey(env)).update(mail).digest('hex');
 const encrypt=(mail,env)=>{
   const nonce=crypto.randomBytes(12),cipher=crypto.createCipheriv('aes-256-gcm',emailKey(env),nonce);
@@ -31,33 +32,45 @@ export class V3Engagement{
     this.env=env;
     this.sendMail=sendMail||null;
     if(this.enabled('FOLLOW')&&String(env.SESSION_SECRET||'').length<32)throw new Error('Strong SESSION_SECRET required before enabling follower email storage');
-    store.db.exec(schema);
+    applyV3Migrations(store);
   }
   enabled(feature){return flag(this.env,'CORNER_V3_'+feature)}
   assertEnabled(feature){if(!this.enabled(feature))throw httpError(404,'This feature is not available.','FEATURE_DISABLED')}
-  search({q='',category='',year='',tag='',limit=20,offset=0}={}){
+  search({q='',category='',year='',tag='',limit=20,offset=0,cursor=''}={}){
     this.assertEnabled('SEARCH');
     q=content(q,100);category=String(category||'').trim();year=String(year||'').trim();tag=content(tag,35);
     limit=clamp(Number(limit)||20,1,40);offset=clamp(Number(offset)||0,0,5000);
-    if(!q&&!category&&!year&&!tag)return {items:[],total:0,nextOffset:null};
     if(category&&!['Latest','Wishes','Builds','Notes','Journal','Moments'].includes(category))throw httpError(400,'Invalid category','INVALID_CATEGORY');
     if(year&&!/^(19|20)\d{2}$/.test(year))throw httpError(400,'Invalid publication year','INVALID_YEAR');
+    let after=null;
+    if(cursor){
+      if(typeof cursor!=='string'||cursor.length>256||offset)throw httpError(400,'Invalid page cursor','INVALID_CURSOR');
+      try{
+        const parsed=JSON.parse(Buffer.from(cursor,'base64url').toString('utf8'));
+        if(!Array.isArray(parsed)||parsed.length!==2||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(parsed[0])||!/^post_[0-9a-f-]{36}$/i.test(parsed[1]))throw Error('invalid');
+        after=parsed;
+      }catch{throw httpError(400,'Invalid page cursor','INVALID_CURSOR')}
+    }
     const filters=["p.state='published'"],args=[];
     const like=(v)=>'%'+v.replace(/[\\%_]/g,'\\$&')+'%';
     if(q){const query=like(q);filters.push("(p.title LIKE ? ESCAPE '\\' OR p.excerpt LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\')");args.push(query,query,query);}
     if(category&&category!=='Latest'){filters.push('p.category=?');args.push(category)}
-    if(year){filters.push('substr(p.published_at,1,4)=?');args.push(year)}
+    if(year){filters.push('p.published_at>=? AND p.published_at<?');args.push(year+'-01-01',(Number(year)+1)+'-01-01')}
     if(tag){filters.push('EXISTS(SELECT 1 FROM json_each(p.tags) WHERE value=?)');args.push(tag)}
     const where=filters.join(' AND ');
     const total=Number(this.store.one('SELECT count(*) AS total FROM posts p WHERE '+where,...args)?.total||0);
-    const rows=this.store.all('SELECT p.* FROM posts p WHERE '+where+' ORDER BY p.published_at DESC,p.id DESC LIMIT ? OFFSET ?',...args,limit,offset).map(publicPost);
-    return {items:rows,total,nextOffset:offset+rows.length<total?offset+rows.length:null};
+    const afterClause=after?' AND (p.published_at<? OR (p.published_at=? AND p.id<?))':'';
+    const pagination=after?[after[0],after[0],after[1]]:[];
+    const rows=this.store.all('SELECT p.* FROM posts p WHERE '+where+afterClause+' ORDER BY p.published_at DESC,p.id DESC LIMIT ? OFFSET ?',...args,...pagination,limit+1,after?0:offset);
+    const items=rows.slice(0,limit),more=rows.length>limit,last=items.at(-1);
+    return {items:items.map(publicPost),total,nextCursor:more&&last?encodeCursor(last):null,nextOffset:!cursor&&offset+items.length<total?offset+items.length:null};
   }
-  archive(year){
+  archive(year='',cursor=''){
     this.assertEnabled('SEARCH');
     if(year!==undefined && year!=='' && !/^(19|20)\d{2}$/.test(String(year)))throw httpError(400,'Invalid year','INVALID_YEAR');
     const years=this.store.all("SELECT substr(published_at,1,4) AS year,count(*) AS total FROM posts WHERE state='published' AND published_at IS NOT NULL GROUP BY year ORDER BY year DESC LIMIT 50");
-    return {years,items:year?this.search({year,limit:40}).items:[]};
+    const result=year?this.search({year,limit:40,cursor}):null;
+    return {years,items:result?.items||[],nextCursor:result?.nextCursor||null};
   }
   listGuestbook({limit=30,offset=0}={}){
     this.assertEnabled('GUESTBOOK');
@@ -69,7 +82,7 @@ export class V3Engagement{
     this.assertEnabled('GUESTBOOK');
     if(honeypot)return {accepted:true};
     if(consent!==true)throw httpError(400,'Confirm that your note can be displayed after review.','CONSENT_REQUIRED');
-    const author=content(name,65),note=content(message,550);
+    const author=name===undefined||name===null||!String(name).trim()?'Guest':content(name,65),note=content(message,550);
     if(author.length<2||author.length>60||note.length<5||note.length>500)throw httpError(400,'Use a name and message within the limits.','INVALID_GUESTBOOK');
     if(/<[^>]+>|https?:\/\/|www\./i.test(note))throw httpError(400,'Please omit HTML and links.','LINK_NOT_ALLOWED');
     const id=uid('guest'),time=now();
@@ -98,9 +111,10 @@ export class V3Engagement{
     const address=safeEmail(email);
     if(!Array.isArray(topics)||topics.length<1||topics.length>5||topics.some(x=>!validTopics.includes(x)))throw httpError(400,'Choose valid topics.','INVALID_TOPICS');
     if(!['weekly','instant'].includes(frequency))throw httpError(400,'Invalid frequency.','INVALID_FREQUENCY');
+    if(topics.includes('all')&&topics.length!==1)throw httpError(400,'Choose all updates or individual topics.','INVALID_TOPICS');
     const normalizedTopics=[...new Set(topics)];
     const emailHash=normalizedHash(address,this.env),existing=this.store.one('SELECT * FROM v3_follows WHERE email_hash=?',emailHash);
-    if(existing?.state==='active')return {accepted:true,message:'If eligible, a verification email has been sent.'};
+    if(existing?.state==='active'||existing?.state==='bounced')return {accepted:true,message:'If eligible, a verification email has been sent.'};
     const id=existing?.id||uid('follow'),token=crypto.randomBytes(32).toString('base64url'),time=now();
     const insert=()=>this.store.exec('INSERT INTO v3_follows(id,email_hash,email_cipher,topics,frequency,state,consent_version,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
       id,emailHash,encrypt(address,this.env),JSON.stringify(normalizedTopics),frequency,'pending','v3.0',time,time,time);
@@ -174,13 +188,16 @@ export class V3Engagement{
     const post=this.store.getPostById(String(postId||''));
     if(!post)throw httpError(404,'Post not found.','NOT_FOUND');
     if(progress===undefined){
-      const p=this.store.one('SELECT progress,updated_at AS updatedAt FROM v3_reading_positions WHERE user_id=? AND post_id=?',actor.id,postId);
+      const p=this.store.one('SELECT progress,progress_updated_at AS updatedAt FROM identity_bookmarks WHERE user_id=? AND post_id=?',actor.id,postId);
       return {progress:p?.progress??0,updatedAt:p?.updatedAt||null};
     }
-    if(progress===null){this.store.exec('DELETE FROM v3_reading_positions WHERE user_id=? AND post_id=?',actor.id,postId);return {progress:0,updatedAt:null};}
+    if(progress===null){
+      this.store.exec('UPDATE identity_bookmarks SET progress=NULL,progress_updated_at=NULL WHERE user_id=? AND post_id=?',actor.id,postId);
+      return {progress:0,updatedAt:null};
+    }
     if(typeof progress!=='number'||!Number.isInteger(progress)||progress<0||progress>100)throw httpError(400,'Progress must be an integer from 0 to 100.','INVALID_PROGRESS');
     const time=now();
-    this.store.exec('INSERT INTO v3_reading_positions(user_id,post_id,progress,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id,post_id) DO UPDATE SET progress=excluded.progress,updated_at=excluded.updated_at',actor.id,postId,progress,time);
+    this.store.exec('INSERT INTO identity_bookmarks(user_id,post_id,created_at,progress,progress_updated_at) VALUES(?,?,?,?,?) ON CONFLICT(user_id,post_id) DO UPDATE SET progress=excluded.progress,progress_updated_at=excluded.progress_updated_at',actor.id,postId,time,progress,time);
     return {progress,updatedAt:time};
   }
 }

@@ -7,7 +7,7 @@ import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
 import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
-import { searchPage, archivePage, guestbookPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
+import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
 import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
 import { accountPage } from './identity-ui.mjs';
@@ -278,12 +278,16 @@ async function route(req,res){
       if(pathname==='/admin/invite'&&(!valid||actor.role!=='owner'))throw httpError(403,'Owner account required.','OWNER_REQUIRED');
       return page(res,accountPage({type:pathname,user:valid?identity.safeMe(identity.account(actor.id)):null,registrationOpen:identity.canRegister()}),200,true);
     }
+    if(pathname==='/admin/v3/guestbook'&&v3.enabled('GUESTBOOK')){
+      const moderator=requireOwner(req,'/api/admin/comments','GET');
+      return page(res,guestbookModerationPage(v3,moderator),200,true);
+    }
     if(pathname==='/guestbook'&&v3.enabled('GUESTBOOK'))return page(res,guestbookPage(v3));
     if(pathname==='/follow'&&v3.enabled('FOLLOW'))return page(res,followPage());
     if(pathname==='/follow/confirm'&&v3.enabled('FOLLOW'))return page(res,followConfirmPage());
     if(pathname==='/follow/unsubscribe'&&v3.enabled('FOLLOW'))return page(res,unsubscribePage());
-    if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||''));
-    if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0}));
+    if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||'',url.searchParams.get('cursor')||''));
+    if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
     if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
