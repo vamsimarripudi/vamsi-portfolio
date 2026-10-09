@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { SITE_IDENTITY, SITE_URL, staticRouteMeta } from '../src/seo.js';
+import { SITE_IDENTITY, SITE_URL, staticRouteMeta, siteStructuredDataForRoute } from '../src/seo.js';
 
 const distDir = new URL('../dist/', import.meta.url);
 const baseHtml = await readFile(new URL('index.html', distDir), 'utf8');
@@ -20,6 +20,12 @@ for (const [route, meta] of Object.entries(staticRouteMeta)) {
   html = replaceMeta(html, 'name="twitter:title"', meta.title);
   html = replaceMeta(html, 'name="twitter:description"', meta.description);
   html = html.replace(/(<link rel="canonical" href=")[^"]*("\s*\/?>)/i, `$1${canonical}$2`);
+  // A consistent, route-specific JSON-LD graph is available in the initial HTML
+  // even to crawlers that do not run the client-side React application.
+  const graph = JSON.stringify(siteStructuredDataForRoute(route)).replaceAll('<', '\\u003c');
+  const jsonLdPattern = /<script type="application\/ld\+json">[\s\S]*?<\/script>/i;
+  if (!jsonLdPattern.test(html)) throw new Error('Expected JSON-LD entry missing on ' + route);
+  html = html.replace(jsonLdPattern, '<script type="application/ld+json">' + graph + '</script>');
   if (meta.noindex) html = html.replace('</head>', '    <meta name="robots" content="noindex, follow" />\n  </head>');
   const routeDir = route === '/' ? distDir : new URL(`${route.slice(1)}/`, distDir);
   await mkdir(routeDir, { recursive: true });

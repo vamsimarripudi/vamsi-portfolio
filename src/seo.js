@@ -57,3 +57,86 @@ export const staticRouteMeta = {
   '/maintenance': { title: 'Maintenance — Vamsi Marripudi', description: 'Temporary maintenance information for vamsimarripudi.me.', noindex: true },
   '/rate-limited': { title: 'Too Many Requests — Vamsi Marripudi', description: 'A temporary rate limit recovery page for vamsimarripudi.me.', noindex: true },
 };
+
+// Shared, human-visible FAQ answers are used for the page and its machine-readable description.
+export const faqItems=[['What does Vamsi build?','Vamsi works across product engineering, full-stack development, backend systems, APIs, data, and the practical delivery details that help a product become useful.'],['What is the best way to get in touch?','Use the contact form or email connect@vamsimarripudi.me. Accepted contact-form messages are delivered to that enquiry mailbox.'],['What information does the contact form collect?','The form asks for a name, email address, enquiry type, and message so a response is possible. It does not ask for a phone number, address, or budget.'],['Does this site publish a phone number?','No. The public contact path is the enquiry mailbox and the contact form.'],['Where can I find projects and technical work?','Start with Work for project records, Engineering for the system approach, and Lab for safe local experiments.'],['Does the site use tracking cookies?','No advertising cookies, marketing tracker, or visitor analytics product is used. A theme preference and an optional Signal Runner best score may be stored locally in your browser.'],['Is the Enquiry Tracker public?','No. The tracker is a private owner-only workspace protected by an email verification flow.']];
+
+// Canonical identifiers are stable across the portfolio, FAQ, and creator profile.
+export const PERSON_ID = SITE_URL + '/#person';
+export const WEBSITE_ID = SITE_URL + '/#website';
+
+export function siteStructuredDataForRoute(route = '/') {
+  const path = Object.prototype.hasOwnProperty.call(staticRouteMeta, route) ? route : '/';
+  const meta = staticRouteMeta[path];
+  const url = SITE_URL + (path === '/' ? '/' : path);
+  const creator = {
+    '@type': 'Person',
+    '@id': PERSON_ID,
+    name: SITE_IDENTITY.name,
+    alternateName: 'Vamsi',
+    url: SITE_URL + '/',
+    description: SITE_IDENTITY.homeDescription,
+    jobTitle: 'Founder Engineer',
+    knowsAbout: ['Product engineering', 'Full-stack development', 'Backend systems', 'APIs', 'Cloud infrastructure'],
+    sameAs: [
+      'https://github.com/vamsimarripudi',
+      'https://www.linkedin.com/in/vamsimarripudi/'
+    ]
+  };
+  const website = {
+    '@type': 'WebSite',
+    '@id': WEBSITE_ID,
+    name: SITE_IDENTITY.name,
+    url: SITE_URL + '/',
+    inLanguage: 'en',
+    publisher: {'@id': PERSON_ID}
+  };
+  const page = {
+    '@type': path === '/journey' ? 'ProfilePage' : path === '/faq' ? 'FAQPage' : 'WebPage',
+    '@id': url + '#webpage',
+    url,
+    name: meta.title,
+    description: meta.description,
+    inLanguage: 'en',
+    isPartOf: {'@id': WEBSITE_ID},
+    author: {'@id': PERSON_ID}
+  };
+  if (path === '/' || path === '/journey') page.mainEntity = {'@id': PERSON_ID};
+  if (path === '/faq') {
+    page.mainEntity = faqItems.map(([question, answer]) => ({
+      '@type': 'Question',
+      name: question,
+      acceptedAnswer: {'@type': 'Answer', text: answer}
+    }));
+  }
+  const graph = [creator, website, page];
+  if (path !== '/' && !meta.noindex) {
+    const segments = path.split('/').filter(Boolean);
+    const breadcrumbs = [{
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: SITE_URL + '/'
+    }];
+    for (let i = 0; i < segments.length; i++) {
+      const ancestorPath = '/' + segments.slice(0, i + 1).join('/');
+      if (!staticRouteMeta[ancestorPath] || staticRouteMeta[ancestorPath].noindex) continue;
+      breadcrumbs.push({
+        '@type': 'ListItem',
+        position: breadcrumbs.length + 1,
+        name: ancestorPath === '/work' ? 'Work' :
+          ancestorPath === '/writing' ? 'Writing' :
+          staticRouteMeta[ancestorPath].title.replace('Vamsi Marripudi — ', ''),
+        item: SITE_URL + ancestorPath
+      });
+    }
+    if (breadcrumbs.length > 1) {
+      graph.push({
+        '@type': 'BreadcrumbList',
+        '@id': url + '#breadcrumbs',
+        itemListElement: breadcrumbs
+      });
+    }
+  }
+  return {'@context': 'https://schema.org', '@graph': graph};
+}
