@@ -9,33 +9,33 @@ export function timelinePage(memories,query={}){
  const kinds=['personal','build','work','learning','celebration'];
  const filters='<form action="/timeline" method="get" class="v3m-filters"><label>Category<select name="kind"><option value="">All moments</option>'+kinds.map(k=>'<option value="'+k+'"'+(k===query.kind?' selected':'')+'>'+e(k.slice(0,1).toUpperCase()+k.slice(1))+'</option>').join('')+'</select></label><button type="submit">Filter ↗</button></form>';
  const items=data.items.map(m=>'<article class="v3m-event"><time datetime="'+e(m.occurredOn)+'">'+e(m.occurredOn)+'</time><div><span class="v3m-kind">'+e(m.kind)+'</span><h2>'+e(m.title)+'</h2>'+(m.summary?'<p>'+e(m.summary)+'</p>':'')+(m.postSlug?'<a href="/post/'+encodeURIComponent(m.postSlug)+'">Read story ↗</a>':'')+'</div></article>').join('');
- return simplePage({path:'/timeline',title:'Life Timeline',lead:'A living record of the moments that mattered.',body:'<div class="v3m-content">'+hero('CORNER / TIMELINE','Life Timeline','Small turning points, collected by year.')+years+filters+'<section class="v3m-timeline" aria-label="Published milestones">'+(items||empty('A little ahead of us'))+'</section></div>'});
+ return simplePage({path:'/timeline',title:'Life Timeline',lead:'A living record of the moments that mattered.',body:'<div class="v3m-content">'+years+filters+'<section class="v3m-timeline" aria-label="Published milestones">'+(items||empty('A little ahead of us'))+'</section></div>'});
 }
 export function albumsPage(memories){
  const rows=memories.albums().map(a=>{
   const first=a.images[0];
   return '<a class="v3m-album" href="/moments/'+encodeURIComponent(a.slug)+'"><img loading="lazy" decoding="async" src="'+asset(first.storageKey)+'" alt="'+e(first.alt||a.title)+'"><div><span>'+a.images.length+' photos</span><h2>'+e(a.title)+'</h2><p>'+e(a.summary)+'</p></div></a>';
  }).join('');
- return simplePage({title:'Moments Gallery',path:'/moments',lead:'Photographs and little memories.',body:'<div class="v3m-content">'+hero('CORNER / MOMENTS','Moments Gallery','A few scenes worth saving.')+'<section class="v3m-albums" aria-label="Public albums">'+(rows||empty('More to remember'))+'</section></div>'});
+ return simplePage({title:'Moments Gallery',path:'/moments',lead:'Photographs and little memories.',body:'<div class="v3m-content">'+'<section class="v3m-albums" aria-label="Public albums">'+(rows||empty('More to remember'))+'</section></div>'});
 }
 export function albumPage(memories,slug){
  const a=memories.album(slug);
  const items=a.images.map((m,i)=>'<button type="button" class="v3m-photo" data-v3m-photo data-src="'+e(asset(m.storageKey))+'" data-alt="'+e(m.alt||a.title)+'" data-caption="'+e(m.caption||'')+'" aria-label="Enlarge '+e(m.alt||'photo '+(i+1))+'"><img loading="lazy" decoding="async" src="'+asset(m.storageKey)+'" alt="'+e(m.alt||a.title)+'"></button>').join('');
  const dialog='<dialog class="v3m-lightbox" data-v3m-lightbox aria-label="Photograph"><button type="button" data-v3m-close aria-label="Close photograph">×</button><figure><img alt=""><figcaption></figcaption></figure></dialog>';
- return simplePage({title:a.title,path:'/moments/'+a.slug,lead:a.summary||'Moments worth holding close.',body:'<div class="v3m-content"><a class="v3m-back" href="/moments">← All albums</a>'+hero('CORNER / MOMENTS',a.title,a.summary||'A quiet collection.')+'<div class="v3m-gallery" aria-label="Album photographs">'+items+'</div>'+dialog+'</div>'});
+ return simplePage({title:a.title,path:'/moments/'+a.slug,lead:a.summary||'Moments worth holding close.',body:'<div class="v3m-content"><a class="v3m-back" href="/moments">← All albums</a>'+'<div class="v3m-gallery" aria-label="Album photographs">'+items+'</div>'+dialog+'</div>'});
 }
 export function collectionsPage(memories){
  const rows=memories.collections().map(c=>'<a class="v3m-collection" href="/collections/'+encodeURIComponent(c.slug)+'"><span class="v3m-tile" aria-hidden="true">↗</span><div><small>'+c.posts.length+' STORIES</small><h2>'+e(c.title)+'</h2><p>'+e(c.summary)+'</p></div></a>').join('');
- return simplePage({title:'Collections',path:'/collections',lead:'Stories that belong together.',body:'<div class="v3m-content">'+hero('CORNER / COLLECTIONS','Collections','Collected thoughts, read in order.')+'<section class="v3m-collections">'+(rows||empty('A series starts here'))+'</section></div>'});
+ return simplePage({title:'Collections',path:'/collections',lead:'Stories that belong together.',body:'<div class="v3m-content">'+'<section class="v3m-collections">'+(rows||empty('A series starts here'))+'</section></div>'});
 }
 export function collectionPage(memories,slug){
  const c=memories.collection(slug);
  const items=c.posts.map((p,i)=>'<article class="v3m-series-item"><span>'+String(i+1).padStart(2,'0')+'</span><div><small>'+e(p.category)+'</small><h2><a href="/post/'+encodeURIComponent(p.slug)+'">'+e(p.title)+'</a></h2><p>'+e(p.excerpt||'')+'</p></div><a href="/post/'+encodeURIComponent(p.slug)+'" aria-label="Read '+e(p.title)+'">↗</a></article>').join('');
- return simplePage({title:c.title,path:'/collections/'+c.slug,lead:c.summary||'Read in order.',body:'<div class="v3m-content"><a class="v3m-back" href="/collections">← All collections</a>'+hero('CORNER / COLLECTIONS',c.title,c.summary||'A series to read slowly.')+'<section class="v3m-series">'+items+'</section></div>'});
+ return simplePage({title:c.title,path:'/collections/'+c.slug,lead:c.summary||'Read in order.',body:'<div class="v3m-content"><a class="v3m-back" href="/collections">← All collections</a>'+'<section class="v3m-series">'+items+'</section></div>'});
 }
 export function nowHistoryPage(memories,current){
  const rows=memories.nowHistory().map(x=>'<article class="v3m-now-item"><time>'+e(x.changedAt.slice(0,10))+'</time><span aria-hidden="true">'+e(x.icon)+'</span><div><h2>'+e(x.label)+'</h2><p>'+e(x.detail)+'</p></div></article>').join('');
- return simplePage({title:'Now',path:'/now',lead:current?.label||'What is happening in this little corner.',body:'<div class="v3m-content">'+hero('CORNER / NOW','Now & then',current?.detail||'Notes from the present.')+'<section class="v3m-now-history"><h2>Earlier updates</h2>'+(rows||empty('The first update is coming'))+'</section></div>'});
+ return simplePage({title:'Now',path:'/now',lead:current?.label||'What is happening in this little corner.',body:'<div class="v3m-content">'+'<section class="v3m-now-history"><h2>Earlier updates</h2>'+(rows||empty('The first update is coming'))+'</section></div>'});
 }
 const option=(value,name,selected='')=>'<option value="'+e(value)+'"'+(value===selected?' selected':'')+'>'+e(name)+'</option>';
 const kindOptions=['personal','build','work','learning','celebration'].map(x=>option(x,x)).join('');
