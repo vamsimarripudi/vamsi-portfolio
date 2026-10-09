@@ -42,4 +42,20 @@
     catch(error){status.textContent=error.message;}
     finally{unsubscribe.disabled=false;}
   });
+  const savePosition=document.querySelector('[data-v3-save-progress]');
+  if(savePosition)savePosition.addEventListener('click',async()=>{
+    savePosition.disabled=true;
+    const id=savePosition.dataset.postId;
+    const height=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
+    const progress=Math.max(0,Math.min(100,Math.round(window.scrollY/height*100)));
+    try{
+      const res=await fetch(base+'/api/v1/me/reading/'+encodeURIComponent(id),{
+        method:'PUT',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({progress})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error?.message||'Please sign in to save.');
+      savePosition.textContent='Saved '+progress+'% ✓';
+    }catch(error){savePosition.textContent=error.message;}
+    finally{savePosition.disabled=false;}
+  });
 })();
