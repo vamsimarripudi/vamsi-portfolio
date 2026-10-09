@@ -29,11 +29,11 @@ for(const title of ['A beginning','A quiet summer','Making things that last']){
 }
 memories.milestone(owner,{title:'A turning point',summary:'A thoughtful afternoon.',occurredOn:'2026-10-09',kind:'personal',postId:posts[0].id,state:'published'});
 memories.milestone(owner,{title:'A small win',summary:'Another moment to remember.',occurredOn:'2025-07-09',kind:'build',postId:posts[1].id,state:'published'});
-const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAwMCAO+/wZkAAAAASUVORK5CYII=','base64');
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAIAAAABUCAIAAADF86ilAAACo0lEQVR42u2bIU/DQBiGu6MCgcCiZnALGaBAQDAkGBTBAwlyv4FfwF/YFIrMD0dmmBoQQkBgFsQSFCEIJGJkKWy03d193313975u67K1z3Nvr72sleHgKUHcRQEBBEAAAgEQgLhJCgT5WVz4yr58/5yHADfos29a1IBT0Az0S26FAFr6dh1AgD5ZKw4gAFdBmXTbrZyt2wfHcob/+POGE3LF+WJcPnRmGRpnFY8F6KEn1RCLAHP0RBrCF2AXvXUN/AJUGPRtffmsNM1viZkaQIpeowpbu/v/bXq4ueQUoAKjb/5zK5uHbPQ5BDDTZ3Ngaz1OhUefwUH5lrgU4JC+LQeToKe+Gc5ShMDYxc3XAOfDX9RucAsQddjCHWA52nHSGEZct90qvDu7613nf2B1YwcNCDAq+OEvfMfQgIAECL/ekLl7hA1odvoY4M4EjOjDgRsBWe5wwCRgfIadJC7HgcBpQNGNfcwH3ALyKTc7fWggFFASLhyQCDg6beDyVC8pJ/qsg5O9ddA3bYAeffTAjgAT+nBgKsCcPhzoC7BFHw50BNilz+yA4REPWgEU9CPvgZJAP+ZbZSWEfrRVUKLokzoQOAGUEsBMP7YeKIH0KRzIHP4FAhzSj6cHSix9iw7EDv9k6mqoEPRZBwxLp0T/PJy5AdLom/dA8vD/K0AmfZPbNOH0fwmQTD/gaTkdPPeTJDk7b/myx+WnhGqtPjo6itj65krv6sIj+uMUOqjW6l4cyNzr24ePzb19Ga4tL/lO/6cBDD8zeLxnOySP6Cdsj6mOoFBr8At98VKEX4B8pJ/wP6hNUQVP0bsRYFeD1+hdCjDXEAB69wImUebLCAa6LAHBIxZ0FYRAAAQgEAABCARAAAIBEIBAAARAAAIBEIBAQKz5BmnyHkM26UkCAAAAAElFTkSuQmCC','base64');
 fs.mkdirSync(config.uploads,{recursive:true});
 const id='media_'+crypto.randomUUID(),key=crypto.randomBytes(16).toString('hex')+'.png';
 fs.writeFileSync(path.join(config.uploads,key),png);
-store.addMedia({id,ownerId:posts[1].id,storageKey:key,mimeType:'image/png',size:png.length,alt:'A small quiet scene',width:1,height:1});
+store.addMedia({id,ownerId:posts[1].id,storageKey:key,mimeType:'image/png',size:png.length,alt:'A small quiet scene',width:128,height:84});
 const album=memories.albumWrite(owner,{title:'Scenes from the season',summary:'Pictures from a day.',mediaIds:[id],state:'published'});
 const series=memories.collectionWrite(owner,{title:'Small thoughts',summary:'Three little stories.',postIds:posts.map(p=>p.id),state:'published'});
 memories.recordNow(owner,{label:'Working on what matters',detail:'Keeping a little record of progress.',isActive:true,icon:'✳'});
