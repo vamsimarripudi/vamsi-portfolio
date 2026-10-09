@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/corner-v3-phase2-source.yml'
+      - 'corner/**'
 permissions:
   contents: read
 jobs:
