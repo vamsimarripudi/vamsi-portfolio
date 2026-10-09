@@ -65,7 +65,12 @@ export class WishDelivery {
   if(confirm!==true)throw httpError(400,'Confirm the opted-in notification campaign.','CONFIRM_REQUIRED');
   const post=this.store.one("SELECT id,type,state,title,slug FROM posts WHERE id=?",String(postId||''));
   if(!post||post.type!=='wish'||post.state!=='published')throw httpError(409,'Publish the wish before notifying followers.','WISH_NOT_PUBLISHED');
-  const candidates=this.store.all("SELECT id,topics,frequency FROM v3_follows WHERE state='active' ORDER BY id LIMIT 501").filter(x=>validTopics(x.topics));
+  const candidates=this.store.all(
+    "SELECT f.id,f.topics,f.frequency FROM v3_follows f WHERE f.state='active'"+
+    " AND json_type(CASE WHEN json_valid(f.topics) THEN f.topics ELSE '[]' END)='array'"+
+    " AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(f.topics) THEN f.topics ELSE '[]' END) AS topic"+
+    " WHERE topic.value IN ('all','wishes')) ORDER BY f.id LIMIT 501"
+  ).filter(x=>validTopics(x.topics));
   if(candidates.length>500)throw httpError(409,'This campaign exceeds the safe recipient limit.','RECIPIENT_LIMIT');
   const stamp=now(),weekly=weeklyAt(stamp);
   let queued=0;
