@@ -7,6 +7,9 @@ import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
 import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
+import { V3Memories } from './v3-memories.mjs';
+import { memoriesRoutes } from './v3-memories-routes.mjs';
+import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
 import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
 import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
@@ -20,6 +23,7 @@ const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
+const memories=new V3Memories(store);
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -118,13 +122,15 @@ function mediaFile(req,res,key){
   res.writeHead(200,{...headers,'content-length':stat.size});
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
-function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
+function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
+const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(await handleV3(req,res,pathName,url))return;
+  if(await handleMemories(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -196,7 +202,7 @@ async function api(req,res,pathName,url){
       return ok(res,store.schedule(id,b,owner.id));}
     if(method==='POST'&&action==='duplicate'){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');let copy=store.createPost({...p,title:p.title+' (copy)',allowComments:p.allow_comments,allowReactions:p.allow_reactions},owner.id);return ok(res,copy)}
   }
-  if(pathName==='/api/admin/status'&&method==='PUT')return ok(res,store.updateStatus(await readJSON(req),owner.id));
+  if(pathName==='/api/admin/status'&&method==='PUT'){const data=await readJSON(req);return ok(res,memories.enabled()?memories.recordNow(owner,data):store.updateStatus(data,owner.id));}
   if(pathName==='/api/admin/comments'&&method==='GET')return ok(res,store.pendingComments(url.searchParams.get('state')||'pending'));
   const commentResource=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)$/);
   if(commentResource){
@@ -260,7 +266,7 @@ async function route(req,res){
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return mediaFile(req,res,pathname.split('/').at(-1));}
-    if(['/style.css','/magic.css','/v3.css','/v3.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -282,6 +288,15 @@ async function route(req,res){
       const moderator=requireOwner(req,'/api/admin/comments','GET');
       return page(res,guestbookModerationPage(v3,moderator),200,true);
     }
+    if(pathname==='/admin/v3/memories'&&memories.enabled()){
+      const user=requireOwner(req,'/api/admin/settings','GET');
+      return page(res,memoriesStudioPage(memories,user),200,true);
+    }
+    if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||''}));
+    if(pathname==='/moments'&&memories.enabled())return page(res,albumsPage(memories));
+    if(pathname.startsWith('/moments/')&&memories.enabled())return page(res,albumPage(memories,decodeURIComponent(pathname.slice(9))));
+    if(pathname==='/collections'&&memories.enabled())return page(res,collectionsPage(memories));
+    if(pathname.startsWith('/collections/')&&memories.enabled())return page(res,collectionPage(memories,decodeURIComponent(pathname.slice(13))));
     if(pathname==='/guestbook'&&v3.enabled('GUESTBOOK'))return page(res,guestbookPage(v3));
     if(pathname==='/follow'&&v3.enabled('FOLLOW'))return page(res,followPage());
     if(pathname==='/follow/confirm'&&v3.enabled('FOLLOW'))return page(res,followConfirmPage());
@@ -294,6 +309,7 @@ async function route(req,res){
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
     if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members. Optional V3 features include a moderated guestbook (display name and message), double-opt-in publication subscriptions (encrypted email address and consent history), and reading progress saved only when a verified member requests it. Subscription emails include an opt-out process; account creation alone never enrolls anyone.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
     if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>Members are responsible for protecting their account credentials and the content they submit. Registered profiles are private by default and do not grant publishing or moderation access. Studio access is invitation-only and subject to additional verification.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
+    if(pathname==='/now'&&memories.enabled())return page(res,nowHistoryPage(memories,store.currentStatus()));
     if(pathname==='/now')return page(res,simplePage({path:'/now',title:'Now',lead:store.currentStatus()?.label||'A little space for what is current.',body:`<p>${escapeHtml(store.currentStatus()?.detail||'When a status is shared it will appear here.')}</p>`}));
     throw httpError(404,'Page not found','NOT_FOUND');
   }catch(err){
