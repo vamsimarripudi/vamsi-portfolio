@@ -1,26 +1,28 @@
 import {simplePage,basePage,header,footer,escapeHtml} from './ui.mjs';
 const e=escapeHtml;
-const categories=['Latest','Wishes','Builds','Notes','Journal','Moments'];
-const articles=items=>items.length?'<div class="v3-content">'+items.map(p=>'<article class="v3-note"><small>'+e(p.category)+' · '+e((p.published_at||'').slice(0,10))+'</small><h2><a href="/post/'+encodeURIComponent(p.slug)+'">'+e(p.title)+'</a></h2>'+(p.excerpt?'<p>'+e(p.excerpt)+'</p>':'')+'</article>').join('')+'</div>':'<p class="v3-empty">No public stories match these filters.</p>';
-
+const esc=escapeHtml;
+function option(value,label,selected=''){
+ return '<option value="'+esc(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+esc(label)+'</option>';
+}
 export function searchPage(v3,query={}){
-  const result=v3.search(query),category=String(query.category||'Latest');
-  const options=categories.map(c=>'<option value="'+e(c)+'"'+(category===c?' selected':'')+'>'+e(c==='Latest'?'All':c)+'</option>').join('');
-  const form='<form action="/search" method="get" role="search" class="v3-filter">'+
-    '<label>Search<input name="q" type="search" maxlength="100" value="'+e(query.q||'')+'" placeholder="A word, a memory…"></label>'+
-    '<label>Year<input name="year" type="text" inputmode="numeric" pattern="(19|20)[0-9]{2}" maxlength="4" value="'+e(query.year||'')+'" placeholder="Any year"></label>'+
-    '<label>Category<select name="category">'+options+'</select></label>'+
-    '<label>Tag<input name="tag" maxlength="35" value="'+e(query.tag||'')+'" placeholder="Any tag"></label>'+
-    '<button type="submit">Explore ↗</button></form>';
-  const params=new URLSearchParams({q:String(query.q||''),category,year:String(query.year||''),tag:String(query.tag||''),cursor:result.nextCursor||''});
-  const more=result.nextCursor?'<a class="v3-next" rel="next" href="/search?'+e(params.toString())+'">More stories ↓</a>':'';
-  return simplePage({title:'Explore',lead:'Discover public stories, memories, ideas.',path:'/search',body:form+'<h2 class="v3-results-heading">'+result.total+' '+(result.total===1?'story':'stories')+'</h2>'+articles(result.items)+more});
+ const found=v3.search(query),years=v3.archive().years;
+ const filters='<form class="v3-explore-form" method="get" action="/search" role="search">'+
+ '<label class="v3-wide"><span>Search the Corner</span><input type="search" name="q" maxlength="100" placeholder="A thought, idea, moment…" value="'+esc(query.q||'')+'" /></label>'+
+ '<label><span>Collection</span><select name="category">'+option('','All collections',query.category)+['Wishes','Builds','Notes','Journal','Moments'].map(x=>option(x,x,query.category)).join('')+'</select></label>'+
+ '<label><span>Year</span><select name="year">'+option('','All years',query.year)+years.map(x=>option(x.year,x.year,query.year)).join('')+'</select></label>'+
+ '<label><span>Tag</span><input type="text" name="tag" maxlength="35" placeholder="Optional" value="'+esc(query.tag||'')+'" /></label>'+
+ '<button type="submit" class="v3-icon-action" aria-label="Search public stories"><span aria-hidden="true">⌕</span> Explore</button></form>';
+ const cards=found.items.map((post,i)=>'<article class="v3-result"><div><span class="v3-result-type">'+esc(post.type.replaceAll('_',' '))+'</span><h3><a href="/post/'+encodeURIComponent(post.slug)+'">'+esc(post.title)+'</a></h3><p>'+esc(post.excerpt||'')+'</p></div><a class="v3-result-arrow" href="/post/'+encodeURIComponent(post.slug)+'" aria-label="Read '+esc(post.title)+'">↗</a></article>').join('');
+ const more=found.nextCursor?'<a class="v3-result-more" rel="next" href="/search?'+esc(new URLSearchParams({q:String(query.q||''),category:String(query.category||''),year:String(query.year||''),tag:String(query.tag||''),cursor:found.nextCursor}).toString())+'">More results ↓</a>':'';
+ const body='<div class="v3-explorer">'+filters+'<section class="v3-search-results"><header><h2>'+found.total+' '+(found.total===1?'story':'stories')+'</h2><a href="/archive">Browse archive ↗</a></header>'+(cards||'<div class="v3-empty-reader"><span aria-hidden="true">✳</span><h3>Nothing matching yet.</h3><p>Try a different word or explore the archive.</p></div>')+more+'</section></div>';
+ return simplePage({title:'Explore',lead:'Find stories, moments and ideas worth keeping.',path:'/search',body});
 }
 export function archivePage(v3,year='',cursor=''){
-  const result=v3.archive(year,cursor);
-  const years=result.years.map(y=>'<a href="/archive?year='+encodeURIComponent(y.year)+'"'+(y.year===year?' aria-current="page"':'')+'>'+e(y.year)+' <small>'+Number(y.total)+'</small></a>').join('');
-  const more=result.nextCursor?'<a class="v3-next" rel="next" href="/archive?year='+encodeURIComponent(year)+'&amp;cursor='+encodeURIComponent(result.nextCursor)+'">More memories ↓</a>':'';
-  return simplePage({title:'Archive',lead:'What happened, and when.',path:'/archive',body:'<nav class="v3-years" aria-label="Publication years">'+(years||'<p>More moments to come.</p>')+'</nav>'+(year?articles(result.items)+more:'<p>Choose a year to explore the archive.</p>')});
+ const data=v3.archive(year,cursor);
+ const links=data.years.map(x=>'<a class="v3-year" href="/archive?year='+esc(x.year)+'"'+(year===x.year?' aria-current="page"':'')+'><strong>'+esc(x.year)+'</strong><span>'+Number(x.total)+' notes</span><small aria-hidden="true">↗</small></a>').join('');
+ const posts=data.items.map(x=>'<a class="v3-archive-post" href="/post/'+encodeURIComponent(x.slug)+'"><span>'+esc(x.title)+'</span><span aria-hidden="true">↗</span></a>').join('');
+ const more=data.nextCursor?'<a class="v3-result-more" rel="next" href="/archive?year='+encodeURIComponent(year)+'&amp;cursor='+encodeURIComponent(data.nextCursor)+'">More memories ↓</a>':'';
+ return simplePage({title:'Archive',lead:'An intentional record of things worth remembering.',path:'/archive',body:'<div class="v3-explorer"><nav class="v3-year-grid" aria-label="Published years">'+(links||'<p>First memories will be added here.</p>')+'</nav>'+(year?'<section class="v3-archive-list"><h2>'+esc(year)+' in notes</h2>'+(posts||'<p>No public posts in this year.</p>')+more+'</section>':'')+'</div>'});
 }
 export function guestbookPage(v3){
   const notes=v3.listGuestbook().map(n=>'<article class="v3-note"><p>'+e(n.message)+'</p><small>'+e(n.name)+'</small></article>').join('');
