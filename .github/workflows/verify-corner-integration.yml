@@ -30,6 +30,8 @@ jobs:
         run: npm test
       - name: Portfolio production build
         run: npm run build
+      - name: Install Corner image processor
+        run: npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
       - name: Corner test suite including /corner mount and password rotation
         working-directory: corner
         run: npm run check
