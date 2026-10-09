@@ -37,3 +37,8 @@ Physical thumbnail generation/resizing is not yet included. Images are lazy-load
 - Published milestones are now keyset/cursor-paginated with a server-capped page size, stable ordering, and invalid-cursor rejection. Drafts and posts archived after linking remain private.
 - Year and category remain selected across navigation and next-page links, with an accessible More milestones action. Public REST v1 accepts optional `year`, `kind`, `cursor`, `limit`.
 - Acceptance regression covers 76 milestones, published-only filtering and pagination without duplicate records.
+
+## Reproducible pre-deploy migration rehearsal
+
+- CI now snapshots a disposable Phase 1 SQLite database with a published story and uploaded file, verifies manifest checksums, restores into an isolated directory, applies migration `v3-0003-memories`, validates SQLite integrity, and confirms existing content/media survive.
+- This synthetic rehearsal **does not** demonstrate migration safety for a fresh copy of the private production snapshot. Keep real backup-restore acceptance and gallery derivative performance gates open.

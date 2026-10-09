@@ -108,6 +108,31 @@ for(const [method,url,id,summary] of routes){
  const op={operationId:id,summary,tags:[url.includes('/me')?'Account':url.includes('/auth/')?'Identity':url.includes('/admin/')?'Owner':'Public'],responses:{'200':reply('Success'),'400':reply('Invalid input'),'401':reply('Authentication required'),'403':reply('Forbidden'),'404':reply('Not found'),'429':reply('Too many requests')}};
  const placeholders=[...url.matchAll(/\{(\w+)\}/g)].map(m=>({in:'path',name:m[1],required:true,schema:{type:'string'}}));
  if(placeholders.length)op.parameters=placeholders;
+ if(id==='listLifeTimeline'){
+  op.parameters=[
+   {in:'query',name:'year',required:false,schema:{type:'string',pattern:'^(19|20)\\d{2}
+ if(url.startsWith('/api/v1/me'))op.security=[{memberSession:[]},{ownerSession:[]}];
+ if(url.includes('/admin/')&&!['signInOwner','loginStaff','registerInvitedStaff'].includes(id))op.security=[{ownerSession:[]}];
+ if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
+ if(id==='uploadMedia')op.requestBody={required:true,content:{'image/png':{schema:{type:'string',format:'binary'}},'image/jpeg':{schema:{type:'string',format:'binary'}},'video/mp4':{schema:{type:'string',format:'binary'}}}};
+ if(id==='createPost')op.responses['201']=reply('Created; Location header points to resource');
+ if(id==='getReadiness')op.responses['503']=reply('Storage unavailable');
+ if(id==='streamEvents')op.responses['200']={description:'Event stream',content:{'text/event-stream':{schema:{type:'string'}}}};
+ (paths[url]??={})[method]=op;
+}
+export const openApiDocument=(baseUrl)=>({
+ openapi:'3.1.0',
+ info:{title:"Vamsi's Corner REST API",version:'1.2.0',description:'Additive role-scoped identity and private profiles; public registration stays disabled until verified email delivery is configured. Invitations are owner-only, staff requires MFA, member and Studio cookies are separate. All mutations enforce same-origin CSRF controls. Legacy publishing routes remain compatible.'},
+ servers:[{url:baseUrl}],tags:[{name:'Public'},{name:'Identity'},{name:'Account'},{name:'Owner'}],paths,
+ components:{securitySchemes:{ownerSession:{type:'apiKey',in:'cookie',name:'corner_session'},memberSession:{type:'apiKey',in:'cookie',name:'corner_member_session'}}},
+});
+}},
+   {in:'query',name:'kind',required:false,schema:{type:'string',enum:['personal','build','work','learning','celebration']}},
+   {in:'query',name:'cursor',required:false,schema:{type:'string',maxLength:256}},
+   {in:'query',name:'limit',required:false,schema:{type:'integer',minimum:1,maximum:60,default:30}}
+  ];
+ }
+
  if(url.startsWith('/api/v1/me'))op.security=[{memberSession:[]},{ownerSession:[]}];
  if(url.includes('/admin/')&&!['signInOwner','loginStaff','registerInvitedStaff'].includes(id))op.security=[{ownerSession:[]}];
  if(['post','put','patch'].includes(method)&&!['signOutOwner','logoutIdentity','publishPost','archivePost','restorePost','duplicatePost'].includes(id))op.requestBody={required:true,content:json};
