@@ -159,6 +159,12 @@ const handleInsights=insightRoutes({insights,requireOwner,ok,limit});
 const handleLanguages=languageRoutes({languages,requireOwner,readJSON,ok,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
+  if(pathName==='/api/webhooks/resend'){
+   if(method!=='POST')throw httpError(405,'Method not allowed.','METHOD_NOT_ALLOWED');
+   if(!wishDelivery.enabled())throw httpError(404,'Webhook unavailable.','FEATURE_DISABLED');
+   limit(req,'v3-resend-webhook',180,60);
+   return ok(res,wishDelivery.reconcileWebhook(await readBody(req,65536),req.headers));
+  }
   if(await handleV3(req,res,pathName,url))return;
   if(await handleMemories(req,res,pathName,url))return;
   if(await handleWishes(req,res,pathName,url))return;
@@ -295,7 +301,9 @@ async function route(req,res){
       return ok(res,{version:'1',status:'stable',openapi:(config.basePath||'')+'/api/v1/openapi.json',legacySupported:true,storageMode:'single-writer'});
     }
     if(pathname.startsWith('/api/v1/')){req.cornerApiV1=true;pathname='/api/'+pathname.slice('/api/v1/'.length)}
-    checkOrigin(req);
+    // Public webhook requests do not carry browser Origin; accept them only after
+    // raw-body HMAC verification using the Resend signing secret.
+    if(pathname!=='/api/webhooks/resend')checkOrigin(req);
     if(pathname.startsWith('/api/'))return await api(req,res,pathname,url);
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});

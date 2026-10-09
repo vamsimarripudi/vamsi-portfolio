@@ -17,3 +17,9 @@ All owner mutations require an authenticated owner and same-origin checks. No em
 - Campaign selection scans all active subscriptions for `all`/`wishes` JSON topics in SQLite before applying the 500-recipient cap, rather than discarding eligible recipients because the first 501 active subscriptions were unrelated.
 - Malformed legacy topic JSON fails closed, and exceeding the campaign cap refuses the entire batch before inserting anything. Verified opt-in, explicit owner approval, encrypted addresses, idempotency and unsubscribe rules remain unchanged.
 - Sending stays disabled in production until stable follow-key configuration and real provider/consent acceptance are verified.
+
+## Resend provider reconciliation (Phase 3 hardening)
+
+- Signed Resend webhooks use the raw body plus `svix-id`, `svix-timestamp` and `svix-signature` HMAC verification (five-minute timestamp tolerance), with replay-id deduplication. Only delivery state identifiers are persisted; no raw webhook bodies or subscriber emails are stored.
+- The sender records Resend's returned `email_id`; provider statuses (`accepted`, `delayed`, `delivered`, `bounced`, `complained`) are tracked separately from outbox handoff. Permanent bounce or complaint suppresses the follower and blocks future campaigns. Out-of-order webhook delivery never revives a bounced address.
+- Endpoint: POST `/corner/api/v1/webhooks/resend`. Production sending remains OFF until `CORNER_V3_RESEND_WEBHOOK_SECRET`, stable `CORNER_V3_FOLLOW_KEY`, verified sender, double opt-in and real provider callback acceptance have been completed. Configure only necessary Resend events; no open or click tracking is needed.

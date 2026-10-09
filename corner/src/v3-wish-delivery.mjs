@@ -2,9 +2,12 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {now,uid,sha,httpError} from './domain.mjs';
+import {verifyResendWebhook} from './v3-resend-webhook.mjs';
 
 const schema=fs.readFileSync(new URL('./v3-wish-delivery-schema.sql',import.meta.url),'utf8');
 const VERSION='v3-0004-wish-delivery';
+const providerSchema=fs.readFileSync(new URL('./v3-wish-provider-schema.sql',import.meta.url),'utf8');
+const PROVIDER_VERSION='v3-0006-provider-reconciliation';
 const secretKey=env=>{
  const secret=String(env.CORNER_V3_FOLLOW_KEY||'');
  if(secret.length<32)throw httpError(503,'A stable email-following key is required.','FOLLOW_KEY_UNAVAILABLE');
@@ -43,11 +46,19 @@ export class WishDelivery {
    if(typeof sendMail!=='function')throw Error('Delivery sender is not available');
    if(env.NODE_ENV==='production'&&!(env.CORNER_AUTH_RESEND_API_KEY&&env.CORNER_AUTH_FROM_EMAIL))
      throw Error('A verified sender is required before enabling opt-in wish delivery');
+   if(env.NODE_ENV==='production'&&!/^whsec_[A-Za-z0-9+/_=-]{20,}$/.test(String(env.CORNER_V3_RESEND_WEBHOOK_SECRET||'')))
+     throw Error('Signed provider webhook configuration is required before enabling live wish delivery');
    const checksum=sha(schema),prior=store.one('SELECT checksum FROM v3_schema_migrations WHERE version=?',VERSION);
    if(prior&&prior.checksum!==checksum)throw Error('Wish delivery migration checksum mismatch');
    if(!prior)store.transaction(()=>{
     store.db.exec(schema);
     store.exec('INSERT INTO v3_schema_migrations(version,checksum,applied_at) VALUES(?,?,?)',VERSION,checksum,now());
+   });
+   const checksum6=sha(providerSchema),provider=store.one('SELECT checksum FROM v3_schema_migrations WHERE version=?',PROVIDER_VERSION);
+   if(provider&&provider.checksum!==checksum6)throw Error('Provider reconciliation schema checksum mismatch');
+   if(!provider)store.transaction(()=>{
+    store.db.exec(providerSchema);
+    store.exec('INSERT INTO v3_schema_migrations(version,checksum,applied_at) VALUES(?,?,?)',PROVIDER_VERSION,checksum6,now());
    });
   }
  }
@@ -57,8 +68,11 @@ export class WishDelivery {
   owner(user);
   if(!this.enabled())return {enabled:false,queued:0,retry:0,sent:0,failed:0,cancelled:0};
   const statuses=Object.fromEntries(this.store.all("SELECT state,COUNT(*) n FROM v3_wish_outbox GROUP BY state").map(x=>[x.state,x.n]));
+  const providers=Object.fromEntries(this.store.all("SELECT provider_delivery_state state,COUNT(*) n FROM v3_wish_outbox WHERE provider_message_id IS NOT NULL GROUP BY provider_delivery_state").map(x=>[x.state,x.n]));
   return {enabled:true,queued:(statuses.queued||0)+(statuses.sending||0),retry:statuses.retry||0,
-   sent:statuses.sent||0,failed:statuses.failed||0,cancelled:statuses.cancelled||0};
+   sent:statuses.sent||0,failed:statuses.failed||0,cancelled:statuses.cancelled||0,
+   accepted:providers.accepted||0,delayed:providers.delayed||0,
+   delivered:providers.delivered||0,bounced:providers.bounced||0,complained:providers.complained||0};
  }
  enqueue(user,postId,{confirm=false}={}){
   owner(user);this.assertReady();
@@ -142,11 +156,15 @@ export class WishDelivery {
      const recipient=decrypt(follow.email_cipher,this.env);
      const first=rows[0],reference=first.provider_reference;
      const letter=this.render(posts,this.unsubscribeUrl(follow.id,reference),{weekly:due.frequency==='weekly'});
-     await this.sendMail({to:recipient,...letter,reference});
+     const response=await this.sendMail({to:recipient,...letter,reference});
+     const providerId=typeof response?.id==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(response.id)?response.id:null;
      const stamp=now();
      this.store.transaction(()=>{
-      for(const id of ids){this.store.exec("UPDATE v3_wish_outbox SET state='sent',sent_at=?,lease_until=NULL,last_error=NULL,updated_at=? WHERE id=?",stamp,stamp,id);this.event(id,'sent',stamp)}
-     });sent+=rows.length;
+      for(const id of ids){this.store.exec("UPDATE v3_wish_outbox SET state='sent',sent_at=?,lease_until=NULL,last_error=NULL,updated_at=?,provider_message_id=?,provider_delivery_state=? WHERE id=?",stamp,stamp,providerId,providerId?'accepted':'unconfirmed',id);this.event(id,'sent',stamp)}
+     });
+     // If a verified provider callback raced the send response, reconcile it now.
+     if(providerId)this.reconcileProviderId(providerId);
+     sent+=rows.length;
     }catch(error){
      const stamp=now();
      this.store.transaction(()=>{
@@ -164,4 +182,46 @@ export class WishDelivery {
    return {processed,sent,skipped};
   }finally{this.busy=false}
  }
+ /** Signed provider events are aggregate-only, replay-safe, and never store raw payloads or addresses. */
+ reconcileWebhook(raw,headers){
+  this.assertReady();
+  const event=verifyResendWebhook(raw,headers,String(this.env.CORNER_V3_RESEND_WEBHOOK_SECRET||''));
+  if(event.ignored)return {accepted:true,ignored:true};
+  const received=now();
+  const changed=this.store.exec("INSERT OR IGNORE INTO v3_wish_provider_events(id,provider_message_id,event,received_at) VALUES(?,?,?,?)",
+   event.id,event.emailId,event.type,received).changes;
+  if(!changed)return {accepted:true,duplicate:true};
+  const count=this.reconcileProviderId(event.emailId);
+  return {accepted:true,reconciled:count};
+ }
+ reconcileProviderId(providerId){
+  const outcomes=this.store.all("SELECT event FROM v3_wish_provider_events WHERE provider_message_id=? ORDER BY received_at,id",providerId);
+  if(!outcomes.length)return 0;
+  const outbox=this.store.all("SELECT id,follow_id,provider_delivery_state FROM v3_wish_outbox WHERE provider_message_id=?",providerId);
+  if(!outbox.length)return 0;
+  // A bounce/complaint is terminal; a later out-of-order delivered event cannot undo suppression.
+  const types=new Set(outcomes.map(e=>e.event));
+  const terminal=types.has('email.complained')?'complained':types.has('email.bounced')?'bounced':null;
+  const state=terminal||(
+   types.has('email.delivered')?'delivered':
+   types.has('email.delivery_delayed')?'delayed':'accepted'
+  );
+  this.store.transaction(()=>{
+   for(const row of outbox){
+    if(['bounced','complained'].includes(row.provider_delivery_state)&&!terminal)continue;
+    this.store.exec('UPDATE v3_wish_outbox SET provider_delivery_state=?,updated_at=? WHERE id=?',state,now(),row.id);
+    if(terminal){
+     const follow=this.store.one('SELECT state FROM v3_follows WHERE id=?',row.follow_id);
+     if(follow?.state==='active'){
+      const stamp=now();
+      this.store.exec("UPDATE v3_follows SET state='bounced',revoked_at=?,updated_at=? WHERE id=? AND state='active'",stamp,stamp,row.follow_id);
+      this.store.exec("INSERT INTO v3_follow_consent(id,follow_id,event,notice_version,recorded_at) VALUES(?,?,'bounced','v3.0',?)",
+       uid('consent'),row.follow_id,stamp);
+     }
+    }
+   }
+  });
+  return outbox.length;
+ }
+
 }
