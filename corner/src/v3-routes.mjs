@@ -36,7 +36,7 @@ export function v3Routes({v3,store,identity,readJSON,ok,limit}){
       else {limit(req,'v3-reading',60,60);const data=await readJSON(req,800);ok(res,v3.reading(member,reading[1],data.progress));}
       return true;
     }
-    if(path==='/api/search'&&method==='GET'&&v3.enabled('SEARCH')){limit(req,'v3-search',60,60);ok(res,v3.search({
+    if(path==='/api/search/advanced'&&method==='GET'&&v3.enabled('SEARCH')){limit(req,'v3-search',60,60);ok(res,v3.search({
       q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',
       year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',
       limit:url.searchParams.get('limit')||20,offset:url.searchParams.get('offset')||0
