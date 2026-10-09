@@ -103,3 +103,48 @@ test('real HTTP V3: CSRF, moderation, hidden pending notes and one-use email opt
   assert.equal((await request('/api/v1/follow/verify','POST',{token})).status,200);
   assert.equal((await request('/api/v1/follow/verify','POST',{token})).status,400);
 });
+
+
+test('anonymous guestbook entry stays pending until moderator approval',t=>{
+  const store=new Store(':memory:');t.after(()=>store.close());
+  const v3=new V3Engagement(store,{env:flags});
+  const result=v3.submitGuestbook({message:'A thoughtful unsigned visitor note',consent:true});
+  assert.equal(result.state,'pending');
+  assert.equal(v3.listGuestbook().length,0);
+  const pending=v3.reviewQueue({id:'owner',role:'owner'});
+  assert.equal(pending[0].name,'Guest');
+  v3.manageGuestbook({id:'owner',role:'owner'},{id:pending[0].id,state:'approved'});
+  assert.equal(v3.listGuestbook()[0].name,'Guest');
+});
+
+test('archive cursor pages through more than forty published entries without repeats',t=>{
+  const store=new Store(':memory:');t.after(()=>store.close());
+  const v3=new V3Engagement(store,{env:flags});
+  for(let n=0;n<45;n++){
+    const post=store.createPost({title:'Archive story '+n,body:'Public content',type:'tech_note'},'owner');
+    store.publish(post.id,'owner');
+  }
+  store.createPost({title:'Private archive entry',body:'Not public',type:'tech_note'},'owner');
+  const year=new Date().getUTCFullYear().toString();
+  const first=v3.archive(year);
+  assert.equal(first.items.length,40);
+  assert.ok(first.nextCursor);
+  const second=v3.archive(year,first.nextCursor);
+  assert.equal(second.items.length,5);
+  assert.equal(second.nextCursor,null);
+  assert.equal(new Set([...first.items,...second.items].map(p=>p.id)).size,45);
+});
+
+test('bounced follower addresses stay suppressed and are not sent another email',async t=>{
+  const store=new Store(':memory:');t.after(()=>store.close());
+  const emails=[];
+  const v3=new V3Engagement(store,{env:flags,sendMail:async mail=>emails.push(mail)});
+  await v3.follow({email:'bounced@example.invalid',topics:['notes'],consent:true});
+  assert.equal(emails.length,1);
+  store.exec("UPDATE v3_follows SET state='bounced'");
+  const response=await v3.follow({email:'bounced@example.invalid',topics:['notes'],consent:true});
+  assert.equal(response.accepted,true);
+  assert.equal(store.one('SELECT state FROM v3_follows').state,'bounced');
+  assert.equal(emails.length,1);
+  await assert.rejects(v3.follow({email:'new@example.invalid',topics:['all','notes'],consent:true}),{code:'INVALID_TOPICS'});
+});
