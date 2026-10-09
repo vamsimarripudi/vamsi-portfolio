@@ -21,7 +21,7 @@ test('versioned V3 migrations retain rows, repeat safely and fail closed on mism
   const s=new Store(':memory:');t.after(()=>s.close());
   const p=seed(s),v=new V3Engagement(s,{env:flags});
   assert.equal(v.search({q:'Published'}).total,1);
-  assert.equal(s.one('SELECT count(*) n FROM v3_schema_migrations').n,2);
+  assert.equal(s.one('SELECT count(*) n FROM v3_schema_migrations').n,3);
   applyV3Migrations(s);assert.equal(s.one('SELECT count(*) n FROM posts').n,1);
   s.exec("UPDATE v3_schema_migrations SET checksum='corrupt' WHERE version='v3-0001-engagement'");
   assert.throws(()=>applyV3Migrations(s),/checksum mismatch/);
