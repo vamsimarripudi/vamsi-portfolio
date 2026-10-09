@@ -67,6 +67,7 @@ export class WishDelivery {
   if(!post||post.type!=='wish'||post.state!=='published')throw httpError(409,'Publish the wish before notifying followers.','WISH_NOT_PUBLISHED');
   const candidates=this.store.all(
     "SELECT f.id,f.topics,f.frequency FROM v3_follows f WHERE f.state='active'"+
+    " AND json_type(CASE WHEN json_valid(f.topics) THEN f.topics ELSE '[]' END)='array'"+
     " AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(f.topics) THEN f.topics ELSE '[]' END) AS topic"+
     " WHERE topic.value IN ('all','wishes')) ORDER BY f.id LIMIT 501"
   ).filter(x=>validTopics(x.topics));
