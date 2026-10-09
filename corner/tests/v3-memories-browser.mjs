@@ -59,6 +59,20 @@ try{
    assert.equal(h1,1,'Phase 2 page must have exactly one H1 and no repeated hero '+width+' '+url);
    const w=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}));
    assert.ok(w.scroll<=w.viewport+1,'Horizontal overflow '+width+' '+url+': '+JSON.stringify(w));
+   if(url==='/moments'||url==='/moments/'+album.slug){
+    const image=page.locator(url==='/moments'?'.v3m-album img':'.v3m-photo img').first();
+    await image.scrollIntoViewIfNeeded();
+    await image.evaluate(async node=>node.decode());
+    const decoded=await image.evaluate(node=>({
+     naturalWidth:node.naturalWidth,naturalHeight:node.naturalHeight,
+     complete:node.complete,alt:node.getAttribute('alt'),src:node.currentSrc
+    }));
+    assert.equal(decoded.complete,true,'Gallery image finished loading '+width+' '+url);
+    assert.equal(decoded.naturalWidth,128,'Gallery fixture really decoded '+width+' '+url);
+    assert.equal(decoded.naturalHeight,84,'Gallery dimensions match fixture '+width+' '+url);
+    assert.ok(decoded.alt?.length>3,'Gallery has descriptive alt text '+width+' '+url);
+    assert.ok(decoded.src.includes('/corner/media/'),'Gallery uses the media endpoint '+width+' '+url);
+   }
    assert.deepEqual(errors,[],width+' '+url+' no JS errors');
    if((width===375||width===1366)&&['/timeline','/moments','/collections'].includes(url)){
     await page.screenshot({path:'/tmp/corner-v3-phase2-'+width+'-'+url.slice(1)+'.png',fullPage:true});
