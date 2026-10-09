@@ -1,6 +1,7 @@
 FROM node:22.16.0-bookworm-slim
 WORKDIR /srv/corner
 COPY . .
+RUN npm install --omit=dev --no-audit --no-fund --package-lock=false
 RUN node --version && node --no-warnings --test tests/*.test.mjs
 RUN mkdir -p /data && chown -R node:node /srv/corner /data
 ENV NODE_ENV=production

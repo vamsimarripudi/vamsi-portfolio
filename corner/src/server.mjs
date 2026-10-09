@@ -7,6 +7,12 @@ import { config,ROOT } from './config.mjs';
 import { Store } from './store.mjs';
 import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
+import { V3Memories } from './v3-memories.mjs';
+import {sanitizeImage} from './media-privacy.mjs';
+import {ImageDerivatives} from './v3-image-derivatives.mjs';
+import { memoriesRoutes } from './v3-memories-routes.mjs';
+import {auditLatestOffsiteMigration} from './v3-restore-audit.mjs';
+import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
 import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
 import { IdentityService, privilegedRole, staffPermission } from './identity.mjs';
 import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
@@ -20,6 +26,8 @@ const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
+const memories=new V3Memories(store);
+const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
@@ -99,7 +107,7 @@ function imageDimensions(buf,mime){
   }catch{}
   return null;
 }
-function mediaFile(req,res,key){
+async function mediaFile(req,res,key,variant=''){
   if(!/^[a-zA-Z0-9_-]{6,80}\.(png|jpg|webp|gif|mp4|webm)$/.test(key))throw httpError(404,'Not found');
   const media=store.one('SELECT * FROM media WHERE storage_key=?',key);if(!media)throw httpError(404,'Not found');
   const visible=store.one("SELECT id FROM posts WHERE (id=? OR parent_post_id=?) AND state='published' LIMIT 1",media.owner_id,media.owner_id);
@@ -107,7 +115,15 @@ function mediaFile(req,res,key){
   const filename=path.resolve(config.uploads,key);
   if(!filename.startsWith(config.uploads+path.sep)||!fs.existsSync(filename))throw httpError(404,'Not found');
   const stat=fs.statSync(filename);
-  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=31536000,immutable':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
+  if(variant){
+    if(!memories.enabled()||!visible||!memories.allowedMedia(media.id))throw httpError(404,'Photograph unavailable.','NOT_FOUND');
+    limit(req,'v3-image-preview',120,60);
+    const image=await imageDerivatives.preview({filename,key,variant});
+    const headers={'content-type':image.mime,'cache-control':'public,max-age=60,must-revalidate','etag':image.etag,'x-content-type-options':'nosniff'};
+    if(req.headers['if-none-match']===image.etag)return end(res,304,'',headers);
+    return end(res,200,req.method==='HEAD'?'':image.bytes,{...headers,'content-length':image.bytes.length});
+  }
+  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=60,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
   const range=req.headers.range?.match(/^bytes=(\d*)-(\d*)$/);
   if(req.headers.range&&!range)throw httpError(416,'Unsupported media range');
   if(range){const start=range[1]?Number(range[1]):Math.max(0,stat.size-Number(range[2]||0));const endByte=range[1]?(range[2]?Number(range[2]):stat.size-1):stat.size-1;
@@ -118,13 +134,15 @@ function mediaFile(req,res,key){
   res.writeHead(200,{...headers,'content-length':stat.size});
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
-function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
+function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
+const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(await handleV3(req,res,pathName,url))return;
+  if(await handleMemories(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -196,7 +214,7 @@ async function api(req,res,pathName,url){
       return ok(res,store.schedule(id,b,owner.id));}
     if(method==='POST'&&action==='duplicate'){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');let copy=store.createPost({...p,title:p.title+' (copy)',allowComments:p.allow_comments,allowReactions:p.allow_reactions},owner.id);return ok(res,copy)}
   }
-  if(pathName==='/api/admin/status'&&method==='PUT')return ok(res,store.updateStatus(await readJSON(req),owner.id));
+  if(pathName==='/api/admin/status'&&method==='PUT'){const data=await readJSON(req);return ok(res,memories.enabled()?memories.recordNow(owner,data):store.updateStatus(data,owner.id));}
   if(pathName==='/api/admin/comments'&&method==='GET')return ok(res,store.pendingComments(url.searchParams.get('state')||'pending'));
   const commentResource=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)$/);
   if(commentResource){
@@ -221,6 +239,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/media/upload'&&method==='POST'){
     let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?8*1024*1024:25*1024*1024);
     const ext=fileMagic(buf,mime);if(!ext)throw httpError(415,'Unsupported media type or invalid file contents');
+    if(image)buf=sanitizeImage(buf,mime);
     const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
     if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
     const dimensions=image?imageDimensions(buf,mime):null;
@@ -259,8 +278,8 @@ async function route(req,res){
     if(pathname.startsWith('/api/'))return await api(req,res,pathname,url);
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
-    if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return mediaFile(req,res,pathname.split('/').at(-1));}
-    if(['/style.css','/magic.css','/v3.css','/v3.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
+    if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -282,6 +301,15 @@ async function route(req,res){
       const moderator=requireOwner(req,'/api/admin/comments','GET');
       return page(res,guestbookModerationPage(v3,moderator),200,true);
     }
+    if(pathname==='/admin/v3/memories'&&memories.enabled()){
+      const user=requireOwner(req,'/api/admin/settings','GET');
+      return page(res,memoriesStudioPage(memories,user),200,true);
+    }
+    if(pathname==='/timeline'&&memories.enabled())return page(res,timelinePage(memories,{year:url.searchParams.get('year')||'',kind:url.searchParams.get('kind')||'',cursor:url.searchParams.get('cursor')||''}));
+    if(pathname==='/moments'&&memories.enabled())return page(res,albumsPage(memories));
+    if(pathname.startsWith('/moments/')&&memories.enabled())return page(res,albumPage(memories,decodeURIComponent(pathname.slice(9))));
+    if(pathname==='/collections'&&memories.enabled())return page(res,collectionsPage(memories));
+    if(pathname.startsWith('/collections/')&&memories.enabled())return page(res,collectionPage(memories,decodeURIComponent(pathname.slice(13))));
     if(pathname==='/guestbook'&&v3.enabled('GUESTBOOK'))return page(res,guestbookPage(v3));
     if(pathname==='/follow'&&v3.enabled('FOLLOW'))return page(res,followPage());
     if(pathname==='/follow/confirm'&&v3.enabled('FOLLOW'))return page(res,followConfirmPage());
@@ -292,8 +320,9 @@ async function route(req,res){
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
     if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);return page(res,detailPage({post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
-    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members. Optional V3 features include a moderated guestbook (display name and message), double-opt-in publication subscriptions (encrypted email address and consent history), and reading progress saved only when a verified member requests it. Subscription emails include an opt-out process; account creation alone never enrolls anyone.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
+    if(pathname==='/privacy')return page(res,simplePage({path:'/privacy',title:'Privacy',lead:'A small footprint, by design.',body:'<p>The site stores pseudonymous first-party identifiers to reduce abusive reactions and measure engagement. Essential private session cookies are used for registered members and authorized Studio accounts. We do not sell visitor data or use advertising trackers.</p><p>Registering an account collects your email address, chosen display name, password hash, verification status, account preferences and bookmarks. Account email is used for verification and recovery through our email processor. Profiles are private by default and public posting rights are not granted to members. Optional V3 features include a moderated guestbook (display name and message), double-opt-in publication subscriptions (encrypted email address and consent history), and reading progress saved only when a verified member requests it. Phase 2 allows the owner to publish milestones, gallery photographs, reading collections and public Now history. New JPEG, PNG and WebP photos have optional embedded location metadata stripped before storage. Legacy photos with metadata remain ineligible for the gallery. Private story media is never listed. Subscription emails include an opt-out process; account creation alone never enrolls anyone.</p><p>When enabled, comments collect the name and text you submit for moderation and display. Raw pseudonymous analytics are removed after 90 days. Sessions, pending requests, audit logs and backups have separate operational retention requirements.</p><p>Verified account holders can request profile correction, a data export or deletion review through their account. For other requests email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Identity verification may be required before removal; statutory timelines depend on the applicable law.</p>'}));
     if(pathname==='/terms')return page(res,simplePage({path:'/terms',title:'Terms',lead:'A few sensible expectations.',body:'<p>This site is a personal publication. Its content is provided for general information, not professional advice. Please do not submit illegal, harassing, automated or misleading comments or attempts to access private areas.</p><p>Members are responsible for protecting their account credentials and the content they submit. Registered profiles are private by default and do not grant publishing or moderation access. Studio access is invitation-only and subject to additional verification.</p><p>External links are outside this site’s control. Content and features may evolve. Questions: <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>'}));
+    if(pathname==='/now'&&memories.enabled())return page(res,nowHistoryPage(memories,store.currentStatus()));
     if(pathname==='/now')return page(res,simplePage({path:'/now',title:'Now',lead:store.currentStatus()?.label||'A little space for what is current.',body:`<p>${escapeHtml(store.currentStatus()?.detail||'When a status is shared it will appear here.')}</p>`}));
     throw httpError(404,'Page not found','NOT_FOUND');
   }catch(err){
@@ -308,6 +337,25 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null)}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
-  const shutdown=()=>{stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
+  // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
+  // isolated restore. Never enable Phase 2 automatically.
+  let shuttingDown=false;
+  const restoreAuditTimer=config.prod&&process.env.CORNER_BACKUP_ENABLED==='1'&&process.env.CORNER_V3_MEMORIES!=='1'
+    ?setTimeout(()=>{
+      void auditLatestOffsiteMigration().then(report=>{
+       if(shuttingDown)return;
+       store.saveSetting('v3.phase2.restoreAuditLastSuccess',report.completedAt);
+       store.saveSetting('v3.phase2.restoreAuditBackupCreatedAt',report.backupCreatedAt);
+       store.saveSetting('v3.phase2.restoreAuditLastError',null);
+       log('info',{event:'corner.v3.restore_audit.verified',files:report.filesVerified,integrity:report.sqliteIntegrity,phase2Migration:report.phase2Migration});
+      }).catch(error=>{
+       if(shuttingDown)return;
+       const reason=String(error?.message||'Unknown failure').slice(0,120);
+       try{store.saveSetting('v3.phase2.restoreAuditLastError',reason)}catch{}
+       log('error',{event:'corner.v3.restore_audit.failed',reason});
+      });
+    },25000):null;
+
+  const shutdown=()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }

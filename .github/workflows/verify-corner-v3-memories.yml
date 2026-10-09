@@ -1,0 +1,57 @@
+name: Verify Corner V3 Memories responsive acceptance
+on:
+  push:
+    paths:
+      - 'corner/src/v3-memories*'
+      - 'corner/src/media-privacy.mjs'
+      - 'corner/src/v3-image-derivatives.mjs'
+      - 'corner/src/v3-restore-audit.mjs'
+      - 'corner/tests/v3-image-derivatives.test.mjs'
+      - 'corner/tests/v3-real-backup-audit.test.mjs'
+      - 'corner/public/v3-memories.*'
+      - 'corner/tests/v3-memories-browser.mjs'
+      - '.github/workflows/verify-corner-v3-memories.yml'
+  pull_request:
+    paths:
+      - 'corner/src/v3-memories*'
+      - 'corner/src/media-privacy.mjs'
+      - 'corner/src/v3-image-derivatives.mjs'
+      - 'corner/src/v3-restore-audit.mjs'
+      - 'corner/tests/v3-image-derivatives.test.mjs'
+      - 'corner/tests/v3-real-backup-audit.test.mjs'
+      - 'corner/public/v3-memories.*'
+      - 'corner/tests/v3-memories-browser.mjs'
+      - '.github/workflows/verify-corner-v3-memories.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Corner image processor
+        run: npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+      - name: Verify current Corner unit and API regressions
+        working-directory: corner
+        run: npm run check
+      - name: Install Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Test every memories page and keyboard lightbox
+        working-directory: corner
+        run: node --no-warnings tests/v3-memories-browser.mjs
+      - name: Retain screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-v3-memories-responsive
+          path: /tmp/corner-v3-phase2-*.png
+          retention-days: 3
+          if-no-files-found: ignore
