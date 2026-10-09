@@ -1,4 +1,4 @@
-import { createActivity, createEmailEvent, emailShell, json, query, sendResend, TRACK_OWNER_EMAIL } from '../../../lib/track.js';
+import { createActivity, createEmailEvent, emailShell, json, query, sendResend, TRACK_OWNER_EMAIL } from '../../lib/track.js';
 
 const authorized = (req) => {
   const secret = process.env.CRON_SECRET?.trim();

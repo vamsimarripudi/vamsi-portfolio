@@ -1,4 +1,4 @@
-import { TRACK_PRIORITIES, TRACK_STATUSES, TrackError, assertSameOrigin, canTransition, cleanHeader, cleanText, createActivity, json, query, requireOwner } from '../../../../lib/track.js';
+import { TRACK_PRIORITIES, TRACK_STATUSES, TrackError, assertSameOrigin, canTransition, cleanHeader, cleanText, createActivity, json, query, requireOwner } from '../../../lib/track.js';
 
 const privacyTypes = ['ACCESS', 'CORRECTION', 'ERASURE', 'GRIEVANCE', 'WITHDRAWAL'];
 

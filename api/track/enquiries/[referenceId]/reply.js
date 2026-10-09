@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { TrackError, assertSameOrigin, cleanText, createActivity, createEmailEvent, emailShell, escapeHtml, json, query, requireOwner, sendResend } from '../../../../lib/track.js';
+import { TrackError, assertSameOrigin, cleanText, createActivity, createEmailEvent, emailShell, escapeHtml, json, query, requireOwner, sendResend } from '../../../lib/track.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { ok: false, message: 'Method not allowed.' });

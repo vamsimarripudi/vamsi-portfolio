@@ -1,0 +1,59 @@
+name: Verify Enquiry Tracker routes and responsive dashboard
+on:
+  push:
+    paths:
+      - 'api/track/**'
+      - 'api/lib/track.js'
+      - 'api/contact.js'
+      - 'src/Track.*'
+      - 'scripts/verify-track-visual.mjs'
+      - 'tests/track-*.test.mjs'
+      - '.github/workflows/verify-track.yml'
+  pull_request:
+    paths:
+      - 'api/track/**'
+      - 'api/lib/track.js'
+      - 'api/contact.js'
+      - 'src/Track.*'
+      - 'scripts/verify-track-visual.mjs'
+      - 'tests/track-*.test.mjs'
+      - '.github/workflows/verify-track.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install, lint, test every tracker API module and build
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+      - name: Install Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Verify responsive tracker on eight viewports
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 >/tmp/track-vite.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/track >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/verify-track-visual.mjs
+      - name: Keep visual snapshots for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-responsive-screenshots
+          path: /tmp/track-*.png
+          if-no-files-found: ignore
+          retention-days: 3
