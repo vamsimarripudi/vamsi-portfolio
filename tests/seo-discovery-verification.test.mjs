@@ -67,3 +67,12 @@ test('static metadata build wires page-specific JSON-LD into prerendered HTML',(
  assert.match(source,/jsonLdPattern/);
  assert.match(source,/noindex, follow/);
 });
+
+test('no-JavaScript public HTML contains useful factual content matching visible FAQ',()=>{
+ const source=read('scripts/prerender-seo.mjs');
+ assert.match(source,/noScriptContent\(route, meta\)/);
+ assert.match(source,/faqItems\.map/);
+ assert.match(source,/if \(meta\.noindex\) return ''/);
+ assert.match(source,/contentByRoute/);
+ assert.match(source,/html\.replace\('<div id="root"><\/div>'/);
+});
