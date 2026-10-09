@@ -30,3 +30,7 @@ Phase 4 is an additive implementation following the Phase 3 merge. Flags default
 ## Optimistic review safety
 
 Language publish and revoke operations require the translation revision visible when the owner initiated approval. An out-of-date browser tab receives HTTP 409, instead of approving or revoking a translation altered elsewhere. Every accepted review returns the new revision. Source-article version checks and explicit human approval remain unchanged.
+
+## Owner Studio discoverability
+
+The existing responsive Studio sidebar now lists Memories, Wishes, Insights and Languages when their feature flags are enabled, and only for an authenticated owner role. Standard editors, moderators and signed-out visitors never receive owner-only navigation links. The existing `admin-v3-link` class preserves the locked visual design; a dedicated regression test covers roles and OFF flags.
