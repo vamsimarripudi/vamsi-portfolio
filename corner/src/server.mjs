@@ -10,6 +10,7 @@ import { v3Routes } from './v3-routes.mjs';
 import { V3Memories } from './v3-memories.mjs';
 import {sanitizeImage} from './media-privacy.mjs';
 import {ImageDerivatives} from './v3-image-derivatives.mjs';
+import {renderSyndication} from './v3-syndication.mjs';
 import { memoriesRoutes } from './v3-memories-routes.mjs';
 import {auditLatestOffsiteMigration} from './v3-restore-audit.mjs';
 import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
@@ -278,6 +279,15 @@ async function route(req,res){
     if(pathname.startsWith('/api/'))return await api(req,res,pathname,url);
     if(pathname==='/robots.txt')return end(res,200,`User-agent: *\nDisallow: ${config.basePath}/admin\nDisallow: ${config.basePath}/api/admin/\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{'content-type':'text/plain; charset=utf-8'});
     if(pathname==='/sitemap.xml')return end(res,200,sitemap(),{'content-type':'application/xml; charset=utf-8'});
+    if(pathname==='/rss.xml'||pathname==='/atom.xml'){
+      if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed.','METHOD_NOT_ALLOWED');
+      const format=pathname==='/rss.xml'?'rss':'atom';
+      const feed=renderSyndication(store,{format,baseUrl:config.siteUrl,title:config.siteTitle});
+      const headers={'content-type':format==='rss'?'application/rss+xml; charset=utf-8':'application/atom+xml; charset=utf-8',
+        'cache-control':'public,max-age=0,must-revalidate','etag':feed.etag,'x-content-type-options':'nosniff'};
+      if(req.headers['if-none-match']===feed.etag)return end(res,304,'',headers);
+      return end(res,200,req.method==='HEAD'?'':feed.xml,{...headers,'content-length':Buffer.byteLength(feed.xml)});
+    }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(['/style.css','/magic.css','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
