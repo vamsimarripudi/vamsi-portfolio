@@ -45,7 +45,7 @@ export class V3Memories{
   if(!kinds.includes(kind))throw httpError(400,'Invalid category.','INVALID_KIND');
   const state=stateOf(data.state??existing?.state);
   const postId=data.postId===null?'':String(data.postId??existing?.post_id??'').trim();
-  if(postId&&!this.store.getPostById(postId))throw httpError(400,'Link a published story.','POST_NOT_PUBLIC');
+  if(postId){const linked=this.store.one('SELECT state FROM posts WHERE id=?',postId);if(!linked||state==='published'&&linked.state!=='published')throw httpError(400,'Link a published story.','POST_NOT_PUBLIC');}
   const stamp=now(),key=existing?.id||uid('milestone');
   this.store.transaction(()=>{
    if(existing)this.store.exec('UPDATE v3_milestones SET title=?,summary=?,occurred_on=?,kind=?,post_id=?,state=?,updated_at=?,published_at=CASE WHEN ?=\'published\' THEN COALESCE(published_at,?) ELSE published_at END WHERE id=?',title,summary,occurred,kind,postId||null,state,stamp,state,stamp,key);
@@ -83,7 +83,7 @@ export class V3Memories{
   const title=clean(data.title??old?.title,110),summary=clean(data.summary??old?.summary,350),state=stateOf(data.state??old?.state);
   if(title.length<2)throw httpError(400,'Add an album title.','INVALID_TITLE');
   const mediaIds=data.mediaIds!==undefined?asIds(data.mediaIds):old?this.store.all('SELECT media_id FROM v3_album_items WHERE album_id=? ORDER BY sort_order',id).map(x=>x.media_id):[];
-  for(const mid of mediaIds)if(!this.allowedMedia(mid))throw httpError(400,'Albums may include only images belonging to published stories.','MEDIA_NOT_PUBLIC');
+  for(const mid of mediaIds)if(!this.store.one('SELECT id FROM media WHERE id=?',mid)||state==='published'&&!this.allowedMedia(mid))throw httpError(400,'Published albums require public story images.','MEDIA_NOT_PUBLIC');
   if(state==='published'&&!mediaIds.length)throw httpError(400,'Add at least one public image.','EMPTY_ALBUM');
   const key=old?.id||uid('album'),slug=old?.slug||this.uniqueSlug('v3_albums',title),stamp=now();
   this.store.transaction(()=>{
@@ -112,7 +112,7 @@ export class V3Memories{
   const title=clean(data.title??old?.title,110),summary=clean(data.summary??old?.summary,350),state=stateOf(data.state??old?.state);
   if(title.length<2)throw httpError(400,'Add a collection title.','INVALID_TITLE');
   const postIds=data.postIds!==undefined?asIds(data.postIds):old?this.store.all('SELECT post_id FROM v3_collection_items WHERE collection_id=? ORDER BY sort_order',id).map(x=>x.post_id):[];
-  for(const postId of postIds)if(!this.allowedPost(postId))throw httpError(400,'Collections may include only published stories.','POST_NOT_PUBLIC');
+  for(const postId of postIds)if(!this.store.one('SELECT id FROM posts WHERE id=?',postId)||state==='published'&&!this.allowedPost(postId))throw httpError(400,'Published collections require public stories.','POST_NOT_PUBLIC');
   if(state==='published'&&!postIds.length)throw httpError(400,'Add at least one published story.','EMPTY_COLLECTION');
   const key=old?.id||uid('collection'),slug=old?.slug||this.uniqueSlug('v3_collections',title),stamp=now();
   this.store.transaction(()=>{
