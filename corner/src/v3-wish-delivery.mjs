@@ -95,10 +95,10 @@ export class WishDelivery {
     uid('token'),followId,hash,expireIn(90),stamp);
   return String(this.env.SITE_URL||'http://localhost:4141/corner').replace(/\/$/,'')+'/follow/unsubscribe#token='+encodeURIComponent(token);
  }
- render(postRows,unsubscribe){
+ render(postRows,unsubscribe,{weekly=false}={}){
   const subjects=postRows.map(x=>x.title),links=postRows.map(x=>
    String(this.env.SITE_URL||'http://localhost:4141/corner').replace(/\/$/,'')+'/post/'+encodeURIComponent(x.slug));
-  const subject=postRows.length===1?'A new wish from Vamsi’s Corner':'Your weekly wishes from Vamsi’s Corner';
+  const subject=weekly?'Your weekly wishes from Vamsi’s Corner':'A new wish from Vamsi’s Corner';
   const text=[subject,'','You requested updates about wishes from Vamsi’s Corner.','',
    ...postRows.flatMap((p,i)=>[p.title,links[i],'']),'Unsubscribe: '+unsubscribe].join('\n');
   const stories=postRows.map((x,i)=>'<p style="margin:0 0 18px"><a style="color:#111;text-decoration:underline" href="'+escapeHTML(links[i])+'">'+escapeHTML(x.title)+'</a></p>').join('');
@@ -136,7 +136,7 @@ export class WishDelivery {
     try{
      const recipient=decrypt(follow.email_cipher,this.env);
      const first=rows[0],reference=first.provider_reference;
-     const letter=this.render(posts,this.unsubscribeUrl(follow.id,reference));
+     const letter=this.render(posts,this.unsubscribeUrl(follow.id,reference),{weekly:due.frequency==='weekly'});
      await this.sendMail({to:recipient,...letter,reference});
      const stamp=now();
      this.store.transaction(()=>{
