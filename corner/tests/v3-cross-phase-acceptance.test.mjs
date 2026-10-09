@@ -83,6 +83,6 @@ test('Phases 3+4 integrate: owner wish → published feed → approved locale �
  const serialized=JSON.stringify(stats)+JSON.stringify(delivery.snapshot(owner));
  assert.doesNotMatch(serialized,/lifecycle@example.test|token=/,'No email or one-time token leaked through private aggregate APIs');
  store.archive(published.id,owner.id);
- assert.equal(languages.localize(store.getPost(published.slug),'te').language,'en','Archived source invalidates translation');
+ assert.equal(languages.localize(store.getPost(published.slug),'te'),null,'Archived source and its translation are not publicly accessible');
  assert.doesNotMatch(renderSyndication(store,{format:'rss',baseUrl:env.SITE_URL}).xml,/A kind wish/);
 });
