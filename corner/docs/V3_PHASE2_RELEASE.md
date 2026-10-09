@@ -54,3 +54,8 @@ Physical thumbnail generation/resizing is not yet included. Images are lazy-load
 ## Automated Railway offsite rehearsal
 
 On production boot with `CORNER_BACKUP_ENABLED=1` and `CORNER_V3_MEMORIES=0`, the service schedules a one-time read-only rehearsal of the latest real private backup after 25 seconds. It verifies the manifest, restores an isolated copy, applies Phase 2 migration and compares record counts. Only summary results are saved privately and reported as sanitized Railway logs (`corner.v3.restore_audit.verified` or `.failed`). The live database and memories feature flag remain unchanged. Confirm a verified result on Railway before enabling Phase 2.
+
+## Fail-closed production activation and archive revalidation
+
+- The first production boot with `CORNER_V3_MEMORIES=1` now requires a real completed offsite restore-audit timestamp and original backup timestamp both within 36 hours; otherwise startup refuses Phase 2 migration and feature exposure. Once migration `v3-0003` has been successfully recorded, future restarts need not reuse stale timestamps.
+- Browser/CDN image caching uses immediate revalidation (`max-age=0, must-revalidate`), preserving content-addressed ETags without a 60-second stale visibility window after post archival. An authenticated photo remains subject to publication checks on every request.

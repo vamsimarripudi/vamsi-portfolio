@@ -119,11 +119,11 @@ async function mediaFile(req,res,key,variant=''){
     if(!memories.enabled()||!visible||!memories.allowedMedia(media.id))throw httpError(404,'Photograph unavailable.','NOT_FOUND');
     limit(req,'v3-image-preview',120,60);
     const image=await imageDerivatives.preview({filename,key,variant});
-    const headers={'content-type':image.mime,'cache-control':'public,max-age=60,must-revalidate','etag':image.etag,'x-content-type-options':'nosniff'};
+    const headers={'content-type':image.mime,'cache-control':'public,max-age=0,must-revalidate','etag':image.etag,'x-content-type-options':'nosniff'};
     if(req.headers['if-none-match']===image.etag)return end(res,304,'',headers);
     return end(res,200,req.method==='HEAD'?'':image.bytes,{...headers,'content-length':image.bytes.length});
   }
-  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=60,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
+  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=0,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
   const range=req.headers.range?.match(/^bytes=(\d*)-(\d*)$/);
   if(req.headers.range&&!range)throw httpError(416,'Unsupported media range');
   if(range){const start=range[1]?Number(range[1]):Math.max(0,stat.size-Number(range[2]||0));const endByte=range[1]?(range[2]?Number(range[2]):stat.size-1):stat.size-1;
