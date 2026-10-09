@@ -1,4 +1,8 @@
 import { uid,now,pureText,slugify,httpError,clamp } from './domain.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import {config} from './config.mjs';
+import {imageHasPrivateMetadata} from './media-privacy.mjs';
 const kinds=['personal','build','work','learning','celebration'];
 const states=['draft','published','archived'];
 const clean=(v,max=300)=>pureText(v,max).replace(/\s+/g,' ').trim();
@@ -55,11 +59,17 @@ export class V3Memories{
   return this.store.one('SELECT * FROM v3_milestones WHERE id=?',key);
  }
  allowedMedia(mediaId){
-  return this.store.one("SELECT m.id,m.storage_key,m.mime_type,m.alt_text,m.caption,m.focal_x,m.focal_y,p.slug AS post_slug FROM media m JOIN posts p ON p.id=m.owner_id WHERE m.id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type LIKE 'image/%'",mediaId);
+  const media=this.store.one("SELECT m.id,m.storage_key,m.mime_type,m.alt_text,m.caption,m.focal_x,m.focal_y,p.slug AS post_slug FROM media m JOIN posts p ON p.id=m.owner_id WHERE m.id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type IN ('image/jpeg','image/png','image/webp')",mediaId);
+  if(!media)return null;
+  if(this.store.location===':memory:')return media;
+  if(!/^[A-Za-z0-9_-]{6,80}\.(?:jpg|png|webp)$/.test(media.storage_key))return null;
+  const file=path.join(config.uploads,media.storage_key);
+  try{if(!fs.existsSync(file)||imageHasPrivateMetadata(fs.readFileSync(file),media.mime_type))return null;}catch{return null}
+  return media;
  }
  allowedPost(postId){return this.store.getPostById(postId)}
  albumImages(id){
-  return this.store.all("SELECT m.id,m.storage_key AS storageKey,m.mime_type AS mimeType,m.alt_text AS alt,m.caption,m.focal_x AS focalX,m.focal_y AS focalY,p.slug AS postSlug FROM v3_album_items a JOIN media m ON m.id=a.media_id JOIN posts p ON p.id=m.owner_id WHERE a.album_id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type LIKE 'image/%' ORDER BY a.sort_order,a.media_id LIMIT 60",id);
+  return this.store.all("SELECT m.id,m.storage_key AS storageKey,m.mime_type AS mimeType,m.alt_text AS alt,m.caption,m.focal_x AS focalX,m.focal_y AS focalY,p.slug AS postSlug FROM v3_album_items a JOIN media m ON m.id=a.media_id JOIN posts p ON p.id=m.owner_id WHERE a.album_id=? AND m.owner_type='post' AND p.state='published' AND m.mime_type IN ('image/jpeg','image/png','image/webp') ORDER BY a.sort_order,a.media_id LIMIT 60",id).filter(m=>this.allowedMedia(m.id));
  }
  collectionPosts(id){
   return this.store.all("SELECT p.id,p.slug,p.title,p.excerpt,p.category,p.published_at AS publishedAt FROM v3_collection_items c JOIN posts p ON p.id=c.post_id WHERE c.collection_id=? AND p.state='published' ORDER BY c.sort_order,c.post_id LIMIT 60",id);

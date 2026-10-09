@@ -8,6 +8,7 @@ import { Store } from './store.mjs';
 import { V3Engagement } from './v3-engagement.mjs';
 import { v3Routes } from './v3-routes.mjs';
 import { V3Memories } from './v3-memories.mjs';
+import {sanitizeImage} from './media-privacy.mjs';
 import { memoriesRoutes } from './v3-memories-routes.mjs';
 import { timelinePage,albumsPage,albumPage,collectionsPage,collectionPage,nowHistoryPage,memoriesStudioPage } from './v3-memories-ui.mjs';
 import { searchPage, archivePage, guestbookPage, guestbookModerationPage, followPage, followConfirmPage, unsubscribePage } from './v3-ui.mjs';
@@ -227,6 +228,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/media/upload'&&method==='POST'){
     let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?8*1024*1024:25*1024*1024);
     const ext=fileMagic(buf,mime);if(!ext)throw httpError(415,'Unsupported media type or invalid file contents');
+    if(image)buf=sanitizeImage(buf,mime);
     const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
     if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
     const dimensions=image?imageDimensions(buf,mime):null;
