@@ -24,7 +24,11 @@ test('Phase 2 real HTTP: private owner APIs, public-only content, CSRF and Now h
  assert.equal(ready,true,errors.join('').slice(0,300));
  const call=(url,method='GET',body,session='',originHeader=true)=>fetch(origin+'/corner'+url,{method,headers:{...(session?{cookie:session}:{}),...(body!==undefined?{'content-type':'application/json'}:{}),...(originHeader&&method!=='GET'?{origin}:{})},body:body===undefined?undefined:JSON.stringify(body),redirect:'manual'});
  for(const url of ['/timeline','/moments','/collections','/api/v1/memories/timeline','/api/v1/memories/albums','/api/v1/memories/collections','/api/v1/memories/now/history'])assert.equal((await call(url)).status,200,url);
- assert.equal((await call('/admin/v3/memories')).status,401);
+ const signedOut=await call('/admin/v3/memories');
+ assert.equal(signedOut.status,401);
+ const signedOutHTML=await signedOut.text();
+ assert.match(signedOutHTML,/signin-box/,'Signed-out visitors see the actual Studio sign-in form');
+ assert.doesNotMatch(signedOutHTML,/Memories Studio/,'Owner-only Studio content remains inaccessible');
  assert.equal((await call('/api/v1/admin/v3/memories')).status,401);
  assert.equal((await call('/api/v1/admin/v3/milestones','POST',{title:'New moment',occurredOn:'2026-10-09',state:'published'})).status,401);
  assert.equal((await call('/api/v1/admin/v3/memories/backup-audit','POST',{})).status,401);
