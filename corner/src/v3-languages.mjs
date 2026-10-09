@@ -87,7 +87,11 @@ export class V3Languages{
   return {id:variant.id,state:publish?'published':'draft',language:lang};
  }
  available(post){
-  if(!this.enabled()||!post||post.state!=='published')return ['en'];
+  if(!this.enabled()||!post?.id)return ['en'];
+  // Public projection intentionally has no state; verify freshness and publication
+  // from the source table instead of relying on a field redacted from publicPost.
+  const source=this.store.one("SELECT version FROM posts WHERE id=? AND state='published'",post.id);
+  if(!source||Number(source.version)!==Number(post.version))return ['en'];
   const rows=this.store.all("SELECT language FROM v3_language_variants WHERE post_id=? AND state='published' AND source_version=? ORDER BY language",post.id,post.version);
   return ['en',...rows.map(r=>r.language)];
  }
