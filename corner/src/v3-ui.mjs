@@ -1,15 +1,26 @@
 import {simplePage,escapeHtml} from './ui.mjs';
-export function searchPage(v3,query={}) {
-  const matches=v3.search(query);
-  const rows=matches.items.map(p=>'<p><a href="/post/'+encodeURIComponent(p.slug)+'">'+escapeHtml(p.title)+'</a></p>').join('');
-  const form='<form action="/search" method="get"><label>Find a story <input name="q" maxlength="100" type="search" value="'+escapeHtml(query.q||'')+'"></label> <button type="submit">Search ↗</button></form>';
-  return simplePage({title:'Explore',lead:'Discover public stories, memories, ideas.',path:'/search',body:form+'<h2>'+matches.total+' results</h2>'+(rows||'<p>No matching stories.</p>')});
+const esc=escapeHtml;
+function option(value,label,selected=''){
+ return '<option value="'+esc(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+esc(label)+'</option>';
+}
+export function searchPage(v3,query={}){
+ const found=v3.search(query),years=v3.archive().years;
+ const filters='<form class="v3-explore-form" method="get" action="/search" role="search">'+
+ '<label class="v3-wide"><span>Search the Corner</span><input type="search" name="q" maxlength="100" placeholder="A thought, idea, moment…" value="'+esc(query.q||'')+'" /></label>'+
+ '<label><span>Collection</span><select name="category">'+option('','All collections',query.category)+['Wishes','Builds','Notes','Journal','Moments'].map(x=>option(x,x,query.category)).join('')+'</select></label>'+
+ '<label><span>Year</span><select name="year">'+option('','All years',query.year)+years.map(x=>option(x.year,x.year,query.year)).join('')+'</select></label>'+
+ '<label><span>Tag</span><input type="text" name="tag" maxlength="35" placeholder="Optional" value="'+esc(query.tag||'')+'" /></label>'+
+ '<button type="submit" class="v3-icon-action" aria-label="Search public stories"><span aria-hidden="true">⌕</span> Explore</button></form>';
+ const cards=found.items.map((post,i)=>'<article class="v3-result"><div><span class="v3-result-type">'+esc(post.type.replaceAll('_',' '))+'</span><h3><a href="/post/'+encodeURIComponent(post.slug)+'">'+esc(post.title)+'</a></h3><p>'+esc(post.excerpt||'')+'</p></div><a class="v3-result-arrow" href="/post/'+encodeURIComponent(post.slug)+'" aria-label="Read '+esc(post.title)+'">↗</a></article>').join('');
+ const more=found.nextOffset===null?'':'<a class="v3-result-more" href="/search?q='+encodeURIComponent(query.q||'')+'&category='+encodeURIComponent(query.category||'')+'&year='+encodeURIComponent(query.year||'')+'&tag='+encodeURIComponent(query.tag||'')+'&offset='+found.nextOffset+'">More results ↓</a>';
+ const body='<div class="v3-explorer">'+filters+'<section class="v3-search-results"><header><h2>'+found.total+' '+(found.total===1?'story':'stories')+'</h2><a href="/archive">Browse archive ↗</a></header>'+(cards||'<div class="v3-empty-reader"><span aria-hidden="true">✳</span><h3>Nothing matching yet.</h3><p>Try a different word or explore the archive.</p></div>')+more+'</section></div>';
+ return simplePage({title:'Explore',lead:'Find stories, moments and ideas worth keeping.',path:'/search',body});
 }
 export function archivePage(v3,year=''){
-  const data=v3.archive(year);
-  const years=data.years.map(v=>'<a href="/archive?year='+escapeHtml(v.year)+'">'+escapeHtml(v.year)+'</a>').join(' · ');
-  const rows=data.items.map(p=>'<p><a href="/post/'+encodeURIComponent(p.slug)+'">'+escapeHtml(p.title)+'</a></p>').join('');
-  return simplePage({title:'Archive',lead:'What happened, and when.',path:'/archive',body:'<nav>'+years+'</nav>'+rows});
+ const data=v3.archive(year);
+ const links=data.years.map(x=>'<a class="v3-year" href="/archive?year='+esc(x.year)+'"'+(year===x.year?' aria-current="page"':'')+'><strong>'+esc(x.year)+'</strong><span>'+Number(x.total)+' notes</span><small aria-hidden="true">↗</small></a>').join('');
+ const posts=data.items.map(x=>'<a class="v3-archive-post" href="/post/'+encodeURIComponent(x.slug)+'"><span>'+esc(x.title)+'</span><span aria-hidden="true">↗</span></a>').join('');
+ return simplePage({title:'Archive',lead:'An intentional record of things worth remembering.',path:'/archive',body:'<div class="v3-explorer"><nav class="v3-year-grid" aria-label="Published years">'+(links||'<p>First memories will be added here.</p>')+'</nav>'+(year?'<section class="v3-archive-list"><h2>'+esc(year)+' in notes</h2>'+(posts||'<p>No public posts in this year.</p>')+'</section>':'')+'</div>'});
 }
 export function guestbookPage(v3) {
   const messages=v3.listGuestbook().map(note=>'<article class="v3-note"><p>'+escapeHtml(note.message)+'</p><small>'+escapeHtml(note.name)+'</small></article>').join('');
