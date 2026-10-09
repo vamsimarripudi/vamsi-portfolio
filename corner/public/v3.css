@@ -73,3 +73,10 @@
 @media(max-width:680px){.v3-explore-form{grid-template-columns:repeat(2,minmax(0,1fr))}.v3-explore-form .v3-wide{grid-column:1/-1}.v3-explore-form button{grid-column:1/-1}.v3-year-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:390px){.v3-explore-form{grid-template-columns:1fr}.v3-explore-form .v3-wide,.v3-explore-form button{grid-column:auto}.v3-year-grid{grid-template-columns:1fr 1fr}.v3-year{padding:15px;min-height:135px}.v3-result h3{font-size:1.28rem}}
 @media(prefers-reduced-motion:reduce){.v3-result,.v3-year{transition:none}.v3-result:hover,.v3-year:hover{transform:none}}
+
+/* Reader first-fold: classic serif headings without oversized blank space. */
+.simple-page:has(.v3-explorer){padding-top:clamp(36px,5vw,70px)}
+.simple-page:has(.v3-explorer) h1{font:500 clamp(3.1rem,7vw,5.65rem)/1.02 Georgia,serif;letter-spacing:-.075em;color:#0a0a0a}
+.simple-page:has(.v3-explorer) .simple-lede{max-width:630px;color:#262626;font-size:clamp(.94rem,1.2vw,1.05rem)}
+.simple-page:has(.v3-explorer) .simple-text{margin-top:clamp(25px,3.1vw,42px)}
+@media(max-width:520px){.simple-page:has(.v3-explorer){padding-top:31px}.simple-page:has(.v3-explorer) h1{font-size:clamp(2.75rem,11vw,3.55rem)}}
