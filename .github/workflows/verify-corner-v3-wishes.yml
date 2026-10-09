@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - 'corner/src/v3-wish*'
+      - 'corner/src/v3-resend-webhook.mjs'
+      - 'corner/tests/v3-resend*'
+      - 'corner/tests/v3-provider*'
       - 'corner/public/v3-wishes.*'
       - 'corner/tests/v3-wish*'
       - 'corner/tests/v3-wishes*'
@@ -10,6 +13,9 @@ on:
   pull_request:
     paths:
       - 'corner/src/v3-wish*'
+      - 'corner/src/v3-resend-webhook.mjs'
+      - 'corner/tests/v3-resend*'
+      - 'corner/tests/v3-provider*'
       - 'corner/public/v3-wishes.*'
       - 'corner/tests/v3-wish*'
       - 'corner/tests/v3-wishes*'
