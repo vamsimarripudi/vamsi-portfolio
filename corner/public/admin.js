@@ -23,11 +23,11 @@
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span>✳</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
   function showView(view){clearTimeout(active.saveTimer);active.view=view;active.post=null;
-    const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',analytics:'Analytics',settings:'Settings'};
+    const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Analytics',settings:'Settings'};
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>button.classList.toggle('is-active',button.dataset.adminView===view));
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
-    ({overview,posts,media,comments,analytics,settings}[view]||overview)().catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
+    ({overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
   }
   async function overview(){const summary=await api('/corner/api/admin/overview');
     root.innerHTML=`<section class="admin-grid">${[
@@ -81,6 +81,22 @@
   }
   async function comments(){const list=await api('/corner/api/admin/comments?state=pending');root.innerHTML=`<section class="admin-section"><header><h2>Comments awaiting review.</h2></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}">Approve ✓</button><button data-moderate="hide" data-comment="${c.id}">Hide</button><button data-moderate="delete" data-comment="${c.id}">Delete</button></footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
     $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast('Comment updated.','success');comments()}catch(err){toast(err.message,'error')}});
+  }
+  async function guestbook(){
+    const response=await api('/corner/api/v1/admin/v3/guestbook');
+    const entries=Array.isArray(response)?response:[];
+    root.innerHTML='<section class="admin-section"><header><h2>Guestbook moderation.</h2></header>'+(
+      entries.length?'<div class="admin-card-list">'+entries.map(n=>
+        '<article class="admin-comment"><strong>'+esc(n.name)+'</strong><p>'+esc(n.message)+'</p><footer>'+
+        ['approved','hidden','deleted'].map(state=>'<button type="button" data-guestbook-id="'+esc(n.id)+'" data-guestbook-state="'+state+'">'+(state==='approved'?'Approve':state==='hidden'?'Hide':'Delete')+'</button>').join('')+
+        '</footer></article>').join('')+'</div>':empty('No guestbook notes waiting.'))+'</section>';
+    $('[data-guestbook-id]').forEach(button=>button.addEventListener('click',async()=>{
+      button.disabled=true;
+      try{
+        await api('/corner/api/v1/admin/v3/guestbook/'+encodeURIComponent(button.dataset.guestbookId),'PATCH',{state:button.dataset.guestbookState});
+        toast('Guestbook note reviewed.','success');await guestbook();
+      }catch(error){toast(error.message,'error');button.disabled=false;}
+    }));
   }
   async function analytics(){let summary=await api('/corner/api/admin/analytics/summary');root.innerHTML=`<section class="admin-grid">${[['Views',summary.page_view||0],['Story opens',summary.post_open||0],['Shares',summary.share||0],['Published',summary.published||0]].map(([label,value])=>`<div class="admin-kpi"><p>${label}</p><strong>${Number(value)}</strong></div>`).join('')}</section><section class="admin-section"><div class="admin-surface"><h2>Lean by default.</h2><p>Counts from the past 7 days. No third-party analytics tracker and no public visitor leaderboard.</p>${summary.top?.length?`<p>Top stories: ${summary.top.map(x=>esc(x.post_id)+' ('+x.visits+')').join(' · ')}</p>`:''}</div></section>`}
   async function settings(){let s=await api('/corner/api/admin/settings');root.innerHTML=`<section class="admin-section"><header><h2>The essentials.</h2></header><form class="admin-form admin-surface" id="settings-editor"><label>Site title<input name="title" value="${esc(s.title)}"></label><label>Short descriptor<input name="descriptor" value="${esc(s.descriptor)}"></label><label>Site timezone<input name="timezone" value="${esc(s.timezone)}"></label><div class="editor-checks"><label><input type="checkbox" name="commentsDefault" ${s.commentsDefault?'checked':''}> Comments by default</label><label><input type="checkbox" name="reactionsDefault" ${s.reactionsDefault?'checked':''}> Reactions by default</label></div><button type="submit">Save settings</button></form></section><section class="admin-section"><header><h2>Site status.</h2></header><button class="admin-secondary" id="settings-status">Update current status ↗</button></section>`;
