@@ -60,7 +60,8 @@ test('Album publication requires published images; drafts and archived posts sta
  assert.equal(m.albums().length,0);
  m.albumWrite(owner,{state:'published'},a.id);
  assert.equal(m.album(a.slug).images[0].alt,'A clear day');
- assert.match(albumPage(m,a.slug),/aria-label="Enlarge A clear day"/);
+ assert.match(albumPage(m,a.slug),/aria-haspopup="dialog" aria-label="Open photo 1 of 1: A clear day"/);
+ assert.match(albumPage(m,a.slug),/data-v3m-prev aria-label="Previous photograph"/);
  assert.match(albumsPage(m),/loading="lazy"/);
  store.archive(p.id,'owner');
  assert.equal(m.albums().length,0);
