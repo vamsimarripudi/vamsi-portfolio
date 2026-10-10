@@ -2,18 +2,61 @@
  const current=window.location.pathname.startsWith('/corner')?'/corner':'';
  const dialog=document.querySelector('[data-v3m-lightbox]');
  if(dialog){
-  let opener;
-  document.querySelectorAll('[data-v3m-photo]').forEach(b=>b.addEventListener('click',()=>{
-   opener=b;
-   const image=dialog.querySelector('img'),label=dialog.querySelector('figcaption');
-   image.src=b.dataset.src;image.alt=b.dataset.alt||'Photograph';
-   label.textContent=b.dataset.caption||'';
+  const photos=[...document.querySelectorAll('[data-v3m-photo]')];
+  const photo=dialog.querySelector('figure img'),caption=dialog.querySelector('figcaption');
+  const counter=dialog.querySelector('[data-v3m-counter]');
+  const previous=dialog.querySelector('[data-v3m-prev]'),next=dialog.querySelector('[data-v3m-next]');
+  const close=dialog.querySelector('[data-v3m-close]');
+  let opener=null,index=0,sequence=0,touch=null;
+  const show=indexToShow=>{
+   if(!photos.length)return;
+   index=(indexToShow+photos.length)%photos.length;
+   const source=photos[index],serial=++sequence;
+   dialog.dataset.photoState='loading';
+   photo.alt=source.dataset.alt||'Photograph';
+   caption.textContent=source.dataset.caption||'';
+   counter.textContent=(index+1)+' / '+photos.length;
+   previous.disabled=photos.length<2;next.disabled=photos.length<2;
+   photo.src=source.dataset.src;
+   const decoding=typeof photo.decode==='function'?photo.decode():Promise.resolve();
+   decoding.then(()=>{
+    if(serial===sequence&&dialog.open)dialog.dataset.photoState='ready';
+   }).catch(()=>{
+    if(serial===sequence&&dialog.open){
+     dialog.dataset.photoState='error';
+     caption.textContent='Photograph temporarily unavailable.';
+    }
+   });
+  };
+  photos.forEach((button,n)=>button.addEventListener('click',()=>{
+   opener=button;
    if(!dialog.open)dialog.showModal();
-   dialog.querySelector('[data-v3m-close]').focus();
+   show(n);close.focus({preventScroll:true});
   }));
-  dialog.querySelector('[data-v3m-close]').addEventListener('click',()=>dialog.close());
-  dialog.addEventListener('close',()=>{dialog.querySelector('img').removeAttribute('src');opener?.focus()});
-  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+  previous.addEventListener('click',()=>show(index-1));
+  next.addEventListener('click',()=>show(index+1));
+  close.addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('keydown',event=>{
+   if(event.altKey||event.ctrlKey||event.metaKey||photos.length<2)return;
+   if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
+    event.preventDefault();show(index+(event.key==='ArrowRight'?1:-1));
+   }
+  });
+  photo.addEventListener('touchstart',event=>{
+   const point=event.changedTouches[0];
+   if(point)touch={x:point.clientX,y:point.clientY};
+  },{passive:true});
+  photo.addEventListener('touchend',event=>{
+   const point=event.changedTouches[0];if(!touch||!point||photos.length<2)return;
+   const x=point.clientX-touch.x,y=point.clientY-touch.y;
+   touch=null;
+   if(Math.abs(x)>55&&Math.abs(x)>Math.abs(y)*1.25)show(index+(x<0?1:-1));
+  },{passive:true});
+  dialog.addEventListener('close',()=>{
+   sequence++;photo.removeAttribute('src');delete dialog.dataset.photoState;
+   const source=opener;opener=null;source?.focus({preventScroll:true});
+  });
+  dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
  }
  document.querySelectorAll('[data-v3m-form]').forEach(form=>{
   const resource=form.dataset.v3mForm;
