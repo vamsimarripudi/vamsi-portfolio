@@ -46,7 +46,8 @@ test('Gallery supports icon-only accessible navigation, swipe, keyboard and focu
  for(const token of ['ArrowLeft','ArrowRight','touchstart','touchend',
   "dialog.addEventListener('close'",'opener','sequence++'])
   assert.ok(interaction.includes(token),'Gallery interaction '+token);
- assert.doesNotMatch(interaction,/\bfetch\(/,'Visual-only gallery changes');
+ const gallery=interaction.slice(interaction.indexOf(" const dialog="),interaction.indexOf(" document.querySelectorAll('[data-v3m-form]')"));
+ assert.doesNotMatch(gallery,/\bfetch\(/,'Gallery navigation never calls APIs');
 });
 test('Core design assets retain strict uncompressed transfer budgets',()=>{
  const size=f=>fs.statSync(path.join(root,'public',f)).size;
