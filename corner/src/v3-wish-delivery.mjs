@@ -184,8 +184,11 @@ export class WishDelivery {
  }
  /** Signed provider events are aggregate-only, replay-safe, and never store raw payloads or addresses. */
  reconcileWebhook(raw,headers){
-  this.assertReady();
+  // Verify every callback's HMAC, regardless of live subscriber-delivery status.
+  // Only a verified callback receives a retry-safe acknowledgement while paused.
   const event=verifyResendWebhook(raw,headers,String(this.env.CORNER_V3_RESEND_WEBHOOK_SECRET||''));
+  if(!this.enabled())return {accepted:true,ignored:true,deliveryEnabled:false};
+  this.assertReady();
   if(event.ignored)return {accepted:true,ignored:true};
   const received=now();
   const changed=this.store.exec("INSERT OR IGNORE INTO v3_wish_provider_events(id,provider_message_id,event,received_at) VALUES(?,?,?,?)",
