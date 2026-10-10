@@ -46,20 +46,5 @@
   schedule();
  }
  // Preview animation never changes data, URL, focus or screen-reader status.
- if(canAnimate()&&'MutationObserver' in window){
-  for(const node of main.querySelectorAll('.v3w-preview,[data-v3-language-output]')){
-   let pending=false;
-   const watch=new MutationObserver(()=>{
-    if(pending)return;
-    pending=true;
-    requestAnimationFrame(()=>{
-     pending=false;
-     node.classList.remove('corner-motion-updated');
-     void node.offsetWidth;
-     node.classList.add('corner-motion-updated');
-    });
-   });
-   watch.observe(node,{childList:true,characterData:true,subtree:true});
-  }
- }
+
 })();

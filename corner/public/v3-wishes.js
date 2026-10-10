@@ -47,6 +47,10 @@
    preview.querySelector('[data-v3w-title]').textContent=data.title;
    preview.querySelector('[data-v3w-excerpt]').textContent=data.excerpt||'';
    preview.querySelector('[data-v3w-body]').textContent=data.body;
+   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    preview.classList.remove('corner-motion-updated');
+    void preview.offsetWidth;preview.classList.add('corner-motion-updated');
+   }
    notes(editorStatus,'Private preview only. Nothing emailed or published.');
   }catch(e){notes(editorStatus,e.message)}
  });
