@@ -27,6 +27,10 @@
   try{
    const result=await send('/preview',values());
    output.textContent=result.title+'\n\n'+(result.excerpt?result.excerpt+'\n\n':'')+result.body;
+   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    output.classList.remove('corner-motion-updated');
+    void output.offsetWidth;output.classList.add('corner-motion-updated');
+   }
    note('Preview only. Nothing has been published.');
   }catch(e){note(e.message)}
  });

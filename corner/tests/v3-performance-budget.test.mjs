@@ -9,8 +9,8 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const size=filename=>fs.statSync(path.join(root,'public',filename)).size;
 
 test('Corner baseline and optional phases respect strict static transfer budgets',()=>{
- const baselineCSS=['style.css','magic.css','v3.css','v3-memories.css'].reduce((sum,f)=>sum+size(f),0);
- const baselineJS=['app.js','nav.js','v3.js','v3-memories.js'].reduce((sum,f)=>sum+size(f),0);
+ const baselineCSS=['style.css','magic.css','v3.css','v3-memories.css','motion.css'].reduce((sum,f)=>sum+size(f),0);
+ const baselineJS=['app.js','nav.js','v3.js','v3-memories.js','motion.js'].reduce((sum,f)=>sum+size(f),0);
  const wishes=size('v3-wishes.css')+size('v3-wishes.js');
  const phase4=size('v3-phase4.css')+size('v3-phase4.js');
  assert.ok(baselineCSS<90000,'Core CSS must remain under 90 KB uncompressed, got '+baselineCSS);

@@ -34,7 +34,10 @@ fs.mkdirSync(config.uploads,{recursive:true});
 const id='media_'+crypto.randomUUID(),key=crypto.randomBytes(16).toString('hex')+'.png';
 fs.writeFileSync(path.join(config.uploads,key),png);
 store.addMedia({id,ownerId:posts[1].id,storageKey:key,mimeType:'image/png',size:png.length,alt:'A small quiet scene',width:128,height:84});
-const album=memories.albumWrite(owner,{title:'Scenes from the season',summary:'Pictures from a day.',mediaIds:[id],state:'published'});
+const id2='media_'+crypto.randomUUID(),key2=crypto.randomBytes(16).toString('hex')+'.png';
+fs.writeFileSync(path.join(config.uploads,key2),png);
+store.addMedia({id:id2,ownerId:posts[1].id,storageKey:key2,mimeType:'image/png',size:png.length,alt:'Another quiet scene',width:128,height:84});
+const album=memories.albumWrite(owner,{title:'Scenes from the season',summary:'Pictures from a day.',mediaIds:[id,id2],state:'published'});
 const series=memories.collectionWrite(owner,{title:'Small thoughts',summary:'Three little stories.',postIds:posts.map(p=>p.id),state:'published'});
 memories.recordNow(owner,{label:'Working on what matters',detail:'Keeping a little record of progress.',isActive:true,icon:'✳'});
 store.close();
@@ -88,12 +91,37 @@ try{
   await page.goto(origin+'/corner/moments/'+album.slug);
   const photo=page.locator('[data-v3m-photo]').first();await photo.focus();await photo.press('Enter');
   assert.equal(await page.locator('[data-v3m-lightbox]').evaluate(x=>x.open),true,'Gallery opens via keyboard');
+  assert.equal((await page.locator('[data-v3m-counter]').textContent()).trim(),'1 / 2');
+  await page.keyboard.press('ArrowRight');
+  assert.equal((await page.locator('[data-v3m-counter]').textContent()).trim(),'2 / 2','Next image via keyboard');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal((await page.locator('[data-v3m-counter]').textContent()).trim(),'1 / 2','Previous image via keyboard');
+  await page.locator('[data-v3m-next]').click();
+  assert.equal((await page.locator('[data-v3m-counter]').textContent()).trim(),'2 / 2','Icon next button');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('[data-v3m-lightbox]').evaluate(x=>x.open),false,'Gallery closes via Escape');
   assert.equal(await photo.evaluate(x=>document.activeElement===x),true,'Focus returns to opener');
   console.log('PASS Phase 2 accessible lightbox '+width);
   await context.close();
  }
+  const moving=await browser.newContext({viewport:{width:375,height:812},reducedMotion:'no-preference'});
+  const animated=await moving.newPage();
+  await animated.goto(origin+'/corner/timeline',{waitUntil:'domcontentloaded'});
+  assert.equal(await animated.locator('link[href="/corner/motion.css"]').count(),1);
+  assert.equal(await animated.locator('script[src="/corner/motion.js"]').count(),1);
+  for(const route of ['/corner/motion.css','/corner/motion.js'])
+   assert.equal((await animated.request.get(origin+route)).status(),200,'Motion asset '+route);
+  await animated.locator('.v3m-event').first().scrollIntoViewIfNeeded();
+  await animated.waitForFunction(()=>document.querySelector('.v3m-event')?.classList.contains('is-visible'));
+  const motion=await animated.evaluate(()=>({
+   active:document.documentElement.dataset.cornerMotion,
+   revealed:document.querySelector('.v3m-event')?.hasAttribute('data-motion-reveal')
+  }));
+  assert.equal(motion.active,'active');
+  assert.equal(motion.revealed,true);
+  await animated.goto(origin+'/corner/post/'+posts[0].slug,{waitUntil:'domcontentloaded'});
+  assert.equal(await animated.locator('.corner-reading-progress[aria-hidden="true"]').count(),1);
+  await moving.close();
 }finally{
  await browser?.close();
  child.kill('SIGTERM');

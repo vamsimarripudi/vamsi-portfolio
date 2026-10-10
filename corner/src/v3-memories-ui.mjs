@@ -33,8 +33,8 @@ export function albumsPage(memories){
 }
 export function albumPage(memories,slug){
  const a=memories.album(slug);
- const items=a.images.map((m,i)=>'<button type="button" class="v3m-photo" data-v3m-photo data-src="'+e(asset(m.storageKey,'viewer'))+'" data-alt="'+e(m.alt||a.title)+'" data-caption="'+e(m.caption||'')+'" aria-label="Enlarge '+e(m.alt||'photo '+(i+1))+'"><img loading="lazy" decoding="async" src="'+asset(m.storageKey,'tile')+'" alt="'+e(m.alt||a.title)+'"'+dimensions(m)+'></button>').join('');
- const dialog='<dialog class="v3m-lightbox" data-v3m-lightbox aria-label="Photograph"><button type="button" data-v3m-close aria-label="Close photograph">×</button><figure><img alt=""><figcaption></figcaption></figure></dialog>';
+ const items=a.images.map((m,i)=>'<button type="button" class="v3m-photo" data-v3m-photo data-src="'+e(asset(m.storageKey,'viewer'))+'" data-alt="'+e(m.alt||a.title)+'" data-caption="'+e(m.caption||'')+'" aria-haspopup="dialog" aria-label="Open photo '+(i+1)+' of '+a.images.length+': '+e(m.alt||'photograph')+'"><img loading="lazy" decoding="async" src="'+asset(m.storageKey,'tile')+'" alt="'+e(m.alt||a.title)+'"'+dimensions(m)+'></button>').join('');
+ const dialog='<dialog class="v3m-lightbox" data-v3m-lightbox aria-label="Photograph"><button type="button" data-v3m-close aria-label="Close photograph">×</button><figure><img alt=""><figcaption></figcaption></figure><nav class="v3m-lightbox-controls" aria-label="Album photo navigation"><button type="button" data-v3m-prev aria-label="Previous photograph">←</button><span data-v3m-counter aria-live="polite"></span><button type="button" data-v3m-next aria-label="Next photograph">→</button></nav></dialog>';
  return simplePage({title:a.title,path:'/moments/'+a.slug,lead:a.summary||'Moments worth holding close.',body:'<div class="v3m-content"><a class="v3m-back" href="/moments">← All albums</a>'+'<div class="v3m-gallery" aria-label="Album photographs">'+items+'</div>'+dialog+'</div>'});
 }
 export function collectionsPage(memories){
