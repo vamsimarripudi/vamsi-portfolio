@@ -1,0 +1,134 @@
+/* V3 / Native Motion Primitives · all five phases.
+   Classic Minimal / Icon First · no external CSS or tracking. */
+:root{
+ --corner-motion-ease:cubic-bezier(.22,1,.36,1);
+ --corner-motion-fast:150ms;
+ --corner-motion-medium:280ms;
+ --corner-motion-slow:440ms;
+ --corner-motion-border:rgba(0,0,0,.3);
+ --corner-motion-shadow:0 16px 38px -30px rgba(12,12,12,.38);
+}
+@media(prefers-reduced-motion:no-preference){
+ html[data-corner-motion=active] [data-motion-reveal]{
+  opacity:0;translate:0 11px;
+  transition:opacity var(--corner-motion-slow) var(--corner-motion-ease),
+   translate var(--corner-motion-slow) var(--corner-motion-ease);
+  transition-delay:var(--motion-delay,0ms);
+ }
+ html[data-corner-motion=active] [data-motion-reveal].is-visible{opacity:1;translate:0 0}
+ html[data-corner-motion=active] .v3a-panel.is-visible .v3a-pillar{
+  animation:corner-pillar-enter var(--corner-motion-slow) var(--corner-motion-ease) both;
+  transform-origin:center bottom;
+ }
+ @keyframes corner-pillar-enter{from{transform:scaleY(.06);opacity:.5}to{transform:scaleY(1);opacity:1}}
+ .v3m-lightbox[open]{animation:corner-dialog-enter var(--corner-motion-medium) var(--corner-motion-ease) both}
+ .v3m-lightbox[open]::backdrop{animation:corner-backdrop-enter var(--corner-motion-medium) ease-out both}
+ @keyframes corner-dialog-enter{from{opacity:0;transform:translate3d(0,12px,0) scale(.985)}to{opacity:1;transform:none}}
+ @keyframes corner-backdrop-enter{from{opacity:0}to{opacity:1}}
+ .v3m-lightbox figure img{transition:opacity var(--corner-motion-medium) ease}
+ .v3m-lightbox[data-photo-state=loading] figure img{opacity:.12}
+ .v3m-lightbox[data-photo-state=ready] figure img{opacity:1}
+ .corner-motion-updated{animation:corner-ui-feedback var(--corner-motion-medium) var(--corner-motion-ease)}
+ @keyframes corner-ui-feedback{from{opacity:.58;translate:0 5px}to{opacity:1;translate:0 0}}
+}
+:where(.v3-result,.v3-year,.v3m-album,.v3m-collection,.v3m-photo,
+ .v3w-panel,.v3w-form,.v3a-kpi,.v3a-panel){
+ transition:box-shadow var(--corner-motion-medium) var(--corner-motion-ease),
+  border-color var(--corner-motion-medium) ease,
+  transform var(--corner-motion-medium) var(--corner-motion-ease);
+}
+:where(.v3m-years a,.v3a-periods a,.v3a-language-picker a,.v3w-statline span){
+ transition:border-color var(--corner-motion-fast),background-color var(--corner-motion-fast),
+  color var(--corner-motion-fast),box-shadow var(--corner-motion-fast);
+}
+:where(.v3m-filters button,.v3m-form button,.v3w-form button,.v3w-item-actions button,
+ .v3a-form button,.v3a-actions button,.v3m-admin-list button,.v3m-more,.v3-icon-action){
+ transition:transform var(--corner-motion-fast) var(--corner-motion-ease),
+  box-shadow var(--corner-motion-fast),background-color var(--corner-motion-fast);
+}
+:where(.v3m-filters button,.v3m-form button,.v3w-form button,.v3w-item-actions button,
+ .v3a-form button,.v3a-actions button,.v3m-admin-list button,.v3m-more):disabled{
+ opacity:.55;cursor:wait;box-shadow:none;transform:none;
+}
+:where(.v3m-filters select,.v3m-form input,.v3m-form textarea,.v3m-form select,
+ .v3w-form input,.v3w-form textarea,.v3w-form select,
+ .v3a-form input,.v3a-form textarea,.v3a-form select,
+ .v3-explore-form input,.v3-explore-form select){
+ transition:border-color var(--corner-motion-fast),box-shadow var(--corner-motion-fast);
+}
+:where(.v3m-filters,.v3m-form,.v3w-form,.v3a-form,.v3-explore-form) :where(input,textarea,select):focus-visible{
+ outline:2px solid #111;outline-offset:2px;border-color:#111;box-shadow:0 0 0 4px rgba(0,0,0,.07);
+}
+:where(.v3m-admin-list,.v3w-panel,.v3a-panel,.v3w-form,.v3m-form,.v3a-kpi){min-width:0}
+:where(.v3m-admin-list,.v3w-panel,.v3a-panel,.v3w-form,.v3m-form,.v3a-kpi):focus-within{border-color:var(--corner-motion-border)}
+:where(.v3w-feedback,.v3w-form [role=status],.v3m-form [role=status],.v3a-form [role=status]){overflow-wrap:anywhere}
+:where(.v3m-years a,.v3a-periods a,.v3a-language-picker a):focus-visible{outline:3px solid #111;outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+ :where(.v3m-album,.v3m-collection,.v3m-photo,.v3w-panel,.v3a-kpi,.v3a-panel):hover{
+  border-color:var(--corner-motion-border);box-shadow:var(--corner-motion-shadow);
+  transform:translate3d(0,-2px,0);
+ }
+ :where(.v3m-filters button,.v3m-form button,.v3w-form button,.v3w-item-actions button,
+ .v3a-form button,.v3a-actions button,.v3m-admin-list button,.v3m-more):not(:disabled):hover{
+  box-shadow:0 10px 22px -17px rgba(0,0,0,.65);transform:translate3d(0,-1px,0);
+ }
+ :where(.v3m-years a,.v3a-periods a,.v3a-language-picker a):not([aria-current=page]):hover{border-color:#111}
+}
+:where(.v3m-filters button,.v3m-form button,.v3w-form button,.v3w-item-actions button,
+ .v3a-form button,.v3a-actions button,.v3m-admin-list button,.v3m-more):not(:disabled):active{transform:scale(.975)}
+.corner-reading-progress{
+ position:fixed;top:0;left:0;right:0;height:3px;z-index:2000;background:#111;
+ transform:scaleX(0);transform-origin:left center;pointer-events:none;
+}
+.v3m-lightbox{overscroll-behavior:contain}
+.v3m-lightbox figure{position:relative;min-height:120px}
+.v3m-lightbox[data-photo-state=loading] figure::before{
+ content:'Opening photo';position:absolute;inset:0;display:grid;place-items:center;color:#e8e8e8;
+ font:700 .7rem/1.4 system-ui,sans-serif;letter-spacing:.08em;pointer-events:none;
+}
+.v3m-lightbox-controls{
+ display:flex;align-items:center;justify-content:center;gap:clamp(9px,2vw,20px);
+ margin:16px 0 0;min-height:48px;
+}
+.v3m-lightbox-controls button{
+ display:grid;place-items:center;min-width:48px;min-height:48px;
+ border:1px solid #777;background:#202020;color:#fff;border-radius:12px;
+ cursor:pointer;font-size:1.28rem;
+}
+.v3m-lightbox-controls button:disabled{opacity:.38;cursor:default}
+.v3m-lightbox-controls button:not(:disabled):focus-visible{outline:3px solid #fff;outline-offset:3px}
+.v3m-lightbox-controls [data-v3m-counter]{
+ font:700 .7rem system-ui,sans-serif;letter-spacing:.11em;color:#ddd;
+ min-width:60px;text-align:center;font-variant-numeric:tabular-nums;
+}
+.v3m-lightbox figcaption{overflow-wrap:anywhere}
+@media(max-width:720px){
+ .v3m-lightbox{width:calc(100vw - 16px);max-height:92dvh;padding:14px;border-radius:13px}
+ .v3m-lightbox img{max-height:66dvh;touch-action:pan-y}
+ .v3m-lightbox-controls{justify-content:space-between;padding-inline:clamp(10px,3vw,20px)}
+ .v3m-album img{height:auto;aspect-ratio:4/3;object-fit:cover}
+ .v3a-trend{overflow:hidden}
+ .v3w-item-actions button,.v3a-actions button{min-height:44px}
+}
+@media(pointer:coarse){
+ :where(.v3m-album,.v3m-collection,.v3m-photo,.v3w-panel,.v3a-kpi,.v3a-panel):hover{box-shadow:none;transform:none}
+ .v3m-lightbox-controls button{min-width:48px;min-height:48px}
+}
+@media(prefers-contrast:more){
+ :where(.v3m-album,.v3m-collection,.v3w-panel,.v3a-panel,.v3a-kpi){border-color:#111}
+ :where(.v3m-filters,.v3m-form,.v3w-form,.v3a-form) :where(input,select,textarea){border-color:#111}
+}
+@media(forced-colors:active){
+ .corner-reading-progress{background:Highlight}
+ .v3m-lightbox-controls button{forced-color-adjust:auto;border:2px solid ButtonText;color:ButtonText}
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-corner-motion] [data-motion-reveal]{opacity:1!important;translate:none!important;transition:none!important}
+ .v3m-lightbox,.v3m-lightbox::backdrop,.v3m-lightbox figure img,.corner-motion-updated{
+  animation:none!important;transition:none!important;transform:none!important;
+ }
+ :where(.v3m-album,.v3m-collection,.v3m-photo,.v3w-panel,.v3a-panel,.v3a-kpi,
+ .v3m-filters button,.v3m-form button,.v3w-form button,.v3a-form button):hover{
+  transform:none!important;transition:none!important;
+ }
+}
