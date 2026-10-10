@@ -161,7 +161,8 @@ async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(pathName==='/api/webhooks/resend'){
    if(method!=='POST')throw httpError(405,'Method not allowed.','METHOD_NOT_ALLOWED');
-   if(!wishDelivery.enabled())throw httpError(404,'Webhook unavailable.','FEATURE_DISABLED');
+   // A signed callback can be tested while live subscriber delivery remains paused.
+   if(!process.env.CORNER_V3_RESEND_WEBHOOK_SECRET)throw httpError(404,'Webhook unavailable.','FEATURE_DISABLED');
    limit(req,'v3-resend-webhook',180,60);
    return ok(res,wishDelivery.reconcileWebhook(await readBody(req,65536),req.headers));
   }
