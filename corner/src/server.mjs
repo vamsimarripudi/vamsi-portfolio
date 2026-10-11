@@ -326,7 +326,7 @@ async function route(req,res){
       const staff=session&&privilegedRole(session.role)?session:null;
       return page(res,adminRouteState(staff),200,true);
     }
-    if(['/login','/register','/verify-email','/resend-verification','/forgot-password','/reset-password','/confirm-email','/profile','/settings/security','/admin/register','/admin/mfa','/admin/invite'].includes(pathname)){
+    if(['/login','/register','/verify-email','/resend-verification','/forgot-password','/reset-password','/confirm-email','/profile','/settings/profile','/settings/security','/admin/register','/admin/mfa','/admin/invite'].includes(pathname)){
       const cookies=cookieHeader(req);
       const readToken=(name)=>{try{return decodeURIComponent(cookies[name]||'')}catch{return ''}};
       const staff=store.session(readToken('corner_session'));
@@ -334,6 +334,11 @@ async function route(req,res){
       const actor=staff&&privilegedRole(staff.role)?staff:member?.role==='member'?member:null;
       const valid=!!actor&&(actor.role==='member'?!!identity.getProfile(actor.id)?.verified_at:privilegedRole(actor.role));
       if(pathname==='/admin/invite'&&(!valid||actor.role!=='owner'))throw httpError(403,'Owner account required.','OWNER_REQUIRED');
+      // The public Account link points to /login. Reuse the valid cookie rather
+      // than presenting another sign-in form when returning from a story.
+      if(pathname==='/login'&&valid)return end(res,302,'',{
+        location:(config.basePath||'')+'/profile','cache-control':'private,no-store'
+      });
       return page(res,accountPage({type:pathname,user:valid?identity.safeMe(identity.account(actor.id)):null,registrationOpen:identity.canRegister()}),200,true);
     }
     if(pathname==='/admin/v3/guestbook'&&v3.enabled('GUESTBOOK')){

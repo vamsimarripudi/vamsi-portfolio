@@ -453,3 +453,72 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 /* Member discovery and save-for-later remain unobtrusive on the reader. */
 .post-share [data-bookmark-post]{margin-right:1.2rem}
 .post-share [data-bookmark-post]:not([hidden]){display:inline-flex;gap:.4rem;align-items:center}
+
+
+/* Compact mobile Studio owner navigation.
+   Do not change desktop sidebar, cards or the locked visual palette. */
+@media(max-width:767px){
+  .admin-shell .admin-sidebar{
+    display:block;
+    height:auto;
+    min-height:0;
+    padding:12px var(--corner-gutter) 9px;
+  }
+  .admin-shell .admin-brand{
+    display:flex;
+    align-items:center;
+    min-height:42px;
+    gap:10px;
+    line-height:1.2;
+  }
+  .admin-shell .admin-nav{
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    margin-top:9px;
+    padding:0 0 5px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    gap:7px;
+    scrollbar-width:none;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .admin-shell .admin-nav::-webkit-scrollbar{display:none}
+  .admin-shell .admin-nav button,
+  .admin-shell .admin-nav .admin-v3-link{
+    display:inline-flex;
+    flex:0 0 auto;
+    align-items:center;
+    justify-content:center;
+    box-sizing:border-box;
+    width:auto;
+    height:44px;
+    min-height:44px;
+    max-height:44px;
+    margin:0;
+    padding:0 14px;
+    border-radius:12px;
+    font-size:.76rem;
+    line-height:1.1;
+    white-space:nowrap;
+    scroll-snap-align:start;
+  }
+  .admin-shell .admin-main{padding-top:18px}
+  .admin-shell .admin-top{
+    align-items:flex-start;
+    gap:12px;
+    margin:0 0 18px;
+  }
+  .admin-shell .admin-top>div:last-child{
+    min-width:0;
+    max-width:55%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+}
