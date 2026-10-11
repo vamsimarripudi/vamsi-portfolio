@@ -53,8 +53,24 @@
       event.preventDefault();
       const kind=form.dataset.accountForm,button=first('button[type=submit]',form),data=dataOf(form);
       if(data.email&&!isEmail(data.email)){response(form,'Enter a valid email address.',true);return}
-      if(data.password&&(data.password.length<12||data.password.length>128)){response(form,'Use a password between 12 and 128 characters.',true);return}
-      if(data.newPassword&&(data.newPassword.length<12||data.newPassword.length>128)){response(form,'Use a new password between 12 and 128 characters.',true);return}
+      // A login must accept passwords minted under the previous policy.
+      // Short member-password rules apply only when creating or replacing a credential.
+      if(kind==='register'&&(!data.password||data.password.length<6||data.password.length>12)){
+        response(form,'Member passwords must be 6–12 characters.',true);return
+      }
+      if(kind==='admin-register'&&(!data.password||data.password.length<12||data.password.length>128)){
+        response(form,'Studio passwords must be at least 12 characters.',true);return
+      }
+      if(kind==='reset'&&(!data.password||data.password.length<6||data.password.length>128)){
+        response(form,'Enter a valid new password.',true);return
+      }
+      if(kind==='password-change'){
+        const member=initial.account?.role==='member';
+        const minimum=member?6:12,maximum=member?12:128;
+        if(!data.newPassword||data.newPassword.length<minimum||data.newPassword.length>maximum){
+          response(form,member?'Member passwords must be 6–12 characters.':'Studio passwords must be at least 12 characters.',true);return
+        }
+      }
       if(kind==='verify'&&!data.token){response(form,'This verification link has no token. Request a new email.',true);return}
       if(kind==='confirm-email'&&!data.token){response(form,'Your email-confirmation link is missing or expired.',true);return}
       if(kind==='reset'&&!data.token){response(form,'Your reset link is missing or expired.',true);return}
@@ -94,7 +110,7 @@
         else if(kind==='verify')response(form,'Email verified. You can sign in now.');
         else if(kind==='reset')response(form,'Password changed. Return to sign-in.');
         else if(kind==='password-change'){response(form,'Password changed; your sessions have been revoked. Sign in again.');setTimeout(()=>location.assign(base+'/login'),1200)}
-        else if(kind==='profile')response(form,'Profile updated.');
+        else if(kind==='profile'){response(form,'Profile updated.');location.assign(base+'/profile');return}
         else response(form,'Saved.');
       }catch(error){response(form,error.message||'Please try again.',true)}
       finally{if(button.type==='submit')button.disabled=false}
