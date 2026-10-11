@@ -112,5 +112,29 @@ jobs:
             await page.waitForURL('**/corner/login',{timeout:12000});
             await page.close();
             console.log('PASS authenticated browser registration, verification, session, profile, navigation and logout');
+            // Render the same server-side owner Studio markup with synthetic
+            // in-memory owner data; exercise real CSS at mobile widths without
+            // reusing credentials or touching production accounts.
+            const {adminPage}=await import('./corner/src/ui.mjs');
+            const synthetic=adminPage({owner:{id:'test-owner',role:'owner',email:'visual@example.test'}});
+            const markup=synthetic.replace(/(href|src)=(["'])\/(?!\/)/g,(_,key,quote)=>key+'='+quote+'/corner/');
+            for(const width of [320,375,390,430]){
+              const ui=await browser.newPage({viewport:{width,height:844}});
+              await ui.goto(origin+'/corner',{waitUntil:'domcontentloaded'});
+              await ui.setContent(markup,{waitUntil:'load'});
+              const layout=await ui.evaluate(()=>{
+                const box=css=>document.querySelector(css)?.getBoundingClientRect();
+                return {body:document.documentElement.scrollWidth,viewport:innerWidth,
+                 sidebar:box('.admin-sidebar')?.height,nav:box('.admin-nav')?.height,
+                 currentTab:box('.admin-nav button.is-active')?.height,mainY:box('.admin-main')?.top};
+              });
+              assert.ok(layout.body<=layout.viewport+1,'Mobile owner page overflow '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.sidebar>0&&layout.sidebar<155,'Sidebar/header compact '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.nav>0&&layout.nav<=65,'Navigation one-row '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.currentTab>=43&&layout.currentTab<=48,'Active tab not stretched '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.mainY<160,'Editor near top, not after huge gap '+width+' '+JSON.stringify(layout));
+              await ui.close();
+            }
+            console.log('PASS compact 320–430px owner Studio navigation, no giant selected tab or horizontal overflow');
           }finally{await browser.close();server.kill('SIGTERM');await sleep(130);fs.rmSync(directory,{recursive:true,force:true})}
           JS
