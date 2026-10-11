@@ -53,8 +53,26 @@
       event.preventDefault();
       const kind=form.dataset.accountForm,button=first('button[type=submit]',form),data=dataOf(form);
       if(data.email&&!isEmail(data.email)){response(form,'Enter a valid email address.',true);return}
-      if(data.password&&(data.password.length<12||data.password.length>128)){response(form,'Use a password between 12 and 128 characters.',true);return}
-      if(data.newPassword&&(data.newPassword.length<12||data.newPassword.length>128)){response(form,'Use a new password between 12 and 128 characters.',true);return}
+      const compact=initial.memberCompactPasswords===true;
+      // Password length on login must not reject existing longer credentials.
+      if(kind==='register'&&data.password){
+        const min=compact?6:12,max=compact?12:128;
+        if(data.password.length<min||data.password.length>max){
+          response(form,compact?'Member passwords must contain 6–12 characters.':'Use a password with at least 12 characters.',true);return
+        }
+      }
+      if(kind==='admin-register'&&data.password&&(data.password.length<12||data.password.length>128)){
+        response(form,'Studio passwords must contain at least 12 characters.',true);return
+      }
+      if(kind==='reset'&&data.password&&(data.password.length<6||data.password.length>128)){
+        response(form,'Enter a valid new password.',true);return
+      }
+      if(kind==='password-change'&&data.newPassword){
+        const member=initial.account?.role==='member'&&compact;
+        if(data.newPassword.length<(member?6:12)||data.newPassword.length>(member?12:128)){
+          response(form,member?'Member passwords must contain 6–12 characters.':'Use a password with at least 12 characters.',true);return
+        }
+      }
       if(kind==='verify'&&!data.token){response(form,'This verification link has no token. Request a new email.',true);return}
       if(kind==='confirm-email'&&!data.token){response(form,'Your email-confirmation link is missing or expired.',true);return}
       if(kind==='reset'&&!data.token){response(form,'Your reset link is missing or expired.',true);return}
