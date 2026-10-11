@@ -76,7 +76,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 .hero-kicker{margin-bottom:clamp(15px,2.4vh,28px);gap:10px;color:var(--corner-subtext);font-size:clamp(.58rem,.68vw,.68rem)}
 .hero-content h1{
   max-width:100%;
-  font-size:clamp(3.25rem,5.65vw,7.1rem);
+  font-size:clamp(2.75rem,4.65vw,5.45rem);
   font-weight:620;line-height:.95;
   letter-spacing:-.09em;
   color:var(--corner-ink);
@@ -102,7 +102,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 .hero-link:hover>span,.story:hover .read-link>span{transform:translate(2px,-2px)}
 .hero-link:hover{border-color:var(--corner-black);color:var(--corner-ink)}
 .hero-quiet{color:var(--corner-subtext)}
-.hero-aside{gap:clamp(12px,1.55vw,22px);padding-top:0}
+.hero-aside{gap:clamp(10px,1.2vw,16px);padding-top:0}
 
 /* White surfaces: black type, clear UI hierarchy, subtle physical depth. */
 .now-panel,.story,.story-featured,.story-wish,.story-build,.story-journal,.story-moment,
@@ -114,7 +114,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 }
 .now-panel{
   position:relative;overflow:hidden;
-  min-height:215px;
+  min-height:175px;
   padding:clamp(21px,2.1vw,30px);
   border-radius:20px;
   background:var(--corner-white);
@@ -138,7 +138,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 .editorial-chip a:hover{color:var(--corner-terracotta)}
 .feed-section{padding-top:clamp(47px,5.6vw,81px)}
 .feed-heading{gap:20px}
-.feed-heading h2{font-size:clamp(2.3rem,4vw,4.2rem);color:var(--corner-ink);letter-spacing:-.07em}
+.feed-heading h2{font-size:clamp(1.85rem,3.1vw,3.2rem);color:var(--corner-ink);letter-spacing:-.07em}
 .feed-updated,.eyebrow,.meta{color:var(--corner-subtext)}
 .feed-heading .eyebrow{color:var(--corner-subtext)}
 
@@ -155,13 +155,13 @@ body::before{opacity:.19;mix-blend-mode:multiply}
   container-type:inline-size;
 }
 .story{padding:clamp(20px,2vw,28px)}
-.story-featured{padding:clamp(25px,3.3vw,45px);min-height:340px;gap:clamp(15px,2vw,30px)}
+.story-featured{padding:clamp(20px,2.8vw,33px);min-height:290px;gap:clamp(15px,2vw,30px)}
 .story-top .category,.story-copy h2,.story-copy h2 a,.story-copy .story-excerpt,
 .story .story-count,.story-bottom .read-meta,.story .status-tag{
   color:var(--corner-ink);
 }
-.story-copy h2{font-size:clamp(1.35rem,2vw,2.3rem);line-height:1.17;letter-spacing:-.062em}
-.story-featured .story-copy h2{font-size:clamp(2.05rem,3.8vw,4.7rem);line-height:1.04}
+.story-copy h2{font-size:clamp(1.2rem,1.65vw,1.8rem);line-height:1.17;letter-spacing:-.062em}
+.story-featured .story-copy h2{font-size:clamp(1.85rem,3.25vw,3.45rem);line-height:1.04}
 .story .story-excerpt{color:var(--corner-subtext);line-height:1.7}
 .story .story-count,.story-bottom .read-meta,.story-top .category{letter-spacing:.1em}
 .story-top .status-tag{background:#f5f3ef;border-color:var(--corner-border)}
@@ -200,7 +200,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
 .end-mark span{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:8px;background:var(--corner-black);color:var(--corner-white)}
 
 /* Reader, forms, toast and owner console keep one high-contrast color contract. */
-.category-hero h1,.simple-page h1,.post-heading h1{color:var(--corner-ink);font-size:clamp(2.6rem,6vw,6.4rem);text-wrap:balance}
+.category-hero h1,.simple-page h1,.post-heading h1{color:var(--corner-ink);font-size:clamp(2.25rem,4.6vw,4.7rem);text-wrap:balance}
 .post-heading h1{font-size:clamp(2.7rem,5vw,5.4rem)}
 .post-body,.post-body p,.simple-text,.simple-text p{color:var(--corner-ink)}
 .reactions button,.comments input,.comments textarea,.search-field,
@@ -290,7 +290,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
   .hero-intro{grid-template-columns:minmax(0,1.46fr) minmax(255px,.66fr);gap:clamp(22px,3.3vw,52px)}
   .hero-content h1{font-size:clamp(3.48rem,5.55vw,5.3rem)}
   .hero-aside{gap:11px}
-  .now-panel{min-height:198px;padding:23px}
+  .now-panel{min-height:168px;padding:23px}
   .editorial-chip{padding:15px 18px}
   .feed-section{padding-top:52px}
 }
@@ -339,7 +339,7 @@ body::before{opacity:.19;mix-blend-mode:multiply}
   .hero-intro{grid-template-columns:1fr;gap:27px;padding:clamp(31px,7vh,53px) 0 clamp(34px,7vh,62px)}
   .hero-intro::before{left:-30%;top:2%;height:60%;width:95%}
   .hero-kicker{margin-bottom:19px;font-size:.59rem;letter-spacing:.1em}
-  .hero-content h1{max-width:100%;font-size:clamp(2.8rem,9.2vw,4.45rem);letter-spacing:-.077em;line-height:.98}
+  .hero-content h1{max-width:100%;font-size:clamp(2.45rem,7.5vw,3.55rem);letter-spacing:-.077em;line-height:.98}
   .hero-content h1 em{font-size:.93em;letter-spacing:-.075em}
   .hero-spark{right:-.02em;top:.04em}
   .hero-content>p{margin-top:18px;max-width:56ch;font-size:clamp(.88rem,2.9vw,1rem);line-height:1.68}
@@ -521,4 +521,20 @@ body::before{opacity:.19;mix-blend-mode:multiply}
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+}
+
+/* Small touch sign-out stays reachable without stretching the Studio header. */
+.admin-sidebar-footer button#admin-logout{
+display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;
+padding:0;border:1px solid var(--corner-border);border-radius:12px;
+background:var(--corner-white);color:var(--corner-black)}
+.admin-sidebar-footer button#admin-logout:focus-visible{outline:3px solid var(--corner-black);outline-offset:2px}
+@media(max-width:767px){
+.admin-shell .admin-sidebar{position:relative}
+.admin-shell .admin-sidebar-footer{display:flex;position:absolute;top:9px;right:var(--corner-gutter);
+width:44px;height:44px;padding:0;margin:0;border:0}
+.admin-shell .admin-sidebar-footer>a{display:none}
+.admin-shell .admin-brand{max-width:calc(100% - 56px);font-size:clamp(.86rem,3.6vw,1rem)}
+.admin-shell .admin-nav button{font-size:.74rem}
+.admin-shell .admin-top{margin-bottom:15px}
 }
