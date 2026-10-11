@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { secureEqual } from './domain.mjs';
 export function passwordHash(password){
-  if(typeof password!=='string'||password.length<12)throw Error('Minimum 12 characters');
+  if(typeof password!=='string'||password.length<6)throw Error('Minimum 6 characters');
   const salt=crypto.randomBytes(24).toString('base64url');
   const derived=crypto.scryptSync(password,salt,64,{N:16384,r:8,p:1}).toString('base64url');
   return `scrypt$16384$${salt}$${derived}`;

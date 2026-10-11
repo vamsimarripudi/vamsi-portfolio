@@ -21,9 +21,16 @@ const nameOf=(value)=>{
   if(name.length<2||name.length>60)throw httpError(400,'Use a name of 2–60 characters.','INVALID_NAME');
   return name;
 };
-const strongPassword=(value)=>{
-  if(typeof value!=='string'||value.length<12||value.length>128||/\u0000/.test(value)||/password|123456|qwerty/i.test(value))
-    throw httpError(400,'Choose a strong password of 12–128 characters.','WEAK_PASSWORD');
+const strongPassword=(value,{role='member',compactMember=false}={})=>{
+  const short=role==='member'&&compactMember;
+  const min=short?6:12,max=short?12:128;
+  const length=typeof value==='string'?[...value].length:0;
+  const weak=short&&(!/\p{L}/u.test(value||'')||!/[\p{N}\p{P}\p{S}]/u.test(value||''));
+  if(typeof value!=='string'||length<min||length>max||
+     /\u0000/.test(value)||/password|123456|qwerty|letmein|abcdef|111111|000000/i.test(value)||weak)
+    throw httpError(400,short?
+      'Choose a 6–12 character member password with letters and numbers or symbols.':
+      'Choose a strong password of 12–128 characters.','WEAK_PASSWORD');
   return value;
 };
 const tokenDigest=(token)=>sha('corner:identity:v2:'+String(token));
@@ -91,7 +98,7 @@ export class IdentityService{
   findByEmail(email){return this.store.one('SELECT * FROM users WHERE email=? AND disabled_at IS NULL',email)}
   async registerMember(data){
     if(!this.canRegister())throw httpError(503,'Registration is not open yet.','REGISTRATION_DISABLED');
-    const email=normalizedEmail(data.email),name=nameOf(data.name),password=strongPassword(data.password);
+    const email=normalizedEmail(data.email),name=nameOf(data.name),password=strongPassword(data.password,{role:'member',compactMember:this.env.CORNER_MEMBER_SHORT_PASSWORDS==='1'});
     let user=this.findByEmail(email);
     if(!user){
       const id=uid('usr'),stamp=now();
@@ -144,9 +151,11 @@ export class IdentityService{
     return {accepted:true,message:'If an account exists, password reset instructions will arrive.'};
   }
   resetPassword(data){
-    const pass=strongPassword(data.password);
     this.store.transaction(()=>{
       const token=this.consumeToken(data.token,'reset-password');
+      const user=this.account(token.user_id);
+      if(!user)throw httpError(401,'Reset link has expired.','TOKEN_INVALID');
+      const pass=strongPassword(data.password,{role:user.role,compactMember:this.env.CORNER_MEMBER_SHORT_PASSWORDS==='1'});
       this.store.exec('UPDATE users SET password_hash=?,updated_at=? WHERE id=?',passwordHash(pass),now(),token.user_id);
       this.store.exec('UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL',now(),token.user_id);
       this.store.audit(token.user_id,'password.reset','user',token.user_id);
@@ -156,7 +165,7 @@ export class IdentityService{
   changePassword(user,data){
     const row=this.account(user.id);
     if(!row||!passwordVerify(data.currentPassword,row.password_hash))throw httpError(403,'Current password is incorrect.','INVALID_PASSWORD');
-    const next=strongPassword(data.newPassword);
+    const next=strongPassword(data.newPassword,{role:row.role,compactMember:this.env.CORNER_MEMBER_SHORT_PASSWORDS==='1'});
     this.store.transaction(()=>{
       this.store.exec('UPDATE users SET password_hash=?,updated_at=? WHERE id=?',passwordHash(next),now(),user.id);
       this.store.exec('UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL',now(),user.id);
