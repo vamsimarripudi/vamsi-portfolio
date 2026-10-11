@@ -2,9 +2,9 @@ import { basePage } from './ui.mjs';
 
 const h=(value)=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 const field=(name,title,type='text',autocomplete='',extra='')=>`<label class="account-field"><span>${title}</span><input name="${name}" type="${type}" ${autocomplete?`autocomplete="${autocomplete}"`:''} ${extra} required></label>`;
-const compactMemberPasswords=process.env.CORNER_MEMBER_SHORT_PASSWORDS==='1';
+const compactMemberPasswords=()=>process.env.CORNER_MEMBER_SHORT_PASSWORDS==='1';
 const password=(name='password',autocomplete='current-password',mode='login')=>{
-  const member=mode==='member-new'&&compactMemberPasswords;
+  const member=mode==='member-new'&&compactMemberPasswords();
   const login=mode==='login',recovery=mode==='recovery';
   const min=login?1:member||recovery?6:12,max=login?512:member?12:128;
   const hint=member?'6–12 characters. Use letters and numbers or symbols.':
@@ -68,5 +68,5 @@ export function accountPage({type,user,registrationOpen=false}){
   const sessions=type==='/settings/security'&&user?`<div class="account-side-section"><h2>Active sessions.</h2><div data-account-sessions>Loading…</div></div>${user.role==='owner'?'<div class="account-side-section"><h2>Owner email.</h2><p>Change the owner address through your Railway identity configuration. This avoids breaking the existing owner record.</p></div>':`<div class="account-side-section"><h2>Change email.</h2>${changeEmail}</div>`}${['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled?'<div class="account-side-section"><h2>Authenticator security.</h2><a class="account-cta-link" href="/admin/mfa">Enable two-factor verification ↗</a></div>':''}`:'';
   const top=`<div class="account-top"><a class="account-brand" href="/"><span>✳</span><b>Vamsi's Corner</b></a><a class="account-back" href="/">← Back to stories</a></div>`;
   const body=`<div class="account-shell" data-account-page="${h(type)}" data-signed-in="${user?'true':'false'}">${top}<main id="content" class="account-main"><section class="account-intro"><p class="eyebrow">${details.kicker}</p><h1>${details.title}</h1><p>${details.subtitle}</p><div class="account-geometry" aria-hidden="true"><span></span><span></span><span></span></div></section><section class="account-card">${user&&type==='/profile'?`<p class="account-status"><span>●</span> Signed in as ${h(user.email)}</p>`:''}${inner}${details.foot}${extra}${sessions}${user?'<button type="button" class="account-text-button" data-account-logout>Sign out</button>':''}</section></main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script></div>`;
-  return basePage({path:type,title:details.title,noindex:true,content:body,initial:{page:'account',authenticated:!!user,account:user,memberCompactPasswords:compactMemberPasswords}});
+  return basePage({path:type,title:details.title,noindex:true,content:body,initial:{page:'account',authenticated:!!user,account:user,memberCompactPasswords:compactMemberPasswords()}});
 }
