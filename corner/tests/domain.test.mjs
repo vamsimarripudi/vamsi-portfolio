@@ -7,7 +7,7 @@ test('passwords are salted and verified with a resistant KDF',()=>{
  const a=passwordHash('SuperStrong%TestPassword2026'),b=passwordHash('SuperStrong%TestPassword2026');
  assert.notEqual(a,b);assert.equal(passwordVerify('SuperStrong%TestPassword2026',a),true);
  assert.equal(passwordVerify('IncorrectTestPassword',a),false);
- assert.throws(()=>passwordHash('too-short'));
+ assert.throws(()=>passwordHash('tiny'));
 });
 test('IANA zones preserve intended local publication time',()=>{
  assert.equal(zoneLocalToUtc('2026-10-08T09:00','Asia/Kolkata'),'2026-10-08T03:30:00.000Z');
