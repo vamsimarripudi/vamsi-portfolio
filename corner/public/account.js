@@ -94,7 +94,7 @@
         else if(kind==='verify')response(form,'Email verified. You can sign in now.');
         else if(kind==='reset')response(form,'Password changed. Return to sign-in.');
         else if(kind==='password-change'){response(form,'Password changed; your sessions have been revoked. Sign in again.');setTimeout(()=>location.assign(base+'/login'),1200)}
-        else if(kind==='profile')response(form,'Profile updated.');
+        else if(kind==='profile'){response(form,'Profile updated.');location.assign(base+'/profile');return}
         else response(form,'Saved.');
       }catch(error){response(form,error.message||'Please try again.',true)}
       finally{if(button.type==='submit')button.disabled=false}

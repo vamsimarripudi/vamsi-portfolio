@@ -19,6 +19,17 @@ const mfa=form('mfa-activate','<div class="account-secret" data-mfa-secret hidde
 const invite=form('invite',field('email','Invitee email','email','off','maxlength="254"')+'<label class="account-field"><span>Studio role</span><select name="role"><option value="admin">Admin</option><option value="editor">Editor</option><option value="moderator">Moderator</option></select></label>','Email invitation');
 const change=form('password-change',password('currentPassword')+password('newPassword','new-password'),'Change password');
 const profile=form('profile',field('displayName','Display name','text','name','maxlength="60"')+'<label class="account-field"><span>Short bio</span><textarea name="bio" maxlength="280" rows="3"></textarea></label><label class="account-field"><span>Language</span><select name="locale"><option value="en">English</option><option value="te">Telugu</option><option value="hi">Hindi</option></select></label><label class="account-check"><input type="checkbox" name="emailUpdates"><span>Allow optional account updates</span></label>','Save profile');
+const profileOverview=(user)=>{
+  const locale=({en:'English',te:'Telugu',hi:'Hindi'})[user.locale]||'English';
+  return '<section class="account-profile-overview" data-profile-summary>'+
+    '<p class="eyebrow">YOUR PRIVATE ACCOUNT</p>'+
+    '<h2>'+h(user.displayName||'Your account')+'</h2>'+
+    (user.bio?'<p class="account-profile-bio">'+h(user.bio)+'</p>':'<p class="account-profile-bio">Your private profile is ready.</p>')+
+    '<dl><div><dt>Language</dt><dd>'+h(locale)+'</dd></div>'+
+    '<div><dt>Updates</dt><dd>'+(user.emailUpdates?'Enabled':'Off')+'</dd></div></dl>'+
+    '<a class="account-cta-link" href="/settings/profile">Edit in Settings <span aria-hidden="true">↗</span></a>'+
+    '</section>';
+};
 const kind={
   '/login':{title:'Welcome back.',kicker:'MEMBER SIGN-IN',subtitle:'Your private space for saved posts and a few useful preferences.',form:signIn,foot:links([['Create account','/register'],['Forgot password?','/forgot-password']])},
   '/register':{title:'Keep your corner.',kicker:'MEMBER REGISTRATION',subtitle:'A private member profile. No public feed, no extra noise.',form:register,foot:links([['Already registered? Sign in','/login']])},
@@ -31,14 +42,15 @@ const kind={
   '/admin/mfa':{title:'Protect your studio.',kicker:'AUTHENTICATOR SETUP',subtitle:'Add a six-digit authenticator. Store the one-time recovery codes somewhere secure.',form:mfa,foot:links([['Owner sign-in','/admin']])},
   '/admin/invite':{title:'Invite a collaborator.',kicker:'OWNER CONTROL',subtitle:'Invitations are single-use, last 48 hours and never grant the owner role.',form:invite,foot:links([['Return to studio','/admin']])},
   '/settings/security':{title:'Security settings.',kicker:'ACCOUNT SECURITY',subtitle:'Change your password and inspect active sessions.',form:change,foot:links([['My profile','/profile']])},
-  '/profile':{title:'Your quiet space.',kicker:'PRIVATE PROFILE',subtitle:'Manage your own preferences and saved stories.',form:profile,foot:links([['Account security','/settings/security']])},
+  '/profile':{title:'Your quiet space.',kicker:'PRIVATE PROFILE',subtitle:'Your private account and saved stories.',form:'',foot:links([['Edit profile','/settings/profile'],['Account security','/settings/security']])},
+  '/settings/profile':{title:'Profile settings.',kicker:'ACCOUNT PREFERENCES',subtitle:'Update your bio, display name, language and preferences.',form:profile,foot:links([['Back to my profile','/profile'],['Account security','/settings/security']])},
 };
 
 export function accountPage({type,user,registrationOpen=false}){
   const details=kind[type]||kind['/login'];
   const formHtml=typeof details.form==='function'?details.form(registrationOpen):details.form;
-  const profileLocked=(type==='/profile'||type==='/settings/security')&&!user;
-  const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:formHtml;
+  const profileLocked=(type==='/profile'||type==='/settings/profile'||type==='/settings/security')&&!user;
+  const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:type==='/profile'&&user?profileOverview(user):formHtml;
   const extra=type==='/profile'&&user?`<div class="account-side-section" id="account-saved"><h2>Saved stories.</h2><div data-account-bookmarks><p>Loading saved posts…</p></div></div><div class="account-side-section"><h2>Your information.</h2><button class="account-text-button" type="button" data-account-export>Export account data ↗</button><button class="account-text-button" type="button" data-account-delete>Request account deletion ↗</button></div>`:'';
   const sessions=type==='/settings/security'&&user?`<div class="account-side-section"><h2>Active sessions.</h2><div data-account-sessions>Loading…</div></div>${user.role==='owner'?'<div class="account-side-section"><h2>Owner email.</h2><p>Change the owner address through your Railway identity configuration. This avoids breaking the existing owner record.</p></div>':`<div class="account-side-section"><h2>Change email.</h2>${changeEmail}</div>`}${['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled?'<div class="account-side-section"><h2>Authenticator security.</h2><a class="account-cta-link" href="/admin/mfa">Enable two-factor verification ↗</a></div>':''}`:'';
   const top=`<div class="account-top"><a class="account-brand" href="/"><span>✳</span><b>Vamsi's Corner</b></a><a class="account-back" href="/">← Back to stories</a></div>`;
