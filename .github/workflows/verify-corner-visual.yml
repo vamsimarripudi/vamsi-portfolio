@@ -123,6 +123,8 @@ jobs:
             console.log('PASS admin high contrast + reduced-motion');
           }finally{await browser.close()}
           JS
+      - name: Verify compact typography and vertical rhythm at 12 viewports
+        run: node corner/tests/responsive-density-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4
