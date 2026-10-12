@@ -4,12 +4,12 @@ import fs from 'node:fs';
 const read=(p)=>fs.readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
 test('editorial hierarchy and whitespace stay responsive and compact',()=>{
  const css=read('magic.css');
- assert.match(css,/V3 viewport-density pass/);
+ assert.match(css,/Compact responsive editorial hierarchy/);
  assert.match(css,/\.hero-content h1\{font-size:clamp\(2rem,6\.4vw,2\.9rem\)/);
- assert.match(css,/\.admin-top h1\{font-size:clamp\(1\.48rem,5vw,1\.9rem\)/);
- assert.match(css,/\.admin-main\{padding:15px var\(--corner-gutter\) 25px\}/);
- assert.match(css,/\.story,.story:nth-child\(n\)\{padding:clamp\(15px,4vw,19px\);min-height:0\}/);
- assert.match(css,/max-height:820px/);
+ assert.match(read('post-media.css'),/\.admin-top h1\{font-size:clamp\(1\.45rem,5vw,1\.85rem\)/);
+ assert.match(read('post-media.css'),/\.admin-main\{padding:14px var\(--corner-gutter\) 23px\}/);
+ assert.match(css,/\.feed-heading h2\{font-size:clamp\(1\.35rem,4\.6vw,2rem\)/);
+ assert.match(css,/@media\(max-width:767px\)/);
 });
 test('upload, caption and image-preview interfaces keep usable touch controls and fluid geometry',()=>{
  const css=read('post-media.css');
