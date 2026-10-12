@@ -5,8 +5,13 @@ on:
       - 'api/track/**'
       - 'api/lib/track.js'
       - 'api/contact.js'
-      - 'src/Track.*'
-      - 'scripts/verify-track-visual.mjs'
+      - 'src/Track*'
+      - 'shared/track-analytics.mjs'
+      - 'api/lib/track-analytics.js'
+      - 'tests/fixtures/track-analytics.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-track-*.mjs'
       - 'tests/track-*.test.mjs'
       - '.github/workflows/verify-track.yml'
   pull_request:
@@ -14,8 +19,13 @@ on:
       - 'api/track/**'
       - 'api/lib/track.js'
       - 'api/contact.js'
-      - 'src/Track.*'
-      - 'scripts/verify-track-visual.mjs'
+      - 'src/Track*'
+      - 'shared/track-analytics.mjs'
+      - 'api/lib/track-analytics.js'
+      - 'tests/fixtures/track-analytics.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-track-*.mjs'
       - 'tests/track-*.test.mjs'
       - '.github/workflows/verify-track.yml'
   workflow_dispatch:
@@ -39,9 +49,9 @@ jobs:
           npm run build
       - name: Install Chromium
         run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
+          npm install --no-save --no-package-lock playwright@1.64.0
           npx playwright install chromium --with-deps
-      - name: Verify responsive tracker on eight viewports
+      - name: Verify enquiry tracker and analytics on phone, tablet and desktop
         run: |
           npm run dev -- --host 127.0.0.1 --port 4173 >/tmp/track-vite.log 2>&1 &
           for i in $(seq 1 45); do
@@ -49,6 +59,7 @@ jobs:
             sleep 1
           done
           node scripts/verify-track-visual.mjs
+          node scripts/verify-track-analytics.mjs
       - name: Keep visual snapshots for inspection
         if: always()
         uses: actions/upload-artifact@v4

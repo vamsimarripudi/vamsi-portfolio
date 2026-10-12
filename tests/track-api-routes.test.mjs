@@ -9,6 +9,7 @@ const routes = [
   ['auth/session', 'GET'],
   ['auth/logout', 'POST'],
   ['metrics', 'GET'],
+  ['analytics', 'GET'],
   ['enquiries/index', 'GET'],
   ['enquiries/[referenceId]', 'GET'],
   ['enquiries/[referenceId]/actions', 'POST'],
@@ -32,7 +33,7 @@ for(const [route,allowed] of routes) {
     assert.equal(res.payload?.ok,false);
   });
 }
-for(const route of ['auth/session','metrics','enquiries/index','enquiries/[referenceId]']) {
+for(const route of ['auth/session','metrics','analytics','enquiries/index','enquiries/[referenceId]']) {
   test('private tracker returns 401 without session: '+route,async()=>{
     const mod=await load(route),res=response();
     await mod.default({method:'GET',headers:{},query:{}},res);

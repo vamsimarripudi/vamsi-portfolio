@@ -58,6 +58,10 @@
   ],
   "rewrites": [
     {
+      "source": "/track/analytics",
+      "destination": "/track/index.html"
+    },
+    {
       "source": "/corner",
       "destination": "https://corner-web-production-2600.up.railway.app/corner"
     },
