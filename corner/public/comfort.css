@@ -121,6 +121,8 @@
 .corner-comfort .search-field input {font-size:1rem!important}
 
 @media(max-width:767px) {
+  .corner-comfort .signin-box {padding:1rem}
+  .corner-comfort .signin-box form {margin-top:.75rem}
   :is(#root,.corner-comfort) .signin-box h1 {font-size:1.5rem!important}
   .corner-comfort .account-main {grid-template-columns:minmax(0,1fr);gap:.75rem;padding-block:1rem}
   .corner-comfort .account-card {width:100%;max-width:none;padding:1rem}
