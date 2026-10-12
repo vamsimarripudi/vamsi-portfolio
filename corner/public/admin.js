@@ -54,7 +54,7 @@
     $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title||'Your next story.';$('.preview-excerpt',card).textContent=p.excerpt||'Just enough to invite someone in.';
     $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
   }
-  function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">THE READER’S VIEW</p><h3>One story. Four screens.</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="story-copy"><p class="story-count">JUST NOW</p><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
+  function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">THE READER’S VIEW</p><h3>One story. Four screens.</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><p class="story-count">JUST NOW</p><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
   async function editor(id=null){clearTimeout(active.saveTimer);active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:false,tags:[]};active.post=p;
     root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><div class="admin-section" id="schedule-panel" hidden></div><div class="admin-section" id="editor-media"></div>`;
     const form=$('#post-editor');
@@ -69,12 +69,177 @@
     $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
     $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
     $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
-    if(p.id)mediaForPost(p.id).catch(err=>toast(err.message,'error'));
+    mediaForPost(p.id||null,()=>save(true)).catch(err=>toast(err.message,'error'));
     form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
   }
-  async function mediaForPost(id){const section=$('#editor-media');if(!section)return;let m=await api('/corner/api/admin/posts/'+id);section.innerHTML=`<div class="admin-surface"><h3>Media for this story</h3>${m.media.length?`<div class="media-gallery">${m.media.map(x=>mediaCard(x)).join('')}</div>`:'<p>No media attached yet.</p>'}<form id="editor-upload" class="upload-field"><label>Add image or video<input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" required></label><label>Alt text<input name="alt" placeholder="Describe meaningful visual details"></label><button type="submit" class="admin-secondary">Attach media ↑</button></form></div>`;$$('[data-media-edit]',section).forEach(button=>button.onclick=()=>mediaEdit(button.dataset.mediaEdit,m.media,id));$('#editor-upload').onsubmit=async e=>{e.preventDefault();const file=e.target.elements.file.files[0],alt=e.target.elements.alt.value;try{await upload(file,id,alt);toast('Media attached.','success');mediaForPost(id)}catch(err){toast(err.message,'error')}};}
-  function mediaCard(x){const src='/corner/media/'+encodeURIComponent(x.storage_key);return `<div class="media-thumb">${x.mime_type.startsWith('image/')?`<img src="${src}" alt="${esc(x.alt_text||'Image')}">`:`<video src="${src}" controls preload="none"></video>`}<small>${esc(x.mime_type)}</small><small>${Math.round(x.size_bytes/1024)} KB</small><button type="button" data-media-edit="${x.id}">Edit ↗</button></div>`}
-  async function upload(file,postId,alt){if(!file)throw Error('Choose a file');if(file.size>25*1024*1024)throw Error('File is too large');let url='/corner/api/admin/media/upload?postId='+encodeURIComponent(postId||'')+'&alt='+encodeURIComponent(alt||'');let response=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'content-type':file.type},body:file});let result=await response.json();if(!response.ok)throw Error(result.error?.message||'Upload failed');return result.data;}
+  const uploadLimit=8;
+  const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
+  function showEditorCover(items){
+    const host=$('[data-editor-photo-preview]');
+    if(!host)return;
+    const cover=items.find(item=>item.mime_type?.startsWith('image/'));
+    host.replaceChildren();
+    host.hidden=!cover;
+    if(!cover)return;
+    const image=document.createElement('img');
+    image.src='/corner/media/'+encodeURIComponent(cover.storage_key);
+    image.alt=cover.alt_text||'Story cover photograph';
+    image.loading='lazy';
+    host.append(image);
+  }
+  async function mediaForPost(postId,ensureDraft){
+    const section=$('#editor-media');
+    if(!section)return;
+    const result=postId?await api('/corner/api/admin/posts/'+encodeURIComponent(postId)):null;
+    const attachments=result?.media||[];
+    showEditorCover(attachments);
+    section.innerHTML='<section class="admin-surface post-media-editor" aria-labelledby="media-editor-title">'+
+      '<div class="post-media-head"><div><p class="eyebrow">STORY PHOTOGRAPHS</p><h3 id="media-editor-title">Images & captions</h3></div>'+
+      '<small>'+attachments.length+' attached</small></div>'+
+      (attachments.length?'<div class="media-gallery">'+attachments.map(x=>mediaCard(x,true)).join('')+'</div>':
+       '<p class="admin-hint">Add photographs to give this story a visual chapter. Only published posts show media to visitors.</p>')+
+      '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
+      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required></label>'+
+      '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
+      '<p class="admin-hint">Add a description for each image and an optional caption. Draft photos stay private. JPG, PNG, WebP or GIF up to 8 MB; MP4/WebM up to 25 MB.</p>'+
+      '<p data-upload-status role="status" aria-live="polite"></p>'+
+      '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
+      '</form></section>';
+    $$('[data-media-edit]',section).forEach(button=>{
+      button.onclick=()=>mediaEdit(button.dataset.mediaEdit,attachments,postId);
+    });
+    $$('[data-media-quick-edit]',section).forEach(form=>{
+      form.onsubmit=async event=>{
+        event.preventDefault();
+        const button=form.querySelector('button[type=submit]');
+        button.disabled=true;
+        try{
+          const id=form.dataset.mediaQuickEdit;
+          const altText=form.elements.alt.value.trim();
+          const caption=form.elements.caption.value.trim();
+          const original=attachments.find(item=>item.id===id);
+          if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
+          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
+          toast('Caption and description saved.','success');
+          await mediaForPost(postId,ensureDraft);
+        }catch(error){toast(error.message,'error');button.disabled=false}
+      };
+    });
+    const form=$('#editor-upload',section);
+    const fileInput=form.elements.files;
+    const previewList=$('[data-upload-previews]',form);
+    const status=$('[data-upload-status]',form);
+    const submit=form.querySelector('button[type=submit]');
+    let pending=[];
+    const cleanup=()=>{for(const entry of pending)if(entry.url)URL.revokeObjectURL(entry.url)};
+    const previewEntry=entry=>{
+      const wrapper=document.createElement('div');
+      wrapper.className='upload-preview-card';
+      const figure=document.createElement('figure');
+      const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
+      entry.url=URL.createObjectURL(entry.file);
+      picture.src=entry.url;
+      if(picture.tagName==='IMG')picture.alt='Local upload preview: '+entry.file.name;
+      else{picture.controls=true;picture.playsInline=true;picture.preload='metadata'}
+      figure.append(picture);
+      const filename=document.createElement('small');
+      filename.textContent=entry.file.name;
+      figure.append(filename);
+      const fields=document.createElement('div');
+      const altLabel=document.createElement('label');
+      altLabel.textContent='Image description';
+      entry.alt=document.createElement('input');
+      entry.alt.name='alt';entry.alt.maxLength=240;
+      entry.alt.placeholder='Describe what appears in the photograph';
+      entry.alt.required=entry.file.type.startsWith('image/');
+      if(!entry.alt.required){altLabel.textContent='Video description (optional)'}
+      altLabel.append(entry.alt);
+      const captionLabel=document.createElement('label');
+      captionLabel.textContent='Caption';
+      entry.caption=document.createElement('input');
+      entry.caption.name='caption';entry.caption.maxLength=300;
+      entry.caption.placeholder='A moment worth remembering…';
+      captionLabel.append(entry.caption);
+      fields.append(altLabel,captionLabel);
+      wrapper.append(figure,fields);
+      previewList.append(wrapper);
+    };
+    fileInput.onchange=()=>{
+      cleanup();pending=[];
+      previewList.replaceChildren();
+      const files=[...fileInput.files];
+      if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
+      if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
+      status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
+      for(const file of files){
+        const entry={file,done:false,url:null,alt:null,caption:null};
+        pending.push(entry);previewEntry(entry);
+      }
+      submit.disabled=!pending.length;
+      submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
+    };
+    form.onsubmit=async event=>{
+      event.preventDefault();
+      if(!pending.length)return;
+      submit.disabled=true;
+      let sent=0;
+      try{
+        for(const entry of pending.filter(item=>!item.done)){
+          const isImage=entry.file.type.startsWith('image/');
+          const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
+          if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
+          if(!entry.file.size||entry.file.size>(isImage?8:25)*1024*1024)throw Error('File is too large: '+entry.file.name);
+          if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
+          if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
+        }
+        if(!postId){
+          const saved=await ensureDraft?.();
+          if(!saved?.id)throw Error('Enter a story title and save the draft before adding photos.');
+          postId=saved.id;
+        }
+        for(const entry of pending.filter(item=>!item.done)){
+          status.textContent='Uploading '+(sent+1)+' of '+pending.filter(item=>!item.done).length+'…';
+          await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim());
+          entry.done=true;sent++;
+        }
+        toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
+        cleanup();pending=[];
+        await mediaForPost(postId,ensureDraft);
+      }catch(error){
+        status.textContent=error.message+' Already uploaded files are preserved. Retry the remaining ones.';
+        toast(error.message,'error');
+        submit.disabled=false;
+      }
+    };
+  }
+  function mediaCard(x,quickEdit=false){
+    const src='/corner/media/'+encodeURIComponent(x.storage_key);
+    const isImage=x.mime_type.startsWith('image/');
+    const preview=isImage?'<img loading="lazy" src="'+src+'" alt="'+esc(x.alt_text||'Image')+'">':
+      '<video src="'+src+'" controls preload="none" playsinline></video>';
+    return '<article class="media-thumb">'+
+      '<a class="media-view-link" href="'+src+'" target="_blank" rel="noopener" aria-label="View attached media">'+preview+'</a>'+
+      (x.caption?'<p class="media-card-caption">'+esc(x.caption)+'</p>':'')+
+      '<small>'+esc(x.mime_type)+' · '+Math.round(x.size_bytes/1024)+' KB</small>'+
+      (quickEdit?'<form class="media-quick-edit" data-media-quick-edit="'+esc(x.id)+'">'+
+        '<label>Caption<input name="caption" maxlength="300" value="'+esc(x.caption||'')+'" placeholder="Add a caption"></label>'+
+        '<label>Image description<input name="alt" maxlength="240" value="'+esc(x.alt_text||'')+'" '+(isImage?'required':'')+'></label>'+
+        '<button type="submit">Save details</button></form>':'')+
+      '<button type="button" data-media-edit="'+esc(x.id)+'">Advanced settings ↗</button>'+
+      '</article>';
+  }
+  async function upload(file,postId,alt,caption=''){
+    if(!file)throw Error('Choose a file');
+    if(!supportedMedia.has(file.type))throw Error('Unsupported file type');
+    if(file.size>(file.type.startsWith('image/')?8:25)*1024*1024)throw Error('File is too large');
+    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||'')});
+    const response=await fetch('/corner/api/admin/media/upload?'+params.toString(),{
+      method:'POST',credentials:'same-origin',headers:{'content-type':file.type},body:file
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error?.message||'Upload failed');
+    return result.data;
+  }
   async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section"><header><h2>Your media library.</h2></header><div class="admin-surface"><p>Images and video stay tied to individual posts. Upload from a post editor to attach files safely.</p>${list.length?`<div class="media-gallery">${list.map(mediaCard).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));}
   function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div><button type="submit">Save media details</button></form></section>`;
     $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
