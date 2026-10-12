@@ -98,7 +98,7 @@ test('member and owner can return from stories to Account without reauthenticati
 });
 test('mobile Studio navigation stays compact, horizontal and icon-first without changing desktop',()=>{
  const styles=fs.readFileSync(new URL('../public/magic.css',import.meta.url),'utf8');
- assert.match(styles,/Compact mobile Studio owner navigation/);
+ assert.match(fs.readFileSync(new URL('../public/comfort.css',import.meta.url),'utf8'),/min-height:44px/);
  assert.match(styles,/max-width:767px/);
  assert.match(styles,/\.admin-shell \.admin-sidebar\{/);
  assert.match(styles,/\.admin-shell \.admin-nav button,/);

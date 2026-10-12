@@ -51,7 +51,7 @@ test('Gallery supports icon-only accessible navigation, swipe, keyboard and focu
 });
 test('Core design assets retain strict uncompressed transfer budgets',()=>{
  const size=f=>fs.statSync(path.join(root,'public',f)).size;
- const totalCss=['style.css','magic.css','v3.css','v3-memories.css','motion.css'].reduce((n,f)=>n+size(f),0);
+ const totalCss=['style.css','magic.css','v3.css','v3-memories.css','motion.css','comfort.css'].reduce((n,f)=>n+size(f),0);
  const totalJs=['app.js','nav.js','v3.js','v3-memories.js','motion.js'].reduce((n,f)=>n+size(f),0);
  assert.ok(totalCss<90000,'Core CSS under 90 KB (actual '+totalCss+')');
  assert.ok(totalJs<24000,'Core JS under 24 KB (actual '+totalJs+')');
