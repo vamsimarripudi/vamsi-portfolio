@@ -83,7 +83,7 @@ function isBot(req){return /bot|crawler|spider|preview|curl/i.test(req.headers['
 function safetyHeaders(res){
   res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','strict-origin-when-cross-origin');res.setHeader('x-frame-options','DENY');
   res.setHeader('permissions-policy','camera=(), microphone=(), geolocation=(), payment=()');
-  res.setHeader('content-security-policy',"default-src 'self'; connect-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  res.setHeader('content-security-policy',"default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   if(config.prod)res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains');
 }
 function demoFeed(category){let all=samples();if(category==='Latest')return all;return all.filter(p=>({wish:'Wishes',announcement:'Latest',tech_note:'Notes',journal:'Journal',build:'Builds',moment:'Moments'})[p.type]===category)}
@@ -270,10 +270,12 @@ async function api(req,res,pathName,url){
     if(image)buf=sanitizeImage(buf,mime);
     const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
     if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
+    const altText=pureText(url.searchParams.get('alt'),240);
+    const caption=pureText(url.searchParams.get('caption'),300);
     const dimensions=image?imageDimensions(buf,mime):null;
     if(image&&(!dimensions||!dimensions.width||!dimensions.height||dimensions.width*dimensions.height>50_000_000))throw httpError(422,'Unsupported or oversized image dimensions');
     const file=crypto.randomBytes(18).toString('base64url')+ext;fs.mkdirSync(config.uploads,{recursive:true});fs.writeFileSync(path.join(config.uploads,file),buf,{flag:'wx'});
-    let item;try{item=store.addMedia({id:'media_'+crypto.randomUUID(),ownerId:postId,storageKey:file,mimeType:mime,size:buf.length,alt:url.searchParams.get('alt')||'',caption:url.searchParams.get('caption')||'',width:dimensions?.width,height:dimensions?.height});}
+    let item;try{item=store.addMedia({id:'media_'+crypto.randomUUID(),ownerId:postId,storageKey:file,mimeType:mime,size:buf.length,alt:altText,caption,width:dimensions?.width,height:dimensions?.height});}
     catch(err){fs.rmSync(path.join(config.uploads,file),{force:true});throw err}
     store.audit(owner.id,'media.uploaded','media',item.id,{size:item.size_bytes});return ok(res,{...item,url:(config.basePath||'')+'/media/'+file});
   }
@@ -318,7 +320,7 @@ async function route(req,res){
       return end(res,200,req.method==='HEAD'?'':feed.xml,{...headers,'content-length':Buffer.byteLength(feed.xml)});
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
-    if(['/style.css','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
