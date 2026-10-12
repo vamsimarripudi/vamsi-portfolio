@@ -103,3 +103,12 @@
  .post-lightbox>figure img{max-height:calc(100dvh - 168px)}
 }
 @media(max-width:359px){.post-media-editor .upload-preview-card{grid-template-columns:minmax(0,1fr)}}
+
+/* Studio typography and spacing: loaded only on admin and post-detail pages. */
+.admin-top h1{font-size:clamp(1.55rem,2.6vw,2.3rem);line-height:1.12}
+.admin-section>header h2,.admin-surface h2{font-size:clamp(1.1rem,1.8vw,1.55rem);line-height:1.2}
+.admin-main{padding-block:clamp(16px,2.1vw,26px)}
+.admin-top{margin-bottom:clamp(11px,1.8vw,19px)}
+.admin-surface{padding:clamp(13px,1.5vw,20px)}
+.admin-form{gap:clamp(10px,1.2vw,16px)}
+@media(max-width:767px){.admin-top h1{font-size:clamp(1.45rem,5vw,1.85rem)}.admin-main{padding:14px var(--corner-gutter) 23px}.admin-top{margin-bottom:12px}.admin-surface{padding:clamp(12px,3.5vw,16px)}}
