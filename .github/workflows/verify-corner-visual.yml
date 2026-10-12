@@ -125,6 +125,9 @@ jobs:
           JS
       - name: Verify compact typography and vertical rhythm at 12 viewports
         run: node corner/tests/responsive-density-browser.mjs
+      - name: Real owner post photos and captions browser acceptance
+        run: |
+          node corner/tests/post-media-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4
