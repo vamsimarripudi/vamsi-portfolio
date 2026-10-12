@@ -1,0 +1,41 @@
+name: Verify platform typography and viewport comfort
+on:
+  push:
+    branches: [master, fix/platform-comfort-20261012]
+    paths: ['src/**', 'corner/public/**', 'corner/src/ui.mjs', 'corner/src/server.mjs', 'scripts/verify-platform-comfort.mjs', 'tests/platform-comfort.test.mjs', '.github/workflows/verify-platform-comfort.yml']
+  pull_request:
+    paths: ['src/**', 'corner/public/**', 'corner/src/ui.mjs', 'corner/src/server.mjs', 'scripts/verify-platform-comfort.mjs', 'tests/platform-comfort.test.mjs', '.github/workflows/verify-platform-comfort.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comfort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify application and shared design contract
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm --prefix corner run check
+      - name: Install pinned browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium --with-deps
+      - name: Check public/private layouts, real local sign-in and accessibility overrides
+        run: node scripts/verify-platform-comfort.mjs
+      - name: Preserve test-only visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-comfort
+          path: screenshots/comfort/
+          retention-days: 7

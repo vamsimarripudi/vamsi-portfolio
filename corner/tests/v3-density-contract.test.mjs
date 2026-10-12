@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read=(p)=>fs.readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
 test('editorial hierarchy and whitespace stay responsive and compact',()=>{
- const css=read('magic.css');
- assert.match(css,/Compact responsive editorial hierarchy/);
- assert.match(css,/\.hero-content h1\{font-size:clamp\(2rem,6\.4vw,2\.9rem\)/);
- assert.match(read('post-media.css'),/\.admin-top h1\{font-size:clamp\(1\.45rem,5vw,1\.85rem\)/);
- assert.match(read('post-media.css'),/\.admin-main\{padding:14px var\(--corner-gutter\) 23px\}/);
- assert.match(css,/\.feed-heading h2\{font-size:clamp\(1\.35rem,4\.6vw,2rem\)/);
+ const css=read('comfort.css');
+ assert.match(css,/--ui-title: clamp\(1\.5rem, 1\.375rem \+ \.625vw, 2rem\)/);
+ assert.match(css,/--ui-section: clamp\(1\.25rem, 1\.15rem \+ \.4vw, 1\.5rem\)/);
+ assert.match(css,/font-size:var\(--ui-title\)!important/);
+ assert.match(css,/font-size:var\(--ui-section\)!important/);
+ assert.match(css,/\.hero-intro \{min-height:0;padding-block:var\(--ui-space\)/);
  assert.match(css,/@media\(max-width:767px\)/);
+ assert.match(css,/min-height:100dvh/);
+
 });
 test('upload, caption and image-preview interfaces keep usable touch controls and fluid geometry',()=>{
  const css=read('post-media.css');

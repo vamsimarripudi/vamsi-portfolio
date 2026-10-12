@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
+const base=process.env.TRACK_TEST_BASE_URL||'http://127.0.0.1:4173';
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const widths=[320,375,390,430,768,1024,1440,1920];
 try{
@@ -17,7 +18,7 @@ try{
   });
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:4173/track',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/track',{waitUntil:'domcontentloaded'});
   await page.locator('.track-kpi').first().waitFor({timeout:10000});
   await page.locator('.track-table-wrap tbody tr').first().waitFor({timeout:10000});
   const state=await page.evaluate(()=>{
