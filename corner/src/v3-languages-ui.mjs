@@ -1,4 +1,5 @@
-import {basePage,header,footer,escapeHtml} from './ui.mjs';
+import {studioFrame} from './studio-ui.mjs';
+import {basePage,escapeHtml} from './ui.mjs';
 const e=escapeHtml;
 const choice=(v,title)=>'<option value="'+e(v)+'">'+e(title)+'</option>';
 export function languageStudioPage(languages,actor){
@@ -18,10 +19,10 @@ export function languageStudioPage(languages,actor){
   '<small>'+e(row.sourceTitle)+' · '+e(row.language.toUpperCase())+' · '+e(row.state)+(row.needsReview?' · source changed':'')+'</small></div>'+
   '<div class="v3a-actions"><button type="button" data-v3-language-edit="'+e(JSON.stringify(row))+'">Edit</button>'+
   (row.state!=='published'?'<button type="button" data-v3-language-publish="'+e(row.postId)+':'+e(row.language)+'" data-v3-language-revision="'+e(row.revision)+'">Review & publish</button>':'<button type="button" data-v3-language-revoke="'+e(row.postId)+':'+e(row.language)+'" data-v3-language-revision="'+e(row.revision)+'">Unpublish</button>')+'</div></article>').join('');
- const html=header()+'<main id="content" class="shell v3a-page"><a class="v3a-back" href="/admin">← Studio</a>'+
+ const html= '<main id="content" class="shell v3a-page"><a class="v3a-back" href="/admin">← Studio</a>'+
   '<p class="v3a-eyebrow">OWNER / HUMAN REVIEW</p><h1>Languages<span>.</span></h1><p class="v3a-lead">Translate the meaning, then approve every word. Nothing publishes automatically.</p>'+
   '<div class="v3a-layout"><section class="v3a-panel">'+form+'</section>'+
   '<section class="v3a-panel"><h2>Private review</h2><div class="v3a-preview" data-v3-language-output aria-live="polite"></div></section></div>'+
-  '<section class="v3a-panel"><h2>Reviewed versions</h2>'+(rows||'<p>No translations yet.</p>')+'</section></main>'+footer();
- return basePage({title:'Language Studio',path:'/admin/v3/languages',content:html,noindex:true,initial:{page:'languages'}});
+  '<section class="v3a-panel"><h2>Reviewed versions</h2>'+(rows||'<p>No translations yet.</p>')+'</section></main>';
+ return basePage({title:'Language Studio',path:'/admin/v3/languages',content:studioFrame(actor,'languages',html),noindex:true,initial:{page:'languages'}});
 }

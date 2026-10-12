@@ -18,7 +18,7 @@ test('owner wish draft, preview, optimistic locking and scheduled publication ar
  assert.equal(draft.type,'wish');assert.equal(draft.state,'draft');
  assert.equal(w.list(owner).length,1);
  const html=wishesStudioPage(w,owner);
- assert.match(html,/data-wish-studio/);assert.match(html,/PRIVATE PREVIEW/);
+ assert.match(html,/data-wish-studio/);assert.match(html,/LIVE PREVIEW/);assert.doesNotMatch(html,/data-v3w-preview[ >]/);
  assert.match(html,/v3w-form/);assert.doesNotMatch(html,/script[^>]+onerror=/);
  const before=s.all("SELECT * FROM posts WHERE state='published'");
  assert.match(w.preview(owner,{title:'Private wish',body:'Hello there'}).reminder,/nothing has been published/i);
