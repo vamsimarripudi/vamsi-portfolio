@@ -49,13 +49,14 @@ try {
    const headings=[...document.querySelectorAll('h1,h2,h3')].filter(visible).map(n=>({tag:n.tagName,size:parseFloat(getComputedStyle(n).fontSize),text:n.textContent.slice(0,45)}));
    const fields=[...document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select')].filter(visible).map(n=>({name:n.name,ui:getComputedStyle(n).getPropertyValue('--ui-body'),size:parseFloat(getComputedStyle(n).fontSize),width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));
    const card=document.querySelector('.signin-box'),back=card?.querySelector(':scope>a'),submit=card?.querySelector('button[type=submit]');
-   return {rootFont:getComputedStyle(document.documentElement).fontSize,style:document.querySelector('style:last-of-type')?.textContent,width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,headings,fields,
+   const below=[...document.body.querySelectorAll('*')].filter(n=>n.getBoundingClientRect().bottom>innerHeight+1).slice(-12).map(n=>({tag:n.tagName,class:n.className,bottom:n.getBoundingClientRect().bottom,position:getComputedStyle(n).position}));return {below,bodyHeight:document.body.scrollHeight,rootFont:getComputedStyle(document.documentElement).fontSize,style:document.querySelector('style:last-of-type')?.textContent,width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,headings,fields,
     login:card?{height:card.getBoundingClientRect().height,submitBottom:submit.getBoundingClientRect().bottom,backBottom:back.getBoundingClientRect().bottom}:null};
   });
+  if(fit && data.scrollHeight>data.height+1){await page.screenshot({path:path.join(screenshots,'fit-failure.png'),fullPage:true});await fs.writeFile(path.join(screenshots,'fit-failure.json'),JSON.stringify(data,null,2));}
   assert.ok(data.scrollWidth<=data.width+1,label+' horizontal overflow '+JSON.stringify(data));
   for(const h of data.headings)assert.ok(h.size<=({H1:32,H2:24,H3:20}[h.tag])*scale+.1,label+' oversized '+JSON.stringify(h));
   for(const f of data.fields)assert.ok(f.size>=16*scale-.1,label+' small input '+JSON.stringify({f,root:data.rootFont,style:data.style}));
-  if(fit){assert.ok(data.login&&data.login.backBottom<=data.height+.5,label+' login back link outside viewport');assert.ok(data.login.submitBottom<=data.height+.5,label+' submit outside viewport');assert.ok(data.scrollHeight<=data.height+1,label+' login unnecessarily scrolls')}
+  if(fit){assert.ok(data.login&&data.login.backBottom<=data.height+.5,label+' login back link outside viewport');assert.ok(data.login.submitBottom<=data.height+.5,label+' submit outside viewport');assert.ok(data.scrollHeight<=data.height+1,label+' login unnecessarily scrolls '+JSON.stringify(data))}
   evidence.routes.add(label.split(' @')[0]);evidence.checks++;return data;
  };
  const publicRoutes=['/','/now','/work','/engineering','/lab','/writing','/journey','/resume','/uses','/contact','/privacy','/terms','/faq','/changelog','/birthday','/not-found','/offline','/error','/maintenance','/rate-limited','/track'];
@@ -70,7 +71,7 @@ try {
   }
   for(const route of full?cornerRoutes:['/corner','/corner/admin','/corner/login']){
    await p.goto(corner+route,{waitUntil:'domcontentloaded'});const result=await check(p,route+' @'+width,{fit:route==='/corner/admin'&&height>=568});
-   if(route==='/corner/admin'){evidence.viewports.push({width,height,heading:result.headings[0].size,...result.login});
+   if(route==='/corner/admin'){evidence.viewports.push({width,viewportHeight:height,heading:result.headings[0].size,cardHeight:result.login.height,submitBottom:result.login.submitBottom,backBottom:result.login.backBottom});
     if([390,1366].includes(width))await p.screenshot({path:path.join(screenshots,'signin-'+width+'.png'),animations:'disabled'});
    }
   }
