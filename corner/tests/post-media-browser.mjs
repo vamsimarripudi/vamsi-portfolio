@@ -97,7 +97,7 @@ try{
  for(const [width,height] of [[320,720],[360,780],[375,812],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[1280,800],[1366,768],[1920,1080]]){
    await page.setViewportSize({width,height});
    const layout=await page.evaluate(()=>{
-     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
+     const rect=selector=>{const box=document.querySelector(selector)?.getBoundingClientRect();return box?{left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width}:null};
      return {
        scroll:document.documentElement.scrollWidth,viewport:innerWidth,
        photo:rect('.post-gallery-item .post-photo'),
