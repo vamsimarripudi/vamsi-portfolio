@@ -1,7 +1,7 @@
 import { JWT } from 'google-auth-library';
 import { createHash } from 'node:crypto';
-import { TrackError, query } from './track.js';
-import { datesBetween, resolveRange, REPORT_TIME_ZONE } from '../../shared/track-analytics.mjs';
+import { TrackError, query } from '../api/lib/track.js';
+import { datesBetween, resolveRange, REPORT_TIME_ZONE } from '../shared/track-analytics.mjs';
 
 const SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 const BASE = 'https://analyticsdata.googleapis.com/v1beta/properties/';

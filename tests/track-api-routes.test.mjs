@@ -9,7 +9,6 @@ const routes = [
   ['auth/session', 'GET'],
   ['auth/logout', 'POST'],
   ['metrics', 'GET'],
-  ['analytics', 'GET'],
   ['enquiries/index', 'GET'],
   ['enquiries/[referenceId]', 'GET'],
   ['enquiries/[referenceId]/actions', 'POST'],
@@ -33,7 +32,7 @@ for(const [route,allowed] of routes) {
     assert.equal(res.payload?.ok,false);
   });
 }
-for(const route of ['auth/session','metrics','analytics','enquiries/index','enquiries/[referenceId]']) {
+for(const route of ['auth/session','metrics','enquiries/index','enquiries/[referenceId]']) {
   test('private tracker returns 401 without session: '+route,async()=>{
     const mod=await load(route),res=response();
     await mod.default({method:'GET',headers:{},query:{}},res);
@@ -45,4 +44,21 @@ test('scheduled follow-up job denies unauthenticated access',async()=>{
   const job=await load('cron/followups'),res=response();
   await job.default({method:'GET',headers:{}},res);
   assert.equal(res.statusCode,401);
+});
+
+test('analytics routed through the existing metrics function retains the owner gate',async()=>{
+  const metrics=await load('metrics'),res=response();
+  await metrics.default({method:'GET',headers:{},query:{view:'analytics',source:'ga4'}},res);
+  assert.equal(res.statusCode,401);assert.equal(res.headers['cache-control'],'private, no-store');
+});
+test('analytics routed through the existing metrics function rejects writes',async()=>{
+  const metrics=await load('metrics'),res=response();
+  await metrics.default({method:'POST',headers:{},query:{view:'analytics'}},res);
+  assert.equal(res.statusCode,405);assert.equal(res.headers.allow,'GET');
+});
+
+test('analytics routing preserves inherited HTTP request headers',async()=>{
+  const metrics=await load('metrics'),res=response();
+  const req=Object.create({get headers(){return {};}});req.method='GET';req.query={view:'analytics'};
+  await metrics.default(req,res);assert.equal(res.statusCode,401);
 });

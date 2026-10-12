@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
-import { loadEnquiryAnalytics } from '../api/lib/track-analytics.js';
+import { loadEnquiryAnalytics } from '../server/track-analytics.js';
 import { NOW } from './fixtures/track-analytics.mjs';
 
 test('real PostgreSQL engine verifies inclusive IST boundaries, comparisons, privacy exclusion and read-only aggregation', async () => {

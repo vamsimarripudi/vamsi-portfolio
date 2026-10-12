@@ -1,5 +1,5 @@
-import { json, requireOwner } from '../lib/track.js';
-import { loadEnquiryAnalytics, loadGa4, safeAnalyticsError } from '../lib/track-analytics.js';
+import { json, requireOwner } from '../api/lib/track.js';
+import { loadEnquiryAnalytics, loadGa4, safeAnalyticsError } from './track-analytics.js';
 
 // Dependency injection allows testing authorization and upstream failures without production credentials.
 export function createAnalyticsHandler({ authorize = requireOwner, enquiries = loadEnquiryAnalytics, ga4 = loadGa4 } = {}) {

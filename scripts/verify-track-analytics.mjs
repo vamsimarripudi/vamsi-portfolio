@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
-import { createGa4Reader, normalizeEnquiries } from '../api/lib/track-analytics.js';
+import { createGa4Reader, normalizeEnquiries } from '../server/track-analytics.js';
 import { resolveRange } from '../shared/track-analytics.mjs';
 import { NOW, GA_ENV, fakeGa4Report } from '../tests/fixtures/track-analytics.mjs';
 

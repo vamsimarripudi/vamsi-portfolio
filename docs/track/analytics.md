@@ -55,3 +55,6 @@ During initial implementation, configuration metadata access through the Vercel 
 - https://developers.google.com/analytics/devguides/reporting/data/v1/api-schema
 - https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/ResponseMetaData
 - https://developers.google.com/identity/protocols/oauth2/service-account
+
+## Deployment budget remediation
+The first Vercel preview was rejected because the Hobby deployment permits at most 12 functions. Analytics now shares the existing `api/track/metrics.js` function through an explicit `/api/track/analytics` rewrite. Source adapters and handlers live under `server/`, outside the API route tree. Existing metrics behavior is unchanged and dedicated tests verify the rewritten analytics mode retains authorization, method restrictions and no-store headers. No plan upgrade or security reduction is required.

@@ -58,6 +58,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/track/analytics",
+      "destination": "/api/track/metrics?view=analytics"
+    },
+    {
       "source": "/track/analytics",
       "destination": "/track/index.html"
     },

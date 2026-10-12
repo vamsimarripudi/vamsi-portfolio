@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calendarToday, resolveRange, datesBetween, changeFor, csvCell, analyticsCsv } from '../shared/track-analytics.mjs';
-import { createGa4Reader, normalizeGa4, readGa4Config, safeAnalyticsError, reportRows } from '../api/lib/track-analytics.js';
-import { createAnalyticsHandler } from '../api/track/analytics.js';
+import { createGa4Reader, normalizeGa4, readGa4Config, safeAnalyticsError, reportRows } from '../server/track-analytics.js';
+import { createAnalyticsHandler } from '../server/track-analytics-handler.js';
 import { NOW, GA_ENV, fakeGa4Report } from './fixtures/track-analytics.mjs';
 const response = () => ({ headers: {}, statusCode: 0, payload: null, setHeader(k, v) { this.headers[k] = v; }, status(v) { this.statusCode = v; return this; }, json(v) { this.payload = v; return this; } });
 const request = query => ({ method: 'GET', headers: {}, query });
