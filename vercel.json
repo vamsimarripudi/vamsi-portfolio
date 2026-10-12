@@ -58,14 +58,6 @@
   ],
   "rewrites": [
     {
-      "source": "/api/track/analytics",
-      "destination": "/api/track/metrics?view=analytics"
-    },
-    {
-      "source": "/track/analytics",
-      "destination": "/track/index.html"
-    },
-    {
       "source": "/corner",
       "destination": "https://corner-web-production-2600.up.railway.app/corner"
     },
@@ -76,6 +68,14 @@
     {
       "source": "/api/birthday",
       "destination": "/api/contact?birthday=1"
+    },
+    {
+      "source": "/api/track/analytics",
+      "destination": "/api/track/metrics?view=analytics"
+    },
+    {
+      "source": "/track/analytics",
+      "destination": "/track/index.html"
     }
   ],
   "crons": [
