@@ -1,0 +1,44 @@
+name: Verify Studio live editing and fixed sidebar
+on:
+  push:
+    branches: [master, fix/studio-live-sidebar-20261012]
+    paths: ['corner/**', 'src/components/**', 'src/Track*', 'scripts/verify-studio-live.mjs', 'package*.json', '.github/workflows/verify-studio-live.yml']
+  pull_request:
+    paths: ['corner/**', 'src/components/**', 'src/Track*', 'scripts/verify-studio-live.mjs', 'package*.json', '.github/workflows/verify-studio-live.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install and verify source
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm --prefix corner run check
+      - name: Install pinned browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium --with-deps
+      - name: Real isolated Studio and existing media acceptance
+        run: |
+          node scripts/verify-studio-live.mjs
+          node corner/tests/v3-wishes-browser.mjs
+          node corner/tests/post-media-browser.mjs
+      - name: Retain screenshots and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-live-sidebar
+          path: screenshots/studio-live/
+          retention-days: 7
