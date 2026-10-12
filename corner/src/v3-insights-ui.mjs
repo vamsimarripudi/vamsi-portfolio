@@ -1,4 +1,5 @@
-import {basePage,header,footer,escapeHtml} from './ui.mjs';
+import {studioFrame} from './studio-ui.mjs';
+import {basePage,escapeHtml} from './ui.mjs';
 const e=escapeHtml;
 const metric=(label,value)=>'<article class="v3a-kpi"><span>'+e(label)+'</span><strong>'+Number(value).toLocaleString('en-IN')+'</strong></article>';
 export function insightsPage(insights,actor,{days=7}={}){
@@ -10,7 +11,7 @@ export function insightsPage(insights,actor,{days=7}={}){
    '<span class="v3a-pillar" style="height:'+Math.max(5,Math.round((x.events||0)/max*100))+'%"></span>'+
    '<small>'+e(x.day.slice(5))+'</small><span class="v3a-sr">'+(x.suppressed?'Fewer than five events':x.events+' events')+'</span></div>').join('')+'</div>';
  const top=report.topPublishedStories.map((x,i)=>'<li><span>'+String(i+1).padStart(2,'0')+'</span><a href="/post/'+encodeURIComponent(x.slug)+'">'+e(x.title)+'</a><strong>'+x.opens+'</strong></li>').join('');
- const content=header()+'<main id="content" class="shell v3a-page"><a class="v3a-back" href="/admin">← Studio</a>'+
+ const content= '<main id="content" class="shell v3a-page"><a class="v3a-back" href="/admin">← Studio</a>'+
   '<p class="v3a-eyebrow">OWNER / PRIVACY-FIRST INSIGHTS</p><h1>Insights<span>.</span></h1>'+
   '<p class="v3a-lead">Only aggregated first-party signals. No visitor profiles or third-party pixels.</p>'+
   '<nav class="v3a-periods" aria-label="Reporting period">'+[7,30,90].map(link).join('')+'</nav>'+
@@ -20,6 +21,6 @@ export function insightsPage(insights,actor,{days=7}={}){
   '<small>Daily groups below five are hidden.</small></section>'+
   '<section class="v3a-panel"><h2>Most read stories</h2><ol class="v3a-top">'+(top||'<li>No story has reached the privacy threshold.</li>')+'</ol></section></div>'+
   '<p class="v3a-privacy">Privacy minimum: five events per reported segment · Raw pseudonymous events retain their existing 90-day lifecycle.</p>'+
-  '</main>'+footer();
- return basePage({title:'Private Insights',path:'/admin/v3/insights',content,noindex:true,initial:{page:'insights'}});
+  '</main>';
+ return basePage({title:'Private Insights',path:'/admin/v3/insights',content:studioFrame(actor,'insights',content),noindex:true,initial:{page:'insights'}});
 }

@@ -45,11 +45,11 @@ try{
    const form=page.locator('[data-v3w-form]');
    await form.locator('[name=title]').fill('A thoughtful wish');
    await form.locator('[name=body]').fill('May the coming days bring good things.');
-   await page.locator('[data-v3w-preview]').click();
-   await page.getByText('Private preview only. Nothing emailed or published.').waitFor();
+   assert.equal(await page.locator('[data-v3w-preview]').count(),0);
+   assert.equal(await page.locator('[data-v3w-body]').textContent(),'May the coming days bring good things.');
    assert.equal(await page.locator('[data-v3w-title]').textContent(),'A thoughtful wish');
    await form.locator('[type=submit]').click();
-   await page.getByText('A thoughtful wish').last().waitFor({timeout:12000});
+   await page.locator('.v3w-item h3').filter({hasText:'A thoughtful wish'}).waitFor({timeout:12000});
    assert.match(await page.locator('.v3w-item').first().textContent(),/draft/i);
   }
   await context.close();

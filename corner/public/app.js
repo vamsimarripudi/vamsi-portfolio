@@ -35,7 +35,8 @@
       const wrapper=button.closest('.reactions');if(!wrapper)return;
       button.disabled=true;
       try{let response=await request(`/corner/api/posts/${encodeURIComponent(wrapper.dataset.postId)}/reactions`,{reaction:button.dataset.reaction});
-        $$('.reactions button').forEach(b=>{b.querySelector('span').textContent=response.counts[b.dataset.reaction]||0;b.setAttribute('aria-pressed',String(response.yours===b.dataset.reaction))});
+        $$('.reactions button').forEach(b=>{b.querySelector('span').textContent=response.counts[b.dataset.reaction]||0;window.CornerMotion?.count(b.querySelector('span'));b.setAttribute('aria-pressed',String(response.yours===b.dataset.reaction))});
+        window.CornerMotion?.react(button,response.yours===button.dataset.reaction);
       }catch(err){toast(err.message,'error');}finally{button.disabled=false}
     });
   });
@@ -59,13 +60,13 @@
     const onEvent=(event)=>{try{const data=JSON.parse(event.data),key=data.entityId;let previous=lastByEntity.get(key)||0;if(data.version<previous)return;lastByEntity.set(key,data.version);
       if(data.type==='post.published'||data.type==='post.updated'||data.type==='post.archived')showUpdate('A new note is ready.');
       if(data.type==='status.updated'){const status=data.payload?.status;let current=$('.now-status strong');if(current)current.textContent=status?.label||'Keeping a little corner alive.';}
-    }catch{/* ignore malformed or non-critical browser events */} };
+    }catch{/* Ignore invalid events. */} };
     ['post.published','post.updated','post.archived','status.updated'].forEach(kind=>stream.addEventListener(kind,onEvent));
     window.addEventListener('pagehide',()=>stream.close(),{once:true});
   }
   const postId=initial.postId;
-  if(initial.page==='detail'&&!initial.demo&&postId){let stream=new EventSource('/corner/api/realtime/stream?since='+encodeURIComponent(initial.eventCursor||0));stream.addEventListener('reaction.updated',event=>{try{let r=JSON.parse(event.data);if(r.entityId!==postId)return;$$('.reactions button').forEach(button=>{let n=$('span',button);if(n)n.textContent=r.payload?.counts?.[button.dataset.reaction]||0})}catch{/* ignore malformed or non-critical browser events */}});stream.addEventListener('comment.created',event=>{try{if(JSON.parse(event.data).entityId===postId)toast('The conversation was updated.')}catch{/* ignore malformed or non-critical browser events */}});window.addEventListener('pagehide',()=>stream.close(),{once:true});}
-  // Optional member bookmarks: guests retain anonymous reading and reactions.
+  if(initial.page==='detail'&&!initial.demo&&postId){let stream=new EventSource('/corner/api/realtime/stream?since='+encodeURIComponent(initial.eventCursor||0));stream.addEventListener('reaction.updated',event=>{try{let r=JSON.parse(event.data);if(r.entityId!==postId)return;$$('.reactions button').forEach(button=>{let n=$('span',button);if(n){n.textContent=r.payload?.counts?.[button.dataset.reaction]||0;window.CornerMotion?.count(n)}})}catch{/* Ignore invalid events. */}});stream.addEventListener('comment.created',event=>{try{if(JSON.parse(event.data).entityId===postId)toast('The conversation was updated.')}catch{/* Ignore invalid events. */}});window.addEventListener('pagehide',()=>stream.close(),{once:true});}
+  // Optional member bookmarks.
   const bookmark=$('[data-bookmark-post]');
   if(bookmark&&initial.page==='detail'&&!initial.demo&&postId){
     const getJson=async(url,init={})=>{const reply=await fetch(url,{credentials:'same-origin',cache:'no-store',...init});const body=await reply.json().catch(()=>({}));if(!reply.ok)throw Error(body.error?.message||'Could not update bookmarks');return body.data};

@@ -1,6 +1,7 @@
 /* Corner V3 native Motion Primitives: progressive design only, no network calls. */
 (()=>{
  'use strict';
+ if(document.querySelector('.studio-frame'))return;
  const main=document.querySelector('main#content');
  if(!main)return;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -45,6 +46,4 @@
   addEventListener('resize',schedule,{passive:true});
   schedule();
  }
- // Preview animation never changes data, URL, focus or screen-reader status.
-
 })();

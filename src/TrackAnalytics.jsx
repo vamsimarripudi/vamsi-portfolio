@@ -1,3 +1,5 @@
+import AnimatedContent from './components/react-bits/AnimatedContent.jsx';
+import CountNumber from './components/CountNumber.jsx';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FiDownload, FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
@@ -46,12 +48,12 @@ function RangeControls({ applied, timeZone, onApply, busy }) {
 }
 function Metric({ metric }) {
   const change = changeFor(metric.value, metric.previous, metric.format);
-  return <article className="ta-metric" title={metric.description}>
-    <h2>{metric.label}</h2><strong>{formatNumber(metric.value, metric.format)}</strong>
+  return <AnimatedContent as="article" className="ta-metric" title={metric.description}>
+    <h2>{metric.label}</h2><strong><CountNumber value={metric.value} format={value => formatNumber(value, metric.format)}/></strong>
     {change && <p className="ta-change">{change.unit === 'new' ? 'New · no prior baseline'
       : `${change.value > 0 ? '+' : ''}${formatNumber(change.value)}${change.unit === 'pp' ? ' pp' : '%'} vs comparison`}</p>}
     {metric.previous !== null && <small>Previously {formatNumber(metric.previous, metric.format)}</small>}
-  </article>;
+  </AnimatedContent>;
 }
 function Trend({ trend }) {
   const points = trend.points, maximum = Math.max(1, ...points.flatMap(point => [point.value, point.previous || 0]));
