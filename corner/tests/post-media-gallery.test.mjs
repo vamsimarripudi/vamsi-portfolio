@@ -52,6 +52,8 @@ test('gallery interaction and server routes are local, user-accessible and scrip
  assert.match(js,/ArrowLeft/);assert.match(js,/ArrowRight/);
  assert.match(js,/gallery\.addEventListener\('close'/);
  assert.match(server,/\/post-gallery\.js/);
+ assert.match(server,/img-src 'self' data: blob:/,'Local image preview URLs are allowed by CSP');
+ assert.match(server,/media-src 'self' blob:/,'Local video preview URLs are allowed by CSP');
  assert.match(server,/\/post-media\.css/);
  assert.doesNotMatch(js,/fetch\(|localStorage|innerHTML\s*=/,'Viewer needs no API calls or HTML insertion');
 });
