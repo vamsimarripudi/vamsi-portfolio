@@ -1,0 +1,43 @@
+name: Verify reading analytics and consent
+on:
+  push:
+    branches: [master, feat/reading-analytics-20261013]
+    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
+  pull_request:
+    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reading:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install and verify source and privacy contracts
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm --prefix corner run check
+      - name: Install pinned browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium --with-deps
+      - name: Isolated consent, reading, report and existing Studio acceptance
+        run: |
+          node scripts/verify-reading-analytics.mjs
+          node scripts/verify-studio-live.mjs
+      - name: Retain analytics evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reading-analytics-evidence
+          path: screenshots/reading-analytics/
+          retention-days: 7
