@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "source": "corner-first-party",
+  "collection": "disabled until reader explicitly allows first-party reading analytics",
+  "routes": {"collect": "POST /corner/api/analytics/reading", "withdrawCurrentJourney": "DELETE /corner/api/analytics/reading", "report": "GET /corner/api/admin/analytics/reading"},
+  "scope": ["public feed", "public published story"],
+  "excluded": ["admin", "account", "profile", "track", "portfolio", "demo posts", "known staff", "DNT", "GPC", "recognizable bots"],
+  "wireFields": {
+    "v": 1,
+    "view": "random 32-hex page visit token; HMAC before database storage",
+    "journey": "random 32-hex tab journey token; 30-minute idle / 24-hour max; HMAC before storage",
+    "page": ["feed", "story"],
+    "post": "published post_UUID for a story; null for feed",
+    "device": ["mobile", "tablet", "desktop"],
+    "source": ["direct", "internal", "search", "social", "referral"],
+    "depth": [0, 25, 50, 75, 90],
+    "activeMs": "integer 0..1800000, server-clamped to elapsed observation time",
+    "action": ["", "story_click", "react", "share", "comment_start", "comment_success"],
+    "issue": ["", "request_failed", "media_failed"],
+    "reason": ["", "finished", "return_later", "not_relevant", "too_long", "hard_to_read", "slow_or_broken", "other"]
+  },
+  "retentionDays": 90,
+  "minimumReportedSegment": 5,
+  "reportTimeZone": "Asia/Kolkata",
+  "funnel": {"unit": "recorded tab journey", "entry": "first retained observation is feed in selected window", "maturity": "no selected observation in last 30 minutes", "steps": ["feed visit", "story visit", "same-story 90% depth and 10 seconds visible active time", "reaction/share/comment after that milestone"], "notEquivalentTo": "GA4 user-scoped funnel or unique people"},
+  "ga4PlanOnly": {
+    "activeCollection": false,
+    "existingReportingRoute": "/track/analytics?source=ga4",
+    "prerequisites": ["verified GA4 property", "web stream and measurement ID", "numeric Data API property ID", "Data API enabled", "service-account Viewer access", "secure server credentials", "separate accurate Google collection consent", "safe page URL/title handling", "DebugView and processed-report verification"],
+    "proposedMappings": [
+      {"firstPartySignal": "public story view", "ga4Event": "content_view", "parameters": ["content_id", "content_type"], "status": "planned, not emitted to Google"},
+      {"firstPartySignal": "quantized depth plus active threshold", "ga4Event": "reading_progress", "parameters": ["content_id", "depth_bucket"], "status": "planned, not emitted to Google"},
+      {"firstPartySignal": "90% plus 10 seconds", "ga4Event": "substantial_read", "parameters": ["content_id"], "status": "planned key-event candidate; not comprehension"},
+      {"firstPartySignal": "successful share action", "ga4Event": "share", "parameters": ["content_type", "item_id", "method"], "status": "planned; no raw destination URL"},
+      {"firstPartySignal": "future confirmed subscription", "ga4Event": "subscription_confirmed", "parameters": ["surface"], "status": "future implementation; not form-submit or click"},
+      {"firstPartySignal": "future successfully accepted enquiry", "ga4Event": "generate_lead", "parameters": ["surface"], "status": "future privacy-reviewed outcome; no contact fields"}
+    ],
+    "neverTransmit": ["email", "name", "password", "OTP", "form values", "comment text", "free-form feedback", "raw referrer", "URL query", "search text", "precise location", "session replay"]
+  }
+}
