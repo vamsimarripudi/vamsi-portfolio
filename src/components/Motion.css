@@ -1,0 +1,5 @@
+.ui-count{display:inline-grid;font-variant-numeric:tabular-nums;vertical-align:baseline;white-space:nowrap}.ui-count>span{grid-area:1/1}.ui-count-visual{visibility:hidden;pointer-events:none}.ui-count[data-counting=true]>.ui-count-value{opacity:0}.ui-count[data-counting=true]>.ui-count-visual{visibility:visible}
+#root :is(.track-icon-button,.track-kpi,.ta-action,.track-workspace-nav a){transition:transform .16s,box-shadow .16s,background .16s}
+@media(hover:hover) and (pointer:fine){#root :is(.track-icon-button,.track-kpi,.ta-action):not(:disabled):hover{transform:translateY(-1px)}}
+#root :is(.track-icon-button,.track-kpi,.ta-action):not(:disabled):active{transform:scale(.98)}
+@media(prefers-reduced-motion:reduce){#root :is(.track-icon-button,.track-kpi,.ta-action,.track-workspace-nav a){transition:none!important;transform:none!important}.ui-count[data-counting=true]>.ui-count-value{opacity:1}.ui-count[data-counting=true]>.ui-count-visual{visibility:hidden}}
