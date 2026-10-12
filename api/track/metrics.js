@@ -1,6 +1,15 @@
+import analytics from '../../server/track-analytics-handler.js';
 import { json, query, requireOwner } from '../lib/track.js';
 
 export default async function handler(req, res) {
+  // Share the existing function slot; the analytics handler retains its own owner gate.
+  if (req.query?.view === 'analytics') {
+    const { view, ...query } = req.query;
+    void view;
+    const analyticsRequest = Object.create(req);
+    Object.defineProperty(analyticsRequest, 'query', { value: query });
+    return analytics(analyticsRequest, res);
+  }
   if (req.method !== 'GET') return json(res, 405, { ok: false, message: 'Method not allowed.' });
   const owner = await requireOwner(req, res);
   if (!owner) return;

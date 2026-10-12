@@ -1,0 +1,61 @@
+/* Scoped extension of the locked Track palette. No changes to Corner or portfolio styles. */
+.track-page.ta-page{padding-block:1.4rem 2rem;min-height:calc(100dvh - 130px);overflow-wrap:anywhere}
+.ta-page:before{display:none}
+.ta-heading,.ta-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.ta-page .ta-heading h1{margin:.45rem 0;font-size:clamp(1.65rem,3vw,2.35rem);line-height:1.1;letter-spacing:-.045em}
+.ta-heading>div>p:not(.track-kicker){margin:0;max-width:65ch;color:var(--muted);font-size:.85rem;line-height:1.55}
+.ta-page .ta-actions{display:flex;flex-wrap:wrap;gap:.5rem;flex-shrink:0}
+.ta-page button:not(.track-icon-button){min-height:44px;margin:0;padding:.6rem .8rem;font-size:.78rem;line-height:1.25;background:var(--bg);color:var(--ink);border:1px solid var(--line);transform:none}
+.ta-page button:not(.track-icon-button):hover:not(:disabled){background:var(--surface);color:var(--ink);border-color:var(--accent);transform:none}
+.ta-page button:focus-visible,.ta-page summary:focus-visible,.ta-table-scroll:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.ta-page .ta-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:end;gap:.8rem;margin:1.25rem 0 .8rem;padding:1rem;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ta-page .ta-controls label{min-width:0;font-size:.65rem;line-height:1.4;letter-spacing:.04em}
+.ta-page .ta-controls input,.ta-page .ta-controls select{min-width:0;max-width:100%;min-height:44px;background:var(--bg);font-family:inherit;font-size:.82rem;letter-spacing:0}
+.ta-page .ta-controls .ta-apply{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ta-page .ta-controls .ta-apply:hover:not(:disabled){background:var(--ink);color:var(--bg);border-color:var(--accent)}
+.ta-custom-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;grid-column:1/-2;grid-row:2}
+.ta-control-hint,.ta-controls .ta-error{grid-column:1/-1;margin:0;font-size:.74rem;line-height:1.5;color:var(--muted)}
+.ta-status p{margin:.8rem 0;font-size:.77rem;line-height:1.65;color:var(--muted)}
+.ta-page .ta-error{color:#b42318;font-size:.85rem;line-height:1.6}
+.ta-notice{padding:.8rem 1rem;border-left:3px solid var(--accent);background:var(--surface);font-size:.8rem;line-height:1.6}
+.ta-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0}
+.ta-metric,.ta-panel{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:1rem}
+.ta-page .ta-metric h2{margin:0;color:var(--muted);font-size:.72rem;line-height:1.4;font-weight:650;letter-spacing:0}
+.ta-metric strong{display:block;margin:.55rem 0;font-size:clamp(1.45rem,2.8vw,2rem);line-height:1.1;font-weight:700;letter-spacing:-.035em}
+.ta-change{margin:0;color:var(--ink);font-size:.74rem;line-height:1.5}
+.ta-metric small{display:block;margin-top:.2rem;color:var(--muted);font-size:.7rem;line-height:1.45}
+.ta-page .ta-panel h2{margin:0;font-size:1rem;line-height:1.4;letter-spacing:-.02em}
+.ta-panel-heading>span{font-size:.7rem;line-height:1.5;color:var(--muted);text-align:right}
+.ta-trend{margin:1rem 0}
+.ta-trend svg{display:block;width:100%;height:auto;max-height:300px;margin-top:.75rem;overflow:visible}
+.ta-trend svg text{fill:var(--muted);font:10px ui-monospace,monospace}
+.ta-gridline{stroke:var(--line);stroke-width:1}
+.ta-line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.ta-line.ta-previous{stroke:var(--muted);stroke-dasharray:5 5}
+.ta-dot{fill:var(--accent)}
+.ta-legend{display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;color:var(--muted);font-size:.72rem}
+.ta-legend span{display:inline-flex;align-items:center;gap:.4rem}
+.ta-legend i{display:inline-block;width:18px;border-top:2px solid var(--accent)}
+.ta-legend .ta-previous-key{border-color:var(--muted);border-top-style:dashed}
+.ta-daily{border-top:1px solid var(--line);padding-top:.75rem;margin-top:.75rem}
+.ta-daily summary{width:fit-content;min-height:44px;padding:.6rem 0;font-size:.78rem;cursor:pointer}
+.ta-table-scroll{max-width:100%;overflow:auto;max-height:360px;overscroll-behavior:contain}
+.ta-table-scroll table{min-width:470px}
+.ta-page table{width:100%;border-collapse:collapse;font-size:.78rem}
+.ta-page table th,.ta-page table td{padding:.7rem .3rem;border-bottom:1px solid var(--line);text-align:left;line-height:1.4;font-weight:400}
+.ta-page table thead th{font-size:.65rem;font-weight:650;color:var(--muted)}
+.ta-breakdown{table-layout:fixed}
+.ta-breakdown th{overflow-wrap:anywhere}
+.ta-breakdown th:last-child,.ta-breakdown td:last-child{width:32%;text-align:right;font-variant-numeric:tabular-nums}
+.ta-breakdowns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.ta-notes{margin:1rem 0 0;color:var(--muted);font-size:.74rem;line-height:1.65}
+.ta-notes p{margin:.5rem 0}
+.ta-muted{color:var(--muted);font-size:.8rem;line-height:1.5}
+.ta-connection>svg{font-size:1.4rem;margin-bottom:.6rem;color:var(--accent)}
+.ta-connection p,.ta-connection li{max-width:85ch;color:var(--muted);font-size:.84rem;line-height:1.65}
+.ta-connection ol{padding-left:1.25rem}
+.ta-connection li{margin:.4rem 0}
+.ta-connection code{font-size:.8em;overflow-wrap:anywhere;color:var(--ink)}
+@media(max-width:900px){.ta-heading{flex-direction:column}.ta-page .ta-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-custom-dates{grid-column:1/-1;grid-row:auto}.ta-page .ta-controls .ta-apply{align-self:end}.ta-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.track-page.ta-page{padding-top:1.1rem}.ta-page .ta-controls{grid-template-columns:minmax(0,1fr);padding:.85rem;gap:.7rem}.ta-custom-dates{grid-template-columns:minmax(0,1fr)}.ta-breakdowns{grid-template-columns:minmax(0,1fr)}.ta-metric,.ta-panel{padding:.85rem}.ta-metrics{gap:.55rem}.ta-page .ta-metric h2{font-size:.67rem}.ta-change,.ta-metric small{font-size:.68rem}.ta-panel-heading{flex-direction:column;gap:.35rem}.ta-panel-heading>span{text-align:left}.ta-trend svg{min-height:130px}.ta-actions{width:100%}.ta-page .ta-actions button{flex:1}}
+@media(prefers-reduced-motion:reduce){.ta-page button{transition:none}}
