@@ -571,3 +571,44 @@ width:44px;height:44px;padding:0;margin:0;border:0}
   .post-lightbox>figure img{max-height:calc(100dvh - 196px)}
 }
 @media(prefers-reduced-motion:reduce){.post-lightbox,.post-photo{transition:none!important}}
+
+
+/* Owner photo composer: compact, readable, and consistent with Studio surfaces. */
+.post-media-editor{min-width:0}
+.post-media-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 17px}
+.post-media-head .eyebrow{margin-bottom:6px}
+.post-media-head h3{margin:0;font-size:clamp(1.16rem,2.3vw,1.5rem);line-height:1.12;letter-spacing:-.045em}
+.post-media-head>small{padding:6px 11px;border-radius:40px;background:var(--corner-soft);color:var(--corner-subtext);font-size:.73rem}
+.post-media-editor .media-gallery{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px;margin:15px 0}
+.post-media-editor .media-thumb{min-width:0;background:#fff}
+.post-media-editor .media-view-link{display:block;border-radius:10px;overflow:hidden;cursor:zoom-in}
+.post-media-editor .media-view-link img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#f4f3f0}
+.post-media-editor .media-card-caption{font-size:.8rem;line-height:1.55;color:var(--corner-ink);overflow-wrap:anywhere}
+.post-media-editor .media-quick-edit{display:grid;gap:8px;margin:11px 0 3px}
+.post-media-editor .media-quick-edit label{font-size:.73rem}
+.post-media-editor .media-quick-edit input{min-width:0;max-width:100%;height:40px;border:1px solid var(--corner-border);border-radius:9px;padding:8px 10px;font-size:.77rem;background:#fff;color:var(--corner-ink)}
+.post-media-editor .media-quick-edit button{width:max-content;min-height:39px;padding:9px 13px;border:1px solid var(--corner-border-strong);border-radius:9px;background:var(--corner-black);color:var(--corner-white);font-size:.74rem;font-weight:650}
+.post-media-editor .media-quick-edit button:disabled{opacity:.6}
+.post-media-editor .upload-field{gap:10px;padding-top:12px;border-top:1px solid var(--corner-border)}
+.post-media-editor .upload-preview-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:11px}
+.post-media-editor .upload-preview-card{display:grid;gap:10px;min-width:0;padding:11px;border-radius:12px;border:1px solid var(--corner-border);background:#fff}
+.post-media-editor .upload-preview-card figure{margin:0;min-width:0}
+.post-media-editor .upload-preview-card img,.post-media-editor .upload-preview-card video{display:block;width:100%;height:155px;object-fit:contain;border-radius:8px;background:#f4f3f0}
+.post-media-editor .upload-preview-card small{display:block;margin-top:6px;font-size:.7rem;color:var(--corner-subtext);overflow-wrap:anywhere}
+.post-media-editor .upload-preview-card>div{display:grid;gap:9px}
+.post-media-editor .upload-preview-card label{display:grid;gap:5px;font-size:.72rem}
+.post-media-editor .upload-preview-card input{min-width:0;width:100%;min-height:41px;padding:9px 11px;font-size:.78rem;border:1px solid var(--corner-border-strong);border-radius:9px}
+.post-media-editor [data-upload-status]:empty{display:none}
+.post-media-editor [data-upload-status]{margin:0;font-size:.76rem;color:var(--corner-subtext);line-height:1.5}
+.post-media-editor button[disabled]{opacity:.55;cursor:wait}
+.preview-card .preview-media[hidden]{display:none}
+.preview-card .preview-media{margin:13px 0;min-width:0;border-radius:11px;overflow:hidden;background:#f4f3f0}
+.preview-card .preview-media img{display:block;width:100%;max-height:225px;object-fit:contain}
+@media(max-width:767px){
+  .post-media-editor .media-gallery{grid-template-columns:minmax(0,1fr)}
+  .post-media-editor .upload-preview-list{grid-template-columns:minmax(0,1fr)}
+  .post-media-editor .upload-preview-card{grid-template-columns:110px minmax(0,1fr);align-items:start}
+  .post-media-editor .upload-preview-card img,.post-media-editor .upload-preview-card video{height:113px}
+  .post-media-editor .upload-preview-card>div{min-width:0}
+}
+@media(max-width:359px){.post-media-editor .upload-preview-card{grid-template-columns:minmax(0,1fr)}}
