@@ -9,6 +9,8 @@ on:
       - "corner/src/ui.mjs"
       - "corner/src/server.mjs"
       - "corner/tests/design-contract.test.mjs"
+      - "corner/tests/post-media-browser.mjs"
+      - "corner/tests/responsive-density-browser.mjs"
       - ".github/workflows/verify-corner-visual.yml"
   workflow_dispatch:
 permissions:
