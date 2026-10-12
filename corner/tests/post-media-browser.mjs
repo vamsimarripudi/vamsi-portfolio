@@ -93,6 +93,31 @@ try{
  await page.keyboard.press('Escape');
  await dialog.waitFor({state:'hidden'});
  assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Keyboard focus returns to selected photo');
+
+ for(const [width,height] of [[320,720],[360,780],[375,812],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[1280,800],[1366,768],[1920,1080]]){
+   await page.setViewportSize({width,height});
+   const layout=await page.evaluate(()=>{
+     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
+     return {
+       scroll:document.documentElement.scrollWidth,viewport:innerWidth,
+       photo:rect('.post-gallery-item .post-photo'),
+       caption:rect('.post-gallery-item figcaption'),heading:rect('.post-heading h1')
+     };
+   });
+   assert.ok(layout.scroll<=layout.viewport+1,'No gallery document overflow '+width+' '+JSON.stringify(layout));
+   for(const item of [layout.photo,layout.caption,layout.heading])
+     assert.ok(item&&item.left>=-1&&item.right<=width+1,'No gallery element clipping '+width+' '+JSON.stringify(layout));
+   assert.equal(await page.locator('.post-gallery-item .post-photo').count(),2,'Both photos visible '+width);
+   if([320,390,768,1366,1920].includes(width)){
+     await page.locator('.post-gallery-item .post-photo').first().click();
+     await dialog.waitFor({state:'visible'});
+     const viewer=await dialog.boundingBox();
+     assert.ok(viewer&&viewer.x>=-1&&viewer.x+viewer.width<=width+1,'Viewer fits '+width+' '+JSON.stringify(viewer));
+     await page.keyboard.press('Escape');
+     await dialog.waitFor({state:'hidden'});
+   }
+   console.log('PASS gallery viewport '+width+'x'+height);
+ }
  fs.mkdirSync('screenshots',{recursive:true});
  await page.screenshot({path:'screenshots/corner-photo-post-mobile.png',fullPage:true,animations:'disabled'});
  assert.deepEqual(browserErrors,[],'No client JavaScript runtime errors');
