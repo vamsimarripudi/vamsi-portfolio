@@ -538,3 +538,10 @@ width:44px;height:44px;padding:0;margin:0;border:0}
 .admin-shell .admin-nav button{font-size:.74rem}
 .admin-shell .admin-top{margin-bottom:15px}
 }
+
+
+
+/* Compact responsive editorial hierarchy: overrides approved theme sizing. */
+.hero-content h1{font-size:clamp(2.1rem,4.1vw,4.5rem)}
+.feed-heading h2{font-size:clamp(1.5rem,2.8vw,2.6rem)}
+@media(max-width:767px){.hero-content h1{font-size:clamp(2rem,6.4vw,2.9rem)}.feed-heading h2{font-size:clamp(1.35rem,4.6vw,2rem)}}
