@@ -74,7 +74,8 @@ try{
   const j=await r.json();return j.data.find(p=>p.title==='First photo-led Corner story')?.slug;
  });
  assert.ok(slug,'Test post was published');
- await page.goto(base+'/post/'+encodeURIComponent(slug),{waitUntil:'networkidle'});
+ await page.goto(base+'/post/'+encodeURIComponent(slug),{waitUntil:'domcontentloaded'});
+ await page.locator('.post-gallery-grid').waitFor({state:'visible',timeout:10000});
  const images=page.locator('.post-gallery-item .post-photo');
  assert.equal(await images.count(),2,'Both photos are publicly rendered');
  await page.getByText('A new Corner beginning.').waitFor();
