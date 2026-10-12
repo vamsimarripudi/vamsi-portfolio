@@ -6,7 +6,7 @@
   // server-rendered media; captions are inserted via textContent, never HTML.
   const gallery=$('[data-post-lightbox]');
   if(gallery){
-    const triggers=$('[data-post-photo]');
+    const triggers=$$('[data-post-photo]');
     const photograph=$('figure img',gallery),caption=$('figure figcaption',gallery);
     const counter=$('[data-post-counter]',gallery);
     const previous=$('[data-post-prev]',gallery),next=$('[data-post-next]',gallery);
