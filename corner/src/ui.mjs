@@ -14,6 +14,44 @@ export const samples=()=>[
 ];
 const safeLink=(slug)=>'/post/'+encodeURIComponent(slug);
 export function renderMedia(media=[]){if(!media.length)return '';const m=media[0],src='/media/'+encodeURIComponent(m.storage_key);return m.mime_type.startsWith('video/')?`<div class="card-media"><video controls preload="none" playsinline aria-label="${e(m.alt_text||'Video')}"><source src="${src}" type="${e(m.mime_type)}"></video></div>`:`<div class="card-media"><img src="${src}" loading="lazy" alt="${e(m.alt_text||'Post image')}" style="object-position:${Number(m.focal_x||.5)*100}% ${Number(m.focal_y||.5)*100}%"></div>`}
+
+/** Render every published post attachment without exposing unpublished drafts. */
+export function renderPostGallery(media=[]){
+  if(!media.length)return '';
+  const photos=media.filter(m=>m.mime_type?.startsWith('image/'));
+  let number=0;
+  const cards=media.map(m=>{
+    const src='/media/'+encodeURIComponent(m.storage_key);
+    const alt=e(m.alt_text||'Post photograph');
+    const caption=m.caption?'<figcaption>'+e(m.caption)+'</figcaption>':'';
+    const width=Number(m.width),height=Number(m.height);
+    const size=Number.isSafeInteger(width)&&Number.isSafeInteger(height)&&width>0&&height>0?
+      ' width="'+width+'" height="'+height+'"':'';
+    if(m.mime_type?.startsWith('video/')){
+      return '<figure class="post-gallery-item post-gallery-video">'+
+        '<video controls playsinline preload="metadata" aria-label="'+alt+'"><source src="'+src+'" type="'+e(m.mime_type)+'"></video>'+
+        caption+'</figure>';
+    }
+    const positionX=Math.round(Math.min(1,Math.max(0,Number(m.focal_x)||0.5))*100);
+    const positionY=Math.round(Math.min(1,Math.max(0,Number(m.focal_y)||0.5))*100);
+    const index=number++;
+    return '<figure class="post-gallery-item">'+
+      '<button type="button" class="post-photo" data-post-photo data-caption="'+e(m.caption||'')+'" '+
+      'aria-haspopup="dialog" aria-label="View photograph '+(index+1)+' of '+photos.length+': '+alt+'">'+
+      '<img src="'+src+'" alt="'+alt+'"'+size+' loading="'+(index===0?'eager':'lazy')+'" decoding="async" '+
+      'style="object-position:'+positionX+'% '+positionY+'%"></button>'+caption+'</figure>';
+  }).join('');
+  const lightbox=photos.length?'<dialog class="post-lightbox" data-post-lightbox aria-label="Post photographs">'+
+    '<button type="button" class="post-lightbox-close" data-post-close aria-label="Close photograph">×</button>'+
+    '<figure><img alt=""><figcaption></figcaption></figure>'+
+    '<nav class="post-lightbox-controls" aria-label="Photo navigation">'+
+    '<button type="button" data-post-prev aria-label="Previous photograph">←</button>'+
+    '<span data-post-counter aria-live="polite"></span>'+
+    '<button type="button" data-post-next aria-label="Next photograph">→</button></nav></dialog>':'';
+  return '<section class="post-media-gallery" aria-label="Post images and videos">'+
+    '<div class="post-gallery-grid">'+cards+'</div>'+lightbox+'</section>';
+}
+
 export function card(post,index=0,{featured=false,reactions={},comments=0,media=[]}={}){
   const tag=post.demo?'SAMPLE':(statuses(post)[0]||'');
   const isHero=featured||!!post.featured;
@@ -47,7 +85,7 @@ export function detailPage({post,comments=[],counts={},next=null,media=[],langua
  const linkOf=code=>'/post/'+encodeURIComponent(post.slug)+(code==='en'?'':'?lang='+encodeURIComponent(code));
  const labels={en:'English',te:'తెలుగు',hi:'हिन्दी'};
  const languageNav=languages.length>1?'<nav class="v3a-language-picker" aria-label="Read in another language">'+languages.map(code=>'<a href="'+linkOf(code)+'" lang="'+code+'"'+(code===activeLanguage?' aria-current="page"':'')+'>'+e(labels[code]||code)+'</a>').join('')+'</nav>':'';
- let markup=`${header()}<main id="content" class="shell article-shell"><nav class="crumb"><a href="/">CORNER</a><span>/</span><span>${e(typeLabels[post.type])}</span></nav>${languageNav}<article class="post-article" data-post="${e(post.id)}"><header class="post-heading"><div class="post-caps"><span>${e(typeLabels[post.type])}</span>${post.demo?'<span class="demo-pill">SAMPLE</span>':''}<span>${e(dateLabel(post.published_at))}</span></div><h1>${e(post.title)}</h1>${post.excerpt?`<p>${e(post.excerpt)}</p>`:''}<div class="post-byline"><span class="avatar">V.</span><div><strong>Vamsi</strong><span>${Math.max(1,Math.ceil(post.body.split(/\s+/).length/220))} MIN READ</span></div><a href="#share" class="share-link">Share ↗</a></div></header>${post.type==='moment'&&!media.length?`<div class="detail-art" aria-hidden="true">${e(post.emoji||'✺')}</div>`:''}${renderMedia(media)}<div class="post-body">${bodyHtml||'<p>A small moment, shared here.</p>'}</div><div class="post-end">✳</div><div class="post-actions"><div><p class="eyebrow">LEAVE A LITTLE REACTION</p>${post.allow_reactions&&!post.demo?`<div class="reactions" data-post-id="${e(post.id)}">${REACTIONS.map(x=>`<button type="button" data-reaction="${e(x)}" aria-label="React ${e(x)}">${x} <span>${Number(counts[x]||0)}</span></button>`).join('')}</div>`:'<p class="action-note">A quiet appreciation is enough.</p>'}</div><div id="share" class="post-share"><button type="button" data-bookmark-post data-post-id="${e(post.id)}" hidden>Save for later ☆</button>${process.env.CORNER_V3_READING==='1'&&!post.demo?'<button type="button" data-v3-save-progress data-post-id="'+e(post.id)+'">Save reading position ◇</button>':''}<button type="button" data-copy-url>Copy link ↗</button></div></div>${post.allow_comments&&!post.demo?`<section class="comments"><div class="comments-title"><p class="eyebrow">THE CONVERSATION</p><h2>A few words back.</h2></div><div id="comments-list">${comments.length?comments.map(c=>`<article class="comment"><strong>${e(c.author_name)}</strong><time>${e(dateLabel(c.created_at))}</time><p>${e(c.body)}</p></article>`).join(''):'<p class="empty-comments">No comments yet.</p>'}</div><form id="comment-form" data-post-id="${e(post.id)}"><label for="comment-name">Name</label><input id="comment-name" name="name" maxlength="60" minlength="2" required placeholder="What should I call you?"><label for="comment-text">Your note</label><textarea id="comment-text" name="body" required minlength="3" maxlength="1000" placeholder="Something thoughtful, kind, or curious…"></textarea><button type="submit">Send comment <span>↗</span></button><small>Comments appear after review.</small></form></section>`:''}</article>${next?`<aside class="next-story"><p class="eyebrow">KEEP READING</p><a href="${safeLink(next.slug)}"><span>${e(next.title)}</span><b>↗</b></a></aside>`:''}</main>${footer()}${searchDialog()}<div class="toast-stack" id="toast-stack" aria-live="polite"></div>`;
+ let markup=`${header()}<main id="content" class="shell article-shell"><nav class="crumb"><a href="/">CORNER</a><span>/</span><span>${e(typeLabels[post.type])}</span></nav>${languageNav}<article class="post-article" data-post="${e(post.id)}"><header class="post-heading"><div class="post-caps"><span>${e(typeLabels[post.type])}</span>${post.demo?'<span class="demo-pill">SAMPLE</span>':''}<span>${e(dateLabel(post.published_at))}</span></div><h1>${e(post.title)}</h1>${post.excerpt?`<p>${e(post.excerpt)}</p>`:''}<div class="post-byline"><span class="avatar">V.</span><div><strong>Vamsi</strong><span>${Math.max(1,Math.ceil(post.body.split(/\s+/).length/220))} MIN READ</span></div><a href="#share" class="share-link">Share ↗</a></div></header>${post.type==='moment'&&!media.length?`<div class="detail-art" aria-hidden="true">${e(post.emoji||'✺')}</div>`:''}${renderPostGallery(media)}<div class="post-body">${bodyHtml||'<p>A small moment, shared here.</p>'}</div><div class="post-end">✳</div><div class="post-actions"><div><p class="eyebrow">LEAVE A LITTLE REACTION</p>${post.allow_reactions&&!post.demo?`<div class="reactions" data-post-id="${e(post.id)}">${REACTIONS.map(x=>`<button type="button" data-reaction="${e(x)}" aria-label="React ${e(x)}">${x} <span>${Number(counts[x]||0)}</span></button>`).join('')}</div>`:'<p class="action-note">A quiet appreciation is enough.</p>'}</div><div id="share" class="post-share"><button type="button" data-bookmark-post data-post-id="${e(post.id)}" hidden>Save for later ☆</button>${process.env.CORNER_V3_READING==='1'&&!post.demo?'<button type="button" data-v3-save-progress data-post-id="'+e(post.id)+'">Save reading position ◇</button>':''}<button type="button" data-copy-url>Copy link ↗</button></div></div>${post.allow_comments&&!post.demo?`<section class="comments"><div class="comments-title"><p class="eyebrow">THE CONVERSATION</p><h2>A few words back.</h2></div><div id="comments-list">${comments.length?comments.map(c=>`<article class="comment"><strong>${e(c.author_name)}</strong><time>${e(dateLabel(c.created_at))}</time><p>${e(c.body)}</p></article>`).join(''):'<p class="empty-comments">No comments yet.</p>'}</div><form id="comment-form" data-post-id="${e(post.id)}"><label for="comment-name">Name</label><input id="comment-name" name="name" maxlength="60" minlength="2" required placeholder="What should I call you?"><label for="comment-text">Your note</label><textarea id="comment-text" name="body" required minlength="3" maxlength="1000" placeholder="Something thoughtful, kind, or curious…"></textarea><button type="submit">Send comment <span>↗</span></button><small>Comments appear after review.</small></form></section>`:''}</article>${next?`<aside class="next-story"><p class="eyebrow">KEEP READING</p><a href="${safeLink(next.slug)}"><span>${e(next.title)}</span><b>↗</b></a></aside>`:''}</main>${footer()}${searchDialog()}<div class="toast-stack" id="toast-stack" aria-live="polite"></div>`;
  return basePage({title:post.title,description:post.excerpt||post.body.slice(0,150),path:linkOf(activeLanguage),content:markup,article:true,language:activeLanguage==='te'?'te-IN':activeLanguage==='hi'?'hi-IN':'en',alternates:languages.map(code=>({lang:code==='en'?'en':code+'-IN',url:config.siteUrl+linkOf(code)})),initial:{page:'detail',postId:post.id,demo:!!post.demo,hasLanguages:languages.length>1}});
 }
 export function simplePage({title,lead,body,path}){let html=`${header()}<main id="content" class="shell simple-page"><p class="eyebrow">THE CORNER / ${e(title.toUpperCase())}</p><h1>${e(title)}<span>.</span></h1><p class="simple-lede">${e(lead)}</p><div class="simple-text">${body}</div><a class="back-link" href="/">← Back to the corner</a></main>${footer()}${searchDialog()}<div class="toast-stack" id="toast-stack" aria-live="polite"></div>`;return basePage({title,path,content:html})}

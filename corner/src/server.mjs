@@ -270,10 +270,12 @@ async function api(req,res,pathName,url){
     if(image)buf=sanitizeImage(buf,mime);
     const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
     if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
+    const altText=pureText(url.searchParams.get('alt'),240);
+    const caption=pureText(url.searchParams.get('caption'),300);
     const dimensions=image?imageDimensions(buf,mime):null;
     if(image&&(!dimensions||!dimensions.width||!dimensions.height||dimensions.width*dimensions.height>50_000_000))throw httpError(422,'Unsupported or oversized image dimensions');
     const file=crypto.randomBytes(18).toString('base64url')+ext;fs.mkdirSync(config.uploads,{recursive:true});fs.writeFileSync(path.join(config.uploads,file),buf,{flag:'wx'});
-    let item;try{item=store.addMedia({id:'media_'+crypto.randomUUID(),ownerId:postId,storageKey:file,mimeType:mime,size:buf.length,alt:url.searchParams.get('alt')||'',caption:url.searchParams.get('caption')||'',width:dimensions?.width,height:dimensions?.height});}
+    let item;try{item=store.addMedia({id:'media_'+crypto.randomUUID(),ownerId:postId,storageKey:file,mimeType:mime,size:buf.length,alt:altText,caption,width:dimensions?.width,height:dimensions?.height});}
     catch(err){fs.rmSync(path.join(config.uploads,file),{force:true});throw err}
     store.audit(owner.id,'media.uploaded','media',item.id,{size:item.size_bytes});return ok(res,{...item,url:(config.basePath||'')+'/media/'+file});
   }
