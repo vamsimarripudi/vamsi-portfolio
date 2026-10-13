@@ -1,3 +1,4 @@
+import {verifyAnalyticsPopups} from './analytics-popup-acceptance.mjs';
 import {verifyAdvancedAnalytics} from './advanced-analytics-acceptance.mjs';
 /** Local-only acceptance: real isolated Corner sign-in, every public page, V3 and reflow.
  * No production database, mailbox, credentials, or session is used by this suite. */
@@ -76,8 +77,10 @@ try{
   if([390,1366].includes(width))await ownerPage.screenshot({path:path.join(screenshots,'analytics-'+width+'.png'),fullPage:true});console.log('PASS reading report viewport '+width);
  }
  const advancedLayouts=await verifyAdvancedAnalytics({page:ownerPage,admin,origin,screenshots,firstDate,lastDate});
- const downloadPromise=ownerPage.waitForEvent('download');await ownerPage.getByRole('button',{name:'Export CSV'}).click();const download=await downloadPromise;const csv=await fs.readFile(await download.path(),'utf8');assert.ok(csv.includes('Feed visit')&&csv.includes('40'));assert.ok(!csv.includes('journey_key'));
- await ownerPage.getByLabel('Reading period').selectOption('custom');await ownerPage.getByLabel('Reading start date').fill('2026-10-10');await ownerPage.getByLabel('Reading end date').fill('2026-10-01');await ownerPage.getByRole('button',{name:'Apply',exact:true}).click();await ownerPage.getByRole('alert').waitFor();assert.equal(await ownerPage.getByRole('button',{name:'Export CSV'}).isDisabled(),true);
+ await verifyAnalyticsPopups({page:ownerPage,origin,screenshots,firstDate,lastDate});
+ await ownerPage.getByRole('button',{name:'Export report',exact:true}).click();
+ const downloadPromise=ownerPage.waitForEvent('download');await ownerPage.getByRole('button',{name:'Export CSV'}).click();const download=await downloadPromise;const csv=await fs.readFile(await download.path(),'utf8');assert.ok(csv.includes('Feed visit')&&csv.includes('40'));assert.ok(!csv.includes('journey_key'));await ownerPage.keyboard.press('Escape');
+ await ownerPage.getByRole('button',{name:'Date range and filters',exact:true}).click();await ownerPage.getByLabel('Reading period').selectOption('custom');await ownerPage.getByLabel('Reading start date').fill('2026-10-10');await ownerPage.getByLabel('Reading end date').fill('2026-10-01');await ownerPage.getByRole('button',{name:'Apply',exact:true}).click();await ownerPage.getByRole('alert').waitFor();assert.equal(await ownerPage.locator('[data-export]').isDisabled(),true);
  // Deterministic failure state: no stale stats are presented as current numbers.
  await ownerPage.route('**/api/admin/analytics/reading?**',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{message:'Temporary report failure.'}})}));await ownerPage.getByRole('button',{name:'Refresh',exact:true}).click();await ownerPage.getByText(/Temporary report failure/).waitFor();assert.equal(await ownerPage.locator('.ca-step').count(),0);
  // Browser privacy signals prevent IDs and collection even if a consent cookie exists.
