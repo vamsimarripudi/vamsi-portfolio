@@ -1,0 +1,39 @@
+name: Verify website analytics scope and Track
+on:
+  push:
+    branches: [master, fix/website-analytics-track-20261013]
+    paths: ['public/website-analytics*', 'public/site-analytics-contract.mjs', 'server/site-analytics*', 'server/track-analytics*', 'api/track/**', 'src/Track*', 'src/WebsiteAnalytics*', 'src/SiteMeasurement.jsx', 'src/App.jsx', 'src/privacy.js', 'vercel.json', 'scripts/verify-website-analytics.mjs', 'tests/site-analytics.test.mjs', 'tests/fixtures/site-db.mjs', '.github/workflows/verify-website-analytics.yml']
+  pull_request:
+    paths: ['public/website-analytics*', 'public/site-analytics-contract.mjs', 'server/site-analytics*', 'server/track-analytics*', 'api/track/**', 'src/Track*', 'src/WebsiteAnalytics*', 'src/SiteMeasurement.jsx', 'src/App.jsx', 'src/privacy.js', 'vercel.json', 'scripts/verify-website-analytics.mjs', 'tests/site-analytics.test.mjs', 'tests/fixtures/site-db.mjs', '.github/workflows/verify-website-analytics.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install and validate website/report contracts
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+      - name: Install browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium --with-deps
+      - name: Verify actual public React flow and isolated PostgreSQL report
+        run: node scripts/verify-website-analytics.mjs
+      - name: Retain test screenshots and scope evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-analytics-evidence
+          path: screenshots/website-analytics/
+          retention-days: 7

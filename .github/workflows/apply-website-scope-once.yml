@@ -1,0 +1,54 @@
+name: Apply integrity-verified website scope edits
+on:
+  push:
+    branches: [chore/website-scope-apply-20261013]
+    paths: [.github/workflows/apply-website-scope-once.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'vamsimarripudi/vamsi-portfolio' && github.ref == 'refs/heads/chore/website-scope-apply-20261013'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Retrieve reviewed source and verify every file before staging
+        run: |
+          python3 - <<'PY'
+          import gzip,hashlib,json,pathlib,subprocess,urllib.request
+          url='https://sb-5ttywp0hcekk.vercel.run/9fd5180c69d8d53513c2378d543cb102698c3bf1bf7d591c.gz'
+          with urllib.request.urlopen(url,timeout=30) as response:
+              packed=response.read(200000)
+          assert hashlib.sha256(packed).hexdigest()=='7548577ec43d948b5fcaeea2bd9b730e3d48f40128855f16d33995a0c5dab988'
+          raw=gzip.decompress(packed)
+          assert hashlib.sha256(raw).hexdigest()=='0c77609b4ec010dab6a6fbbc1b226d91ff247c9d682dc29a15f4aac317ed7d47'
+          items=json.loads(raw)
+          def blob(text):
+              data=text.encode()
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          allowed={'db/migrations/0002_site_analytics.sql','docs/website-analytics-track-scope.md','public/site-analytics-contract.mjs','public/website-analytics.css','public/website-analytics.js','scripts/verify-website-analytics.mjs','server/site-analytics-handler.js','server/site-analytics-report.js','server/site-analytics-store.js','src/SiteMeasurement.jsx','src/TrackSourceReport.jsx','src/WebsiteAnalytics.css','src/WebsiteAnalytics.jsx','tests/fixtures/site-db.mjs','tests/site-analytics.test.mjs','api/track/cron/followups.js','api/track/metrics.js','corner/src/server.mjs','corner/src/ui.mjs','scripts/verify-track-analytics.mjs','scripts/verify-track-visual.mjs','server/track-analytics-handler.js','src/App.jsx','src/Track.jsx','src/TrackAnalytics.jsx','src/privacy.js','vercel.json'}
+          assert len(items)==len(allowed) and {i['path'] for i in items}==allowed
+          for item in items:
+              file=pathlib.Path(item['path'])
+              if 'copy' in item:
+                  assert item['copy']=='src/TrackAnalytics.jsx'
+                  text=subprocess.check_output(['git','show','HEAD:'+item['copy']]).decode()
+              elif 'content' in item:
+                  assert not file.exists()
+                  text=item['content']
+              else:
+                  text=file.read_text()
+                  assert blob(text)==item['before'], 'Source changed: '+str(file)
+                  for start,end,value in reversed(item['changes']):
+                      assert 0<=start<=end<=len(text)
+                      text=text[:start]+value+text[end:]
+              assert blob(text)==item['after'], 'Result mismatch: '+str(file)
+              file.parent.mkdir(parents=True,exist_ok=True)
+              file.write_text(text)
+              print('Verified '+str(file)+' '+item['after'])
+          subprocess.run(['git','add','--',*sorted(allowed)],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build: apply exact validated website analytics scope changes'
+          git push origin HEAD:refs/heads/chore/website-scope-apply-20261013
