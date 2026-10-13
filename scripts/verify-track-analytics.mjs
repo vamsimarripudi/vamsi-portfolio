@@ -38,7 +38,7 @@ try {
     await page.locator('.ta-metric').first().waitFor();
     assert.equal(await page.locator('.ta-metric').count(), 6);
     assert.equal(await page.locator('.ta-breakdowns .ta-panel').count(), 5);
-    assert.equal(await page.locator('.track-workspace-nav a[aria-current="page"]').textContent(), 'Analytics');
+    assert.equal(await page.locator('.track-workspace-nav a[aria-current="page"]').textContent(), 'Website analytics');
     const layout = await page.evaluate(() => ({
       width: innerWidth, scroll: document.documentElement.scrollWidth,
       heading: parseFloat(getComputedStyle(document.querySelector('.ta-heading h1')).fontSize),
@@ -86,7 +86,8 @@ try {
     if ([390, 834, 1440].includes(width)) await page.screenshot({ path: `/tmp/track-analytics-${width}.png`, fullPage: true });
     await page.getByRole('link', { name: 'Enquiries', exact: true }).click();
     await page.locator('.track-kpi').first().waitFor();
-    await page.getByRole('link', { name: 'Analytics', exact: true }).click();
+    await page.goto(`${base}/track/analytics?source=ga4&range=7d&compare=previous`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.ta-metric').first().waitFor();
     await page.locator('.ta-metric').first().waitFor();
     mode = 'expired'; await page.getByRole('button', { name: 'Refresh analytics' }).click();
     await page.locator('.track-auth').waitFor();

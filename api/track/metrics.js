@@ -1,7 +1,9 @@
+import websiteCollector from '../../server/site-analytics-handler.js';
 import analytics from '../../server/track-analytics-handler.js';
 import { json, query, requireOwner } from '../lib/track.js';
 
 export default async function handler(req, res) {
+  if (req.query?.view === 'site-events') return websiteCollector(req, res);
   // Share the existing function slot; the analytics handler retains its own owner gate.
   if (req.query?.view === 'analytics') {
     const { view, ...query } = req.query;

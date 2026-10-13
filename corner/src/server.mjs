@@ -81,7 +81,7 @@ async function readBody(req,max=110000){
   const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>max)throw httpError(413,'Request too large');chunks.push(chunk)}return Buffer.concat(chunks)
 }
 async function readJSON(req,max=110000){if(!(req.headers['content-type']||'').includes('application/json'))throw httpError(415,'Expected JSON');let data;try{data=JSON.parse((await readBody(req,max)).toString('utf8')||'{}')}catch{throw httpError(400,'Malformed JSON')}if(!data||typeof data!=='object'||Array.isArray(data))throw httpError(400,'Expected object');return data}
-function page(res,html,status=200,privatePage=false){if(config.basePath)html=html.replace(/(href|src|action)=(["'])\/(?!\/)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':privatePage?'private, no-store, max-age=0':'public, max-age=0, must-revalidate','vary':'Cookie','x-content-type-options':'nosniff'})}
+function page(res,html,status=200,privatePage=false){if(config.basePath)html=html.replace(/(href|src|action)=(["'])\/(?!\/|website-analytics\.js)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':privatePage?'private, no-store, max-age=0':'public, max-age=0, must-revalidate','vary':'Cookie','x-content-type-options':'nosniff'})}
 function isBot(req){return /bot|crawler|spider|preview|curl/i.test(req.headers['user-agent']||'')}
 function safetyHeaders(res){
   res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','strict-origin-when-cross-origin');res.setHeader('x-frame-options','DENY');

@@ -1,3 +1,4 @@
+import {cleanupWebsite} from '../../../server/site-analytics-store.js';
 import { createActivity, createEmailEvent, emailShell, json, query, sendResend, TRACK_OWNER_EMAIL } from '../../lib/track.js';
 
 const authorized = (req) => {
@@ -37,7 +38,8 @@ export default async function handler(req, res) {
         await createEmailEvent({ enquiryId: enquiry.id, emailType: 'follow_up_reminder', recipient: TRACK_OWNER_EMAIL, status: 'FAILED', failureCode: error.code || 'UNKNOWN' });
       }
     }
-    return json(res, 200, { ok: true, processed: due.length });
+    let analyticsCleanup='complete';try{await cleanupWebsite(sql)}catch{analyticsCleanup='failed';console.error('website.analytics.cleanup.failed')}
+    return json(res, 200, { ok: true, processed: due.length, analyticsCleanup });
   } catch (error) {
     console.error('track.cron.followups.failed', { message: error instanceof Error ? error.message : 'unknown' });
     return json(res, 503, { ok: false, message: 'Follow-up processing is temporarily unavailable.' });

@@ -1,8 +1,9 @@
+import {loadWebsiteAnalytics} from './site-analytics-report.js';
 import { json, requireOwner } from '../api/lib/track.js';
 import { loadEnquiryAnalytics, loadGa4, safeAnalyticsError } from './track-analytics.js';
 
 // Dependency injection allows testing authorization and upstream failures without production credentials.
-export function createAnalyticsHandler({ authorize = requireOwner, enquiries = loadEnquiryAnalytics, ga4 = loadGa4 } = {}) {
+export function createAnalyticsHandler({ authorize = requireOwner, enquiries = loadEnquiryAnalytics, ga4 = loadGa4, website = loadWebsiteAnalytics } = {}) {
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vary', 'Cookie');
@@ -11,13 +12,13 @@ export function createAnalyticsHandler({ authorize = requireOwner, enquiries = l
     const owner = await authorize(req, res);
     if (!owner) return;
     const input = req.query || {};
-    if (Object.keys(input).some(key => !['source', 'range', 'start', 'end', 'compare'].includes(key)) ||
+    if (Object.keys(input).some(key => !['source', 'range', 'start', 'end', 'compare', ...(input.source==='website'?['device','trafficSource']:[])].includes(key)) ||
       Object.values(input).some(value => typeof value !== 'string' || value.length > 32) ||
-      !['enquiries', 'ga4'].includes(input.source || 'enquiries')) {
+      !['enquiries', 'ga4', 'website'].includes(input.source || 'enquiries')) {
       return json(res, 400, { ok: false, code: 'INVALID_QUERY', message: 'Use a supported analytics source and date range.' });
     }
     try {
-      const report = await (input.source === 'ga4' ? ga4(input) : enquiries(input));
+      const report = await (input.source === 'website' ? website(input) : input.source === 'ga4' ? ga4(input) : enquiries(input));
       return json(res, 200, { ok: true, report });
     } catch (error) {
       const safe = safeAnalyticsError(error);
