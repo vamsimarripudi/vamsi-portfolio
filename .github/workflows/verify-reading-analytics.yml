@@ -2,9 +2,9 @@ name: Verify reading analytics and consent
 on:
   push:
     branches: [master, feat/reading-analytics-20261013]
-    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
+    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'scripts/advanced-analytics-acceptance.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
   pull_request:
-    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
+    paths: ['corner/**', 'scripts/verify-reading-analytics.mjs', 'scripts/advanced-analytics-acceptance.mjs', 'docs/reading-measurement-contract.json', '.github/workflows/verify-reading-analytics.yml']
   workflow_dispatch:
 permissions:
   contents: read
