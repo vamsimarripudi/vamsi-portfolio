@@ -2,8 +2,8 @@ export const PRIVACY = {
   operator: 'Vamsi Marripudi',
   contactEmail: 'connect@vamsimarripudi.me',
   siteUrl: 'https://vamsimarripudi.me',
-  lastUpdated: '24 August 2026',
-  version: '1.1',
+  lastUpdated: '13 October 2026',
+  version: '1.2',
 };
 
 export const privacySections = [
@@ -24,12 +24,12 @@ export const privacySections = [
     body: 'The site is hosted on Vercel. Contact-form email delivery uses Resend, and the private Enquiry Tracker stores contact records in Neon PostgreSQL. Messages are delivered to Vamsi’s enquiry mailbox. These providers process only the information needed to host the site, deliver the message, and operate the relevant service. Their own privacy notices apply to their services.',
   },
   {
-    title: 'Local preferences and no advertising tracker',
-    body: 'This site does not use advertising cookies, a marketing tracker, or a visitor analytics product. Your device may store a theme preference and an optional Signal Runner best score in local storage. Those values stay in your browser and can be removed through browser settings.',
+    title: 'Optional website analytics and local preferences',
+    body: 'Website analytics is optional and off until you allow it in the footer. It measures allowlisted public pages, broad source and device groups, coarse scroll depth, visible active time, selected contact-flow success/failure and resume/profile link clicks. A random short-lived tab identifier groups public visits; it is HMAC-protected before storage in the existing Neon database. Names, form values, comments, search terms, URL queries, raw referrers, precise location and screen recordings are not included. Nothing in this first-party source is sent to Google. Browser Do Not Track and Global Privacy Control disable collection; private /track, account and admin routes are excluded. Your theme preference and optional Signal Runner score remain browser-local. Website consent is separate from existing Corner reading preferences.',
   },
   {
     title: 'Retention',
-    body: 'Contact-form records, private notes, and delivery events are stored in the Enquiry Tracker for up to 24 months after the last meaningful interaction, then reviewed for deletion or anonymization. Spam records are reviewed within 90 days. Approved erasure requests redact the contact record and associated delivery recipients while retaining only minimal non-identifying audit evidence where necessary. In-memory abuse controls are short-lived: rate-limit entries are kept for up to 15 minutes and duplicate-submission fingerprints for up to 10 minutes per running instance. Contact correspondence, delivery, platform, and security logs are retained under the applicable provider account settings or longer only where reasonably needed for a legal, security, or dispute-related reason.',
+    body: 'Website analytics observations expire after 90 days; a daily cleanup is attached to the existing authenticated maintenance job. Withdrawal stops new observation and removes the current tab journey when the server confirms it; older tab identifiers and provider backups follow their retention. A 25-hour revocation marker prevents delayed requests from restoring a deleted journey. The website choice cookie lasts 180 days, and tab IDs rotate after 30 minutes inactivity or 24 hours maximum. Contact-form records, private notes, and delivery events are stored in the Enquiry Tracker for up to 24 months after the last meaningful interaction, then reviewed for deletion or anonymization. Spam records are reviewed within 90 days. Approved erasure requests redact the contact record and associated delivery recipients while retaining only minimal non-identifying audit evidence where necessary. In-memory abuse controls are short-lived: rate-limit entries are kept for up to 15 minutes and duplicate-submission fingerprints for up to 10 minutes per running instance. Contact correspondence, delivery, platform, and security logs are retained under the applicable provider account settings or longer only where reasonably needed for a legal, security, or dispute-related reason.',
   },
   {
     title: 'Security',

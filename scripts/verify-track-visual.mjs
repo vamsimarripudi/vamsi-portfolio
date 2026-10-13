@@ -18,7 +18,7 @@ try{
   });
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/track',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/track/enquiries',{waitUntil:'domcontentloaded'});
   await page.locator('.track-kpi').first().waitFor({timeout:10000});
   await page.locator('.track-table-wrap tbody tr').first().waitFor({timeout:10000});
   const state=await page.evaluate(()=>{
