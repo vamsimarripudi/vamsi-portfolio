@@ -1,0 +1,38 @@
+name: Apply reviewed analytics density fixes
+on:
+  push:
+    branches: [chore/advanced-density-20261013]
+    paths: [.delivery/density/edits.json, .github/workflows/apply-advanced-density-once.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'vamsimarripudi/vamsi-portfolio' && github.ref == 'refs/heads/chore/advanced-density-20261013'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Apply exact density edits on temporary branch
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          def digest(text):
+              b=text.encode('utf-8')
+              return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          items=json.loads(pathlib.Path('.delivery/density/edits.json').read_text())
+          allowed={'corner/public/analysis-explore.css','corner/public/analysis-explore.js','corner/tests/reading-exploration.test.mjs','scripts/advanced-analytics-acceptance.mjs'}
+          assert {x['path'] for x in items} == allowed
+          for item in items:
+              file=pathlib.Path(item['path']);text=file.read_text()
+              assert digest(text)==item['before'], 'Base changed: '+item['path']
+              for start,end,value in reversed(item['changes']):
+                  assert 0 <= start <= end <= len(text)
+                  text=text[:start]+value+text[end:]
+              assert digest(text)==item['after'], 'Patched bytes differ: '+item['path']
+              file.write_text(text)
+          subprocess.run(['git','add','--',*sorted(allowed)],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build: apply verified density edits on temporary branch'
+          git push origin HEAD:refs/heads/chore/advanced-density-20261013
