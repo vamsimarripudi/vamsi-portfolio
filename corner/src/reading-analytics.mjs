@@ -1,3 +1,4 @@
+import {advancedReading} from './reading-exploration.mjs';
 import {createHmac} from 'node:crypto';
 import {httpError} from './domain.mjs';
 
@@ -79,6 +80,7 @@ export class ReadingAnalytics{
  }
  report(actor,input={}){
   if(actor?.role!=='owner')throw httpError(403,'Owner permissions required.','OWNER_REQUIRED');
+  if(input.advanced==='1'){const {advanced,source,entry,...dates}=input;void advanced;const now=this.clock();return advancedReading(this.store,readingRange(dates,now),now,{source,entry})}
   const now=this.clock(),range=readingRange(input,now),cutoff=new Date(now.getTime()-30*60000).toISOString();
   const query=(r,extra='')=>this.store.all(`SELECT page,post_id,device,source,depth,active_ms,started_at,updated_at,reached25_at,reached50_at,reached75_at,reached90_at,engaged_at,story_click,reacted,shared,comment_started,comment_success,request_failed,media_failed,reason,journey_key,view_key FROM reading_views WHERE started_at>=? AND started_at<? AND (?='all' OR device=?) ${extra} ORDER BY started_at LIMIT 50001`,r.from,r.to,range.device,range.device);
   const current=query(range),previous=range.previous?query(range.previous):null;
