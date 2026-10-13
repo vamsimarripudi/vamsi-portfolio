@@ -1,0 +1,43 @@
+name: Apply verified website style corrections
+on:
+  push:
+    branches: [chore/site-style-apply-20261013]
+    paths: [.delivery/site-style.json, .github/workflows/apply-site-style-once.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'vamsimarripudi/vamsi-portfolio' && github.ref == 'refs/heads/chore/site-style-apply-20261013'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Apply exact verified source
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          def blob(text):
+              b=text.encode()
+              return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          items=json.loads(pathlib.Path('.delivery/site-style.json').read_text())
+          allowed={'src/WebsiteAnalytics.css','scripts/verify-website-analytics.mjs','tests/site-analytics-style.test.mjs'}
+          assert {x['path'] for x in items}==allowed
+          for item in items:
+              p=pathlib.Path(item['path'])
+              if 'content' in item:
+                  assert not p.exists()
+                  text=item['content']
+              else:
+                  text=p.read_text()
+                  assert blob(text)==item['before'],str(p)
+                  for start,end,value in reversed(item['changes']):
+                      text=text[:start]+value+text[end:]
+              assert blob(text)==item['after'],str(p)
+              p.write_text(text)
+              print('Verified '+str(p)+' '+item['after'])
+          subprocess.run(['git','add','--',*sorted(allowed)],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build: apply verified website contrast and mobile sheet fixes'
+          git push origin HEAD:refs/heads/chore/site-style-apply-20261013
