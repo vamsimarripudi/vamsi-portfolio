@@ -58,16 +58,16 @@
   ],
   "rewrites": [
     {
-      "source": "/api/website/events",
-      "destination": "/api/track/metrics?view=site-events"
-    },
-    {
       "source": "/corner",
       "destination": "https://corner-web-production-2600.up.railway.app/corner"
     },
     {
       "source": "/corner/:path*",
       "destination": "https://corner-web-production-2600.up.railway.app/corner/:path*"
+    },
+    {
+      "source": "/api/website/events",
+      "destination": "/api/track/metrics?view=site-events"
     },
     {
       "source": "/api/birthday",
