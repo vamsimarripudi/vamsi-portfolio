@@ -1,3 +1,4 @@
+import {buildExplorer} from './reading-explorer.mjs';
 import {createHmac} from 'node:crypto';
 import {httpError} from './domain.mjs';
 
@@ -98,7 +99,7 @@ export class ReadingAnalytics{
    if(rows.some(r=>r.updated_at>=cutoff)){activeJourneys++;continue}
    stages[0]++;const story=rows.find(r=>r.page==='story'&&r.started_at>=rows[0].started_at);if(!story)continue;stages[1]++;
    const completed=rows.find(r=>r.page==='story'&&r.reached90_at);if(!completed)continue;stages[2]++;
-   if(rows.some(r=>r.view_key===completed.view_key&&r.engaged_at&&r.engaged_at>=completed.reached90_at))stages[3]++;
+   if(rows.some(r=>r.page==='story'&&r.reached90_at&&r.engaged_at&&r.engaged_at>=r.reached90_at))stages[3]++;
   }
   const suppressFunnel=stages.some(n=>n>0&&n<MINIMUM)||stages.slice(1).some((n,i)=>stages[i]-n>0&&stages[i]-n<MINIMUM);
   const funnel=['Feed visit','Open a story','Reach 90% + 10 seconds','React, share or comment after reading'].map((label,i)=>({label,value:suppressFunnel?null:stages[i],drop:i===3||suppressFunnel?null:stages[i]-stages[i+1],rate:i===3||suppressFunnel||!stages[i]?null:stages[i+1]/stages[i]}));
@@ -122,6 +123,8 @@ export class ReadingAnalytics{
   if(!current.length)result.nextActions.push({evidence:'No consented reading observations in this range.',action:'Check the selected dates and reader opt-in flow; never replace missing data with estimated traffic.'});
   else if(stages[0]<20)result.nextActions.push({evidence:'Insufficient completed feed-entry journeys for a stable bottleneck recommendation.',action:'Collect more consented journeys; inspect individual layout/error tests rather than drawing a causal conclusion.'});
   else if(!suppressFunnel){const drops=funnel.slice(0,3).filter(s=>s.value>=20).sort((a,b)=>b.drop/b.value-a.drop/a.value);if(drops[0])result.nextActions.push({evidence:`Largest observed attrition: ${drops[0].label} (${drops[0].drop} of ${drops[0].value}).`,action:'Treat this as a hypothesis. Compare devices and reader feedback, reproduce errors, and test a targeted change.'})}
+  const priorPrevious=range.previous?new Set(this.store.all('SELECT DISTINCT journey_key FROM reading_views WHERE started_at<? AND started_at>=?',range.previous.from,new Date(Date.parse(range.previous.from)-DAY).toISOString()).map(r=>r.journey_key)):new Set();
+  result.explorer=buildExplorer({current,previous,range,now,priorCurrent:before,priorPrevious});
   return result;
  }
 }

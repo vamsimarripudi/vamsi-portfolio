@@ -74,10 +74,27 @@ try{
   assert.ok(geom.scroll<=width+1,'No report overflow '+width);assert.ok(geom.h1<=32);if(width>=768)assert.equal(geom.sidebar,'fixed');
   if([390,1366].includes(width))await ownerPage.screenshot({path:path.join(screenshots,'analytics-'+width+'.png'),fullPage:true});console.log('PASS reading report viewport '+width);
  }
+ // Advanced exploration uses the same real isolated report, never mocked production numbers.
+ await ownerPage.getByRole('tab',{name:'Journeys',exact:true}).waitFor();
+ await ownerPage.getByLabel('Journey entry').selectOption('story');assert.ok((await ownerPage.locator('.ca-explorer').innerText()).includes('Story entry'));
+ for(const width of [320,390,768,1366]){
+  await ownerPage.setViewportSize({width,height:900});
+  for(const name of ['Journeys','Segments','Paths & trends','Quality & actions']){
+   await ownerPage.getByRole('tab',{name,exact:true}).click();
+   assert.equal(await ownerPage.getByRole('tab',{name,exact:true}).getAttribute('aria-selected'),'true');
+   assert.ok(await ownerPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Explorer reflow '+name+' '+width);
+  }
+ }
+ await ownerPage.getByRole('tab',{name:'Segments',exact:true}).click();await ownerPage.getByLabel('Compare segments').selectOption('sources');
+ await ownerPage.getByRole('button',{name:'Remember view'}).click();const saved=await ownerPage.evaluate(()=>JSON.parse(sessionStorage.getItem('corner-explorer-view')));assert.deepEqual(Object.keys(saved).sort(),['mode','segment','tab']);assert.equal(saved.mode,'story');
+ await ownerPage.getByRole('tab',{name:'Journeys',exact:true}).focus();await ownerPage.keyboard.press('ArrowRight');assert.equal(await ownerPage.getByRole('tab',{name:'Segments',exact:true}).getAttribute('aria-selected'),'true');
+ const extraDownload=ownerPage.waitForEvent('download');await ownerPage.getByRole('button',{name:'Export exploration'}).click();const extra=await extraDownload;const advancedCSV=await fs.readFile(await extra.path(),'utf8');assert.ok(advancedCSV.includes('Advanced aggregate exploration'));assert.ok(advancedCSV.includes('Unavailable'));assert.ok(!advancedCSV.includes('journey_key'));
+ await ownerPage.getByRole('tab',{name:'Journeys',exact:true}).click();await ownerPage.getByLabel('Journey entry').selectOption('feed');await ownerPage.setViewportSize({width:1366,height:1000});await ownerPage.screenshot({path:path.join(screenshots,'explorer-1366.png'),fullPage:true});
+ await ownerPage.setViewportSize({width:390,height:844});await ownerPage.screenshot({path:path.join(screenshots,'explorer-390.png'),fullPage:true});
  const downloadPromise=ownerPage.waitForEvent('download');await ownerPage.getByRole('button',{name:'Export CSV'}).click();const download=await downloadPromise;const csv=await fs.readFile(await download.path(),'utf8');assert.ok(csv.includes('Feed visit')&&csv.includes('40'));assert.ok(!csv.includes('journey_key'));
  await ownerPage.getByLabel('Reading period').selectOption('custom');await ownerPage.getByLabel('Reading start date').fill('2026-10-10');await ownerPage.getByLabel('Reading end date').fill('2026-10-01');await ownerPage.getByRole('button',{name:'Apply',exact:true}).click();await ownerPage.getByRole('alert').waitFor();assert.equal(await ownerPage.getByRole('button',{name:'Export CSV'}).isDisabled(),true);
  // Deterministic failure state: no stale stats are presented as current numbers.
- await ownerPage.route('**/api/admin/analytics/reading?**',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{message:'Temporary report failure.'}})}));await ownerPage.getByRole('button',{name:'Refresh',exact:true}).click();await ownerPage.getByText(/Temporary report failure/).waitFor();assert.equal(await ownerPage.locator('.ca-step').count(),0);
+ await ownerPage.route('**/api/admin/analytics/reading?**',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:{message:'Temporary report failure.'}})}));await ownerPage.getByRole('button',{name:'Refresh',exact:true}).click();await ownerPage.getByText(/Temporary report failure/).waitFor();assert.equal(await ownerPage.locator('.ca-step').count(),0);assert.equal(await ownerPage.locator('.ca-explorer').count(),0,'No stale explorer after API failure');
  // Browser privacy signals prevent IDs and collection even if a consent cookie exists.
  const dnt=await browser.newContext({extraHTTPHeaders:{DNT:'1'},reducedMotion:'reduce'});await dnt.addCookies([{name:'corner_reading_consent',value:'allow',domain:'127.0.0.1',path:'/corner'}]);await dnt.addInitScript(()=>Object.defineProperty(navigator,'doNotTrack',{get:()=> '1'}));const d=await dnt.newPage();let dn=0;d.on('request',r=>{if(r.url().endsWith('/api/analytics/reading'))dn++});await d.goto(origin+'/corner/post/'+post.slug);await d.locator('[data-reading-allow]').waitFor({state:'attached'});assert.equal(await d.locator('[data-reading-allow]').isDisabled(),true);assert.equal(dn,0);assert.equal(await d.evaluate(()=>sessionStorage.getItem('corner-reading-journey-v1')),null);await dnt.close();
  fixtureStore.close();assert.deepEqual(exceptions,[]);await fs.writeFile(path.join(screenshots,'evidence.json'),JSON.stringify({viewports:8,orderedFunnel:[40,30,20,10],defaultOff:true,withdrawal:true,dnt:true,privateAPI:true,noPersonalFields:true,readerSnapshots:true,csv:true,failureState:true},null,2));
