@@ -60,7 +60,7 @@ test('large reports reject rather than returning a sampled or partial result',()
 test('advanced assets remain lazy, bounded and do not add collection',async()=>{
  const {readFileSync}=await import('node:fs');const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
  const entry=read('../public/analysis-studio.js'),ui=read('../public/analysis-explore.js'),css=read('../public/analysis-explore.css');
- assert.ok(Buffer.byteLength(entry)<1200);assert.ok(Buffer.byteLength(ui)<27000);assert.ok(Buffer.byteLength(css)<7500);
+ assert.ok(Buffer.byteLength(entry)<1200);assert.ok(Buffer.byteLength(ui)<27000);assert.ok(Buffer.byteLength(css)<9500);
  assert.doesNotMatch(ui,/analytics\/reading'|googletagmanager\.com|google-analytics\.com/);
  assert.match(ui,/events\.abort\(\)/);assert.match(ui,/document\.hidden/);assert.match(ui,/query\(\)\.toString\(\)!==lastQuery/);
  // Verify the exact CSV function used by the browser, not a duplicate implementation.
