@@ -60,6 +60,8 @@ try{
  const first=new Date(+base+330*60000).toISOString().slice(0,10),last=new Date(Date.now()+330*60000).toISOString().slice(0,10),reportURL=origin+'/track?source=website&range=custom&start='+first+'&end='+last+'&compare=none';
  await context.addCookies([{name:'vm_track_session',value:ownerToken,url:origin}]);await page.goto(reportURL);await page.getByRole('heading',{name:'Website analytics',exact:true}).waitFor();await page.waitForFunction(()=>document.querySelectorAll('.ws-metrics article').length===4);assert.equal(await page.locator('.ws-metrics article').first().locator('strong').innerText(),'90');
  assert.equal(await page.locator('.ws-toolbar a').count(),0,'No Google header link');
+ await page.mouse.move(0,0);const colors=await page.getByRole('button',{name:'Devices',exact:true}).evaluate(el=>({bg:getComputedStyle(el).backgroundColor,fg:getComputedStyle(el).color}));assert.deepEqual(colors,{bg:'rgb(255, 255, 255)',fg:'rgb(41, 50, 65)'},'Website toolbar is isolated from enquiry button styles');
+ const activeTab=await page.getByRole('tab',{name:'Overview',exact:true}).evaluate(el=>({bg:getComputedStyle(el).backgroundColor,fg:getComputedStyle(el).color}));assert.deepEqual(activeTab,{bg:'rgb(234, 240, 251)',fg:'rgb(37, 75, 156)'},'Selected tab has readable approved colors');
  let layouts=0,popups=0;
  for(const width of [320,390,600,768,834,1024,1366,1920]){
   await page.setViewportSize({width,height:width<768?844:900});
@@ -67,8 +69,8 @@ try{
   await page.getByRole('tab',{name:'Overview',exact:true}).click();
   if([390,1366].includes(width))await page.screenshot({path:screenshots+'/website-'+width+'.png',fullPage:true});
   for(const name of ['Audience overview','Devices','Export report','Date range and filters','More options']){
-   const trigger=page.getByRole('button',{name,exact:true});await trigger.click();const dialog=page.getByRole('dialog');assert.equal(await dialog.evaluate(d=>d.open),true);const box=await dialog.boundingBox();assert.ok(box.x>=-1&&box.x+box.width<=width+1,'Popup fits '+name+' '+width);assert.ok(await dialog.evaluate(d=>d.scrollWidth<=d.clientWidth+1),'Popup content fits '+name+' '+width);
-   if(name==='Devices'&&[390,1366].includes(width))await page.screenshot({path:screenshots+'/devices-'+width+'.png',fullPage:true});
+   const trigger=page.getByRole('button',{name,exact:true});await trigger.click();const dialog=page.getByRole('dialog');assert.equal(await dialog.evaluate(d=>d.open),true);const box=await dialog.boundingBox();assert.ok(box.x>=-1&&box.x+box.width<=width+1,'Popup fits '+name+' '+width);if(width<768)assert.ok(Math.abs(box.width-width)<2,'Mobile bottom sheet uses viewport width');assert.ok(await dialog.evaluate(d=>d.scrollWidth<=d.clientWidth+1),'Popup content fits '+name+' '+width);
+   if(name==='Devices'&&[390,1366].includes(width))await page.screenshot({path:screenshots+'/devices-'+width+'.png',fullPage:false});
    await page.keyboard.press('Escape');assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await trigger.evaluate(el=>document.activeElement===el),true,'Focus returns '+name);popups++;
   }
  }
