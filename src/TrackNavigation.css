@@ -1,5 +1,5 @@
 /* Authenticated workspace navigation; existing enquiry workflows stay unchanged. */
-.track-workspace-nav{display:flex;gap:1rem;width:min(calc(100% - 3rem),var(--max));margin:auto;border-bottom:1px solid var(--line)}
+ .track-workspace-nav{display:flex;flex-wrap:wrap;gap:1rem;width:min(calc(100% - 3rem),var(--max));margin:auto;border-bottom:1px solid var(--line)}
 .track-workspace-nav a{display:inline-flex;align-items:center;min-height:48px;padding:.6rem .15rem;color:var(--muted);font:650 .8rem/1.4 Inter,system-ui,sans-serif;text-decoration:none;border-bottom:2px solid transparent}
 .track-workspace-nav a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
 .track-workspace-nav a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}

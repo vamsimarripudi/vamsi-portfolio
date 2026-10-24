@@ -54,6 +54,24 @@
           "value": "noindex, nofollow, noarchive"
         }
       ]
+    },
+    {
+      "source": "/ev-survey",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/api/ev-survey",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -83,6 +101,10 @@
     },
     {
       "source": "/track/enquiries",
+      "destination": "/track/index.html"
+    },
+    {
+      "source": "/track/ev-surveys",
       "destination": "/track/index.html"
     }
   ],

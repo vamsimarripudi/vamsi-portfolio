@@ -62,6 +62,7 @@ jobs:
           done
           node scripts/verify-track-visual.mjs
           node scripts/verify-track-analytics.mjs
+          node scripts/verify-ev-survey-visual.mjs
       - name: Keep visual snapshots for inspection
         if: always()
         uses: actions/upload-artifact@v4
