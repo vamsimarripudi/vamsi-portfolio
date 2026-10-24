@@ -13,6 +13,12 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/verify-track-*.mjs'
+      - 'scripts/verify-ev-survey-visual.mjs'
+      - 'src/EVSurvey*'
+      - 'shared/ev-survey.mjs'
+      - 'server/ev-survey-store.js'
+      - 'server/ev-survey-*.js'
+      - 'tests/ev-survey*.test.mjs'
       - 'tests/track-*.test.mjs'
       - '.github/workflows/verify-track.yml'
   pull_request:
@@ -28,6 +34,12 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/verify-track-*.mjs'
+      - 'scripts/verify-ev-survey-visual.mjs'
+      - 'src/EVSurvey*'
+      - 'shared/ev-survey.mjs'
+      - 'server/ev-survey-store.js'
+      - 'server/ev-survey-*.js'
+      - 'tests/ev-survey*.test.mjs'
       - 'tests/track-*.test.mjs'
       - '.github/workflows/verify-track.yml'
   workflow_dispatch:
@@ -62,6 +74,7 @@ jobs:
           done
           node scripts/verify-track-visual.mjs
           node scripts/verify-track-analytics.mjs
+          node scripts/verify-ev-survey-visual.mjs
       - name: Keep visual snapshots for inspection
         if: always()
         uses: actions/upload-artifact@v4

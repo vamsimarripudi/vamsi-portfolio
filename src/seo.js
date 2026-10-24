@@ -23,6 +23,7 @@ export const pageDescriptions = {
   '/faq': 'Frequently asked questions about Vamsi Marripudi, this site, and contacting him.',
   '/changelog': 'A lightweight record of verified improvements to Vamsi Marripudi’s personal engineering site.',
   '/track': 'Private Enquiry Tracker for the authorized owner only.',
+  '/ev-survey': 'A private EV owner interview conducted for independent research on real electric car ownership problems.',
   '/birthday': 'Create and share a beautifully handwritten birthday surprise.',
 };
 
@@ -50,6 +51,7 @@ export const staticRouteMeta = {
   '/faq': { title: 'Vamsi Marripudi — FAQ', description: pageDescriptions['/faq'] },
   '/changelog': { title: 'Vamsi Marripudi — Changelog', description: pageDescriptions['/changelog'] },
   '/track': { title: 'Enquiry Tracker — Vamsi Marripudi', description: pageDescriptions['/track'], noindex: true },
+  '/ev-survey': { title: 'EV Owner Interview — Vamsi Marripudi', description: pageDescriptions['/ev-survey'], noindex: true },
   '/birthday': { title: 'Birthday Surprise | Vamsi Marripudi', description: pageDescriptions['/birthday'], noindex: true },
   '/not-found': { title: 'Page Not Found — Vamsi Marripudi', description: 'This route does not exist on vamsimarripudi.me.', noindex: true },
   '/offline': { title: 'You’re Offline — Vamsi Marripudi', description: 'Connection status and recovery options for vamsimarripudi.me.', noindex: true },

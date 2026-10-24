@@ -54,6 +54,24 @@
           "value": "noindex, nofollow, noarchive"
         }
       ]
+    },
+    {
+      "source": "/ev-survey",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/api/ev-survey",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -64,6 +82,14 @@
     {
       "source": "/corner/:path*",
       "destination": "https://corner-web-production-2600.up.railway.app/corner/:path*"
+    },
+    {
+      "source": "/api/ev-survey",
+      "destination": "/api/track/metrics?view=ev-public"
+    },
+    {
+      "source": "/api/track/ev-surveys",
+      "destination": "/api/track/metrics?view=ev-surveys"
     },
     {
       "source": "/api/website/events",
@@ -83,6 +109,10 @@
     },
     {
       "source": "/track/enquiries",
+      "destination": "/track/index.html"
+    },
+    {
+      "source": "/track/ev-surveys",
       "destination": "/track/index.html"
     }
   ],
