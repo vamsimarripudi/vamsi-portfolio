@@ -36,6 +36,7 @@
 .evs-question h1,.evs-review h1,.evs-complete h1{max-width:730px;font-size:clamp(2rem,4vw,3.4rem);letter-spacing:-.063em;line-height:1.13;font-weight:730;margin:0}
 .evs-subcopy{font-size:1rem;color:var(--muted);line-height:1.65;max-width:660px;margin:1.15rem 0 0}
 .evs-optional,.evs-inline-help{font-size:.79rem;color:var(--muted)}
+.evs-no-contact{padding:1rem;border:1px solid var(--line);background:var(--bg);color:var(--muted);line-height:1.65;font-size:.86rem}
 .evs-answer{margin-top:clamp(1.8rem,4vw,3rem)}
 .evs-answer-label{display:block;font-size:.73rem;font-weight:800;color:var(--muted);margin-bottom:.75rem;letter-spacing:.07em;text-transform:uppercase}
 .evs-options{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}

@@ -4,7 +4,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiCheckCircle, FiChevronRight, FiLo
 import { SURVEY_QUESTIONS, SURVEY_SECTIONS, SURVEY_VERSION, validateSurveyAnswers } from '../shared/ev-survey.mjs';
 import './EVSurvey.css';
 
-const STORAGE_KEY = 'vm-ev-owner-interview-v1';
+const STORAGE_KEY = 'vm-ev-owner-interview-v2';
 const EXPIRY = 7 * 24 * 60 * 60 * 1000;
 const freshDraft = () => ({ step: -1, answers: {}, consent: false, submissionId: crypto.randomUUID() });
 function loadDraft() {
@@ -39,7 +39,7 @@ function QuestionInput({ question, answer, onChange }) {
   )}</div></>;
   return question.type === 'long'
     ? <textarea id={'evs-'+question.id} className="evs-textfield evs-textarea" rows={5} maxLength={1500} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>
-    : <input id={'evs-'+question.id} className="evs-textfield" type="text" maxLength={120} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>;
+    : <input id={'evs-'+question.id} className="evs-textfield" type={question.type === 'phone' ? 'tel' : 'text'} inputMode={question.type === 'phone' ? 'tel' : undefined} autoComplete={question.type === 'phone' ? 'tel-national' : 'off'} maxLength={question.type === 'phone' ? 20 : 120} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>;
 }
 
 export default function EVSurvey() {
@@ -61,9 +61,9 @@ export default function EVSurvey() {
     catch { /* A working form does not require local storage. */ }
   }, [draft, complete]);
   const patch = (change) => { setError(''); setDraft(previous => ({ ...previous, ...change })); };
-  const answer = (value) => patch({ answers: { ...draft.answers, [current.id]: value } });
+  const answer = (value) => patch({ answers: { ...draft.answers, [current.id]: value, ...(current.id === 'follow_up_permission' && value === 'No, do not contact me' ? { participant_phone: '' } : {}) } });
   const next = () => {
-    const state = validateSurveyAnswers({ [current.id]: draft.answers[current.id] });
+    const state = validateSurveyAnswers({ [current.id]: draft.answers[current.id], ...(current.id === 'participant_phone' ? { follow_up_permission: draft.answers.follow_up_permission } : {}) });
     if (state.errors[current.id]) { setError(state.errors[current.id]); return; }
     patch({ step: index + 1 });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -107,13 +107,13 @@ export default function EVSurvey() {
         <div className="evs-intro-grid">
           <div><p className="evs-kicker"><span className="evs-live-dot"/> EV OWNER RESEARCH / INDIA</p><h1>Real EV problems.<br/><em>Real owner stories.</em></h1>
             <p className="evs-lede">A one-to-one conversation about what actually happens after someone buys an electric car. Charging, breakdowns, service, costs, warranties and the workarounds owners use today.</p>
-            <div className="evs-intro-meta"><span><strong>{SURVEY_QUESTIONS.length}</strong> short questions</span><span><strong>15–20</strong> minutes</span><span><strong>{SURVEY_SECTIONS.length}</strong> research stages</span></div>
+            <div className="evs-intro-meta"><span><strong>{SURVEY_QUESTIONS.length}</strong> short questions</span><span><strong>15–25</strong> minutes</span><span><strong>{SURVEY_SECTIONS.length}</strong> research stages</span></div>
           </div>
           <div className="evs-intro-panel">
             <div className="evs-panel-no">01 / FIELD NOTES</div>
             <h2>Before we begin</h2>
             <p>Ask about situations the owner has personally experienced. Do not suggest an answer or promise a future product.</p>
-            <ul><li>No name, number plate, Aadhaar or phone number required.</li><li>Participation is voluntary. Any question can be declined by ending the interview.</li><li>Responses will be kept privately for research, up to 12 months, and never sold.</li></ul>
+            <ul><li>Name or nickname is optional. A mobile number is collected only with separate permission for one research follow-up.</li><li>Do not enter a number plate, Aadhaar, address or other identity information.</li><li>Participation is voluntary. Responses are private, kept up to 12 months, and never sold.</li></ul>
             <label className="evs-consent"><input type="checkbox" checked={draft.consent} onChange={event => patch({ consent: event.target.checked })}/><span>The participant agrees to this research interview and the <Link to="/privacy">privacy notice</Link>.</span></label>
             {error && <p className="evs-error" role="alert">{error}</p>}
             <button type="button" className="evs-primary" onClick={() => draft.consent ? patch({ step: 0 }) : setError('Please confirm the participant agrees before beginning.')}>Start interview <FiArrowRight/></button>
@@ -133,10 +133,10 @@ export default function EVSurvey() {
           <p className="evs-kicker">{current.section.toUpperCase()} <span>/</span> {String(index+1).padStart(2,'0')}</p>
           <h1>{current.title}</h1>
           {current.help && <p className="evs-subcopy">{current.help}</p>}
-          {!current.required && <p className="evs-optional">Optional — you may leave this blank</p>}
+          {!current.required && <p className="evs-optional">{current.id === 'participant_phone' && draft.answers.follow_up_permission === 'Yes, contact me once about this EV research' ? 'Requested only because the owner opted in to a follow-up.' : 'Optional — you may leave this blank'}</p>}
           <div className="evs-answer">
-            {(current.type === 'text' || current.type === 'long') && <label htmlFor={'evs-'+current.id} className="evs-answer-label">Your answer</label>}
-            <QuestionInput question={current} answer={draft.answers[current.id]} onChange={answer}/>
+            {(current.type === 'text' || current.type === 'long' || current.type === 'phone') && <label htmlFor={'evs-'+current.id} className="evs-answer-label">Your answer</label>}
+            {current.id === 'participant_phone' && draft.answers.follow_up_permission !== 'Yes, contact me once about this EV research' ? <p className="evs-no-contact">The owner declined follow-up, so no mobile number is requested. Continue to the next question.</p> : <QuestionInput question={current} answer={draft.answers[current.id]} onChange={answer}/>} 
           </div>
           {error && <div role="alert" className="evs-error">{error}</div>}
           <div className="evs-actions"><button className="evs-secondary" type="button" onClick={back}><FiArrowLeft/> Back</button><span className="evs-auto-save">Draft saved on this device</span><button type="button" className="evs-primary" onClick={next}>{index === SURVEY_QUESTIONS.length - 1 ? 'Review answers' : 'Next question'} <FiArrowRight/></button></div>

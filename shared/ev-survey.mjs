@@ -1,6 +1,9 @@
 // Shared, versioned research questionnaire. Never change existing answer keys in place.
-export const SURVEY_VERSION = '2026-10-v1';
+export const SURVEY_VERSION = '2026-10-v2';
 export const SURVEY_QUESTIONS = [
+  { id: 'participant_name', section: 'Basic details', title: 'What should we call the EV owner?', help: 'Optional first name or nickname, not a legal identity.', type: 'text', required: false, placeholder: 'First name or nickname (optional)' },
+  { id: 'follow_up_permission', section: 'Basic details', title: 'May we contact this owner once about the research?', help: 'One optional research follow-up only. No marketing or sharing. Choosing no means no mobile number will be collected.', type: 'single', required: true, options: ['Yes, contact me once about this EV research', 'No, do not contact me'] },
+  { id: 'participant_phone', section: 'Basic details', title: 'What mobile number may we use for that follow-up?', help: 'India mobile number only, collected only if the owner agreed to one research follow-up.', type: 'phone', required: false, placeholder: '10-digit mobile number, with permission' },
   { id: 'ev_model', section: 'Your EV', title: 'Which electric car do you currently drive?', help: 'Brand, model and variant if known. We are interviewing current EV car owners.', type: 'text', required: true, placeholder: 'For example: Tata Nexon EV, 45 kWh' },
   { id: 'ownership', section: 'Your EV', title: 'How long have you owned this electric car?', type: 'single', required: true, options: ['Less than 6 months', '6–12 months', '1–2 years', 'More than 2 years'] },
   { id: 'city', section: 'Your EV', title: 'Which city do you mainly drive in?', type: 'text', required: false, placeholder: 'City only, not your address' },
@@ -51,10 +54,18 @@ export function validateSurveyAnswers(input) {
       const clean = value.trim();
       if (!clean) { if (q.required) errors[q.id] = 'This answer is required.'; continue; }
       if (q.type === 'single' && !q.options.includes(clean)) { errors[q.id] = 'Choose one of the listed options.'; continue; }
+      if (q.type === 'phone') {
+        const digits = clean.replace(/[\s()+-]/g, '');
+        if (!/^[6-9][0-9]{9}$/.test(digits)) { errors[q.id] = 'Enter a valid 10-digit Indian mobile number.'; continue; }
+        answers[q.id] = digits;
+        continue;
+      }
       if (clean.length > (q.type === 'text' ? 120 : 1500)) { errors[q.id] = 'Answer is too long.'; continue; }
       answers[q.id] = clean;
     }
   }
+  if (answers.follow_up_permission === 'Yes, contact me once about this EV research' && !answers.participant_phone) errors.participant_phone = 'Enter a mobile number for the agreed follow-up, or choose no contact.';
+  if (answers.follow_up_permission === 'No, do not contact me' && answers.participant_phone) errors.participant_phone = 'Remove the phone number because the owner declined follow-up.';
   return { ok: Object.keys(errors).length === 0, answers, errors };
 }
 

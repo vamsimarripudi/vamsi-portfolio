@@ -105,10 +105,10 @@ export async function readSurveyDashboard({ q = '', page = 1, download = false }
     sql`SELECT to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week, COUNT(*)::int AS count
       FROM ev_survey_responses GROUP BY 1 ORDER BY week DESC LIMIT 12`,
     sql`SELECT reference_id, survey_version, answers, created_at FROM ev_survey_responses
-      WHERE (${search} = '' OR reference_id ILIKE ${match} OR answers->>'ev_model' ILIKE ${match} OR answers->>'city' ILIKE ${match})
+      WHERE (${search} = '' OR reference_id ILIKE ${match} OR answers->>'ev_model' ILIKE ${match} OR answers->>'participant_name' ILIKE ${match} OR answers->>'city' ILIKE ${match})
       ORDER BY created_at DESC LIMIT 25 OFFSET ${offset}`,
     sql`SELECT COUNT(*)::int AS count FROM ev_survey_responses
-      WHERE (${search} = '' OR reference_id ILIKE ${match} OR answers->>'ev_model' ILIKE ${match} OR answers->>'city' ILIKE ${match})`,
+      WHERE (${search} = '' OR reference_id ILIKE ${match} OR answers->>'ev_model' ILIKE ${match} OR answers->>'participant_name' ILIKE ${match} OR answers->>'city' ILIKE ${match})`,
   ]);
   return { overview: overview[0] || { total: 0 }, distributions: { issues, prices, interest }, weeks: chronology.reverse(), items: recent, matchCount: searchCount[0]?.count ?? 0, page: Math.max(1, Math.min(1000, Number(page) || 1)) };
 }
@@ -126,6 +126,11 @@ export async function deleteSurveyRecord(referenceId) {
 export async function cleanupSurveyData() {
   await ensureSurveySchema();
   const sql = query();
+  // Minimize personally identifying follow-up data, independent of full response retention.
+  await sql`UPDATE ev_survey_responses
+    SET answers = answers - 'participant_name' - 'participant_phone'
+    WHERE created_at < NOW() - INTERVAL '90 days'
+      AND (answers->>'participant_name' IS NOT NULL OR answers->>'participant_phone' IS NOT NULL)`;
   const deleted = await sql`DELETE FROM ev_survey_responses WHERE created_at < NOW() - INTERVAL '12 months' RETURNING id`;
   await sql`DELETE FROM ev_survey_throttle WHERE bucket_started_at < NOW() - INTERVAL '48 hours'`;
   return deleted.length;

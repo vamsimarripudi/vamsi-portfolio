@@ -6,7 +6,7 @@ This addition belongs to the existing personal portfolio at **vamsimarripudi.me*
 
 | Route | Access | Purpose |
 | --- | --- | --- |
-| `/ev-survey` | Interviewer holding the direct link | Mobile-first, 22-question guided interview |
+| `/ev-survey` | Interviewer holding the direct link | Mobile-first, 25-question guided interview |
 | `POST /api/ev-survey` | Public, JSON with same-origin controls | Validates and saves a consented interview |
 | `/track/ev-surveys` | Owner session only | Summaries, charts, owner-only interview detail |
 | `GET /api/track/ev-surveys` | Owner session only | Paginated data and aggregate metrics |
@@ -23,11 +23,11 @@ This addition belongs to the existing personal portfolio at **vamsimarripudi.me*
 6. Open `/track/ev-surveys` by signing into the existing owner-only tracker. View single responses, problem distributions, willingness to pay and CSV.
 7. Interview across car brands, cities, ownership durations, home/public charging patterns and satisfactory as well as unsatisfactory experiences.
 
-Do **not** type in Aadhaar, full vehicle registration, participant names, phone numbers, addresses, medical information or other identity documents. The optional city question is city-level only. If the participant declines, stop and discard the draft.
+Do **not** type Aadhaar, registration plates, addresses, medical information or other identity documents. An optional first name or nickname may be entered in its dedicated field; a phone number is permitted only in its dedicated field after the owner explicitly agrees to one research follow-up. The optional city question is city-level only. If the participant declines, stop and discard the draft.
 
 ### Questionnaire
 
-Questions are defined once, in `shared/ev-survey.mjs`, with immutable answer keys and a version. There are 22 questions organized into five stages: Your EV, Real experiences, Service & expense, Current solutions, Product validation. The question order intentionally asks about real incidents before presenting the proposed independent repair review.
+Questions are defined once, in `shared/ev-survey.mjs`, with immutable answer keys and a version. There are 25 questions organized into six stages: Basic details, Your EV, Real experiences, Service & expense, Current solutions, Product validation. Basic details cover optional first name or nickname, consent to one research follow-up, and an optional mobile number collected only with explicit consent. The question order intentionally asks about real incidents before presenting the proposed independent repair review.
 
 Survey answers are validated both in the browser and server. The public endpoint stores only whitelisted fields and returns a reference ID. A client-generated submission UUID makes retries idempotent, without double recording.
 
@@ -38,7 +38,7 @@ Survey answers are validated both in the browser and server. The public endpoint
 - `ev_survey_responses`: submitted answers, questionnaire version, submission UUID, consent and creation timestamps.
 - `ev_survey_throttle`: pseudonymous HMAC-based rate limiting (8 submissions per connection per hour), purged after 48 hours.
 - Owner access reuses `requireOwner` from `api/lib/track.js`. All dashboard, export and deletion requests enforce it server-side; client-side hiding is not a security boundary.
-- The Vercel daily tracker cron additionally purges interviews older than 12 months; no new cron or external service is introduced.
+- The Vercel daily tracker cron removes optional names and phone numbers after 90 days and purges interviews older than 12 months; no new cron or external service is introduced.
 - Drafts persist in the interviewer's browser for at most seven days and are removed after a confirmed successful submission or manual discard.
 - CSV formula-like cells are prefixed to prevent execution in spreadsheet applications.
 

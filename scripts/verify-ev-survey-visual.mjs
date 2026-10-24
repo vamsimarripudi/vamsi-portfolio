@@ -26,10 +26,13 @@ try {
     for (const [index, question] of SURVEY_QUESTIONS.entries()) {
       await page.getByRole('heading', { name: question.title }).waitFor();
       if (question.type === 'single' || question.type === 'multi') {
-        await page.getByRole('button', { name: question.options[0], exact: true }).click();
+        await page.getByRole('button', { name: question.id === 'follow_up_permission' && profile.name === 'mobile' ? question.options[1] : question.options[0], exact: true }).click();
+      } else if (question.id === 'participant_phone' && profile.name === 'mobile') {
+        await page.getByText('The owner declined follow-up, so no mobile number is requested.').waitFor();
+        assert.equal(await page.locator('#evs-participant_phone').count(), 0);
       } else {
         const input = page.locator('#evs-' + question.id);
-        await input.fill(question.id === 'city' ? 'Hyderabad' : question.id === 'ev_model' ? 'Tata Nexon EV' : 'Sample interview answer for testing the form.');
+        await input.fill(question.id === 'city' ? 'Hyderabad' : question.id === 'ev_model' ? 'Tata Nexon EV' : question.id === 'participant_phone' ? '9876543210' : 'Sample interview answer for testing the form.');
       }
       await page.getByRole('button', { name: index === SURVEY_QUESTIONS.length - 1 ? 'Review answers' : 'Next question' }).click();
     }
@@ -45,6 +48,9 @@ try {
     assert.equal(submissions.length, 1);
     assert.equal(submissions[0].consent, true);
     assert.equal(submissions[0].answers.ev_model, 'Tata Nexon EV');
+    assert.equal(submissions[0].answers.follow_up_permission, profile.name === 'mobile' ? 'No, do not contact me' : 'Yes, contact me once about this EV research');
+    if (profile.name === 'mobile') assert.equal(submissions[0].answers.participant_phone, undefined);
+    else assert.equal(submissions[0].answers.participant_phone, '9876543210');
     assert.equal(submissions[0].answers.primary_issue, SURVEY_QUESTIONS.find(q => q.id === 'primary_issue').options[0]);
     // Protected dashboard visual and record-detail acceptance with mocked owner session.
     await page.route('**/api/track/auth/session', route => route.fulfill({ status: 200, contentType: 'application/json',

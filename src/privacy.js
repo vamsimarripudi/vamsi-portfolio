@@ -3,7 +3,7 @@ export const PRIVACY = {
   contactEmail: 'connect@vamsimarripudi.me',
   siteUrl: 'https://vamsimarripudi.me',
   lastUpdated: '25 October 2026',
-  version: '1.3',
+  version: '1.4',
 };
 
 export const privacySections = [
@@ -25,7 +25,7 @@ export const privacySections = [
   },
   {
     title: 'Electric vehicle research interviews',
-    body: 'The optional /ev-survey interview records car model, city if supplied, owner experiences, reported costs and time impacts, current solutions, and hypothetical willingness to pay. It does not require names, email addresses, phone numbers, vehicle registration numbers, or identity documents. Questions may still contain personal details that a participant volunteers, so avoid entering identifiers or sensitive information. Interview responses are stored in private Neon PostgreSQL tables accessible only to the authenticated owner via /track/ev-surveys; individual answers are not published and are not sold or used for targeted advertising. Submissions require the participant’s voluntary consent. A random submission identifier prevents accidental duplicates; short-lived, pseudonymous rate-limit records protect the endpoint. Unsubmitted drafts are saved only in the browser used for the interview for up to seven days unless discarded sooner. Interview responses are kept up to 12 months for research, then deleted or anonymized, subject to necessary legal holds. To request correction or deletion, email connect@vamsimarripudi.me with the interview reference.',
+    body: 'The optional /ev-survey interview records vehicle model, city if supplied, owner experiences, costs, solutions and hypothetical willingness to pay. An owner may optionally provide a first name or nickname. A 10-digit Indian mobile number is collected only if they separately consent to one research follow-up, never for marketing. Full names, email addresses, registration numbers and identity documents are not required. Questions may still contain personal details that a participant volunteers, so avoid entering identifiers or sensitive information. Interview responses are stored in private Neon PostgreSQL tables accessible only to the authenticated owner via /track/ev-surveys; individual answers are not published and are not sold or used for targeted advertising. Submissions require the participant’s voluntary consent. A random submission identifier prevents accidental duplicates; short-lived, pseudonymous rate-limit records protect the endpoint. Unsubmitted drafts are saved only in the browser used for the interview for up to seven days unless discarded sooner. Individual names and contact numbers are automatically removed after 90 days; other interview responses are kept up to 12 months for research, then deleted or anonymized, subject to necessary legal holds. To request correction or deletion, email connect@vamsimarripudi.me with the interview reference.',
   },
   {
     title: 'Optional website analytics and local preferences',
