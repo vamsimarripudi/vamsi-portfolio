@@ -63,7 +63,7 @@ export function responseRowsToCsv(rows) {
   const safeCell = (value) => {
     let str = Array.isArray(value) ? value.join('; ') : String(value ?? '');
     // Prevent spreadsheet formula injection without changing the original DB record.
-    if (/^[\s]*[=+@-\t\r]/.test(str)) str = "'" + str;
+    if (/^[\s]*[=+@\t\r-]/.test(str)) str = "'" + str;
     return '"' + str.replaceAll('"', '""') + '"';
   };
   return [headings, ...rows.map((row) => [row.reference_id, row.created_at, ...SURVEY_QUESTIONS.map((q) => row.answers?.[q.id] ?? '')])].map((line) => line.map(safeCell).join(',')).join('\r\n');
