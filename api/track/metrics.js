@@ -1,9 +1,14 @@
 import websiteCollector from '../../server/site-analytics-handler.js';
 import analytics from '../../server/track-analytics-handler.js';
 import { json, query, requireOwner } from '../lib/track.js';
+import publicEVSurvey from '../../server/ev-survey-public-handler.js';
+import privateEVSurvey from '../../server/ev-survey-private-handler.js';
 
 export default async function handler(req, res) {
   if (req.query?.view === 'site-events') return websiteCollector(req, res);
+  // Keep EV research within the current Vercel Hobby serverless-function budget.
+  if (req.query?.view === 'ev-public') return publicEVSurvey(req, res);
+  if (req.query?.view === 'ev-surveys') return privateEVSurvey(req, res);
   // Share the existing function slot; the analytics handler retains its own owner gate.
   if (req.query?.view === 'analytics') {
     const { view, ...query } = req.query;

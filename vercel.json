@@ -84,6 +84,14 @@
       "destination": "https://corner-web-production-2600.up.railway.app/corner/:path*"
     },
     {
+      "source": "/api/ev-survey",
+      "destination": "/api/track/metrics?view=ev-public"
+    },
+    {
+      "source": "/api/track/ev-surveys",
+      "destination": "/api/track/metrics?view=ev-surveys"
+    },
+    {
       "source": "/api/website/events",
       "destination": "/api/track/metrics?view=site-events"
     },

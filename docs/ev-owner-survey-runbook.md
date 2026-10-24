@@ -1,6 +1,6 @@
 # EV owner field research: implementation and runbook
 
-This addition belongs to the existing personal portfolio at **vamsimarripudi.me**. It is not a KRAVIA product. It reuses the portfolio's authenticated Track workspace, Neon PostgreSQL, Vercel project and existing Vercel Cron; it requires no form-builder, analytics SaaS, map, OEM or AI provider.
+This addition belongs to the existing personal portfolio at **vamsimarripudi.me**. It is not a KRAVIA product. It reuses the portfolio's authenticated Track workspace, Neon PostgreSQL, Vercel project and existing Vercel Cron; it requires no form-builder, analytics SaaS, map, OEM or AI provider. Both new public API paths are rewritten to distinct handlers inside the existing /api/track/metrics.js serverless function to stay within the Vercel Hobby function-count limit.
 
 ## Routes
 

@@ -1,5 +1,5 @@
-import { assertSameOrigin, json, TrackError } from './lib/track.js';
-import { submitSurvey } from '../server/ev-survey-store.js';
+import { assertSameOrigin, json, TrackError } from '../api/lib/track.js';
+import { submitSurvey } from './ev-survey-store.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');

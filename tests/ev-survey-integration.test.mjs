@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 
 test('public interview and owner-only research routes are wired without exposing Track', () => {
@@ -12,15 +12,20 @@ test('public interview and owner-only research routes are wired without exposing
   assert.match(track, /to="\/track\/ev-surveys"/);
   assert.ok(config.rewrites.some(x => x.source === '/track/ev-surveys' && x.destination === '/track/index.html'));
   assert.ok(config.headers.some(x => x.source === '/ev-survey' && x.headers.some(y => y.key === 'X-Robots-Tag')));
+  assert.ok(config.rewrites.some(x => x.source === '/api/ev-survey' && x.destination.endsWith('view=ev-public')));
+  assert.ok(config.rewrites.some(x => x.source === '/api/track/ev-surveys' && x.destination.endsWith('view=ev-surveys')));
 });
 test('survey owner API checks authentication before reading/exporting/deleting', () => {
-  const route = read('api/track/ev-surveys.js');
-  const publicRoute = read('api/ev-survey.js');
+  const route = read('server/ev-survey-private-handler.js');
+  const publicRoute = read('server/ev-survey-public-handler.js');
   assert.ok(route.indexOf('requireOwner(req, res)') < route.indexOf('readSurveyDashboard('));
   assert.ok(route.indexOf('requireOwner(req, res)') < route.indexOf('deleteSurveyRecord('));
   assert.match(route, /assertSameOrigin\(req\)/);
   assert.match(publicRoute, /assertSameOrigin\(req\)/);
   assert.match(publicRoute, /submitSurvey\(req, req\.body\)/);
+  const router = read('api/track/metrics.js');
+  assert.match(router, /view === 'ev-public'/);
+  assert.match(router, /view === 'ev-surveys'/);
 });
 test('survey uses separate tables, durable rate limiting and scheduled retention', () => {
   const db = read('server/ev-survey-store.js');
@@ -32,4 +37,20 @@ test('survey uses separate tables, durable rate limiting and scheduled retention
   assert.match(cron, /cleanupSurveyData/);
   const privacy = read('src/privacy.js');
   assert.match(privacy, /Electric vehicle research interviews/);
+});
+
+test('survey uses existing serverless function budget without new api entrypoints', () => {
+  const stack = ['api'];
+  const endpoints = [];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const item of readdirSync(new URL('../' + dir + '/', import.meta.url), { withFileTypes: true })) {
+      const filename = dir + '/' + item.name;
+      if (item.isDirectory()) stack.push(filename);
+      else if (item.name.endsWith('.js') && !filename.startsWith('api/lib/')) endpoints.push(filename);
+    }
+  }
+  assert.ok(endpoints.length <= 12, 'Vercel Hobby permits at most 12 independent serverless functions; found ' + endpoints.length);
+  assert.equal(endpoints.includes('api/ev-survey.js'), false);
+  assert.equal(endpoints.includes('api/track/ev-surveys.js'), false);
 });
