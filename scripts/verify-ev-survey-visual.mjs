@@ -6,14 +6,19 @@ const browser = await chromium.launch({ headless: true });
 try {
   for (const profile of [
     { name: 'desktop', options: { viewport: { width: 1366, height: 850 } } },
+    { name: 'tablet', options: { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true } },
     { name: 'mobile', options: devices['iPhone 13'] },
+    { name: 'mobile-small', options: { viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } },
   ]) {
     const context = await browser.newContext(profile.options);
     const page = await context.newPage();
     const errors = [];
+    const phone = profile.name.startsWith('mobile');
     page.on('pageerror', err => errors.push(err.message));
     await page.goto('http://127.0.0.1:4173/ev-survey', { waitUntil: 'networkidle' });
     await page.locator('.evs-intro h1').waitFor();
+    const firstViewport = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
+    assert.ok(firstViewport.scrollWidth <= firstViewport.width + 1, profile.name + ' intro must not overflow horizontally');
     await page.screenshot({ path: '/tmp/track-ev-survey-'+profile.name+'-intro.png', fullPage: true });
 
     await page.getByRole('button', { name: 'Start interview' }).click();
@@ -21,20 +26,52 @@ try {
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Start interview' }).click();
     await page.getByRole('heading', { name: SURVEY_QUESTIONS[0].title }).waitFor();
+    const layout = await page.evaluate(() => {
+      const dock = document.querySelector('.evs-actions');
+      const button = document.querySelector('.evs-actions .evs-primary');
+      const choice = document.querySelector('.evs-choice');
+      const field = document.querySelector('.evs-textfield');
+      const control = choice || field;
+      const stage = document.querySelector('.evs-mobile-stage');
+      return {
+        width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth,
+        dock: getComputedStyle(dock).position, dockRect: dock.getBoundingClientRect().toJSON(),
+        buttonHeight: button.getBoundingClientRect().height,
+        controlHeight: control?.getBoundingClientRect().height ?? 0,
+        controlFont: control ? parseFloat(getComputedStyle(control).fontSize) : 0,
+        stageDisplay: getComputedStyle(stage).display,
+      };
+    });
+    assert.ok(layout.scrollWidth <= layout.width + 1, profile.name + ' question must not overflow horizontally');
+    assert.ok(layout.buttonHeight >= 44, profile.name + ' primary button has touch target');
+    if (phone) {
+      assert.equal(layout.dock, 'fixed', profile.name + ' next action should remain visible');
+      assert.equal(layout.stageDisplay, 'flex', profile.name + ' compact stage indicator should show');
+      assert.ok(layout.dockRect.left >= -1 && layout.dockRect.right <= layout.width + 1, profile.name + ' action dock fits viewport');
+      assert.ok(layout.controlHeight >= 54 && layout.controlFont >= 16, profile.name + ' controls are readable and touch sized');
+    } else assert.equal(layout.stageDisplay, 'none', 'desktop/tablet uses full stage navigation');
     await page.screenshot({ path: '/tmp/track-ev-survey-'+profile.name+'-question.png', fullPage: true });
 
     for (const [index, question] of SURVEY_QUESTIONS.entries()) {
       await page.getByRole('heading', { name: question.title }).waitFor();
       if (question.type === 'single' || question.type === 'multi') {
-        await page.getByRole('button', { name: question.id === 'follow_up_permission' && profile.name === 'mobile' ? question.options[1] : question.options[0], exact: true }).click();
-      } else if (question.id === 'participant_phone' && profile.name === 'mobile') {
+        if (phone) {
+          const size = await page.locator('.evs-choice').first().evaluate(element => ({ height: element.getBoundingClientRect().height, fontSize: parseFloat(getComputedStyle(element).fontSize) }));
+          assert.ok(size.height >= 60 && size.fontSize >= 16, profile.name + ' choice touch target and font size: ' + question.id);
+        }
+        await page.getByRole('button', { name: question.id === 'follow_up_permission' && phone ? question.options[1] : question.options[0], exact: true }).click();
+      } else if (question.id === 'participant_phone' && phone) {
         await page.getByText('The owner declined follow-up, so no mobile number is requested.').waitFor();
         assert.equal(await page.locator('#evs-participant_phone').count(), 0);
       } else {
         const input = page.locator('#evs-' + question.id);
         await input.fill(question.id === 'city' ? 'Hyderabad' : question.id === 'ev_model' ? 'Tata Nexon EV' : question.id === 'participant_phone' ? '9876543210' : 'Sample interview answer for testing the form.');
       }
-      await page.getByRole('button', { name: index === SURVEY_QUESTIONS.length - 1 ? 'Review answers' : 'Next question' }).click();
+      if (question.id === 'ev_model' && profile.name === 'mobile-small') {
+        await page.locator('#evs-ev_model').press('Enter');
+      } else {
+        await page.getByRole('button', { name: index === SURVEY_QUESTIONS.length - 1 ? 'Review answers' : 'Next question' }).click();
+      }
     }
     await page.getByRole('heading', { name: 'Review the conversation.' }).waitFor();
     await page.screenshot({ path: '/tmp/track-ev-survey-'+profile.name+'-review.png', fullPage: true });
@@ -48,8 +85,8 @@ try {
     assert.equal(submissions.length, 1);
     assert.equal(submissions[0].consent, true);
     assert.equal(submissions[0].answers.ev_model, 'Tata Nexon EV');
-    assert.equal(submissions[0].answers.follow_up_permission, profile.name === 'mobile' ? 'No, do not contact me' : 'Yes, contact me once about this EV research');
-    if (profile.name === 'mobile') assert.equal(submissions[0].answers.participant_phone, undefined);
+    assert.equal(submissions[0].answers.follow_up_permission, phone ? 'No, do not contact me' : 'Yes, contact me once about this EV research');
+    if (phone) assert.equal(submissions[0].answers.participant_phone, undefined);
     else assert.equal(submissions[0].answers.participant_phone, '9876543210');
     assert.equal(submissions[0].answers.primary_issue, SURVEY_QUESTIONS.find(q => q.id === 'primary_issue').options[0]);
     // Protected dashboard visual and record-detail acceptance with mocked owner session.

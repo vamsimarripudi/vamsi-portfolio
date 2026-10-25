@@ -70,3 +70,73 @@
 @media(max-width:900px){.evs-intro-grid{grid-template-columns:1fr;gap:3rem}.evs-intro h1{max-width:720px}.evs-intro-panel{max-width:680px}}
 @media(max-width:650px){.evs-wrap{width:calc(100% - 34px)}.evs-topline{gap:.6rem}.evs-top-private{display:none}.evs-intro{padding:2.7rem 0}.evs-intro h1{font-size:clamp(2.65rem,10vw,4rem)}.evs-intro-meta{gap:1.4rem}.evs-stages{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.evs-options{grid-template-columns:1fr}.evs-card{padding:1.5rem}.evs-actions{flex-wrap:wrap}.evs-auto-save{order:3;width:100%;text-align:center}.evs-actions .evs-primary{margin-left:auto}.evs-complete{margin:2rem auto}}
 @media(prefers-reduced-motion:reduce){.evs-page *, .evs-page *:before,.evs-page *:after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Touch-first interview layout: compact stage indicator, readable controls, and
+   one-handed navigation. Scoped to EV survey so portfolio/Track remain unchanged. */
+.evs-mobile-stage{display:none}
+@media(max-width:650px){
+  .evs-page{overflow-x:clip;min-height:100svh;-webkit-text-size-adjust:100%}
+  .evs-wrap{width:calc(100% - 28px);max-width:520px}
+  .evs-topline{gap:.6rem;min-height:54px;padding:.75rem 0;letter-spacing:.08em}
+  .evs-topline>span:nth-child(2){font-size:.61rem;line-height:1.4;letter-spacing:.07em;text-align:right;max-width:72%;overflow-wrap:normal}
+  .evs-intro{padding:clamp(1.25rem,4vh,2.25rem) 0 2rem}
+  .evs-intro-grid{gap:1.7rem}
+  .evs-intro h1{font-size:clamp(2.3rem,9.7vw,3.5rem);line-height:1.04;letter-spacing:-.065em;margin-bottom:1.1rem}
+  .evs-lede{font-size:.97rem;line-height:1.6;margin:.6rem 0}
+  .evs-intro-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin-top:1.3rem;padding-top:1.1rem}
+  .evs-intro-meta span{font-size:.68rem;line-height:1.4}
+  .evs-intro-meta strong{font-size:1.45rem}
+  .evs-intro-panel{max-width:none;padding:1.3rem 1.1rem;border-radius:12px;box-shadow:none}
+  .evs-panel-no{margin-bottom:1rem}
+  .evs-intro-panel h2{font-size:1.75rem}
+  .evs-intro-panel ul{margin:1.15rem 0;font-size:.88rem}
+  .evs-consent{min-height:52px;align-items:center;gap:.85rem;font-size:.9rem}
+  .evs-consent input{width:23px;height:23px}
+  .evs-intro-panel>.evs-primary{min-height:56px;font-size:.95rem}
+  .evs-interview{max-width:none;min-height:calc(100svh - 54px);padding:1.25rem 0 calc(7.5rem + env(safe-area-inset-bottom))}
+  .evs-progress-top{font-size:.7rem;letter-spacing:.07em;margin-bottom:.7rem}
+  .evs-progress{height:5px;border-radius:99px}
+  .evs-progress>span{border-radius:99px}
+  .evs-stages{display:none}
+  .evs-mobile-stage{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:1.15rem 0 .95rem}
+  .evs-mobile-stage span{font-size:.68rem;font-weight:800;letter-spacing:.09em;color:var(--muted);white-space:nowrap}
+  .evs-mobile-stage strong{font-size:.81rem;font-weight:760;color:var(--accent);text-align:right;line-height:1.4}
+  .evs-card{padding:1.3rem 1.1rem;border-radius:12px}
+  .evs-question h1,.evs-review h1,.evs-complete h1{font-size:clamp(1.66rem,7vw,2.15rem);line-height:1.17;letter-spacing:-.05em;overflow-wrap:anywhere}
+  .evs-subcopy{font-size:.95rem;line-height:1.55;margin-top:.9rem}
+  .evs-answer{margin-top:1.45rem}
+  .evs-answer-label{font-size:.75rem;letter-spacing:.04em}
+  .evs-options{grid-template-columns:1fr;gap:.65rem}
+  .evs-choice{min-height:64px;border-radius:8px;padding:.95rem;gap:.85rem;font-size:1rem;line-height:1.4;touch-action:manipulation}
+  .evs-choice-mark{width:24px;height:24px}
+  .evs-choice-chevron{display:none}
+  .evs-textfield{min-height:56px;padding:.95rem 1rem;border-radius:8px;font-size:16px;line-height:1.5}
+  .evs-textarea{min-height:148px}
+  .evs-actions{position:fixed;z-index:50;inset-inline:0;bottom:0;display:flex;flex-wrap:nowrap;align-items:center;gap:.75rem;margin:0;padding:.8rem max(14px,env(safe-area-inset-right)) calc(.8rem + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -7px 24px rgba(0,0,0,.06)}
+  .evs-auto-save{display:none}
+  .evs-actions .evs-secondary,.evs-actions .evs-primary{min-height:54px;font-size:.95rem;justify-content:center;gap:.65rem;padding:.65rem .8rem;white-space:nowrap}
+  .evs-actions .evs-secondary{flex:0 0 34%}
+  .evs-actions .evs-primary{flex:1;min-width:0;margin:0}
+  .evs-review-list{max-height:none;overflow:visible;margin:1.5rem 0}
+  .evs-review-row{align-items:flex-start}
+  .evs-review-row button{min-height:44px;min-width:54px;flex-shrink:0}
+  .evs-review-row strong{font-size:.88rem;line-height:1.6}
+  .evs-under-card{gap:.8rem;margin-top:1.1rem;line-height:1.55}
+  .evs-complete{margin:1.5rem auto;padding:1.7rem 1.25rem}
+  .evs-bottom{align-items:flex-start;font-size:.72rem;line-height:1.6}
+  .evs-bottom>span:last-child{flex-wrap:wrap}
+  .evs-page button,.evs-page input,.evs-page textarea{touch-action:manipulation}
+}
+@media(max-width:355px){
+  .evs-wrap{width:calc(100% - 24px)}
+  .evs-card{padding:1.15rem .95rem}
+  .evs-topline>span:nth-child(2){font-size:.57rem}
+  .evs-actions{gap:.5rem;padding-inline:12px}
+  .evs-actions .evs-secondary,.evs-actions .evs-primary{font-size:.86rem;gap:.35rem}
+  .evs-actions .evs-secondary{flex-basis:32%}
+}
+@media(max-width:650px) and (orientation:landscape){
+  .evs-interview{padding-top:.8rem}
+  .evs-actions{padding-top:.4rem;padding-bottom:calc(.4rem + env(safe-area-inset-bottom))}
+  .evs-actions .evs-secondary,.evs-actions .evs-primary{min-height:44px}
+}
