@@ -40,7 +40,21 @@ try{
  await page.locator('#create-from-overview').click();
  await page.locator('#post-editor input[name="title"]').fill('First photo-led Corner story');
  await page.locator('#post-editor textarea[name="body"]').fill('Two photographs with captions, tested in a real mobile browser.');
- const input=page.locator('#editor-upload input[type="file"]');
+ const attachmentDialog=page.locator('dialog#editor-media');
+ assert.equal(await attachmentDialog.count(),1,'Uploader is rendered as a native dialog');
+ assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'No bottom attachment card is visible before opening');
+ assert.equal(await page.locator('#admin-view > .admin-section#editor-media').count(),0,'Old bottom media card removed');
+ await page.locator('#open-media-panel').click();
+ await attachmentDialog.locator('#editor-upload').waitFor({state:'visible'});
+ for(const [width,height] of [[320,720],[390,844],[768,980],[1366,850]]){
+   await page.setViewportSize({width,height});
+   const bounds=await attachmentDialog.boundingBox();
+   assert.ok(bounds&&bounds.x>=-1&&bounds.x+bounds.width<=width+1,'Media modal fits viewport '+width+' '+JSON.stringify(bounds));
+   const {scrollWidth,clientWidth}=await attachmentDialog.evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}));
+   assert.ok(scrollWidth<=clientWidth+1,'Media modal content does not overflow horizontally at '+width);
+ }
+ await page.setViewportSize({width:390,height:844});
+ const input=attachmentDialog.locator('#editor-upload input[type="file"]');
  await input.waitFor({state:'visible'});
  await input.setInputFiles([
   {name:'photo-one.png',mimeType:'image/png',buffer:png},
@@ -60,6 +74,14 @@ try{
  await inline.nth(1).locator('input[name="caption"]').fill('Second caption updated.');
  await inline.nth(1).locator('button[type="submit"]').click();
  await page.getByText('Caption and description saved.').first().waitFor({timeout:12000});
+ assert.equal(await page.locator('#media-count').textContent(),'2','Editor shows current attachment count');
+ await attachmentDialog.locator('[data-media-dismiss]').last().click();
+ assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Done closes the attachment modal');
+ await page.locator('#open-media-panel').click();
+ assert.equal(await attachmentDialog.locator('.media-thumb').count(),2,'Reopening preserves uploaded media and captions');
+ await page.keyboard.press('Escape');
+ assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Escape dismisses the native dialog');
+ assert.equal(await page.locator('#open-media-panel').evaluate(element=>element===document.activeElement),true,'Focus returns to the media trigger');
  await page.locator('#publish-post').click();
  await page.waitForFunction(async()=>{
   try{
