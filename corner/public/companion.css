@@ -1,0 +1,67 @@
+/* Corner Pulse, a lightweight original glowing mascot and real-update card. */
+.corner-orbit-dock {
+  position:fixed;right:max(17px,env(safe-area-inset-right));bottom:max(15px,env(safe-area-inset-bottom));
+  z-index:84;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none;
+  width:min(362px,calc(100vw - 24px));font-family:var(--sans,system-ui,sans-serif);
+}
+.corner-orbit-flow {position:absolute;right:44px;bottom:17px;width:min(172px,35vw);height:28px;overflow:hidden;pointer-events:none;opacity:.7}
+.corner-orbit-flow i {position:absolute;bottom:3px;left:0;right:0;height:15px;border-bottom:2px solid transparent;border-radius:50%;transform-origin:right center}
+.corner-orbit-flow i:nth-child(1) {border-color:rgba(178,101,87,.55);animation:corner-orbit-ribbon 5s ease-in-out infinite}
+.corner-orbit-flow i:nth-child(2) {bottom:7px;left:18px;border-color:rgba(115,113,226,.35);animation:corner-orbit-ribbon 5.9s ease-in-out -1.1s infinite}
+.corner-orbit-flow i:nth-child(3) {bottom:12px;left:52px;border-color:rgba(54,171,155,.34);animation:corner-orbit-ribbon 6.6s ease-in-out -1.5s infinite}
+.corner-orbit-toggle {position:relative;z-index:2;display:grid;grid-template-columns:56px auto;align-items:center;justify-content:start;gap:4px;min-width:58px;min-height:68px;margin:0;padding:5px 11px 5px 6px;border:1px solid #ffffffb8;border-radius:100px;background:rgba(255,255,255,.83);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 15px 35px -18px #0009;pointer-events:auto;cursor:pointer;color:#222;transition:transform .2s,box-shadow .2s}
+.corner-orbit-toggle:is(:hover,:focus-visible) {transform:translateY(-4px);box-shadow:0 21px 48px -19px #0009;outline-offset:3px}
+.corner-orbit-button-text {padding-right:3px;color:#3a312f;font-size:.75rem;font-weight:760;letter-spacing:.03em}
+.corner-orbit-toy {position:relative;isolation:isolate;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 38% 23%,#7c81ae,#383452 49%,#282236 77%);border:2px solid #ffffffbf;box-shadow:inset 0 -5px 9px #0003,0 0 0 2px rgba(186,151,232,.25),0 8px 18px #5551776b;animation:corner-orbit-breathe 4s ease-in-out infinite}
+.corner-orbit-toy::before {content:"";position:absolute;inset:-5px;border:1px solid #ddc6fd9c;border-radius:50%;animation:corner-orbit-halo 5s ease-in-out infinite}
+.corner-orbit-face {position:absolute;inset:11px 6px 8px;border-radius:20px 20px 22px 22px;background:linear-gradient(152deg,#080a1b,#201329);border:1px solid #e1d8fa66;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:inset 0 3px 8px #000b}
+.corner-orbit-eye {width:7px;height:10px;border-radius:8px;background:#faf0ff;box-shadow:0 0 9px 2px #cf9cff80;animation:corner-orbit-blink 7.3s infinite}
+.corner-orbit-eye:nth-child(2) {animation-delay:.12s}
+.corner-orbit-smile {position:absolute;left:50%;bottom:7px;width:12px;height:6px;transform:translateX(-50%);border-bottom:2px solid #ffb5f0;border-radius:0 0 100px 100px}
+.corner-orbit-sprout {position:absolute;left:2px;top:-9px;z-index:3;font-size:20px;color:#d9fb8e;text-shadow:0 0 9px #e2fa95;animation:corner-orbit-spark 5s ease-in-out infinite}
+.corner-orbit-star {position:absolute;right:-5px;bottom:7px;color:#e4adff;font-size:21px;text-shadow:0 0 7px #f3bdff}
+.corner-orbit-card {position:absolute;right:0;bottom:calc(100% + 12px);width:min(350px,calc(100vw - 24px));max-height:min(590px,calc(100dvh - 105px));overflow:auto;overscroll-behavior:contain;padding:22px 20px 18px;border:1px solid rgba(135,116,138,.25);border-radius:23px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(27px) saturate(148%);backdrop-filter:blur(27px) saturate(148%);box-shadow:0 21px 76px -28px #0007;pointer-events:auto;color:#1e1b20;animation:corner-orbit-rise .22s ease-out both}
+.corner-orbit-card[hidden] {display:none!important}
+.corner-orbit-head {display:flex;align-items:start;justify-content:space-between;gap:10px}
+.corner-orbit-kicker {margin:0 0 4px;font:750 .62rem/1.5 var(--mono,monospace);letter-spacing:.11em;color:#ad644c}
+body.corner-comfort .corner-orbit-head h2 {margin:0;font-size:1.37rem!important;line-height:1.25!important;letter-spacing:-.04em!important}
+.corner-orbit-close {display:grid;place-items:center;flex:none;width:36px;height:36px;padding:0;border:1px solid #ded4cf;border-radius:11px;background:#fff;color:#212121;font-size:1.3rem;cursor:pointer}
+.corner-orbit-explainer {margin:11px 0 15px;color:#625d60;font-size:.74rem;line-height:1.6}
+.corner-orbit-reading,.corner-orbit-latest {display:grid;gap:6px;margin:0 0 11px;padding:14px 15px;border:1px solid #eae2e4;border-radius:14px;background:linear-gradient(135deg,#faf8fd,#fbfaf8)}
+.corner-orbit-status-label {font:760 .63rem/1.5 var(--mono,monospace);color:#73696f;letter-spacing:.08em}
+.corner-orbit-reading strong {display:block;color:#23202a;font-size:.89rem;font-weight:740;line-height:1.4}
+.corner-orbit-reading p,.corner-orbit-latest p {margin:0;color:#635c61;font-size:.75rem;line-height:1.5}
+.corner-orbit-latest a {color:#231e22;text-decoration:underline;text-decoration-color:#aa6c91;text-underline-offset:4px;font-size:.85rem;font-weight:730;line-height:1.4}
+.corner-orbit-actions {display:flex;flex-wrap:wrap;gap:8px;padding-top:2px}
+.corner-orbit-actions a {display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 12px;border:1px solid #111;border-radius:11px;background:#111;color:white!important;font-size:.74rem;font-weight:720;text-decoration:none}
+.corner-orbit-actions a+a {background:#fff;color:#111!important;border-color:#d6d0d1}
+.corner-orbit-live-line {display:flex;align-items:center;gap:7px;margin:15px 0 0;color:#58535a;font-size:.69rem}
+.corner-orbit-live-line::before {content:"";width:7px;height:7px;flex:none;border-radius:50%;background:#86a49b;box-shadow:0 0 0 4px rgba(134,164,155,.13)}
+.corner-orbit-dock.is-open .corner-orbit-toy {animation-duration:2.4s}
+body.corner-comfort:has(.corner-orbit-dock) .corner-welcome-card {bottom:max(101px,calc(env(safe-area-inset-bottom) + 89px))}
+body.corner-comfort:has(dialog[open]) .corner-orbit-dock {visibility:hidden;pointer-events:none}
+html.corner-drawer-open body.corner-comfort .corner-orbit-dock {visibility:hidden;pointer-events:none}
+/* Every category symbol has a tactile but subtle motion, never a frantic spinning menu. */
+.corner-rail-icon svg {transform-origin:center;transition:transform .24s cubic-bezier(.2,.8,.2,1),filter .25s}
+body.corner-comfort .corner-rail .corner-rail-link:is(:hover,:focus-visible) .corner-rail-icon svg {transform:translateY(-2px) rotate(-9deg) scale(1.1);filter:drop-shadow(0 3px 2px #0002)}
+body.corner-comfort .corner-rail .corner-rail-link.is-active .corner-rail-icon svg {filter:drop-shadow(0 0 4px #ffffff90)}
+@keyframes corner-orbit-breathe {0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-3px) rotate(4deg)}}
+@keyframes corner-orbit-blink {0%,45%,48%,100%{transform:scaleY(1)}46%,47%{transform:scaleY(.15)}}
+@keyframes corner-orbit-halo {0%,100%{transform:scale(.96);opacity:.55}50%{transform:scale(1.07);opacity:.92}}
+@keyframes corner-orbit-spark {0%,100%{transform:rotate(-17deg) scale(.88)}50%{transform:rotate(22deg) scale(1.2)}}
+@keyframes corner-orbit-ribbon {0%,100%{transform:scaleY(.7) translateY(0);opacity:.55}50%{transform:scaleY(1.5) translateY(-5px);opacity:1}}
+@keyframes corner-orbit-rise {from{opacity:.3;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media(max-width:600px) {
+  .corner-orbit-dock {right:max(10px,env(safe-area-inset-right));bottom:max(9px,env(safe-area-inset-bottom));width:min(330px,calc(100vw - 16px))}
+  .corner-orbit-toggle {grid-template-columns:51px;min-width:59px;min-height:59px;padding:4px;gap:0}
+  .corner-orbit-toy {width:51px;height:51px}
+  .corner-orbit-button-text {display:none}
+  .corner-orbit-card {width:min(330px,calc(100vw - 20px));max-height:min(570px,calc(100dvh - 92px));padding:18px 15px 15px;border-radius:19px}
+  .corner-orbit-flow {width:125px;right:38px}
+  body.corner-comfort:has(.corner-orbit-dock) .corner-welcome-card {bottom:max(84px,calc(env(safe-area-inset-bottom) + 76px))}
+}
+@media(prefers-reduced-motion:reduce) {
+  .corner-orbit-toy,.corner-orbit-toy::before,.corner-orbit-eye,.corner-orbit-sprout,.corner-orbit-flow i,.corner-orbit-card {animation:none!important}
+  .corner-orbit-toggle,.corner-rail-icon svg {transition:none!important}
+  body.corner-comfort .corner-rail .corner-rail-link:is(:hover,:focus-visible) .corner-rail-icon svg {transform:none!important}
+}

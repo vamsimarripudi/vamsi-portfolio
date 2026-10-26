@@ -130,6 +130,9 @@ jobs:
       - name: Real owner post photos and captions browser acceptance
         run: |
           node corner/tests/post-media-browser.mjs
+      - name: Verify responsive glass rail and Corner Pulse in real browser
+        run: |
+          node corner/tests/navigation-companion-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4

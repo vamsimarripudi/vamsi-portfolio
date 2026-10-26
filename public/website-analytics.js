@@ -6,7 +6,7 @@ const privacyBlocked=()=>navigator.globalPrivacyControl===true||navigator.doNotT
 const permitted=()=>cookies()[CONSENT_COOKIE]==='allow'&&!privacyBlocked()&&!cookies().vm_track_session&&!cookies().corner_session;
 const allowedHost=()=>['vamsimarripudi.me','www.vamsimarripudi.me','localhost','127.0.0.1'].includes(location.hostname);
 const token=()=>crypto.randomUUID().replaceAll('-','');
-let current=null,rawPath='',timer=null,lastTick=0,lastAction=0,lastSend=0,lastDepth=-1,engaged=false,panel=null,contactStarted=false;
+let current=null,rawPath='',timer=null,lastTick=0,lastAction=0,lastSend=0,lastDepth=-1,engaged=false,panel=null,contactStarted=false,consentCard=null;
 const source=()=>{try{if(!document.referrer)return 'direct';const host=new URL(document.referrer).hostname;if(host===location.hostname)return 'internal';if(/(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|search\.yahoo\.com)$/.test(host))return 'search';if(/(^|\.)(facebook\.com|instagram\.com|linkedin\.com|t\.co|x\.com|reddit\.com)$/.test(host))return 'social';return 'referral'}catch{return 'direct'}};
 function stateUI(message){if(!panel)return;panel.querySelector('[data-site-choice]').textContent=permitted()?'On':'Off';panel.querySelector('[data-site-allow]').disabled=privacyBlocked();if(message)panel.querySelector('[role=status]').textContent=message;if(privacyBlocked())panel.querySelector('[role=status]').textContent='Your browser privacy signal keeps website analytics off.'}
 function post(body,method='POST'){return fetch(ENDPOINT,{method,credentials:'same-origin',cache:'no-store',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(async response=>{const result=await response.json().catch(()=>({}));return response.ok&&result.ok===true&&result.accepted===true}).catch(()=>false)}
@@ -16,6 +16,31 @@ function send(action='',issue=''){
  lastSend=Date.now();lastDepth=current.depth;
  try{sessionStorage.setItem(KEY,JSON.stringify({id:current.journey,created:current.created,seen:lastSend,device:current.device,source:current.source}))}catch{/* no durable tab state; current page still works */}
  return post({...payload,action,issue});
+}
+function choicePrompt(){
+ const cookie=cookies();
+ const eligible=websitePath(location.pathname)&&!location.pathname.startsWith('/corner')&&allowedHost()&&!privacyBlocked()&&!cookie.vm_track_session&&!cookie.corner_session;
+ const decided=cookie[CONSENT_COOKIE]==='allow'||cookie[CONSENT_COOKIE]==='deny';
+ let deferred=false;try{deferred=sessionStorage.getItem('vm_site_consent_deferred')==='1'}catch{/* Optional session hint only. */}
+ if(!eligible||decided||deferred){consentCard?.remove();consentCard=null;return}
+ if(consentCard?.isConnected)return;
+ const style='website-analytics.css';
+ if(!document.querySelector('link[data-site-preferences-style]')){
+   const link=document.createElement('link');link.rel='stylesheet';link.href='/'+style;link.dataset.sitePreferencesStyle='';document.head.append(link);
+ }
+ const card=document.createElement('aside');
+ card.className='website-analytics-consent';
+ card.setAttribute('aria-label','Optional website analytics preference');
+ card.innerHTML='<p class="site-consent-kicker">YOUR PRIVACY, YOUR CHOICE</p>'+
+  '<h2>Help improve this website?</h2>'+
+  '<p>Allow optional first-party page and reading signals. No personal profiles, typed text, advertising trackers or Google transmission.</p>'+
+  '<div class="site-consent-actions"><button type="button" data-consent-allow>Allow analytics</button><button type="button" data-consent-deny>Keep off</button></div>'+
+  '<div class="site-consent-foot"><a href="/privacy">Read privacy details</a><button type="button" data-consent-later>Not now</button></div>';
+ const end=()=>{card.remove();if(consentCard===card)consentCard=null};
+ card.querySelector('[data-consent-allow]').addEventListener('click',()=>{end();void choose('allow')});
+ card.querySelector('[data-consent-deny]').addEventListener('click',()=>{end();void choose('deny')});
+ card.querySelector('[data-consent-later]').addEventListener('click',()=>{try{sessionStorage.setItem('vm_site_consent_deferred','1')}catch{/* Non-persistent fallback is fine. */}end()});
+ document.body.append(card);consentCard=card;
 }
 function stop(){clearInterval(timer);timer=null;current=null;rawPath='';contactStarted=false}
 function measure(){
@@ -31,7 +56,7 @@ function tick(){
  if((!engaged&&current.activeMs>=10000)||(current.depth>lastDepth&&current.activeMs>=10000)||now-lastSend>=30000){engaged=current.activeMs>=10000;send()}
 }
 export function route(){
- const path=websitePath(location.pathname);if(!path||!allowedHost()){if(current)send();stop();panel?.remove();panel=null;return}
+ const path=websitePath(location.pathname);if(!path||!allowedHost()){if(current)send();stop();panel?.remove();panel=null;consentCard?.remove();consentCard=null;return}
  const slot=document.querySelector('[data-website-preferences]');
  if(slot&&(!panel||!panel.isConnected)){
   panel=document.createElement('details');panel.className='website-preferences';panel.id='website-analytics-preferences';
@@ -39,16 +64,17 @@ export function route(){
   slot.append(panel);panel.querySelector('[data-site-allow]').onclick=()=>choose('allow');panel.querySelector('[data-site-deny]').onclick=()=>choose('deny');
   if(!document.querySelector('link[data-site-preferences-style]')){const css=document.createElement('link');css.rel='stylesheet';css.href='/website-analytics.css';css.dataset.sitePreferencesStyle='';document.head.append(css)}
  }
- stateUI();if(!permitted()||!crypto.randomUUID)return;
+ stateUI();choicePrompt();if(!permitted()||!crypto.randomUUID)return;
  if(current&&rawPath===location.pathname)return;
  if(current)send();stop();let journey;
- try{journey=JSON.parse(sessionStorage.getItem(KEY)||'null');if(!journey||typeof journey.id!=='string'||!/^[a-f0-9]{32}$/.test(journey.id)||Date.now()-journey.seen>=1800000||Date.now()-journey.created>=86400000)journey=null}catch{return}
+ try{journey=JSON.parse(sessionStorage.getItem(KEY)||'null');if(!journey||typeof journey.id!=='string'||!/^[a-f0-9]{32}$/.test(journey.id)||Date.now()-journey.seen>=1800000||Date.now()-journey.created>=86400000)journey=null}catch{journey=null/* No session storage in this browser; measure this page in memory only. */}
  journey ||= {id:token(),created:Date.now(),device:innerWidth<768?'mobile':innerWidth<1024?'tablet':'desktop',source:source()};
  current={v:1,view:token(),journey:journey.id,created:journey.created,path,device:journey.device,source:journey.source,depth:0,activeMs:0,section:'main'};rawPath=location.pathname;lastTick=lastAction=Date.now();lastDepth=-1;engaged=false;send();timer=setInterval(tick,1000);
 }
 async function choose(choice){
  let journey=current?.journey;try{journey ||= JSON.parse(sessionStorage.getItem(KEY)||'null')?.id||sessionStorage.getItem('vm_site_pending_delete')}catch{/* no prior state */}
  document.cookie=CONSENT_COOKIE+'='+choice+'; Path=/; Max-Age=15552000; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');
+ consentCard?.remove();consentCard=null;
  if(choice==='allow'){route();stateUI('Website analytics is allowed. You can turn it off here at any time.');return}
  stop();try{sessionStorage.removeItem(KEY)}catch{/* optional storage */}stateUI('Website analytics is off.');
  if(journey){const deleted=await post({journey},'DELETE');if(deleted){try{sessionStorage.removeItem('vm_site_pending_delete')}catch{/* Storage is optional. */}}stateUI(deleted?'Off. The current tab journey was removed; older tab journeys follow retention.':'Off. Deletion could not be confirmed; retry Keep website analytics off while online.');if(!deleted){try{sessionStorage.setItem('vm_site_pending_delete',journey)}catch{/* report limitation shown */}}}

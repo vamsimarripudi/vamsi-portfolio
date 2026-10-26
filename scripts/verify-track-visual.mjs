@@ -20,6 +20,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/track/enquiries',{waitUntil:'domcontentloaded'});
   await page.locator('.track-kpi').first().waitFor({timeout:10000});
+  assert.equal(await page.locator('.track-unified-shell').count(),1,'All sections use one shared Track workspace');
   await page.locator('.track-table-wrap tbody tr').first().waitFor({timeout:10000});
   const state=await page.evaluate(()=>{
     const root=document.documentElement,card=document.querySelector('.track-kpi');
@@ -55,7 +56,8 @@ try{
       title:button.getAttribute('title'),
       display:getComputedStyle(button).display,
       x:rect.x,right:rect.right,top:rect.top,width:rect.width,height:rect.height,
-      brandRight:brand.right,headerRight:header.right,
+      brandRight:brand.right,brandBottom:brand.bottom,headerRight:header.right,
+      headerDirection:getComputedStyle(button.closest('.track-header')).flexDirection,
       iconWidth:icon?.getBoundingClientRect().width||0
     };
   });
@@ -65,7 +67,8 @@ try{
   assert.equal(signout.display,'grid','Sign out icon must be centered');
   assert.ok(signout.width>=44&&signout.height>=44,'Sign out has an accessible touch target at '+width);
   assert.ok(signout.iconWidth>=17,'Logout icon is visible at '+width);
-  assert.ok(signout.x>=signout.brandRight+6,'Brand and sign out do not overlap at '+width);
+  const separated=signout.headerDirection==='column'?signout.top>=signout.brandBottom+6:signout.x>=signout.brandRight+6;
+  assert.ok(separated,'Brand and sign out do not overlap in shared '+signout.headerDirection+' workspace at '+width);
   assert.ok(signout.right<=width-12,'Sign out respects right viewport inset at '+width);
   assert.ok(signout.headerRight<=width+1,'Header is inside viewport at '+width);
   console.log('PASS /track icon-only sign out '+width+'px '+JSON.stringify(signout));

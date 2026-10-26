@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { renderStoryBody, footer, header, adminPage, detailPage } from '../src/ui.mjs';
+import { renderStoryBody, footer, header, adminPage, detailPage, basePage } from '../src/ui.mjs';
 import { studioSidebar } from '../src/studio-ui.mjs';
 
 const asset=name=>fs.readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
@@ -71,4 +71,34 @@ test('media attach opens in a native dialog instead of a bottom card',()=>{
  assert.match(style,/\.corner-media-modal::backdrop/);
  assert.match(style,/\.corner-media-footer/);
  assert.match(style,/button\.corner-media-trigger/);
+});
+
+
+test('glass rail and live Pulse use first-party endpoints without breaking public navigation',()=>{
+ const html=header();
+ const page=basePage({path:'/',initial:{page:'feed'}});
+ const rail=asset('nav.js'),pulse=asset('companion.js'),style=asset('refresh.css'),theme=asset('companion.css');
+ assert.match(html,/id="corner-rail-nav"/);
+ assert.match(html,/data-corner-rail-toggle/);
+ assert.match(html,/data-corner-profile-toggle/);
+ assert.match(html,/data-corner-profile-card/);
+ assert.match(html,/class="category-tabs corner-rail"/);
+ assert.doesNotMatch(html,/class="category-account"/);
+ assert.equal((html.match(/data-profile-link/g)||[]).length,1);
+ assert.match(page,/href="\/companion\.css"/);
+ assert.match(page,/src="\/companion\.js" defer/);
+ assert.match(pulse,/corner-drawer-open/);
+ assert.match(pulse,/corner-welcome-v1/);
+ assert.match(pulse,/Escape/);
+ assert.ok(rail.length<1700,'Keep shared prefetch core lightweight');
+ assert.match(pulse,/\/api\/status/);
+ assert.match(pulse,/\/api\/posts\?limit=1/);
+ assert.match(pulse,/\/api\/realtime\/stream/);
+ assert.match(pulse,/No AI chat/);
+ assert.match(style,/scrollbar-width:none!important/);
+ assert.match(theme,/\.corner-orbit-toy/);
+ assert.match(theme,/prefers-reduced-motion:reduce/);
+ const server=fs.readFileSync(new URL('../src/server.mjs',import.meta.url),'utf8');
+ assert.match(server,/\/companion\.js/);
+ assert.match(server,/\/companion\.css/);
 });

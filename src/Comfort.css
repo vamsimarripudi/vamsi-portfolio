@@ -30,3 +30,6 @@
 
 @media(max-width:767px){#root :is(.hero,.home-editorial,.contact-panel){grid-template-columns:minmax(0,1fr)}#root .contact-panel{gap:1rem}}
 @media(max-height:600px){#root .track-auth>section{margin-block:0}}
+
+/* Respect user text-size overrides on public contact controls while retaining 16px mobile readability. */
+#root .contact-layout :is(input,textarea,select){font-size:1rem!important;line-height:1.5;min-width:0}

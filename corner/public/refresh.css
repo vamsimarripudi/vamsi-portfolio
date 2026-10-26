@@ -347,3 +347,152 @@ html[data-studio-motion=off] .corner-comfort .admin-shell * {animation:none!impo
   .corner-media-footer span {max-width:185px;font-size:.69rem;line-height:1.5;}
   .corner-media-footer .corner-media-done {min-height:41px;padding:9px 16px;}
 }
+
+
+/* Corner public navigation: invisible scrollbar, glass rail, mobile drawer, profile card. */
+/* Scroll remains enabled for wheel, touch, keyboard and assistive technology. */
+html, body, body.corner-comfort, body.corner-comfort * { scrollbar-width:none!important; -ms-overflow-style:none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, body.corner-comfort *::-webkit-scrollbar {display:none!important;width:0!important;height:0!important;background:transparent!important}
+html:has(dialog[open]),html.corner-drawer-open {overflow:hidden!important;overscroll-behavior:none}
+body.corner-comfort .corner-public-header {overflow:visible;border-bottom:1px solid rgba(25,25,25,.08)}
+body.corner-comfort .corner-public-header .header-row {position:relative;min-width:0;min-height:82px;gap:12px}
+.corner-brand-group {display:flex;align-items:center;gap:11px;min-width:0}
+.corner-brand-group .brand {min-width:0}
+.corner-brand-group .brand-type {min-width:0}
+body.corner-comfort .corner-rail-toggle {display:none;place-items:center;flex:none;min-width:43px;min-height:43px;padding:0;border:1px solid #121212;border-radius:13px;background:#111;color:#fff!important;cursor:pointer}
+.corner-rail-toggle svg,.corner-profile-toggle svg {display:block}
+.corner-profile-wrap {position:relative;flex:none;z-index:60}
+body.corner-comfort .corner-profile-toggle {display:grid;place-items:center;flex:none;min-width:43px;min-height:43px;padding:0;border:1px solid #111;border-radius:14px;background:#111;color:white!important;box-shadow:0 9px 20px -15px #0008}
+.corner-profile-toggle[aria-expanded=true] {outline:2px solid #bd805d;outline-offset:3px}
+body.corner-comfort .corner-profile-card {position:absolute;top:calc(100% + 13px);right:0;z-index:65;display:grid;gap:4px;width:min(300px,calc(100vw - 26px));min-width:238px;padding:19px;border:1px solid #ddd8ce;border-radius:19px;background:rgba(255,255,255,.96);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);box-shadow:0 20px 68px #0003}
+.corner-profile-card[hidden] {display:none!important}
+.corner-profile-kicker {margin:0 0 3px!important;font:750 .65rem/1.4 var(--mono);letter-spacing:.1em;color:#7b6e63}
+.corner-profile-heading {display:block;margin:0 0 9px;font-size:1rem;font-weight:720;letter-spacing:-.025em}
+body.corner-comfort .corner-profile-card a {display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:43px;padding:10px 11px;border-radius:10px;color:#222;font-size:.88rem;font-weight:630;line-height:1.3;text-decoration:none}
+body.corner-comfort .corner-profile-card a:is(:hover,:focus-visible) {background:#f1eee8}
+.corner-profile-card a img {width:27px;height:27px;flex:none;object-fit:cover;border-radius:50%;border:1px solid #ddd}
+.corner-profile-card a span {min-width:0;overflow-wrap:anywhere}
+.corner-profile-divider {height:1px;margin:6px 0;background:#e8e2db}
+body.corner-comfort .corner-public-header .category-tabs.corner-rail {
+  position:fixed;top:clamp(124px,20vh,170px);left:clamp(12px,1.5vw,22px);bottom:auto;right:auto;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:start;
+  width:64px;min-width:0;max-width:none;min-height:0;max-height:calc(100dvh - 190px);
+  margin:0;padding:8px;gap:5px;overflow-x:hidden;overflow-y:auto;
+  border:1px solid rgba(80,72,65,.19);border-radius:20px;
+  background:rgba(255,255,255,.69);-webkit-backdrop-filter:blur(25px) saturate(160%);
+  backdrop-filter:blur(25px) saturate(160%);
+  box-shadow:0 18px 48px -24px rgba(10,10,10,.31),inset 0 1px rgba(255,255,255,.92);
+  z-index:48;transition:width .28s cubic-bezier(.19,1,.22,1),background .24s,box-shadow .24s;
+  scrollbar-width:none!important;
+}
+body.corner-comfort .corner-public-header .corner-rail:is(:hover,:focus-within) {width:217px;background:rgba(255,255,255,.87);box-shadow:0 20px 60px -22px #0004}
+body.corner-comfort .corner-public-header .corner-rail .corner-rail-link {
+  display:flex;align-items:center;justify-content:flex-start;gap:12px;flex:0 0 auto;
+  width:100%;min-width:0;min-height:47px;height:47px;margin:0;padding:4px 9px;
+  border:0;border-radius:13px;background:transparent;color:#302e2b;font-size:.85rem;
+  font-weight:650;letter-spacing:-.01em;text-decoration:none;white-space:nowrap;
+  transition:background .18s,color .18s;
+}
+body.corner-comfort .corner-rail .corner-rail-link::after {display:none!important;content:none!important}
+body.corner-comfort .corner-rail .corner-rail-link:is(:hover,:focus-visible) {background:rgba(20,20,20,.085);color:#111}
+body.corner-comfort .corner-rail .corner-rail-link.is-active {background:#111!important;color:#fff!important}
+.corner-rail-icon {display:grid;place-items:center;flex:none;width:28px;height:31px;color:inherit}
+.corner-rail-icon svg {display:block;flex:none}
+.corner-rail-label {display:block;min-width:0;max-width:0;opacity:0;visibility:hidden;overflow:hidden;transform:translateX(-5px);transition:opacity .18s,transform .18s}
+body.corner-comfort .corner-rail:is(:hover,:focus-within) .corner-rail-label {max-width:155px;opacity:1;visibility:visible;transform:translateX(0)}
+.corner-rail-heading,.corner-rail-foot {display:none}
+.corner-rail-backdrop[hidden] {display:none!important}
+body.corner-comfort .corner-rail-backdrop {display:none}
+@media (min-width:901px) and (max-width:1519px) {
+  body.corner-comfort:has(.corner-public-header) .shell,
+  body.corner-comfort:has(.corner-public-header) .site-footer,
+  body.corner-comfort .corner-public-header {
+    width:min(calc(100% - 137px),var(--page));
+    margin-left:max(89px,calc((100vw - var(--page))/2));
+    margin-right:auto;
+  }
+}
+/* On touch devices the glass navigation becomes a dedicated off-canvas drawer. */
+@media (max-width:900px) {
+  body.corner-comfort .corner-rail-toggle {display:grid}
+  body.corner-comfort .corner-public-header .header-row {min-height:74px;gap:8px}
+  body.corner-comfort .corner-public-header .header-right {gap:7px}
+  body.corner-comfort .corner-public-header .category-tabs.corner-rail,
+  body.corner-comfort .corner-public-header .category-tabs.corner-rail:is(:hover,:focus-within) {
+    position:fixed;top:0;bottom:0;left:0;right:auto;
+    width:min(84vw,320px);max-width:min(84vw,320px);height:100dvh;max-height:100dvh;
+    display:flex;visibility:hidden;pointer-events:none;
+    padding:calc(18px + env(safe-area-inset-top)) 15px max(20px,env(safe-area-inset-bottom));
+    gap:6px;overflow-y:auto;overscroll-behavior:contain;
+    border:0;border-right:1px solid rgba(80,72,65,.22);
+    border-radius:0 24px 24px 0;background:rgba(250,248,245,.91);
+    -webkit-backdrop-filter:blur(28px) saturate(140%);backdrop-filter:blur(28px) saturate(140%);
+    box-shadow:16px 0 65px -20px rgba(0,0,0,.3);z-index:101;
+    transform:translateX(calc(-100% - 22px));
+    transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility .32s;
+  }
+  body.corner-comfort .corner-public-header .category-tabs.corner-rail.is-open {
+    visibility:visible;pointer-events:auto;transform:translateX(0);
+  }
+  body.corner-comfort .corner-public-header .corner-rail .corner-rail-link {min-height:54px;height:54px;gap:15px;padding:8px 12px;border-radius:15px;font-size:.98rem}
+  body.corner-comfort .corner-public-header .corner-rail .corner-rail-label,
+  body.corner-comfort .corner-public-header .corner-rail:is(:hover,:focus-within) .corner-rail-label {
+    display:block;max-width:none;opacity:1;visibility:visible;transform:none;
+  }
+  .corner-rail-heading {display:flex;align-items:start;justify-content:space-between;gap:10px;margin:0 0 21px;padding:9px 4px 19px;border-bottom:1px solid #ded8cf}
+  .corner-rail-heading small {display:block;margin-bottom:7px;color:#746b63;font:700 .64rem/1.4 var(--mono);letter-spacing:.12em}
+  .corner-rail-heading strong {display:block;color:#111;font-size:1.07rem;letter-spacing:-.03em;white-space:normal}
+  body.corner-comfort .corner-rail-heading button {display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #d8d2c8;border-radius:13px;background:white;color:#111;font-size:1.65rem;line-height:1;cursor:pointer}
+  .corner-rail-foot {display:block;margin:auto 0 0;padding:18px 9px 10px;color:#7e7369;font:650 .68rem/1.5 var(--mono);letter-spacing:.03em}
+  body.corner-comfort .corner-rail-backdrop:not([hidden]) {position:fixed;inset:0;display:block;z-index:100;background:rgba(15,15,15,.44);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+  html.corner-drawer-open .corner-welcome-card {display:none!important}
+}
+@media (max-width:600px) {
+  body.corner-comfort .corner-public-header .header-row {min-height:69px}
+  body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle) {width:40px;height:40px;min-width:40px;min-height:40px;border-radius:13px}
+  body.corner-comfort .corner-rail-toggle {min-width:40px;min-height:40px}
+  body.corner-comfort .corner-brand-group {gap:7px}
+  body.corner-comfort .corner-brand-group .brand {gap:8px}
+  body.corner-comfort .corner-brand-group .brand-mark {width:37px;height:37px;font-size:1.55rem}
+  body.corner-comfort .corner-brand-group .brand strong {font-size:1.1rem;line-height:1.1}
+  body.corner-comfort .corner-brand-group .brand small {font-size:.45rem;letter-spacing:.07em}
+}
+@media (max-width:385px) {
+  body.corner-comfort .corner-brand-group {gap:5px}
+  body.corner-comfort .corner-brand-group .brand {gap:4px}
+  body.corner-comfort .corner-brand-group .brand-mark {display:grid;width:29px;height:29px;font-size:1.22rem;border-radius:9px}
+  body.corner-comfort .corner-brand-group .brand small {display:none}
+  body.corner-comfort .corner-brand-group .brand strong {font-size:.94rem;white-space:nowrap}
+  body.corner-comfort .corner-public-header .header-row {gap:4px}
+  body.corner-comfort .corner-public-header .header-right {gap:4px}
+  body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle) {width:44px;height:44px;min-width:44px;min-height:44px}
+  body.corner-comfort .corner-rail-toggle {min-width:44px;min-height:44px}
+}
+.corner-welcome-card {
+  position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));
+  width:min(355px,calc(100vw - 28px));padding:24px 21px 19px;border:1px solid #ded6ca;
+  border-radius:23px;background:rgba(255,255,255,.94);
+  -webkit-backdrop-filter:blur(24px) saturate(145%);backdrop-filter:blur(24px) saturate(145%);
+  box-shadow:0 24px 65px -25px #0005;z-index:90;color:#171614;
+  animation:corner-welcome-arrive .35s cubic-bezier(.2,.8,.2,1) both;
+}
+.corner-welcome-close {position:absolute;top:10px;right:12px;display:grid;place-items:center;width:35px;height:35px;padding:0;border:0;border-radius:10px;background:#f0ece6;color:#151515;font-size:1.4rem;cursor:pointer}
+.corner-welcome-kicker {margin:0 0 10px;color:#a55d41;font:750 .65rem/1.5 var(--mono);letter-spacing:.1em}
+body.corner-comfort .corner-welcome-card h2 {margin:0 22px 9px;font-size:1.24rem!important;letter-spacing:-.04em!important;color:#161616}
+.corner-welcome-card>p:not(.corner-welcome-kicker) {margin:0;color:#4e4842;font-size:.83rem;line-height:1.62}
+.corner-welcome-actions {display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.corner-welcome-actions a,.corner-welcome-actions button {display:inline-flex;align-items:center;justify-content:space-between;gap:9px;min-height:43px;padding:10px 13px;border:1px solid #111;border-radius:11px;background:#111;color:white!important;font-size:.77rem;font-weight:710;text-decoration:none;cursor:pointer}
+.corner-welcome-actions button {background:white;color:#111!important;border-color:#d6cec4}
+@keyframes corner-welcome-arrive {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){
+ .corner-welcome-card {left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:auto;padding:17px 17px 14px;border-radius:19px}
+ body.corner-comfort .corner-welcome-card h2 {margin-left:0;font-size:1.12rem!important}
+ .corner-welcome-card>p:not(.corner-welcome-kicker) {font-size:.78rem;line-height:1.5}
+ .corner-welcome-actions {margin-top:10px}
+ .corner-welcome-actions a,.corner-welcome-actions button {min-height:42px}
+}
+@media(prefers-reduced-motion:reduce){
+ body.corner-comfort .corner-public-header .category-tabs.corner-rail,
+ body.corner-comfort .corner-public-header .corner-rail .corner-rail-link,.corner-rail-label,.corner-welcome-card {transition:none!important;animation:none!important}
+}
+

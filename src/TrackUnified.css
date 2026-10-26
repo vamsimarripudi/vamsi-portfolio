@@ -1,0 +1,143 @@
+/* One consistent private Track workspace for Website analytics, Enquiries, and EV research.
+ * The shell never switches design based on the selected route. */
+#root .track-unified-shell {
+  --ws-ink:#212936;--ws-muted:#637082;--track-accent:#345dbb;
+  --track-surface:#fff;--track-canvas:#f5f6f8;
+  min-height:100dvh;background:var(--track-canvas);color:var(--ws-ink);
+}
+#root .track-unified-shell .track-header {
+  position:fixed;top:0;bottom:0;left:0;z-index:30;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+  width:210px;height:100dvh;min-height:100dvh;padding:24px 18px;
+  border:0;border-right:1px solid #354154;background:#202938;color:#f7f8fa;
+  box-shadow:none;
+}
+#root .track-unified-shell .track-brand,
+#root .track-unified-shell .track-brand b,
+#root .track-unified-shell .track-brand>span {color:#f7f8fa}
+#root .track-unified-shell .track-header>div {margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:15px}
+#root .track-unified-shell .track-private {color:#c5cddb;font-size:.68rem;letter-spacing:.03em}
+#root .track-unified-shell .track-workspace-nav {
+  position:fixed;top:104px;left:12px;z-index:31;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  gap:6px;width:186px;max-height:calc(100dvh - 230px);overflow:auto;
+  padding:0;margin:0;border:0;background:transparent;
+}
+#root .track-unified-shell .track-workspace-nav a {
+  display:flex;align-items:center;gap:11px;min-height:50px;padding:12px;
+  border:0;border-radius:11px;color:#d5dce8;background:transparent;
+  font-size:.85rem;line-height:1.35;font-weight:650;
+}
+#root .track-unified-shell .track-workspace-nav a svg {flex:none;width:18px;height:18px}
+#root .track-unified-shell .track-workspace-nav a[aria-current=page],
+#root .track-unified-shell .track-workspace-nav a:hover {background:#39495d;color:#fff}
+#root .track-unified-shell .track-workspace-nav a:focus-visible {outline:3px solid #a8c7ff;outline-offset:2px}
+#root .track-unified-shell .track-page,
+#root .track-unified-shell .track-page.evst-page {
+  width:calc(100% - 210px);max-width:none;min-width:0;
+  min-height:100dvh;margin:0 0 0 210px;padding:clamp(17px,2vw,27px);
+  background:var(--track-canvas);color:var(--ws-ink);
+}
+#root .track-unified-shell .track-page::before {display:none}
+#root .track-unified-shell .track-page-title,
+#root .track-unified-shell .track-record-heading {gap:12px;margin-bottom:17px}
+#root .track-unified-shell .track-page h1,
+#root .track-unified-shell .track-record-heading h1,
+#root .track-unified-shell .evst-intro h1 {
+  margin:4px 0 8px;max-width:900px;font-size:clamp(1.6rem,2.8vw,2.15rem)!important;
+  font-weight:720;line-height:1.22!important;letter-spacing:-.045em;
+}
+#root .track-unified-shell .track-page-title p:not(.track-kicker) {max-width:680px;font-size:.85rem;line-height:1.55;color:var(--ws-muted)}
+#root .track-unified-shell .track-kpis {gap:10px;margin-bottom:13px;border:0;background:transparent}
+#root .track-unified-shell .track-kpis .track-kpi,
+#root .track-unified-shell .evst-stat,
+#root .track-unified-shell .ws-metrics article {
+  min-height:100px;padding:13px 15px;border:1px solid #dfe5eb;border-radius:13px;
+  background:var(--track-surface);box-shadow:0 8px 22px -24px #101b31;
+}
+#root .track-unified-shell .track-kpis .track-kpi strong,
+#root .track-unified-shell .evst-stat strong,
+#root .track-unified-shell .ws-metrics article strong {
+  display:block;margin:8px 0 4px;font-size:clamp(1.38rem,2.2vw,1.75rem)!important;
+  line-height:1.2;letter-spacing:-.055em;
+}
+#root .track-unified-shell .track-kpis .track-kpi span,
+#root .track-unified-shell .evst-stat>span {font-size:.72rem;line-height:1.35;color:var(--ws-muted)}
+#root .track-unified-shell .track-panel,
+#root .track-unified-shell .track-list,
+#root .track-unified-shell .ws-panel,
+#root .track-unified-shell .evst-panel,
+#root .track-unified-shell .evst-insight {
+  border:1px solid #dfe4eb;border-radius:14px;background:#fff;box-shadow:0 11px 30px -33px #101b31;
+}
+#root .track-unified-shell .track-panel,
+#root .track-unified-shell .track-list {padding:clamp(15px,1.8vw,22px)}
+#root .track-unified-shell .ws-metrics {gap:10px;margin:12px 0}
+#root .track-unified-shell .ws-metrics article>div {gap:7px;font-size:.76rem}
+#root .track-unified-shell .ws-metrics article>div svg {width:22px;height:22px;padding:3px}
+#root .track-unified-shell .ws-metrics article small {font-size:.7rem;line-height:1.4;color:var(--ws-muted)}
+#root .track-unified-shell .ws-overview,
+#root .track-unified-shell .ws-grid {gap:12px}
+#root .track-unified-shell .ws-panel {padding:clamp(14px,1.6vw,18px)}
+#root .track-unified-shell .ws-panel h2 {font-size:1.06rem!important}
+#root .track-unified-shell .ws-title {gap:13px}
+#root .track-unified-shell .ws-title h1 {font-size:clamp(1.65rem,2.7vw,2.12rem)!important}
+#root .track-unified-shell .ws-tabs {margin:14px 0 8px}
+#root .track-unified-shell .ws-tab-panel {min-width:0}
+#root .track-unified-shell .track-table-wrap {max-width:100%;overflow-x:auto}
+#root .track-unified-shell .track-page :is(button,a,input,select,textarea):focus-visible {outline:3px solid #4269c8;outline-offset:3px}
+@media(max-width:1050px) and (min-width:768px) {
+ #root .track-unified-shell .track-header {width:188px;padding-inline:14px}
+ #root .track-unified-shell .track-workspace-nav {left:8px;width:172px}
+ #root .track-unified-shell .track-page,
+ #root .track-unified-shell .track-page.evst-page {margin-left:188px;width:calc(100% - 188px);padding:18px}
+ #root .track-unified-shell .ws-metrics {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:767px) {
+ #root .track-unified-shell .track-header {
+   position:sticky;top:0;left:0;right:0;bottom:auto;z-index:50;
+   box-sizing:border-box;max-width:100vw;min-width:0;
+   display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+   width:100%;height:auto;min-height:65px;padding:9px max(20px,env(safe-area-inset-right)) 9px max(15px,env(safe-area-inset-left));
+   border:0;border-bottom:1px solid #374252;background:#202938;
+ }
+ #root .track-unified-shell .track-header>div {margin:0;flex-direction:row;align-items:center}
+ #root .track-unified-shell .track-private {display:none}
+ #root .track-unified-shell .track-workspace-nav {
+   position:sticky;top:65px;left:0;z-index:49;display:flex;flex-direction:row;align-items:center;
+   gap:4px;width:100%;max-height:none;min-height:51px;overflow-x:auto;overflow-y:hidden;
+   padding:4px 10px;margin:0;background:#202938;border-bottom:1px solid #374252;
+   scrollbar-width:none;
+ }
+ #root .track-unified-shell .track-workspace-nav::-webkit-scrollbar {display:none}
+ #root .track-unified-shell .track-workspace-nav a {min-height:43px;flex:none;gap:7px;padding:10px;border-radius:9px;font-size:.75rem;white-space:nowrap}
+ #root .track-unified-shell .track-workspace-nav a svg {width:16px;height:16px}
+ #root .track-unified-shell .track-page,
+ #root .track-unified-shell .track-page.evst-page {width:100%;min-height:calc(100dvh - 116px);margin:0;padding:16px}
+ #root .track-unified-shell .track-page h1 {font-size:clamp(1.46rem,6vw,1.87rem)!important}
+ #root .track-unified-shell .ws-metrics {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #root .track-unified-shell .ws-metrics article {padding:11px 12px;min-height:94px}
+ #root .track-unified-shell .ws-overview {grid-template-columns:minmax(0,1fr)}
+ #root .track-unified-shell .ws-grid {grid-template-columns:minmax(0,1fr)}
+ #root .track-unified-shell .track-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:360px) {
+ #root .track-unified-shell .track-header {padding-right:max(20px,env(safe-area-inset-right));padding-left:max(10px,env(safe-area-inset-left))}
+ #root .track-unified-shell .track-workspace-nav a {padding:8px;font-size:.7rem}
+ #root .track-unified-shell .track-page,
+ #root .track-unified-shell .track-page.evst-page {padding:12px}
+ #root .track-unified-shell .ws-metrics article {padding:10px}
+}
+@media(prefers-reduced-motion:reduce) {#root .track-unified-shell * {scroll-behavior:auto!important}}
+
+/* Useful zero-data and disabled-source states occupy one compact strip. */
+#root .track-unified-shell .ws-measurement-status {
+  display:grid;gap:5px;margin:12px 0;padding:13px 15px;
+  border:1px solid #cbd7ed;border-left:3px solid #4f74bb;border-radius:11px;
+  background:#eef3fa;color:#283a51;
+}
+#root .track-unified-shell .ws-measurement-status>div {display:flex;align-items:center;gap:9px;font-size:.84rem}
+#root .track-unified-shell .ws-measurement-status p {max-width:91ch;margin:0;font-size:.78rem;line-height:1.55;color:#43546a}
+#root .track-unified-shell .ws-measurement-status a {justify-self:start;color:#254b9c;font-size:.78rem;font-weight:720;text-decoration:underline;text-underline-offset:3px}
+.ws-measurement-indicator {display:block;width:8px;height:8px;flex:none;border-radius:50%;background:#7c94b9;box-shadow:0 0 0 4px #dce6f3}
+#root .track-unified-shell .ws-collection-warning {margin:12px 0;padding:13px;border-left:3px solid #ad654a;border-radius:10px;background:#fff3eb;color:#584338}
+@media(max-width:767px){#root .track-unified-shell .ws-measurement-status{padding:11px 12px}}
