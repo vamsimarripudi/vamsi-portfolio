@@ -77,7 +77,7 @@ function policyPage(doc){
  const main='<main class="shell legal-shell" id="content">'+
  '<div class="legal-breadcrumb"><a href="/">Vamsi’s Corner</a><span>/</span><a href="/policies">Legal & trust</a><span>/</span><span>'+e(doc.title)+'</span></div>'+
  '<header class="legal-hero" id="top"><p class="legal-eyebrow">POLICIES & TRANSPARENCY · '+e(doc.group.toUpperCase())+'</p><h1>'+e(doc.title)+'<span>.</span></h1>'+
- '<p class="legal-lede">'+e(doc.summary)+'</p><div class="legal-meta"><span>Reviewed '+latest+'</span><span class="legal-meta-dot">·</span>'+
+ '<p class="legal-lede">'+e(doc.summary)+'</p><div class="legal-meta"><span>Prepared '+latest+'</span><span class="legal-meta-dot">·</span>'+
  '<span>About '+e(doc.readingMinutes)+' min read</span><span class="legal-meta-dot">·</span><span>Vamsi’s Corner</span></div></header>'+
  '<div class="legal-content-grid">'+policyNav(doc.slug)+
  '<article class="legal-article">'+
@@ -98,7 +98,7 @@ function trustHub(){
     '<h2 id="legal-hub-'+e(group.toLowerCase().replaceAll(/[^a-z0-9]+/g,'-'))+'">'+e(info.short)+'</h2>'+
     '<p>'+e(info.desc)+'</p></div></div><div class="legal-card-grid">'+docs.map(doc=>
      '<a class="legal-card" href="/'+e(doc.slug)+'"><span class="legal-card-top"><span>'+e(doc.readingMinutes)+' MIN READ</span><span aria-hidden="true">↗</span></span>'+
-     '<h3>'+e(doc.title)+'</h3><p>'+e(doc.summary)+'</p><span class="legal-card-footer">Reviewed '+e(doc.updated)+'</span></a>').join('')+
+     '<h3>'+e(doc.title)+'</h3><p>'+e(doc.summary)+'</p><span class="legal-card-footer">Prepared '+e(doc.updated)+'</span></a>').join('')+
     '</div></section>';
  }).join('');
  const main='<main class="shell legal-shell legal-hub-shell" id="content">'+
@@ -106,7 +106,7 @@ function trustHub(){
  '<header class="legal-hero legal-hub-hero" id="top"><p class="legal-eyebrow">INFORMATION YOU CAN ACTUALLY USE</p>'+
  '<h1>A little more <em>clarity.</em><span class="legal-hub-star" aria-hidden="true">✧</span></h1>'+
  '<p class="legal-lede">Privacy, fair use, community standards, data rights and everything that keeps this little corner trustworthy.</p>'+
- '<div class="legal-meta"><span>12 policies</span><span class="legal-meta-dot">·</span><span>Reviewed 27 October 2026</span>'+
+ '<div class="legal-meta"><span>12 policies</span><span class="legal-meta-dot">·</span><span>Prepared 27 October 2026</span>'+
  '<span class="legal-meta-dot">·</span><span>Plain language, original text</span></div></header>'+
  '<div class="legal-hub-note"><span class="legal-hub-note-icon" aria-hidden="true">◈</span><div><strong>Privacy should be understandable.</strong>'+
  '<p>You can read public stories without a member account. Optional reader analytics is off unless you allow it. Your data requests have a direct contact route.</p></div>'+
