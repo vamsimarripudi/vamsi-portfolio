@@ -50,8 +50,8 @@ try{
      assert.ok(layout.top>height-160&&layout.bottom<=height+1,'Dock is at screen bottom '+width);
      assert.equal(await rail.locator('.corner-rail-link').count(),6,'All category links stay accessible');
      assert.equal(await page.locator('[data-corner-rail-backdrop]').isVisible(),false,'No side drawer backdrop');
-     await page.locator('#corner-rail-nav a[href="/category/builds"]').focus();
-     assert.equal(await page.locator('#corner-rail-nav a[href="/category/builds"]').evaluate(el=>el===document.activeElement),true,'Mobile nav keyboard focus');
+     await page.locator('#corner-rail-nav a[href$="/category/builds"]').focus();
+     assert.equal(await page.locator('#corner-rail-nav a[href$="/category/builds"]').evaluate(el=>el===document.activeElement),true,'Mobile nav keyboard focus');
    }else{
      assert.equal(details.toggle,'none','Desktop toggle hidden '+width);
      const rail=page.locator('#corner-rail-nav');
