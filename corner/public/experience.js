@@ -62,7 +62,21 @@
       document.querySelectorAll('[data-auth-open]').forEach(link=>{
         if(!dialog.contains(link))link.hidden=loggedIn;
       });
-      document.querySelectorAll('[data-profile-link]').forEach(link=>link.hidden=!loggedIn);
+      document.querySelectorAll('[data-profile-link]').forEach(link=>{
+        link.hidden=!loggedIn;
+        if(!loggedIn||!user)return;
+        link.replaceChildren();
+        if(user.hasAvatar){
+          const picture=document.createElement('img');
+          picture.alt='';picture.width=26;picture.height=26;
+          picture.src=prefix+'/api/v1/me/avatar';
+          link.append(picture);
+        }
+        const title=document.createElement('span');
+        title.textContent=(user.displayName||'My')+' · Profile';
+        title.style.overflow='hidden';title.style.textOverflow='ellipsis';
+        link.append(title);
+      });
       const gate=document.querySelector('[data-comments-locked]');
       const form=document.querySelector('#comment-form');
       if(gate)gate.hidden=loggedIn;
