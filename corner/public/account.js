@@ -234,24 +234,26 @@
   }
   displayBookmarks();displaySessions();
   first('[data-account-logout]')?.addEventListener('click',async()=>{try{await api('auth/logout','POST',{});location.assign(base+'/login')}catch(error){alert(error.message)}});
-  const dataStatus=first('[data-account-data-status]');
-  const setDataStatus=text=>{if(dataStatus)dataStatus.textContent=text};
+  const exportStatus=first('[data-export-status]')||first('[data-account-data-status]');
+  const deletionStatus=first('[data-delete-status]')||first('[data-account-data-status]');
+  const setExportStatus=text=>{if(exportStatus)exportStatus.textContent=text};
+  const setDeletionStatus=text=>{if(deletionStatus)deletionStatus.textContent=text};
   first('[data-account-export]')?.addEventListener('click',async()=>{
-    setDataStatus('Preparing your account export…');
+    setExportStatus('Preparing your account export…');
     try{
       const info=await api('me/export','POST',{});
       const blob=new Blob([JSON.stringify(info,null,2)],{type:'application/json'});
       const url=URL.createObjectURL(blob),link=document.createElement('a');
       link.href=url;link.download='corner-account-export.json';link.click();
       setTimeout(()=>URL.revokeObjectURL(url),10000);
-      setDataStatus('Your account export is ready.');
-    }catch(error){setDataStatus(error.message||'Could not export your account data.')}
+      setExportStatus('Your account export is ready.');
+    }catch(error){setExportStatus(error.message||'Could not export your account data.')}
   });
   const deletionDialog=first('[data-account-delete-dialog]');
   const deletionTrigger=first('[data-account-delete]');
-  const deletionConfirm=first('[data-account-delete-confirm]');
+  const deletionConfirm=first('[data-account-delete-confirm]')||first('[data-delete-confirm]');
   const deletionMessage=first('[data-account-delete-status]');
-  first('[data-account-delete-cancel]')?.addEventListener('click',()=>deletionDialog?.close());
+  (first('[data-account-delete-cancel]')||first('[data-delete-cancel]'))?.addEventListener('click',()=>deletionDialog?.close());
   deletionDialog?.addEventListener('click',event=>{if(event.target===deletionDialog)deletionDialog.close()});
   const requestDeletion=async()=>{
     if(deletionConfirm)deletionConfirm.disabled=true;
@@ -259,18 +261,18 @@
     try{
       await api('me/deletion','POST',{});
       if(deletionDialog?.open)deletionDialog.close();
-      setDataStatus('Account deletion review requested. You will receive follow-up information through the existing account process.');
+      setDeletionStatus('Deletion review requested. No immediate account deletion occurs.');
     }catch(error){
       const description=error.message||'Could not submit the deletion request.';
       if(deletionMessage)deletionMessage.textContent=description;
-      else setDataStatus(description);
+      else setDeletionStatus(description);
     }finally{if(deletionConfirm)deletionConfirm.disabled=false}
   };
   deletionTrigger?.addEventListener('click',()=>{
     if(deletionDialog?.showModal){
       if(deletionMessage)deletionMessage.textContent='';
       deletionDialog.showModal();
-      first('[data-account-delete-cancel]')?.focus();
+      (first('[data-account-delete-cancel]')||first('[data-delete-cancel]'))?.focus();
     }else if(confirm('Request review of your account deletion? This will not delete your posts or other people’s content.')){
       void requestDeletion();
     }
