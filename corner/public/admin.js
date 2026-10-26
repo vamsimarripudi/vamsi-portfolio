@@ -204,6 +204,24 @@
       entry.caption.placeholder='A moment worth remembering…';
       captionLabel.append(entry.caption);
       fields.append(altLabel,captionLabel);
+      if(entry.file.type==='image/jpeg'||entry.file.type==='image/png'||entry.file.type==='image/webp'){
+        const crop=document.createElement('button');crop.type='button';crop.dataset.cropUpload='';crop.className='corner-crop-trigger';crop.textContent='Crop / reframe ↗';
+        crop.onclick=async()=>{
+          if(!window.CornerImageCrop)return;
+          crop.disabled=true;
+          try{
+            const adjusted=await window.CornerImageCrop.open(entry.file);
+            if(adjusted){
+              if(entry.url)URL.revokeObjectURL(entry.url);
+              entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;
+              filename.textContent=adjusted.name;
+              status.textContent='Crop applied. Add the image description, then attach.';
+            }
+          }catch(error){status.textContent=error.message||'Could not crop this image.'}
+          finally{crop.disabled=false}
+        };
+        fields.append(crop);
+      }
       wrapper.append(figure,fields);
       previewList.append(wrapper);
     };
@@ -220,6 +238,7 @@
       }
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
+      if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
     };
     form.onsubmit=async event=>{
       event.preventDefault();
