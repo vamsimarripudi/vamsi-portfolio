@@ -44,7 +44,7 @@ window.CornerMotion?.react(button,response.yours===button.dataset.reaction);if(r
 $('[data-copy-url]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);toast('Link copied.','success');readingSignal('share');request('/corner/api/analytics/event',{type:'share',postId:initial.postId,path:location.pathname,device:innerWidth<768?'mobile':'desktop'}).catch(()=>{
 });}catch{toast('Select the address to copy.','error')} });
 $('#comment-form')?.addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const button=$('button[type="submit"]',form);button.disabled=true;
-try{const result=await request(`/corner/api/posts/${encodeURIComponent(form.dataset.postId)}/comments`,{name:form.elements.name.value,body:form.elements.body.value});toast(result.message||'Comment sent for review.','success');readingSignal('comment_success');form.reset();}
+try{const result=await request(`/corner/api/posts/${encodeURIComponent(form.dataset.postId)}/comments`,{body:form.elements.body.value});toast(result.message||'Comment sent for review.','success');readingSignal('comment_success');form.reset();}
 catch(err){readingSignal('request_failed');toast(err.message,'error')}finally{button.disabled=false}
 });
 const loadMore=$('[data-load-more]');
