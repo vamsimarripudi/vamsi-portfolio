@@ -68,7 +68,7 @@ try {
  };
  const publicRoutes=['/','/now','/work','/engineering','/lab','/writing','/journey','/resume','/uses','/contact','/privacy','/terms','/faq','/changelog','/birthday','/not-found','/offline','/error','/maintenance','/rate-limited','/track'];
  const cornerRoutes=['/corner','/corner/about','/corner/admin','/corner/login','/corner/register','/corner/forgot-password','/corner/reset-password','/corner/verify-email','/corner/resend-verification','/corner/admin/register'];
- const privateRoutes=['/corner/admin','/corner/profile','/corner/settings/profile','/corner/settings/security','/corner/admin/v3/memories','/corner/admin/v3/wishes','/corner/admin/v3/insights','/corner/admin/v3/languages'];
+ const privateRoutes=['/corner/admin','/corner/profile','/corner/settings/profile','/corner/saved','/corner/settings/preferences','/corner/settings/security','/corner/settings/privacy','/corner/admin/v3/memories','/corner/admin/v3/wishes','/corner/admin/v3/insights','/corner/admin/v3/languages'];
  for(const [width,height] of sizes){
   const p=await publicContext.newPage();await p.setViewportSize({width,height});const errors=[];p.on('pageerror',e=>errors.push(e.message));
   // Auth and main compositions at every width; complete route sweep on phone/tablet/laptop.
@@ -88,7 +88,20 @@ try {
   }
   assert.deepEqual(errors,[],'Public browser errors '+width);await p.close();
   const a=await auth.newPage();await a.setViewportSize({width,height});
-  for(const route of full?privateRoutes:['/corner/admin']){const response=await a.goto(corner+route,{waitUntil:'domcontentloaded'});assert.equal(response.status(),200,route);assert.equal(await a.locator('.signin-box').count(),0,'Owner session required '+route);await check(a,'Private '+route+' @'+width)}
+  for(const route of full?privateRoutes:['/corner/admin']){
+    const response=await a.goto(corner+route,{waitUntil:'domcontentloaded'});
+    assert.equal(response.status(),200,route);
+    assert.equal(await a.locator('.signin-box').count(),0,'Owner session required '+route);
+    if(['/corner/profile','/corner/settings/profile','/corner/saved','/corner/settings/preferences','/corner/settings/security','/corner/settings/privacy'].includes(route)){
+      assert.equal(await a.locator('[data-account-workspace]').count(),1,'Quiet Desk account workspace '+route);
+      assert.equal(await a.locator('.quiet-nav-link[aria-current="page"]').count(),1,'Selected account section '+route);
+      assert.equal(await a.locator('.corner-orbit-dock').count(),0,'Pulse must not obscure private account controls '+route);
+      if([390,1366].includes(width)&&['/corner/profile','/corner/settings/profile','/corner/settings/preferences'].includes(route)){
+        await a.screenshot({path:path.join(screenshots,'quiet-'+route.split('/').filter(Boolean).slice(1).join('-')+'-'+width+'.png'),animations:'disabled'});
+      }
+    }
+    await check(a,'Private '+route+' @'+width);
+  }
   await a.goto(corner+'/corner/admin');await a.locator('#create-from-overview').click();await a.locator('#post-editor').waitFor();await check(a,'Studio editor @'+width);
   if([390,1366].includes(width))await a.screenshot({path:path.join(screenshots,'editor-'+width+'.png'),animations:'disabled'});
   await a.close();console.log('PASS platform viewport '+width+'x'+height);
