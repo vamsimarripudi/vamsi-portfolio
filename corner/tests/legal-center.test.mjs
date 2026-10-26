@@ -57,7 +57,9 @@ test('DPDP notice accurately reflects staged 2025 to 2027 commencement',()=>{
 
 test('privacy and cookies match features and keep consent controls available',()=>{
  const privacy=legalPage('/privacy'),cookies=legalPage('/cookies');
- assert.match(privacy,/Optional first-party measurement/);
+ assert.match(privacy,/Detailed first-party reading data/);
+ assert.match(privacy,/limited basic event endpoint/i);
+ assert.match(cookies,/corner_reading_consent/);
  assert.match(privacy,/90-day cleanup lifecycle/);
  assert.match(privacy,/private profile/i);
  assert.match(privacy,/Resend/);
