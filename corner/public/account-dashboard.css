@@ -338,3 +338,43 @@ body.corner-comfort:has(.account-shell--dashboard) {
   .corner-comfort .account-shell--dashboard .account-identity-cover{background:Canvas}
   .corner-comfort .account-shell--dashboard .account-nav-link.is-active{outline:2px solid Highlight}
 }
+
+
+/* Private-data actions: native, focus-managed confirmation, never an instant delete. */
+.corner-comfort .account-shell--dashboard .account-data-feedback,
+.corner-comfort .account-shell--dashboard .account-delete-status {
+  min-height:0;margin:0;color:#725943;font-size:.73rem;line-height:1.55;
+}
+.corner-comfort .account-shell--dashboard .account-data-feedback:empty,
+.corner-comfort .account-shell--dashboard .account-delete-status:empty {display:none}
+.corner-comfort .account-shell--dashboard dialog.account-delete-dialog[open] {
+  position:fixed;inset:0;display:block;margin:auto;min-width:0;
+  width:min(92vw,430px);max-width:430px;max-height:calc(100dvh - 36px);
+  overflow:auto;padding:0;border:1px solid #e8d8d2;border-radius:21px;
+  background:#fff;color:#251c20;box-shadow:0 24px 75px #2115194d;
+}
+.corner-comfort .account-shell--dashboard .account-delete-dialog::backdrop {
+  background:rgba(25,18,23,.43);backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.corner-comfort .account-shell--dashboard .account-delete-content{display:grid;gap:12px;padding:clamp(19px,4vw,28px)}
+.corner-comfort .account-shell--dashboard .account-delete-content h2{
+  margin:0!important;font-size:clamp(1.13rem,3.2vw,1.42rem)!important;line-height:1.25!important;
+}
+.corner-comfort .account-shell--dashboard .account-delete-content p:not(.account-overline){
+  margin:0;color:#625a5b;font-size:.83rem;line-height:1.62;
+}
+.corner-comfort .account-shell--dashboard .account-delete-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;
+}
+.corner-comfort .account-shell--dashboard .account-delete-actions button{
+  min-height:45px;padding:11px 13px;border:1px solid #d6cfce;border-radius:11px;
+  background:#fff;color:#262025;font-size:.75rem;font-weight:740;cursor:pointer;
+}
+.corner-comfort .account-shell--dashboard .account-delete-actions [data-account-delete-confirm]{
+  border-color:#ad4839;background:#ad4839;color:#fff;
+}
+.corner-comfort .account-shell--dashboard .account-delete-actions [data-account-delete-confirm]:disabled{opacity:.64;cursor:wait}
+@media(max-width:360px){
+ .corner-comfort .account-shell--dashboard .account-delete-actions{grid-template-columns:1fr}
+}
