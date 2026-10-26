@@ -180,7 +180,14 @@ const quietPrivacyScreen=()=>'<section class="quiet-screen" data-quiet-screen="p
  '<h3>Request account deletion</h3><p>This begins a reviewed request. It does not immediately remove other people’s content or bypass legal retention obligations.</p>'+
  '<button class="quiet-danger-action" type="button" data-account-delete>'+quietIcon('trash')+' Request deletion review</button>'+
  '<p class="quiet-action-status" role="status" data-delete-status aria-live="polite"></p></section></div>'+
- '<dialog class="quiet-confirm-dialog" data-account-delete-dialog aria-labelledby="quiet-delete-title">'+
+ '<section class="quiet-panel quiet-policy-links" aria-labelledby="quiet-policy-links-heading">'+
+ '<div class="quiet-panel-top"><div><h3 id="quiet-policy-links-heading">Your privacy in writing.</h3><p>Learn what the site collects, what your choices mean, and how Indian privacy rights apply.</p></div></div>'+
+ quietRow('Privacy Policy','Our actual personal data practices','/privacy','shield')+
+ quietRow('Cookie choices','Required and optional browser storage','/cookies','sliders')+
+ quietRow('India DPDP rights','Statutory rights and phased commencement','/dpdp','lock')+
+ quietRow('Contact & grievances','Request assistance or raise a concern','/grievances','mail')+
+ '</section>'+
+'<dialog class="quiet-confirm-dialog" data-account-delete-dialog aria-labelledby="quiet-delete-title">'+
  '<div class="quiet-confirm-inner"><span class="quiet-panel-symbol">'+quietIcon('shield')+'</span><h3 id="quiet-delete-title">Review account deletion request?</h3>'+
  '<p>This requests review of your account deletion. No immediate deletion happens when you continue.</p>'+
  '<p class="quiet-confirm-status" data-account-delete-status role="status" aria-live="polite"></p>'+
@@ -203,7 +210,7 @@ function quietDeskPage(type,user){
   '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
   '<p class="quiet-session-note"><span aria-hidden="true">●</span> Signed in as '+h(user.email||'')+'</p></div><div class="quiet-desk-grid">'+
   quietNav(type,user)+'<div class="quiet-desk-content">'+panes[type]+'</div></div></main>';
- const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a></footer>';
+ const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/policies">Legal & Trust</a><a href="/privacy">Privacy</a><a href="/cookies">Cookies</a><a href="/dpdp">DPDP rights</a><a href="/terms">Terms</a></footer>';
  const content='<div class="account-shell account-shell--quiet" data-account-page="'+h(type)+'" data-account-workspace data-signed-in="true">'+
   top+main+footer+'<script src="/account.js?v=quiet1" defer></script></div>';
  return basePage({path:type,title,noindex:true,content,initial:{page:'account',authenticated:true,account:user,memberCompactPasswords:compactMemberPasswords()}});
