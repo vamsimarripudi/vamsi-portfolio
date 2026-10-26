@@ -87,9 +87,10 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
  assert.equal((html.match(/data-profile-link/g)||[]).length,1);
  assert.match(page,/href="\/companion\.css"/);
  assert.match(page,/src="\/companion\.js" defer/);
- assert.match(rail,/corner-drawer-open/);
- assert.match(rail,/corner-welcome-v1/);
- assert.match(rail,/Escape/);
+ assert.match(pulse,/corner-drawer-open/);
+ assert.match(pulse,/corner-welcome-v1/);
+ assert.match(pulse,/Escape/);
+ assert.ok(rail.length<1700,'Keep shared prefetch core lightweight');
  assert.match(pulse,/\/api\/status/);
  assert.match(pulse,/\/api\/posts\?limit=1/);
  assert.match(pulse,/\/api\/realtime\/stream/);
