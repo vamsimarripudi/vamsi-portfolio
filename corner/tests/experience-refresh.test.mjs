@@ -107,6 +107,8 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
 test('Media Library has responsive filled columns, clear details actions, and caption clamps',()=>{
  const admin=asset('admin.js'),studio=asset('media-library.css');
  assert.match(admin,/class="media-gallery corner-library-grid"/);
+ assert.match(admin,/list\.map\(x=>mediaCard\(x,false\)\)/);
+ assert.doesNotMatch(admin,/list\.map\(mediaCard\)/);
  assert.match(admin,/media-thumb--library/);
  assert.match(admin,/Edit details ↗/);
  assert.match(studio,/\.corner-library-grid/);
