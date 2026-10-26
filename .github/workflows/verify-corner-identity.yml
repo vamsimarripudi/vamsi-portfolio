@@ -163,8 +163,8 @@ jobs:
             console.log('PASS Quiet Desk overview/edit 320–1366px, real bookmark count, preferences, privacy confirmation and session safety');
             // The public account menu must not expose Studio controls to members.
             await page.setViewportSize({width:390,height:844});
-            await page.goto(origin+'/corner/',{waitUntil:'networkidle'});
-            await page.locator('[data-profile-member]:not([hidden])').waitFor({state:'attached'});
+            await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>document.querySelector('[data-profile-member]')?.hidden===false);
             await page.locator('[data-corner-profile-toggle]').click();
             assert.equal(await page.locator('[data-profile-guest]').isVisible(),false);
             assert.equal(await page.locator('[data-owner-studio]').isVisible(),false,'Owner Studio hidden for members');
