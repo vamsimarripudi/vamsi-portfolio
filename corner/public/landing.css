@@ -160,7 +160,7 @@ body.corner-comfort .corner-home-shell .feed-heading {margin:0 0 17px}
 body.corner-comfort .corner-home-shell .feed-heading>div{min-width:0}
 body.corner-comfort .corner-home-shell .feed-heading .eyebrow{font-size:.63rem;color:#9a765f;margin-bottom:6px}
 body.corner-comfort .corner-home-shell .feed-heading h2{
-  font-size:clamp(1.26rem,2.1vw,1.7rem)!important;line-height:1.35!important;
+  font-size:clamp(1.25rem,1.6vw,1.48rem)!important;line-height:1.35!important;
   font-weight:745;letter-spacing:-.045em;margin:0!important;
 }
 body.corner-comfort .corner-home-shell .corner-feed-subtitle {color:#6d6560;font-size:.84rem;margin:3px 0 0}
