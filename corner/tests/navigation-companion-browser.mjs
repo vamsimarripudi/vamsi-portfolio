@@ -16,6 +16,19 @@ try{
    await page.setViewportSize({width,height});
    const res=await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
    assert.equal(res.status(),200,'Corner home '+width);
+   const vm=page.locator('.brand-mark--vm img.corner-brand-image');
+   await vm.waitFor({state:'visible'});
+   const logo=await vm.evaluate(async img=>{
+     await img.decode();
+     const rect=img.getBoundingClientRect();
+     return {complete:img.complete,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,width:rect.width,height:rect.height,url:img.getAttribute('src')};
+   });
+   assert.equal(logo.complete,true,'Uploaded VM logo loads on '+width);
+   assert.equal(logo.naturalWidth,96,'VM logo renders from the uploaded artwork on '+width);
+   assert.ok(logo.width>=28&&logo.width<=64,'VM logo remains compact without distortion '+width);
+   assert.ok(Math.abs(logo.width-logo.height)<1,'VM logo retains its square proportions '+width);
+   assert.ok(logo.url.includes('/corner/mark.svg?v=vm-20261027'),'Logo is served from Corner, not an external URL');
+
    const details=await page.evaluate(()=>({
      scrollWidth:document.documentElement.scrollWidth,
      viewport:innerWidth,scrollbar:getComputedStyle(document.documentElement).scrollbarWidth,
@@ -26,19 +39,32 @@ try{
    assert.equal(details.scrollbar,'none','Visual scrollbar removed, scrolling preserved '+width);
    assert.ok(details.rail,'A navigation rail exists '+width);
    if(width<=900){
-     assert.notEqual(details.toggle,'none','Mobile drawer toggle available '+width);
-     await page.locator('[data-corner-rail-toggle]').click();
+     const toy=page.locator('.corner-orbit-toggle');
+     await toy.waitFor({state:'visible'});
+     const pulse=await toy.boundingBox(),dock=await page.locator('#corner-rail-nav').boundingBox();
+     assert.ok(pulse&&dock&&pulse.y+pulse.height<=dock.y-5,'Pulse is visibly above the bottom dock '+width);
+   }
+   if(width<=900){
+     assert.equal(details.toggle,'none','Mobile uses a bottom dock, not a hamburger '+width);
      const rail=page.locator('#corner-rail-nav');
-     await page.waitForFunction(()=>document.querySelector('#corner-rail-nav').getBoundingClientRect().left>=-1);
-     assert.equal(await rail.getAttribute('class'), 'category-tabs corner-rail is-open');
-     assert.equal(await page.locator('[data-corner-rail-toggle]').getAttribute('aria-expanded'),'true');
-     assert.equal(await page.locator('html').evaluate(e=>e.classList.contains('corner-drawer-open')),true);
-     const coords=await rail.boundingBox();
-     assert.ok(coords&&coords.x>=-1&&coords.x+coords.width<=width+1,'Drawer within screen '+width);
-     await page.keyboard.press('Escape');
-     assert.equal(await page.locator('[data-corner-rail-toggle]').getAttribute('aria-expanded'),'false');
-     assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('corner-drawer-open')),false);
-     assert.equal(await page.locator('[data-corner-rail-toggle]').evaluate(e=>e===document.activeElement),true);
+     const layout=await rail.evaluate(element=>{
+       const rect=element.getBoundingClientRect(),style=getComputedStyle(element);
+       const pulse=document.querySelector('.corner-orbit-dock')?.getBoundingClientRect();
+       return {position:style.position,display:style.display,visibility:style.visibility,
+         columns:style.gridTemplateColumns.split(' ').filter(Boolean).length,
+         width:rect.width,left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+         pulseBottom:pulse?.bottom,pulseTop:pulse?.top};
+     });
+     assert.equal(layout.position,'fixed','Mobile dock floats above content '+width);
+     assert.equal(layout.display,'grid','Six-column mobile dock '+width);
+     assert.equal(layout.visibility,'visible','Bottom dock stays visible '+width);
+     assert.equal(layout.columns,6,'One icon per category '+width);
+     assert.ok(layout.width<=width&&layout.left>=-1&&layout.right<=width+1,'Glass dock inside viewport '+width+' '+JSON.stringify(layout));
+     assert.ok(layout.top>height-160&&layout.bottom<=height+1,'Dock is at screen bottom '+width);
+     assert.equal(await rail.locator('.corner-rail-link').count(),6,'All category links stay accessible');
+     assert.equal(await page.locator('[data-corner-rail-backdrop]').isVisible(),false,'No side drawer backdrop');
+     await page.locator('#corner-rail-nav a[href$="/category/builds"]').focus();
+     assert.equal(await page.locator('#corner-rail-nav a[href$="/category/builds"]').evaluate(el=>el===document.activeElement),true,'Mobile nav keyboard focus');
    }else{
      assert.equal(details.toggle,'none','Desktop toggle hidden '+width);
      const rail=page.locator('#corner-rail-nav');
@@ -48,9 +74,7 @@ try{
      assert.equal(visible,'visible','Hover reveals navigation text');
    }
    if([320,390,1366].includes(width)){
-     if(width<=900)await page.locator('[data-corner-rail-toggle]').click();
      await page.screenshot({path:'screenshots/corner-rail-'+width+'.png',fullPage:false,animations:'disabled'});
-     if(width<=900)await page.keyboard.press('Escape');
    }
    const avatar=page.locator('[data-corner-profile-toggle]');
    await avatar.click();
