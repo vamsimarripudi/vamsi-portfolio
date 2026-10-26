@@ -59,3 +59,16 @@ test('Studio schedule, crop, basic Insights and switches have regression contrac
  assert.match(style,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(admin,/Publish at the right time/);
 });
+
+
+test('media attach opens in a native dialog instead of a bottom card',()=>{
+ const admin=asset('admin.js'),style=asset('refresh.css');
+ assert.match(admin,/id="open-media-panel" aria-haspopup="dialog"/);
+ assert.match(admin,/<dialog id="editor-media" class="corner-media-modal"/);
+ assert.doesNotMatch(admin,/<div class="admin-section" id="editor-media"><\/div>/);
+ assert.match(admin,/section\.onclose=\(\)=>\{cleanup\(\)/);
+ assert.match(admin,/section\.querySelectorAll\('\[data-media-dismiss\]'\)/);
+ assert.match(style,/\.corner-media-modal::backdrop/);
+ assert.match(style,/\.corner-media-footer/);
+ assert.match(style,/button\.corner-media-trigger/);
+});
