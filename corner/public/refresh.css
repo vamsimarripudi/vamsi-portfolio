@@ -567,3 +567,29 @@ body.corner-comfort #search-dialog .search-footer {gap:8px;font-size:.68rem}
   body.corner-comfort:has(.corner-public-header) #content::before {display:none}
   body.corner-comfort #search-dialog.search-dialog[open] {border:2px solid CanvasText}
 }
+
+
+/* User-provided VM. brand artwork. All Corner navigation, Studio and
+   account marks share the exact image; no generated/re-drawn symbol. */
+.corner-comfort .corner-brand-image {
+  display:block;width:100%;height:100%;max-width:100%;max-height:100%;
+  object-fit:cover;border-radius:inherit;pointer-events:none;
+}
+.corner-comfort :is(.brand-mark--vm,.studio-brand-mark--vm,.account-brand-mark--vm,.admin-signin-mark--vm) {
+  padding:0!important;overflow:hidden;flex:none;isolation:isolate;
+  border-radius:13px;background:#242226;
+}
+.corner-comfort .brand .brand-mark.brand-mark--vm {
+  transform:none!important;border-radius:13px;
+  -webkit-text-fill-color:initial;
+}
+.corner-comfort .brand:is(:hover,:focus-within) .brand-mark.brand-mark--vm {
+  transform:scale(1.025)!important;
+}
+.corner-comfort .admin-brand .studio-brand-mark--vm {border-radius:10px}
+.corner-comfort .account-brand .account-brand-mark--vm {border-radius:11px}
+.corner-comfort .admin-signin-mark.admin-signin-mark--vm {border-radius:11px}
+@media (prefers-reduced-motion:reduce){
+  .corner-comfort .brand .brand-mark.brand-mark--vm {transition:none!important;transform:none!important}
+  .corner-comfort .brand:is(:hover,:focus-within) .brand-mark.brand-mark--vm {transform:none!important}
+}
