@@ -69,3 +69,18 @@
 html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){transition:none!important;transform:none!important}
 [data-reaction-glyph]{display:inline-block;font-style:normal;transform-origin:center}
 @media(prefers-reduced-motion:reduce){[data-reaction-glyph]{transform:none!important}}
+
+
+/* Narrow Studio chrome: fit three 44px actions without horizontal overflow.
+   Keep the category navigation independently scrollable. */
+@media(min-width:360px) and (max-width:767px){
+  .corner-comfort .admin-shell .admin-sidebar-footer{
+    right:12px;left:auto;width:148px;min-width:148px;max-width:calc(100% - 24px);
+    display:flex;justify-content:flex-end;gap:6px;
+  }
+  .corner-comfort .admin-shell .admin-sidebar-footer .studio-icon-button{
+    flex:0 0 44px;width:44px;min-width:44px;min-height:44px;
+  }
+  .corner-comfort .studio-brand-row{padding-right:150px}
+  .corner-comfort .admin-shell .admin-nav{max-width:100%;min-width:0}
+}
