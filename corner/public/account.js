@@ -7,7 +7,7 @@
   const initial=window.__CORNER__||{};
   const base='/corner';
   const endpoints={register:'auth/register',login:'auth/login',verify:'auth/email/verify',resend:'auth/email/resend',forgot:'auth/password/forgot',reset:'auth/password/reset',
-    'confirm-email':'auth/email/confirm','email-change':'auth/email/change','admin-register':'auth/admin/register','mfa-activate':'auth/mfa/activate',invite:'admin/invitations',profile:'me','password-change':'auth/password/change'};
+    'confirm-email':'auth/email/confirm','email-change':'auth/email/change','admin-register':'auth/admin/register','mfa-activate':'auth/mfa/activate',invite:'admin/invitations',profile:'me',preferences:'me/preferences','password-change':'auth/password/change'};
   const isEmail=(value)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value||''));
   const response=(form,text,wrong=false)=>{const el=first('[data-account-response]',form);if(el){el.textContent=text;el.dataset.error=String(wrong);el.dataset.success=String(!wrong)}};
   let token='';
@@ -82,9 +82,18 @@
       try{
         let result;
         if(kind==='mfa-activate')result=await api(endpoints[kind],'POST',{challenge,code:data.code});
-        else result=await api(endpoints[kind],kind==='profile'?'PATCH':'POST',kind==='profile'?{
-          displayName:data.displayName,bio:data.bio,locale:data.locale,emailUpdates:!!first('input[name=emailUpdates]',form)?.checked
-        }:data);
+        else if(kind==='profile'){
+          // Profile and preferences are separate screens. Preserve the member's
+          // existing preferences when editing name/bio through the established API.
+          result=await api(endpoints.profile,'PATCH',{
+            displayName:data.displayName,bio:data.bio,
+            locale:initial.account?.locale||'en',emailUpdates:initial.account?.emailUpdates===true
+          });
+        }else if(kind==='preferences'){
+          result=await api(endpoints.preferences,'PATCH',{
+            locale:data.locale,emailUpdates:!!first('input[name=emailUpdates]',form)?.checked
+          });
+        }else result=await api(endpoints[kind],'POST',data);
         if(kind==='login'){location.assign(base+'/profile');return}
         if(kind==='admin-register'){
           response(form,'Account created. Sign in to the studio to enrol an authenticator.');
@@ -113,6 +122,7 @@
         else if(kind==='reset')response(form,'Password changed. Return to sign-in.');
         else if(kind==='password-change'){response(form,'Password changed; your sessions have been revoked. Sign in again.');setTimeout(()=>location.assign(base+'/login'),1200)}
         else if(kind==='profile'){response(form,'Profile updated.');location.assign(base+'/profile');return}
+        else if(kind==='preferences')response(form,'Preferences saved.');
         else response(form,'Saved.');
       }catch(error){response(form,error.message||'Please try again.',true)}
       finally{if(button.type==='submit')button.disabled=false}
@@ -121,8 +131,16 @@
   const profileForm=first('form[data-account-form=profile]');
   if(profileForm&&initial.account){
     const p=initial.account;
-    for(const key of ['displayName','bio','locale']){const el=profileForm.elements[key];if(el)el.value=p[key]||''}
-    profileForm.elements.emailUpdates.checked=!!p.emailUpdates;
+    for(const key of ['displayName','bio']){const el=profileForm.elements[key];if(el)el.value=p[key]||''}
+    const counter=first('[data-bio-count]',profileForm),bio=profileForm.elements.bio;
+    if(counter&&bio){const update=()=>{counter.textContent=bio.value.length+' / 280'};bio.addEventListener('input',update);update()}
+    if(profileForm.elements.locale)profileForm.elements.locale.value=p.locale||'en';
+    if(profileForm.elements.emailUpdates)profileForm.elements.emailUpdates.checked=!!p.emailUpdates;
+  }
+  const preferencesForm=first('form[data-account-form=preferences]');
+  if(preferencesForm&&initial.account){
+    preferencesForm.elements.locale.value=initial.account.locale||'en';
+    preferencesForm.elements.emailUpdates.checked=!!initial.account.emailUpdates;
   }
   // Profile image: local crop, server-side WebP sanitization and private session access.
   const avatarPanel=first('[data-account-avatar]');
@@ -173,34 +191,40 @@
   }
   async function displayBookmarks(){
     const target=first('[data-account-bookmarks]');if(!target)return;
-    const counter=first('[data-account-saved-count]');
+    const count=first('[data-bookmark-count]');
     try{
       const books=await api('me/bookmarks');
-      if(!Array.isArray(books))throw Error('Saved stories are not available right now.');
       target.replaceChildren();
-      if(counter){counter.textContent=String(books.length);counter.hidden=false}
+      if(count)count.textContent=String(books.length)+' saved';
       if(!books.length){
-        const empty=document.createElement('div');empty.className='account-empty-state';
-        const artwork=document.createElement('span');artwork.className='account-empty-glyph';artwork.setAttribute('aria-hidden','true');artwork.textContent='◇';
-        const title=document.createElement('strong');title.textContent='No saved stories yet.';
-        const desc=document.createElement('p');desc.textContent='Keep stories you like to read them again later.';
-        const action=document.createElement('a');action.href=base+'/';action.textContent='Explore stories ↗';
-        empty.append(artwork,title,desc,action);target.append(empty);return;
+        const empty=document.createElement('div');empty.className='quiet-empty';
+        const icon=document.createElement('span');icon.className='quiet-bookmark-icon';icon.textContent='✳';icon.setAttribute('aria-hidden','true');
+        const heading=document.createElement('h3');heading.textContent='No saved stories yet.';
+        const info=document.createElement('p');info.textContent='When you save a story, it will appear here for easy reading.';
+        const link=document.createElement('a');link.className='quiet-action-link';link.href=base+'/';link.textContent='Explore stories ↗';
+        empty.append(icon,heading,info,link);target.append(empty);return;
       }
-      const list=document.createElement('ul');list.className='account-bookmark-list';
+      const list=document.createElement('ul');
       for(const book of books){
-        if(!book||typeof book.slug!=='string'||typeof book.title!=='string')continue;
-        const li=document.createElement('li'),a=document.createElement('a');
-        a.href=base+'/post/'+encodeURIComponent(book.slug);a.textContent=book.title;
-        li.append(a);list.append(li);
+        const li=document.createElement('li');
+        const art=document.createElement('span');art.className='quiet-bookmark-icon';art.textContent='✳';art.setAttribute('aria-hidden','true');
+        const copy=document.createElement('div');copy.className='quiet-bookmark-copy';
+        const a=document.createElement('a');a.href=base+'/post/'+encodeURIComponent(book.slug);a.textContent=book.title||'Saved story';
+        const date=document.createElement('small');
+        const label=book.type?book.type.replace(/_/g,' ')+' · ':'';
+        date.textContent=label+(book.saved_at?new Date(book.saved_at).toLocaleDateString(undefined,{dateStyle:'medium'}):'Saved in your Corner');
+        copy.append(a,date);
+        const remove=document.createElement('button');remove.type='button';remove.className='quiet-bookmark-remove';
+        remove.textContent='Remove';remove.setAttribute('aria-label','Remove '+(book.title||'story')+' from saved stories');
+        remove.addEventListener('click',async()=>{
+          remove.disabled=true;remove.textContent='Removing…';
+          try{await api('me/bookmarks/'+encodeURIComponent(book.id),'DELETE');await displayBookmarks()}
+          catch(error){remove.disabled=false;remove.textContent='Remove';date.textContent=error.message||'Could not remove this story.'}
+        });
+        li.append(art,copy,remove);list.append(li);
       }
       target.append(list);
-    }catch(error){
-      target.replaceChildren();
-      const message=document.createElement('p');message.className='account-help';message.textContent=error.message||'Saved stories could not be loaded.';
-      target.append(message);
-      if(counter)counter.hidden=true;
-    }
+    }catch(error){target.textContent=error.message||'Could not load saved stories.';if(count)count.textContent='—'}
   }
   async function displaySessions(){const target=first('[data-account-sessions]');if(!target)return;
     try{const sessions=await api('me/sessions');target.replaceChildren();const list=document.createElement('ul');
@@ -211,10 +235,33 @@
   displayBookmarks();displaySessions();
   first('[data-account-logout]')?.addEventListener('click',async()=>{try{await api('auth/logout','POST',{});location.assign(base+'/login')}catch(error){alert(error.message)}});
   first('[data-account-export]')?.addEventListener('click',async()=>{
-    try{const info=await api('me/export','POST',{}),blob=new Blob([JSON.stringify(info,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='corner-account-export.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}catch(error){alert(error.message)}
+    const trigger=first('[data-account-export]'),status=first('[data-export-status]');
+    trigger.disabled=true;if(status)status.textContent='Preparing your export…';
+    try{
+      const info=await api('me/export','POST',{});
+      const blob=new Blob([JSON.stringify(info,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='corner-account-export.json';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),10000);
+      if(status)status.textContent='Your export is ready.';
+    }catch(error){if(status)status.textContent=error.message||'Could not export this account.'}
+    finally{trigger.disabled=false}
   });
-  first('[data-account-delete]')?.addEventListener('click',async()=>{
-    if(!confirm('Request review of your account deletion? This will not delete your posts or other people’s content.'))return;
-    try{await api('me/deletion','POST',{});alert('Deletion review requested.')}catch(error){alert(error.message)}
+  const deletionDialog=first('[data-account-delete-dialog]'),deletionButton=first('[data-account-delete]');
+  const deletionStatus=first('[data-delete-status]');
+  deletionButton?.addEventListener('click',()=>{
+    if(deletionDialog&&!deletionDialog.open)deletionDialog.showModal();
+  });
+  first('[data-delete-cancel]')?.addEventListener('click',()=>deletionDialog.close());
+  deletionDialog?.addEventListener('click',event=>{if(event.target===deletionDialog)deletionDialog.close()});
+  first('[data-delete-confirm]')?.addEventListener('click',async()=>{
+    const trigger=first('[data-delete-confirm]');
+    trigger.disabled=true;
+    if(deletionStatus)deletionStatus.textContent='Submitting a reviewed deletion request…';
+    try{
+      await api('me/deletion','POST',{});
+      deletionDialog.close();
+      if(deletionStatus)deletionStatus.textContent='Your request was received for review. Your account has not been immediately deleted.';
+    }catch(error){if(deletionStatus)deletionStatus.textContent=error.message||'Could not submit request.';deletionDialog.close()}
+    finally{trigger.disabled=false}
   });
 })();
