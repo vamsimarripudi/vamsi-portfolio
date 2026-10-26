@@ -70,6 +70,24 @@ test('member and owner can return from stories to Account without reauthenticati
  const settings=await go('/settings/profile',{cookie:memberCookie});
  assert.equal(settings.status,200);
  assert.match(await settings.text(),/data-account-form="profile"/);
+ for(const route of ['/saved','/settings/preferences','/settings/security','/settings/privacy']){
+  const response=await go(route,{cookie:memberCookie});
+  assert.equal(response.status,200,'Member page '+route);
+  const page=await response.text();
+  assert.match(page,/data-account-workspace/,'Single private account shell '+route);
+  assert.match(response.headers.get('cache-control'),/no-store/,'Member profile does not enter shared caches');
+ }
+ const preferencesPage=await (await go('/settings/preferences',{cookie:memberCookie})).text();
+ assert.match(preferencesPage,/data-account-form="preferences"/);
+ const privatePage=await (await go('/settings/privacy',{cookie:memberCookie})).text();
+ assert.match(privatePage,/data-account-delete-dialog/);
+ assert.match(privatePage,/data-account-export/);
+ const book=await go('/api/v1/me/bookmarks',{method:'POST',cookie:memberCookie,data:{postId:post.id}});
+ assert.equal(book.status,200);
+ const saved=await (await go('/api/v1/me/bookmarks',{cookie:memberCookie})).json();
+ assert.equal(saved.data.length,1);
+ assert.equal(saved.data[0].title,'Return to account story');
+
  const newBio='My <private> biography stays escaped';
  const edited=await go('/api/v1/me',{method:'PATCH',cookie:memberCookie,
   data:{displayName:'Account Tester Updated',bio:newBio,locale:'te',emailUpdates:false}});
@@ -78,6 +96,22 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.match(updated,/Account Tester Updated/);
  assert.match(updated,/My &lt;private&gt; biography stays escaped/);
  assert.doesNotMatch(updated,/data-account-form="profile"/);
+ const prefs=await go('/api/v1/me/preferences',{method:'PATCH',cookie:memberCookie,
+  data:{locale:'hi',emailUpdates:true}});
+ assert.equal(prefs.status,200,'Preference changes use existing first-party endpoint');
+ const mine=await (await go('/api/v1/me',{cookie:memberCookie})).json();
+ assert.equal(mine.data.displayName,'Account Tester Updated','Preferences preserve the display name');
+ assert.equal(mine.data.bio,newBio,'Preferences preserve the saved bio');
+ assert.equal(mine.data.locale,'hi');
+ assert.equal(mine.data.emailUpdates,true);
+ const memberPage=await (await go('/profile',{cookie:memberCookie})).text();
+ assert.match(memberPage,/Hindi · Email updates on/);
+ assert.doesNotMatch(memberPage,/href="\/corner\/admin"/,'Members cannot see Studio links');
+ const deleteSaved=await go('/api/v1/me/bookmarks/'+encodeURIComponent(post.id),{method:'DELETE',cookie:memberCookie});
+ assert.equal(deleteSaved.status,200);
+ const noBooks=await (await go('/api/v1/me/bookmarks',{cookie:memberCookie})).json();
+ assert.equal(noBooks.data.length,0);
+
  assert.equal((await go('/post/'+post.slug,{cookie:memberCookie})).status,200);
  assert.equal((await go('/',{cookie:memberCookie})).status,200);
  const accountReturn=await go('/login',{cookie:memberCookie});
@@ -94,6 +128,11 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.equal(revoke.status,200);
  assert.equal((await go('/login',{cookie:memberCookie})).status,200,'Logged-out member sees login again');
  assert.equal((await go('/settings/profile',{cookie:memberCookie})).status,200);
+ for(const route of ['/saved','/settings/preferences','/settings/privacy']){
+  const locked=await (await go(route,{cookie:memberCookie})).text();
+  assert.match(locked,/Sign in to access your private information/,'Signed-out access is blocked: '+route);
+ }
+
  assert.match(await (await go('/settings/profile',{cookie:memberCookie})).text(),/Sign in to access your private information/);
 });
 test('mobile Studio navigation stays compact, horizontal and icon-first without changing desktop',()=>{
