@@ -91,6 +91,49 @@ try{
    return json.data.some(post=>post.title==='First photo-led Corner story');
   }catch{return false}
  },null,{timeout:15000});
+
+ // The Studio library must show full-width responsive cards, not tiny fixed
+ // auto-fill columns that leave most of the panel empty.
+ await page.locator('[data-admin-view="media"]').click();
+ await page.locator('#admin-view .corner-media-library .corner-library-grid').waitFor({state:'visible',timeout:12000}).catch(async error=>{
+   const active=await page.locator('[data-admin-view="media"]').getAttribute('aria-current').catch(()=>null);
+   const view=await page.locator('#admin-view').innerText().catch(()=>'No Studio view');
+   throw new Error('Media library did not render; active='+active+' view='+view.slice(0,400)+' JS='+browserErrors.join(' | '),{cause:error});
+ });
+ const libraryCards=page.locator('#admin-view .corner-library-grid .media-thumb--library');
+ assert.equal(await libraryCards.count(),2,'Both uploaded assets appear in the clean Studio gallery');
+ assert.equal(await libraryCards.locator('[data-media-edit]').count(),2,'Each library card has one edit-details action');
+ for(const [width,height] of [[320,720],[390,844],[768,980],[1024,800],[1366,850],[1920,1080]]){
+   await page.setViewportSize({width,height});
+   const layout=await page.evaluate(()=>{
+     const panel=document.querySelector('#admin-view .corner-library-grid');
+     const cards=[...panel.querySelectorAll('.media-thumb--library')];
+     const p=panel.getBoundingClientRect();
+     const r=cards.map(c=>c.getBoundingClientRect());
+     return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,panelWidth:p.width,
+       cards:r.map(c=>({width:c.width,left:c.left,right:c.right})),
+       columns:getComputedStyle(panel).gridTemplateColumns,
+       captionClamp:cards.map(c=>getComputedStyle(c.querySelector('.media-card-caption')).webkitLineClamp)};
+   });
+   assert.ok(layout.scroll<=width+1,'Studio Media must not overflow at '+width+' '+JSON.stringify(layout));
+   assert.ok(layout.cards.every(c=>c.left>=-1&&c.right<=width+1),'Media cards inside screen '+width+' '+JSON.stringify(layout));
+   assert.ok(layout.cards.every(c=>c.width>=Math.min(235,layout.panelWidth-1)),'No narrow/tall fixed cards '+width+' '+JSON.stringify(layout));
+   assert.ok(layout.captionClamp.every(v=>v==='2'),'Long captions are previewed in two readable lines');
+   if(width>=1024){
+     assert.ok(layout.cards[0].width>=Math.min(260,layout.panelWidth/3),'Gallery fills available workspace '+width);
+   }
+ }
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.locator('#admin-view .corner-library-grid .media-quick-edit').count(),0,'Library shows no attachment edit forms');
+ const captions=(await libraryCards.locator('.media-card-caption').allTextContents()).map(c=>c.trim()).sort();
+ assert.deepEqual(captions,['A new Corner beginning.','Second caption updated.'].sort(),'Both saved captions appear without depending on gallery order');
+ const selectedCaption=(await libraryCards.first().locator('.media-card-caption').textContent()).trim();
+ await libraryCards.first().locator('[data-media-edit]').click();
+ await page.locator('#media-editor textarea[name="alt"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('#media-editor input[name="caption"]').inputValue(),selectedCaption,'Edit details opens selected asset');
+ await page.locator('#back-media').click();
+ await page.locator('#admin-view .corner-library-grid').waitFor({state:'visible'});
+ console.log('PASS Studio media gallery: responsive card widths, captions, details editor and mobile fit');
  const slug=await page.evaluate(async()=>{
   const r=await fetch('/corner/api/admin/posts?state=published',{credentials:'same-origin'});
   const j=await r.json();return j.data.find(p=>p.title==='First photo-led Corner story')?.slug;

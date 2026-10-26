@@ -96,7 +96,7 @@ function staticFile(res,filepath){
   const rel=decodeURIComponent(filepath).replace(/^\//,'');if(!/^[A-Za-z0-9_./-]+$/.test(rel)||rel.includes('..'))throw httpError(404,'Not found');
   const filename=path.resolve(staticRoot,rel);if(!filename.startsWith(staticRoot+path.sep))throw httpError(404,'Not found');
   if(!fs.existsSync(filename)||!fs.statSync(filename).isFile())throw httpError(404,'Not found');
-  const extension=path.extname(filename).toLowerCase();end(res,200,fs.readFileSync(filename),{'content-type':mimeTypes[extension]||'application/octet-stream','cache-control':'public,max-age=3600','x-content-type-options':'nosniff'});
+  const extension=path.extname(filename).toLowerCase();end(res,200,fs.readFileSync(filename),{'content-type':mimeTypes[extension]||'application/octet-stream','cache-control':['.css','.js'].includes(extension)?'public,max-age=0,must-revalidate':'public,max-age=3600','x-content-type-options':'nosniff'});
 }
 function fileMagic(buf,declared){
   if(declared==='image/jpeg'&&buf[0]===0xff&&buf[1]===0xd8&&buf[2]===0xff)return '.jpg';
@@ -355,7 +355,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}

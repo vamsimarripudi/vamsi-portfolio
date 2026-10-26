@@ -102,3 +102,34 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
  assert.match(server,/\/companion\.js/);
  assert.match(server,/\/companion\.css/);
 });
+
+
+test('Media Library has responsive filled columns, clear details actions, and caption clamps',()=>{
+ const admin=asset('admin.js'),studio=asset('media-library.css');
+ assert.match(admin,/class="media-gallery corner-library-grid"/);
+ assert.match(admin,/list\.map\(x=>mediaCard\(x,false\)\)/);
+ assert.doesNotMatch(admin,/list\.map\(mediaCard\)/);
+ assert.match(admin,/media-thumb--library/);
+ assert.match(admin,/Edit details ↗/);
+ assert.match(studio,/\.corner-library-grid/);
+ assert.match(studio,/repeat\(auto-fit,minmax\(min\(100%,280px\),1fr\)\)/);
+ assert.match(studio,/-webkit-line-clamp:2/);
+ assert.match(studio,/@media \(max-width:600px\)/);
+});
+
+test('light editorial backdrop and compact centered search retain normal page contrast',()=>{
+ const style=asset('refresh.css');
+ assert.match(style,/#search-dialog\.search-dialog\[open\]/);
+ assert.match(style,/margin:auto!important/);
+ assert.match(style,/backdrop-filter:none!important/);
+ assert.match(style,/body\.corner-comfort:has\(\.corner-public-header\) #content::before/);
+ assert.match(style,/@keyframes corner-paper-glow/);
+ assert.match(style,/@media\(prefers-reduced-motion:reduce\)/);
+ const publicPage=basePage({path:'/',initial:{page:'feed'}});
+ const adminPageHtml=basePage({path:'/admin',initial:{page:'admin'}});
+ assert.match(publicPage,/href="\/refresh\.css\?v=20261026-clean1"/);
+ assert.match(adminPageHtml,/href="\/studio\.css\?v=20261026-clean1"/);
+ assert.match(adminPageHtml,/href="\/media-library\.css\?v=20261026-clean1"/);
+ const server=fs.readFileSync(new URL('../src/server.mjs',import.meta.url),'utf8');
+ assert.match(server,/\['\.css','\.js'\]\.includes\(extension\)\?'public,max-age=0,must-revalidate'/);
+});

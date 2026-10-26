@@ -68,6 +68,24 @@ try{
    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow),'hidden','Sign-in freezes background scroll');
    await page.locator('[data-auth-close]').click();
    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow!=='hidden'),true,'Scroll restored on auth close');
+   // The search dialog stays a regular centered pop-up on every viewport.
+   const searchTrigger=page.locator('[data-search-open]');
+   await searchTrigger.click();
+   const searchDialog=page.locator('#search-dialog');
+   await searchDialog.waitFor({state:'visible'});
+   const search=await searchDialog.evaluate(dialog=>{
+     const b=dialog.getBoundingClientRect();
+     return {x:b.x,width:b.width,height:b.height,center:b.x+b.width/2,
+       backdrop:getComputedStyle(dialog,'::backdrop').backdropFilter,
+       paper:getComputedStyle(dialog).backgroundColor};
+   });
+   assert.ok(Math.abs(search.center-width/2)<=3,'Search dialog is horizontally centered '+width+': '+JSON.stringify(search));
+   assert.ok(search.x>=-1&&search.x+search.width<=width+1,'Search dialog fits screen '+width);
+   assert.ok(search.height<=height-8,'Search dialog is a normal compact popup '+width);
+   assert.equal(search.backdrop,'none','Search overlay does not blur the entire website');
+   assert.equal(search.paper,'rgb(255, 255, 255)','Search popup keeps a normal white background');
+   await page.keyboard.press('Escape');
+   assert.equal(await searchDialog.evaluate(el=>el.open),false,'Escape closes the centered search popup');
    if(await page.locator('.corner-welcome-card [data-welcome-close]').count())await page.locator('.corner-welcome-card [data-welcome-close]').click();
    await page.evaluate(()=>window.scrollTo(0,0));
    await page.mouse.wheel(0,500);
