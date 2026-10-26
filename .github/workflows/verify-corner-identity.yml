@@ -173,8 +173,10 @@ jobs:
             await page.keyboard.press('Escape');
             assert.equal(await page.locator('#corner-profile-card').isVisible(),false);
             console.log('PASS Quiet Desk overview/edit 320–1366px, real saved stories, Pulse clearance, role-gated menu');
-            await page.locator('[data-account-logout]').click();
-            await page.waitForURL('**/corner/login',{timeout:12000});
+            await page.locator('[data-corner-profile-toggle]').click();
+            await page.locator('[data-profile-logout]').click();
+            await page.waitForURL('**/corner/',{timeout:12000});
+            assert.equal(await page.locator('[data-profile-member]').isVisible(),false,'Sign out clears private account controls');
             await page.close();
             console.log('PASS authenticated browser registration, verification, session, profile, navigation and logout');
             // Render the same server-side owner Studio markup with synthetic
