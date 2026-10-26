@@ -1,0 +1,330 @@
+/* Quiet Desk — signed-in Vamsi's Corner account surfaces only.
+   No decorative stock photography, fabricated data or third-party UI packages. */
+body.corner-comfort:has(.account-shell--dashboard) {
+  background:#faf8f6!important;
+  background-image:radial-gradient(ellipse at 88% 9%,rgba(216,197,232,.19),transparent 43%),
+    radial-gradient(ellipse at 12% 3%,rgba(248,203,172,.19),transparent 43%)!important;
+}
+.corner-comfort .account-shell--dashboard {
+  --qd-ink:#252126;--qd-muted:#676168;--qd-line:#e8e1de;--qd-peach:#bd7456;--qd-purple:#76688e;
+  --qd-paper:#fff;width:min(calc(100% - clamp(32px,5vw,80px)),1190px);
+  max-width:1190px;min-width:0;color:var(--qd-ink);
+}
+.corner-comfort .account-shell--dashboard .account-top{min-height:77px}
+.corner-comfort .account-shell--dashboard .account-workspace{
+  display:grid;gap:17px;align-content:start;padding:clamp(24px,3.5vw,42px) 0 clamp(28px,4vw,52px);
+  min-width:0;width:100%;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-heading{
+  display:flex;align-items:end;justify-content:space-between;gap:16px;min-width:0;
+}
+.corner-comfort .account-shell--dashboard .account-overline{
+  margin:0 0 5px;color:#9c6c57;font:700 .65rem/1.45 var(--mono,ui-monospace,monospace);
+  letter-spacing:.115em;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-heading h1{
+  margin:0 0 6px!important;max-width:none;font-family:var(--sans,system-ui)!important;
+  font-size:clamp(1.62rem,2.5vw,1.98rem)!important;line-height:1.22!important;
+  font-weight:770!important;letter-spacing:-.05em!important;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-heading>div>p:last-child{
+  margin:0;color:var(--qd-muted);font-size:.86rem;line-height:1.54;
+}
+.corner-comfort .account-shell--dashboard .account-back-mobile{
+  display:inline-flex;align-items:center;justify-content:center;min-height:43px;
+  padding:9px 13px;border:1px solid var(--qd-line);border-radius:12px;
+  background:#fff;color:#302a30;font-size:.77rem;font-weight:720;text-decoration:none;
+}
+.corner-comfort .account-shell--dashboard .account-session-note{
+  display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0;
+  margin:0!important;color:#5f5961;font-size:.76rem;line-height:1.5;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--dashboard .account-session-dot{
+  flex:none;width:7px;height:7px;border-radius:50%;background:#36a578;
+  box-shadow:0 0 0 4px #e3f3e9;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-layout{
+  display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(16px,2vw,27px);
+  align-items:start;min-width:0;width:100%;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-sidebar{
+  position:sticky;top:19px;display:grid;gap:15px;min-width:0;
+  padding:12px;border:1px solid var(--qd-line);border-radius:20px;
+  background:rgba(255,255,255,.91);box-shadow:0 14px 38px -34px #0007;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-nav{display:grid;gap:4px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-nav-link,
+.corner-comfort .account-shell--dashboard .account-nav-signout,
+.corner-comfort .account-shell--dashboard .account-studio-shortcut{
+  display:flex;align-items:center;gap:12px;min-width:0;min-height:43px;padding:10px 11px;
+  border:0;border-radius:12px;background:transparent;color:#46414b;text-decoration:none;
+  font-size:.78rem;font-weight:720;line-height:1.35;text-align:left;cursor:pointer;
+  transition:background-color .18s,transform .18s;
+}
+.corner-comfort .account-shell--dashboard .account-nav-link svg,
+.corner-comfort .account-shell--dashboard .account-nav-signout svg,
+.corner-comfort .account-shell--dashboard .account-studio-shortcut svg{
+  flex:none;width:19px;height:19px;color:inherit;
+}
+.corner-comfort .account-shell--dashboard .account-nav-link:is(:hover,:focus-visible),
+.corner-comfort .account-shell--dashboard :is(.account-nav-signout,.account-studio-shortcut):is(:hover,:focus-visible){
+  color:#131015;background:#f4f0ee;
+}
+.corner-comfort .account-shell--dashboard .account-nav-link.is-active{
+  color:#3a2930;background:#fff0e8;box-shadow:inset 3px 0 0 #bf7b5d;
+}
+.corner-comfort .account-shell--dashboard .account-workspace-sidebar-bottom{
+  display:grid;gap:3px;border-top:1px solid var(--qd-line);padding-top:9px;
+}
+.corner-comfort .account-shell--dashboard .account-nav-signout{color:#ac4939}
+.corner-comfort .account-shell--dashboard .account-workspace-panel.account-card{
+  width:100%;max-width:none!important;min-width:0;margin:0!important;padding:0!important;
+  border:0!important;border-radius:0;background:transparent!important;color:var(--qd-ink)!important;
+  box-shadow:none!important;
+}
+.corner-comfort .account-shell--dashboard .account-overview-content{display:grid;gap:16px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-identity-card{
+  border:1px solid var(--qd-line);border-radius:22px;overflow:hidden;
+  background:#fff;box-shadow:0 16px 40px -38px #0007;
+}
+.corner-comfort .account-shell--dashboard .account-identity-cover{
+  position:relative;isolation:isolate;display:flex;align-items:start;justify-content:flex-end;
+  height:114px;overflow:hidden;padding:15px 22px;
+  background:radial-gradient(ellipse 40% 83% at 89% 20%,rgba(214,193,229,.72),transparent 90%),
+    radial-gradient(ellipse 57% 88% at 19% 30%,rgba(253,216,185,.95),transparent 94%),
+    linear-gradient(100deg,#fcf2eb,#f3edf5 90%);
+}
+.corner-comfort .account-shell--dashboard .account-identity-cover span{font-size:1.3rem;color:#c07b5c}
+.corner-comfort .account-shell--dashboard .account-identity-main{
+  display:grid;grid-template-columns:88px minmax(0,1fr) auto;
+  align-items:center;gap:18px;min-width:0;padding:0 22px 22px;
+}
+.corner-comfort .account-shell--dashboard .account-identity-avatar{
+  display:grid;place-items:center;width:88px;height:88px;flex:none;
+  margin-top:-31px;overflow:hidden;border:4px solid #fff;border-radius:23px;
+  background:#171419;color:#fff;box-shadow:0 7px 20px -12px #0008;
+}
+.corner-comfort .account-shell--dashboard .account-identity-image{
+  display:block;width:100%;height:100%;object-fit:cover;
+}
+.corner-comfort .account-shell--dashboard .account-identity-initial{
+  font:750 2.1rem/1 var(--sans,system-ui);color:#fff;
+}
+.corner-comfort .account-shell--dashboard .account-identity-copy{display:grid;gap:5px;min-width:0;padding-top:12px}
+.corner-comfort .account-shell--dashboard .account-identity-copy .account-overline{font-size:.58rem}
+.corner-comfort .account-shell--dashboard .account-identity-copy h2{
+  margin:0!important;font-size:clamp(1.3rem,2vw,1.65rem)!important;font-weight:780;
+  letter-spacing:-.055em;line-height:1.2!important;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--dashboard .account-identity-bio{
+  margin:0!important;color:#645e63;font-size:.83rem;line-height:1.6;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--dashboard .account-identity-email{
+  color:#8b8288;font-size:.74rem;line-height:1.5;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--dashboard .account-identity-edit{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:43px;
+  padding:10px 16px;border:1px solid #171417;border-radius:12px;
+  background:#171417;color:#fff;text-decoration:none;white-space:nowrap;
+  font-size:.77rem;font-weight:720;
+}
+.corner-comfort .account-shell--dashboard .account-identity-edit:is(:hover,:focus-visible){background:#393039;color:#fff}
+.corner-comfort .account-shell--dashboard .account-overview-grid{
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(245px,1fr);
+  align-items:start;gap:15px;min-width:0;
+}
+.corner-comfort .account-shell--dashboard .account-overview-side{display:grid;gap:15px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-section-card{
+  display:grid;gap:12px;min-width:0;padding:clamp(17px,2vw,23px);
+  border:1px solid var(--qd-line);border-radius:20px;background:#fff;
+  box-shadow:0 14px 34px -36px #0006;color:var(--qd-ink);
+}
+.corner-comfort .account-shell--dashboard .account-section-heading{
+  display:flex;align-items:start;justify-content:space-between;gap:13px;min-width:0;
+}
+.corner-comfort .account-shell--dashboard .account-section-heading h2,
+.corner-comfort .account-shell--dashboard .account-editor-heading h2{
+  margin:0!important;font-size:clamp(1.04rem,1.5vw,1.23rem)!important;
+  font-weight:770;line-height:1.28!important;letter-spacing:-.035em;
+}
+.corner-comfort .account-shell--dashboard .account-count{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  min-width:26px;height:26px;padding:4px 7px;border:1px solid #e7d9ce;
+  border-radius:100px;background:#fff6f0;color:#965c42;font-size:.7rem;font-weight:730;
+}
+.corner-comfort .account-shell--dashboard .account-count[hidden]{display:none!important}
+.corner-comfort .account-shell--dashboard .account-section-sub{
+  margin:-4px 0 0!important;color:var(--qd-muted);font-size:.77rem;line-height:1.56;
+}
+.corner-comfort .account-shell--dashboard .account-empty-state{
+  display:grid;justify-items:center;align-content:center;text-align:center;
+  gap:8px;min-height:172px;padding:22px 16px;border:1px dashed #e3d8d3;border-radius:16px;
+  background:linear-gradient(125deg,#fdfaf7,#faf8fc);
+}
+.corner-comfort .account-shell--dashboard .account-empty-state svg{width:27px;height:27px;color:#af806c}
+.corner-comfort .account-shell--dashboard .account-empty-state strong{font-size:.85rem}
+.corner-comfort .account-shell--dashboard .account-empty-state p{margin:0!important;color:#716a6e;font-size:.75rem;line-height:1.5}
+.corner-comfort .account-shell--dashboard .account-empty-state a{
+  display:inline-flex;align-items:center;min-height:38px;margin-top:4px;padding:7px 13px;
+  border:1px solid #19161c;border-radius:10px;background:#19161c;color:#fff!important;
+  font-size:.72rem;font-weight:710;text-decoration:none;
+}
+.corner-comfort .account-shell--dashboard .account-bookmark-list{
+  display:grid;gap:7px;list-style:none;margin:0;padding:0;
+}
+.corner-comfort .account-shell--dashboard .account-bookmark-list li{min-width:0}
+.corner-comfort .account-shell--dashboard .account-bookmark-list a{
+  display:flex;align-items:center;gap:10px;min-height:48px;padding:9px 12px;
+  border:1px solid #ede7e4;border-radius:12px;background:#fbfaf9;
+  color:#38323a;text-decoration:none;font-size:.81rem;font-weight:690;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--dashboard .account-bookmark-list a:is(:hover,:focus-visible){background:#fff1e9}
+.corner-comfort .account-shell--dashboard .account-preference-list{display:grid;gap:0;margin:0}
+.corner-comfort .account-shell--dashboard .account-preference-list>div{
+  display:flex;align-items:center;justify-content:space-between;gap:13px;min-width:0;
+  padding:10px 0;border-bottom:1px solid #f0ebe8;
+}
+.corner-comfort .account-shell--dashboard .account-preference-list dt{color:#746d72;font-size:.75rem}
+.corner-comfort .account-shell--dashboard .account-preference-list dd{margin:0;color:#2d292e;font-size:.76rem;font-weight:740}
+.corner-comfort .account-shell--dashboard .account-text-link{
+  display:inline-flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:41px;color:#925d47;font-size:.77rem;font-weight:740;text-decoration:none;
+}
+.corner-comfort .account-shell--dashboard .account-text-link svg{width:17px;height:17px}
+.corner-comfort .account-shell--dashboard .account-text-link:hover{text-decoration:underline;text-underline-offset:3px}
+.corner-comfort .account-shell--dashboard .account-data-actions{display:grid;gap:9px}
+.corner-comfort .account-shell--dashboard .account-data-action{
+  display:grid;grid-template-columns:22px minmax(0,1fr) 17px;gap:13px;align-items:center;
+  width:100%;min-height:63px;padding:11px 14px;border:1px solid #e9e3e1;border-radius:13px;
+  background:#fcfaf9;color:#373038;text-align:left;cursor:pointer;
+}
+.corner-comfort .account-shell--dashboard .account-data-action span{display:grid;gap:3px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-data-action strong{font-size:.79rem;font-weight:730}
+.corner-comfort .account-shell--dashboard .account-data-action small{color:#766e72;font-size:.68rem;line-height:1.45}
+.corner-comfort .account-shell--dashboard .account-data-action.is-danger{background:#fff5f3;border-color:#f2dfd9;color:#af4033}
+.corner-comfort .account-shell--dashboard .account-data-action.is-danger small{color:#885f5c}
+.corner-comfort .account-shell--dashboard .account-data-action:is(:hover,:focus-visible){border-color:#bb947e}
+.corner-comfort .account-shell--dashboard .account-edit-panel,
+.corner-comfort .account-shell--dashboard .account-security-panel{gap:21px}
+.corner-comfort .account-shell--dashboard .account-edit-avatar{min-width:0}
+.corner-comfort .account-shell--dashboard .account-avatar-card{
+  grid-template-columns:64px minmax(0,1fr);align-items:center;gap:14px;margin:0;
+  padding:15px;border:1px solid #e5ddda;border-radius:15px;background:#faf8f6;
+}
+.corner-comfort .account-shell--dashboard .account-avatar-visual{
+  width:64px;height:64px;border-radius:16px;overflow:hidden;
+}
+.corner-comfort .account-shell--dashboard .account-avatar-info>p{margin:1px 0 6px}
+.corner-comfort .account-shell--dashboard .account-avatar-actions{gap:8px}
+.corner-comfort .account-shell--dashboard .account-avatar-picker,
+.corner-comfort .account-shell--dashboard .account-avatar-actions button{
+  min-height:42px;padding:9px 14px;border-radius:10px;font-size:.76rem;
+}
+.corner-comfort .account-shell--dashboard .account-avatar-status:empty{display:none}
+.corner-comfort .account-shell--dashboard .account-edit-panel form{
+  display:grid;gap:21px;min-width:0;
+}
+.corner-comfort .account-shell--dashboard .account-editor-section{display:grid;gap:13px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-editor-section+ .account-editor-section{
+  border-top:1px solid var(--qd-line);padding-top:19px;
+}
+.corner-comfort .account-shell--dashboard .account-editor-heading{display:grid;gap:4px;min-width:0}
+.corner-comfort .account-shell--dashboard .account-editor-heading p:not(.account-overline){margin:0;color:#756e72;font-size:.76rem;line-height:1.5}
+.corner-comfort .account-shell--dashboard .account-field{gap:7px;font-size:.77rem}
+.corner-comfort .account-shell--dashboard .account-field input,
+.corner-comfort .account-shell--dashboard .account-field textarea,
+.corner-comfort .account-shell--dashboard .account-field select{
+  min-height:47px;width:100%;padding:12px 14px;border:1px solid #d9d2d2;border-radius:12px;
+  background:#fff;color:#27232a;font-size:1rem!important;line-height:1.45;
+}
+.corner-comfort .account-shell--dashboard .account-field textarea{min-height:100px;resize:vertical}
+.corner-comfort .account-shell--dashboard .account-field span small{color:#8d8388;font-size:.68rem;font-weight:500}
+.corner-comfort .account-shell--dashboard .account-switch-row{
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) 50px;gap:14px;
+  align-items:center;min-height:62px;padding:10px 0;
+  border-top:1px solid #efeae6;cursor:pointer;
+}
+.corner-comfort .account-shell--dashboard .account-switch-row>span:first-child{display:grid;gap:4px}
+.corner-comfort .account-shell--dashboard .account-switch-row strong{font-size:.79rem}
+.corner-comfort .account-shell--dashboard .account-switch-row small{font-size:.69rem;color:#777178;line-height:1.5}
+.corner-comfort .account-shell--dashboard .account-switch-row input{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:48px;height:29px;margin:0;opacity:.01;cursor:pointer;z-index:1;
+}
+.corner-comfort .account-shell--dashboard .account-switch-track{
+  position:relative;display:block;width:48px;height:28px;border:1px solid #c9c5c7;
+  border-radius:100px;background:#ccc9cc;pointer-events:none;transition:background .18s;
+}
+.corner-comfort .account-shell--dashboard .account-switch-track:after{
+  content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;
+  border-radius:50%;background:#fff;box-shadow:0 2px 5px #0003;transition:transform .18s;
+}
+.corner-comfort .account-shell--dashboard .account-switch-row input:checked+.account-switch-track{background:#238a65;border-color:#238a65}
+.corner-comfort .account-shell--dashboard .account-switch-row input:checked+.account-switch-track:after{transform:translateX(19px)}
+.corner-comfort .account-shell--dashboard .account-switch-row input:focus-visible+.account-switch-track{outline:3px solid #3b61b8;outline-offset:3px}
+.corner-comfort .account-shell--dashboard .account-submit{min-height:46px;margin:0;font-size:.83rem}
+.corner-comfort .account-shell--dashboard .account-security-panel .account-pass-wrap input{padding-right:77px}
+.corner-comfort .account-shell--dashboard .account-side-section{min-width:0;margin:0;padding:17px 0 0;border-top:1px solid var(--qd-line)}
+.corner-comfort .account-shell--dashboard .account-side-section h2{margin:0 0 10px;font-size:1rem!important}
+.corner-comfort .account-shell--dashboard .account-side-section ul{gap:4px}
+.corner-comfort .account-shell--dashboard .account-side-section li{padding:11px 0;font-size:.77rem}
+.corner-comfort .account-shell--dashboard :is(a,button,input,textarea,select):focus-visible{outline:3px solid #345cb6;outline-offset:3px}
+@media(max-width:950px){
+  .corner-comfort .account-shell--dashboard .account-workspace-layout{grid-template-columns:190px minmax(0,1fr);gap:15px}
+  .corner-comfort .account-shell--dashboard .account-overview-grid{grid-template-columns:minmax(0,1fr)}
+  .corner-comfort .account-shell--dashboard .account-overview-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .corner-comfort .account-shell--dashboard .account-workspace{padding:22px 0 34px;gap:14px}
+  .corner-comfort .account-shell--dashboard .account-workspace-layout{display:flex;flex-direction:column;gap:13px}
+  .corner-comfort .account-shell--dashboard .account-workspace-sidebar{
+    position:static;display:block;width:100%;padding:6px;
+    border-radius:15px;overflow:hidden;
+  }
+  .corner-comfort .account-shell--dashboard .account-workspace-nav{
+    display:flex;align-items:center;gap:3px;overflow-x:auto;overscroll-behavior-inline:contain;
+    scrollbar-width:none;scroll-snap-type:x proximity;
+  }
+  .corner-comfort .account-shell--dashboard .account-workspace-nav::-webkit-scrollbar{display:none}
+  .corner-comfort .account-shell--dashboard .account-nav-link{
+    flex:none;min-height:43px;padding:10px 12px;gap:7px;white-space:nowrap;scroll-snap-align:start;font-size:.71rem;
+  }
+  .corner-comfort .account-shell--dashboard .account-nav-link svg{width:16px;height:16px}
+  .corner-comfort .account-shell--dashboard .account-nav-link.is-active{box-shadow:inset 0 -3px 0 #bf7b5d}
+  .corner-comfort .account-shell--dashboard .account-workspace-sidebar-bottom{display:none}
+  .corner-comfort .account-shell--dashboard .account-overview-side{grid-template-columns:1fr}
+  .corner-comfort .account-shell--dashboard .account-workspace-panel.account-card{width:100%}
+  .corner-comfort .account-shell--dashboard .account-workspace-heading h1{font-size:clamp(1.5rem,5.3vw,1.9rem)!important}
+  .corner-comfort .account-shell--dashboard .account-identity-main{grid-template-columns:74px minmax(0,1fr);gap:12px;padding:0 16px 17px}
+  .corner-comfort .account-shell--dashboard .account-identity-avatar{width:74px;height:74px;border-radius:20px}
+  .corner-comfort .account-shell--dashboard .account-identity-edit{grid-column:1/-1;width:100%}
+  .corner-comfort .account-shell--dashboard .account-identity-copy{padding-top:10px}
+  .corner-comfort .account-shell--dashboard .account-section-card{padding:16px;border-radius:17px}
+}
+@media(max-width:430px){
+  .corner-comfort .account-shell--dashboard{width:calc(100% - 24px)}
+  .corner-comfort .account-shell--dashboard .account-top{min-height:64px}
+  .corner-comfort .account-shell--dashboard .account-back{font-size:.68rem}
+  .corner-comfort .account-shell--dashboard .account-identity-cover{height:91px}
+  .corner-comfort .account-shell--dashboard .account-identity-main{grid-template-columns:62px minmax(0,1fr)}
+  .corner-comfort .account-shell--dashboard .account-identity-avatar{width:62px;height:62px;margin-top:-25px;border-radius:17px}
+  .corner-comfort .account-shell--dashboard .account-identity-copy h2{font-size:1.3rem!important}
+  .corner-comfort .account-shell--dashboard .account-identity-bio{font-size:.77rem}
+  .corner-comfort .account-shell--dashboard .account-identity-email{font-size:.71rem}
+  .corner-comfort .account-shell--dashboard .account-identity-edit{min-height:44px}
+  .corner-comfort .account-shell--dashboard .account-session-note{font-size:.69rem}
+  .corner-comfort .account-shell--dashboard .account-avatar-card{grid-template-columns:50px minmax(0,1fr);gap:10px;padding:11px}
+  .corner-comfort .account-shell--dashboard .account-avatar-visual{width:50px;height:50px}
+  .corner-comfort .account-shell--dashboard .account-avatar-info>p{font-size:.73rem;line-height:1.5}
+  .corner-comfort .account-shell--dashboard .account-avatar-picker,
+  .corner-comfort .account-shell--dashboard .account-avatar-actions button{font-size:.69rem;padding:8px 10px}
+  .corner-comfort .account-shell--dashboard .account-data-action{gap:8px;padding:10px}
+  .corner-comfort .account-shell--dashboard .account-data-action small{font-size:.65rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .corner-comfort .account-shell--dashboard *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+}
+@media(forced-colors:active){
+  .corner-comfort .account-shell--dashboard .account-identity-cover{background:Canvas}
+  .corner-comfort .account-shell--dashboard .account-nav-link.is-active{outline:2px solid Highlight}
+}
