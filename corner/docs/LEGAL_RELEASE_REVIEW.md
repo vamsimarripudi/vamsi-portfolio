@@ -41,12 +41,13 @@ The user-facing legal copy is maintained by `src/legal-core.mjs` and `src/legal-
 
 ## India DPDP legal dates and content controls
 
-The operative texts are the *Digital Personal Data Protection Act, 2023* and *Digital Personal Data Protection Rules, 2025*. The Central Government staged commencement in **G.S.R. 843(E)** and rules **G.S.R. 846(E)** of **13 November 2025**. A subset of provisions took effect immediately, certain consent-manager matters were scheduled one year later (**13 November 2026**) and most notice, consent, Data Fiduciary and Data Principal-rights provisions were scheduled eighteen months later (**13 May 2027**). Check Gazette updates before each rollout. A website with drafted notices is **not thereby certified or automatically compliant**.
+The operative texts are the *Digital Personal Data Protection Act, 2023* and *Digital Personal Data Protection Rules, 2025*. The Central Government staged commencement in **G.S.R. 843(E)** and rules **G.S.R. 846(E)** of **13 November 2025**. A subset of provisions took effect immediately, certain consent-manager matters were scheduled one year later (**13 November 2026**) and most notice, consent, Data Fiduciary and Data Principal-rights provisions were scheduled eighteen months later (**13 May 2027**). The **Digital Personal Data Protection (Removal of Difficulties) Order, 2026**, S.O. 5458(E), gazetted in October 2026, clarifies section 9(1) on data of children/persons with lawful guardians and section 10(2)(c)(ii) on data audits. It **does not accelerate commencement dates**. Check Gazette updates before each rollout. A website with drafted notices is **not thereby certified or automatically compliant**.
 
 Sources:
 - [MeitY — DPDP Rules, notification and implementation documents](https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa)
 - [India Code — Digital Personal Data Protection Act 2023](https://www.indiacode.nic.in/indiacode/handle/123456789/22037?view_type=browse)
 - [MeitY — enforcement notification](https://www.meity.gov.in/static/uploads/2025/11/c56ceae6c383460ca69577428d36828b.pdf)
+- [MeitY — DPDP Removal of Difficulties Order 2026, S.O. 5458(E)](https://www.meity.gov.in/static/uploads/2026/10/daf495a7b5798a3dfa72a944b51fc176.pdf)
 - [MeitY — Information Technology and other applicable policy documents](https://www.meity.gov.in/documents/act-and-policies)
 
 ## Human verification gates before production release
