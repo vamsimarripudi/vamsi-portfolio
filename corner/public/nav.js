@@ -116,7 +116,7 @@
    '<h2 id="corner-welcome-heading">Welcome to the Corner.</h2>'+
    '<p>Little stories, good wishes, and moments worth keeping. Take a look around; there’s no rush.</p>'+
    '<div class="corner-welcome-actions"><a href="#feed" data-welcome-explore>Explore stories <span aria-hidden="true">↗</span></a><button type="button" data-auth-open="register">Join the Corner</button></div>';
-  const dismiss=()=>{card.remove();try{localStorage.setItem('corner-welcome-v1','seen')}catch{}};
+  const dismiss=()=>{card.remove();try{localStorage.setItem('corner-welcome-v1','seen')}catch{ /* Private browsing may disable local storage. */ }};
   card.querySelector('[data-welcome-close]').addEventListener('click',dismiss);
   card.querySelector('[data-welcome-explore]').addEventListener('click',dismiss);
   card.querySelector('[data-auth-open]').addEventListener('click',dismiss);
