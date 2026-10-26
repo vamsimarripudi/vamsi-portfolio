@@ -117,6 +117,7 @@ const profileOverview=function profileOverview(user){
        <button class="account-data-action" type="button" data-account-export>${accountIcon('shield')}<span><strong>Export account data</strong><small>Download a copy of your available account information.</small></span>${accountIcon('arrow')}</button>
        <button class="account-data-action is-danger" type="button" data-account-delete>${accountIcon('shield')}<span><strong>Request account deletion</strong><small>Request review of account removal; this is not instant deletion.</small></span>${accountIcon('arrow')}</button>
      </div>
+     <p class="account-data-feedback" data-account-data-status role="status" aria-live="polite"></p>
    </section>
  </div>`;
 };
@@ -127,12 +128,17 @@ const accountDashboard=function accountDashboard({type,user,top,formHtml,session
   const body=onProfile?profileOverview(user):
      onEdit?`<section class="account-section-card account-edit-panel" aria-label="Edit your profile"><div class="account-edit-avatar" id="account-avatar">${avatarCard(user)}</div>${formHtml}</section>`:
      `<section class="account-section-card account-security-panel" aria-labelledby="account-password-heading"><header class="account-section-heading"><div><p class="account-overline">PASSWORD</p><h2 id="account-password-heading">Change password</h2></div></header><p class="account-section-sub">Use your current password to keep access secure.</p>${formHtml}</section>${sessions}`;
+  const deletionDialog=onProfile?'<dialog class="account-delete-dialog" data-account-delete-dialog aria-labelledby="account-delete-title" aria-describedby="account-delete-description">'+
+    '<div class="account-delete-content"><p class="account-overline">PRIVATE ACCOUNT ACTION</p><h2 id="account-delete-title">Request account deletion?</h2>'+
+    '<p id="account-delete-description">This sends an account removal request for review. It does not instantly delete your stories or anyone else’s content.</p>'+
+    '<p class="account-delete-status" data-account-delete-status role="status" aria-live="polite"></p>'+
+    '<div class="account-delete-actions"><button type="button" data-account-delete-cancel>Keep my account</button><button type="button" data-account-delete-confirm>Request review</button></div></div></dialog>':'';
   return `<div class="account-shell account-shell--dashboard" data-account-page="${h(type)}" data-signed-in="true">
     ${top}<main id="content" class="account-workspace">
       <header class="account-workspace-heading"><div><p class="account-overline">VAMSI’S CORNER / MY ACCOUNT</p><h1>${title}</h1><p>${intro}</p></div>${onProfile?'':'<a class="account-back-mobile" href="/profile">← My profile</a>'}</header>
       <p class="account-session-note"><span class="account-session-dot" aria-hidden="true"></span>Signed in as ${h(user.email||'')}</p>
       <div class="account-workspace-layout">${accountDashboardNav(type,user)}<section class="account-card account-workspace-panel">${body}</section></div>
-    </main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script>
+    </main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer>${deletionDialog}<script src="/account.js" defer></script>
   </div>`;
 };
 
