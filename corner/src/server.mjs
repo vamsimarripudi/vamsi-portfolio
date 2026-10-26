@@ -154,7 +154,7 @@ async function mediaFile(req,res,key,variant=''){
 }
 function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
-const handleIdentity=identityRoutes({identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader});
+const handleIdentity=identityRoutes({identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
 const handleWishes=wishesRoutes({wishes,delivery:wishDelivery,readJSON,ok,requireOwner,limit});
