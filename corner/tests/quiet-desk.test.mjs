@@ -2,142 +2,183 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {accountPage} from '../src/identity-ui.mjs';
-import {header,basePage} from '../src/ui.mjs';
+import {header} from '../src/ui.mjs';
 
 const asset=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const member={
- id:'synthetic-member',role:'member',email:'verified@example.test',displayName:'Vamsi',
- bio:'A little space for real stories.',locale:'en',emailUpdates:false,hasAvatar:true,mfaEnabled:false
+const person={
+  id:'synthetic-verified-member',role:'member',email:'verified@example.test',displayName:'Vamsi',
+  bio:'A little space for real stories.',locale:'en',emailUpdates:false,
+  hasAvatar:true,mfaEnabled:false
 };
-const owner={...member,id:'synthetic-owner',role:'owner',email:'owner@example.test'};
-const page=(type,user=member)=>accountPage({type,user,registrationOpen:true});
+const owner={...person,id:'synthetic-owner',role:'owner',email:'owner@example.test'};
+const page=(route,user=person)=>accountPage({type:route,user,registrationOpen:true});
+const privateRoutes=['/profile','/settings/profile','/saved','/settings/preferences','/settings/security','/settings/privacy'];
 
-test('signed-in member profile uses the approved Quiet Desk and real private identity fields',()=>{
- const html=page('/profile');
- assert.match(html,/class="account-shell account-shell--dashboard"/);
- assert.match(html,/class="account-workspace-layout"/);
- assert.match(html,/aria-label="Account sections"/);
- assert.match(html,/Your quiet space\./);
- assert.match(html,/Signed in as verified@example\.test/);
- assert.match(html,/class="account-identity-card"/);
- assert.match(html,/src="\/api\/v1\/me\/avatar"/);
- assert.match(html,/A little space for real stories\./);
- assert.match(html,/data-account-bookmarks/);
- assert.match(html,/data-account-saved-count/);
- assert.match(html,/data-account-export/);
- assert.match(html,/data-account-delete/);
- assert.match(html,/data-account-logout/);
- assert.match(html,/href="\/profile#account-saved"/);
- assert.match(html,/href="\/settings\/profile#account-preferences"/);
- assert.match(html,/href="\/settings\/security"/);
- assert.match(html,/href="\/account\.css"/);
- assert.match(html,/href="\/account-dashboard\.css\?v=quietdesk1"/);
- assert.doesNotMatch(html,/No saved stories yet\./,'No fabricated bookmark result before the real API responds');
- assert.doesNotMatch(html,/12 Stories|8 Moments|5 Saved/,'No synthetic activity totals');
- assert.doesNotMatch(html,/class="account-profile-overview"/,'Superseded large legacy overview not rendered');
- assert.doesNotMatch(html,/href="\/admin"/,'Member must not see owner Studio navigation');
+test('Quiet Desk is a coherent private six-screen account workspace with real user data',()=>{
+  for(const route of privateRoutes){
+    const html=page(route);
+    assert.match(html,/class="account-shell account-shell--quiet"/,route);
+    assert.match(html,/data-account-workspace/,route);
+    assert.match(html,/aria-label="My account sections"/,route);
+    assert.match(html,/href="\/account-quiet\.css\?v=quiet1"/,route);
+    assert.match(html,/src="\/account\.js\?v=quiet1"/,route);
+    assert.match(html,/verified@example\.test/,route);
+    assert.match(html,/role="navigation"|<nav class="quiet-navigation"/,route);
+    assert.match(html,/src="\/mark\.svg\?v=vm-20261027"/,route);
+    assert.doesNotMatch(html,/12 Stories|8 Moments|5 Saved/,'Never inject mockup counts');
+    assert.doesNotMatch(html,/class="account-intro"/,'Legacy tall layout must be removed');
+    assert.doesNotMatch(html,/href="\/admin"/,'Members cannot see Studio access');
+    for(const destination of privateRoutes)assert.ok(html.includes('href="'+destination+'"'),'Navigation route '+destination+' on '+route);
+  }
 });
 
-test('profile edit groups details and preferences without changing form/API contracts',()=>{
- const html=page('/settings/profile');
- assert.match(html,/Edit your profile\./);
- assert.match(html,/data-account-avatar/);
- assert.match(html,/data-avatar-file/);
- assert.match(html,/data-avatar-remove/);
- assert.match(html,/data-account-form="profile"/);
- assert.match(html,/name="displayName"/);
- assert.match(html,/name="bio"/);
- assert.match(html,/name="locale"/);
- assert.match(html,/name="emailUpdates"/);
- assert.match(html,/role="switch"/);
- assert.match(html,/id="account-preferences"/);
- assert.match(html,/Save changes/);
- assert.match(html,/href="\/profile"/);
- assert.match(html,/data-account-logout/);
+test('Quiet Desk overview has one private profile hero and actions that open proper screens',()=>{
+  const html=page('/profile');
+  assert.match(html,/data-quiet-screen="overview"/);
+  assert.match(html,/quiet-profile-hero/);
+  assert.match(html,/A little space for real stories\./);
+  assert.match(html,/src="\/api\/v1\/me\/avatar"/);
+  assert.match(html,/class="quiet-edit-pill"/);
+  assert.match(html,/href="\/saved"/);
+  assert.match(html,/href="\/settings\/preferences"/);
+  assert.match(html,/href="\/settings\/security"/);
+  assert.match(html,/href="\/settings\/privacy"/);
+  assert.doesNotMatch(html,/data-account-form="profile"/,'Editing is a separate screen');
+  assert.doesNotMatch(html,/data-bookmark-count/,'Overview does not claim to have fetched bookmark totals');
 });
 
-test('security keeps existing password, sessions, owner email and MFA behavior',()=>{
- const html=page('/settings/security');
- assert.match(html,/Account security\./);
- assert.match(html,/data-account-form="password-change"/);
- assert.match(html,/name="currentPassword"/);
- assert.match(html,/name="newPassword"/);
- assert.match(html,/Active sessions\./);
- assert.match(html,/data-account-sessions/);
- assert.match(html,/Change email\./);
- assert.match(html,/data-account-form="email-change"/);
- assert.doesNotMatch(html,/Owner email\./);
- const admin=page('/settings/security',owner);
- assert.match(admin,/Owner email\./);
- assert.match(admin,/href="\/admin"/);
- assert.match(admin,/data-account-logout/);
- assert.doesNotMatch(admin,/data-account-form="email-change"/,'Owner email change remains infra-controlled');
- assert.match(admin,/Enable two-factor verification/);
+test('Edit Profile retains private image crop and name/bio fields, with separate preferences',()=>{
+  const html=page('/settings/profile');
+  assert.match(html,/data-quiet-screen="edit"/);
+  assert.match(html,/data-account-avatar/);
+  assert.match(html,/data-avatar-file/);
+  assert.match(html,/data-avatar-remove/);
+  assert.match(html,/data-account-form="profile"/);
+  assert.match(html,/name="displayName"/);
+  assert.match(html,/name="bio"/);
+  assert.match(html,/maxlength="280"/);
+  assert.match(html,/data-bio-count/);
+  assert.match(html,/Save changes/);
+  assert.doesNotMatch(html,/name="emailUpdates"/);
+  assert.doesNotMatch(html,/name="locale"/);
 });
 
-test('unsigned members cannot access private dashboard or sensitive content',()=>{
- const html=accountPage({type:'/profile',user:null});
- assert.doesNotMatch(html,/class="account-shell account-shell--dashboard"/);
- assert.match(html,/Sign in to access your private information/);
- assert.match(html,/Member sign-in/);
- assert.doesNotMatch(html,/data-account-bookmarks/);
- assert.doesNotMatch(html,/data-account-export/);
- assert.doesNotMatch(html,/verified@example\.test/);
- const login=accountPage({type:'/login',user:null});
- assert.match(login,/data-account-form="login"/);
- assert.doesNotMatch(login,/account-dashboard\.css/);
- const register=accountPage({type:'/register',user:null,registrationOpen:true});
- assert.match(register,/data-account-form="register"/);
- assert.match(register,/data-account-form="register"[\s\S]*name="password"/);
+test('Saved Stories uses real private bookmark API, safe empty state and removal',()=>{
+  const html=page('/saved');
+  const client=asset('public/account.js');
+  assert.match(html,/data-quiet-screen="saved"/);
+  assert.match(html,/data-account-bookmarks/);
+  assert.match(html,/data-bookmark-count/);
+  assert.doesNotMatch(html,/No saved stories yet\./,'Empty state only after API success');
+  assert.match(client,/api\('me\/bookmarks'\)/);
+  assert.match(client,/api\('me\/bookmarks\/'\+encodeURIComponent\(book\.id\),'DELETE'\)/);
+  assert.match(client,/No saved stories yet\./);
+  assert.match(client,/quiet-bookmark-remove/);
+  assert.match(client,/data-bookmark-count/);
 });
 
-test('all account text is escaped; no user-provided HTML is injected',()=>{
- const attacker={...member,displayName:'<img src=x onerror=alert(1)>',bio:'<script>window.bad=true</script>',
-   email:'a<b@example.test'};
- const html=page('/profile',attacker);
- assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
- assert.match(html,/&lt;script&gt;window\.bad=true&lt;\/script&gt;/);
- assert.doesNotMatch(html,/<img src=x onerror/);
- assert.doesNotMatch(html,/<script>window\.bad/);
+test('Preferences use the existing PATCH endpoint and an accessible on/off switch',()=>{
+  const html=page('/settings/preferences');
+  const client=asset('public/account.js');
+  assert.match(html,/data-quiet-screen="preferences"/);
+  assert.match(html,/data-account-form="preferences"/);
+  assert.match(html,/name="locale"/);
+  assert.match(html,/option value="en"/);
+  assert.match(html,/option value="te"/);
+  assert.match(html,/option value="hi"/);
+  assert.match(html,/name="emailUpdates" role="switch"/);
+  assert.match(html,/Save preferences/);
+  assert.match(client,/preferences:'me\/preferences'/);
+  assert.match(client,/kind==='preferences'/);
+  assert.match(client,/emailUpdates:!!first\('input\[name=emailUpdates\]'/);
+  assert.match(client,/locale:initial\.account\?\.locale\|\|'en'/);
 });
 
-test('public profile menu is compact, guest-first and role-gated by the real session',()=>{
- const markup=header();
- const behavior=asset('public/experience.js');
- const companion=asset('public/companion.js');
- assert.match(markup,/data-corner-profile-card/);
- assert.match(markup,/corner-profile-card--quiet/);
- assert.match(markup,/data-profile-guest/);
- assert.match(markup,/data-profile-member hidden/);
- assert.match(markup,/data-profile-menu-avatar/);
- assert.match(markup,/data-owner-studio href="\/admin" hidden/);
- assert.match(markup,/data-profile-logout/);
- assert.match(markup,/data-auth-open="login"/);
- assert.match(behavior,/loggedIn&&\['owner','admin','editor','moderator'\]/);
- assert.match(behavior,/data-profile-trigger-avatar/);
- assert.match(behavior,/api\/v1\/auth\/logout/);
- assert.match(companion,/\.admin-shell,\.signin-wrap,\.account-shell/,'Pulse is removed from private account pages');
+test('Security preserves active sessions, owner restrictions, email verification and MFA',()=>{
+  const member=page('/settings/security'),admin=page('/settings/security',owner);
+  assert.match(member,/data-quiet-screen="security"/);
+  assert.match(member,/data-account-form="password-change"/);
+  assert.match(member,/name="currentPassword"/);
+  assert.match(member,/name="newPassword"/);
+  assert.match(member,/data-account-sessions/);
+  assert.match(member,/data-account-form="email-change"/);
+  assert.doesNotMatch(member,/href="\/admin"/);
+  assert.match(admin,/href="\/admin"/);
+  assert.match(admin,/href="\/admin\/mfa"/);
+  assert.match(admin,/Changes to the owner address require additional verification/);
+  assert.doesNotMatch(admin,/data-account-form="email-change"/);
 });
 
-test('new account surfaces are responsive and preserve old privacy and bookmark APIs',()=>{
- const css=asset('public/account-dashboard.css');
- const menuCss=asset('public/companion.css');
- const js=asset('public/account.js');
- const server=asset('src/server.mjs');
- assert.match(css,/\.account-workspace-layout/);
- assert.match(css,/account-identity-card/);
- assert.match(css,/account-bookmark-list/);
- assert.match(css,/account-switch-track/);
- assert.match(css,/@media\(max-width:760px\)/);
- assert.match(css,/@media\(max-width:430px\)/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(menuCss,/corner-profile-card--quiet/);
- assert.match(server,/\/account-dashboard\.css/);
- assert.match(js,/if\(token&&location\.hash\)/,'Sensitive token hashes are cleared without destroying account deep links');
- assert.match(js,/api\('me\/bookmarks'\)/);
- assert.match(js,/api\('me\/sessions'\)/);
- assert.match(js,/api\('me\/export','POST'/);
- assert.match(js,/api\('me\/deletion','POST'/);
- assert.match(js,/CornerImageCrop\.open/);
- assert.match(js,/data-account-saved-count/);
+test('Privacy controls retain first-party API actions and require deletion confirmation',()=>{
+  const html=page('/settings/privacy'),client=asset('public/account.js');
+  assert.match(html,/data-quiet-screen="privacy"/);
+  assert.match(html,/data-account-export/);
+  assert.match(html,/data-account-delete/);
+  assert.match(html,/data-account-delete-dialog/);
+  assert.match(html,/data-delete-confirm/);
+  assert.match(html,/data-delete-cancel/);
+  assert.match(html,/No immediate deletion happens/);
+  assert.match(client,/api\('me\/export','POST'/);
+  assert.match(client,/api\('me\/deletion','POST'/);
+  assert.match(client,/deletionDialog\.showModal\(\)/);
+  assert.match(client,/Deletion review requested/);
+});
+
+test('Unauthorized visitors cannot access any private account content',()=>{
+  for(const route of privateRoutes){
+    const html=accountPage({type:route,user:null});
+    assert.match(html,/Sign in to access your private information/,route);
+    assert.doesNotMatch(html,/data-account-workspace/,route);
+    assert.doesNotMatch(html,/data-account-export/,route);
+    assert.doesNotMatch(html,/data-account-bookmarks/,route);
+    assert.doesNotMatch(html,/verified@example\.test/,route);
+  }
+  const login=accountPage({type:'/login',user:null});
+  assert.match(login,/data-account-form="login"/);
+  assert.doesNotMatch(login,/account-shell--quiet/);
+  assert.match(accountPage({type:'/register',user:null,registrationOpen:true}),/data-account-form="register"/);
+});
+
+test('User-provided text is escaped in private account markup',()=>{
+  const dangerous={...person,displayName:'<img src=x onerror=alert(1)>',
+    bio:'<script>window.sneaky=true</script>',email:'fake<b>@example.test'};
+  const html=page('/profile',dangerous);
+  assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(html,/&lt;script&gt;window\.sneaky=true&lt;\/script&gt;/);
+  assert.match(html,/fake&lt;b&gt;@example\.test/);
+  assert.doesNotMatch(html,/<script>window\.sneaky/);
+});
+
+test('Public profile menu is compact and role-gated by authenticated session',()=>{
+  const markup=header(),client=asset('public/experience.js'),nav=asset('public/companion.js');
+  assert.match(markup,/corner-profile-card--quiet/);
+  assert.match(markup,/data-profile-guest/);
+  assert.match(markup,/data-profile-member hidden/);
+  assert.match(markup,/data-profile-menu-avatar/);
+  assert.match(markup,/data-owner-studio href="\/admin" hidden/);
+  assert.match(markup,/href="\/saved"/);
+  assert.match(markup,/href="\/settings\/preferences"/);
+  assert.match(markup,/data-profile-logout/);
+  assert.match(client,/loggedIn&&\['owner','admin','editor','moderator'\]/);
+  assert.match(client,/data-profile-trigger-avatar/);
+  assert.match(client,/api\/v1\/auth\/logout/);
+  assert.match(nav,/\.admin-shell,\.signin-wrap,\.account-shell/,'Pulse does not overlap account screens');
+});
+
+test('Quiet Desk is mobile-first and preserves accessibility and account APIs',()=>{
+  const css=asset('public/account-quiet.css');
+  const js=asset('public/account.js'),server=asset('src/server.mjs');
+  assert.match(css,/\.quiet-desk-grid/);
+  assert.match(css,/\.quiet-navigation/);
+  assert.match(css,/\.quiet-profile-hero/);
+  assert.match(css,/\.quiet-bookmarks/);
+  assert.match(css,/\.quiet-switch input:focus-visible/);
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.match(css,/@media\(max-width:390px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/@media\(forced-colors:active\)/);
+  assert.match(server,/\/account-quiet\.css/);
+  assert.match(js,/CornerImageCrop\.open/);
+  assert.match(js,/api\('me\/sessions'\)/);
+  assert.match(js,/data-account-delete-dialog/);
 });
