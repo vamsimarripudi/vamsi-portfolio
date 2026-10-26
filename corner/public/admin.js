@@ -22,7 +22,7 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span>✳</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){window.CornerAnalysis?.unmount();clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+  function showView(view){window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
@@ -347,6 +347,7 @@
     const details=root.querySelector('.corner-reading-details');
     let loaded=false;
     details.addEventListener('toggle',async()=>{
+      root.classList.toggle('corner-insights-focus',details.open);
       if(!details.open||loaded||active.view!=='analytics')return;
       loaded=true;
       try{
