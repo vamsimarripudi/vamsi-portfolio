@@ -106,35 +106,61 @@ jobs:
             await page.waitForURL('**/corner/profile',{timeout:12000});
             await page.getByText('Signed in as '+email).waitFor();
             assert.match((await page.locator('body').textContent()),/Your quiet space/);
-            // Quiet Desk: exercise the actual authenticated UI against the same
-            // isolated session, never against production user records.
+            // Quiet Desk is exercised using the isolated synthetic member
+            // and its real first-party auth cookie, never a production account.
             fs.mkdirSync('screenshots/quiet-desk',{recursive:true});
             for(const width of [320,375,390,768,1024,1366]){
               const height=width<768?844:900;
               await page.setViewportSize({width,height});
               await page.goto(origin+'/corner/profile',{waitUntil:'networkidle'});
-              await page.locator('.account-identity-card').waitFor({state:'visible'});
+              await page.locator('.quiet-profile-hero').waitFor({state:'visible'});
               const geom=await page.evaluate(()=>({
                 viewport:innerWidth,body:document.documentElement.scrollWidth,
-                dashboard:!!document.querySelector('.account-workspace-layout'),
-                bookmarks:!!document.querySelector('[data-account-bookmarks]'),
-                privateAvatar:!!document.querySelector('.account-identity-avatar'),
+                desk:!!document.querySelector('.quiet-desk-grid'),
+                menu:document.querySelectorAll('.quiet-nav-link').length,
+                photo:!!document.querySelector('.quiet-avatar'),
                 pulse:!!document.querySelector('.corner-orbit-dock')
               }));
-              assert.ok(geom.body<=geom.viewport+1,'No Quiet Desk horizontal overflow '+width+' '+JSON.stringify(geom));
-              assert.ok(geom.dashboard&&geom.bookmarks&&geom.privateAvatar,'Quiet Desk private sections '+width);
-              assert.equal(geom.pulse,false,'Pulse must not overlap account controls '+width);
-              await page.getByText('No saved stories yet.').waitFor({timeout:10000});
-              assert.equal(await page.locator('[data-account-saved-count]').textContent(),'0','Actual empty bookmark count '+width);
+              assert.ok(geom.body<=geom.viewport+1,'No Quiet Desk overview overflow '+width+' '+JSON.stringify(geom));
+              assert.ok(geom.desk&&geom.menu===6&&geom.photo,'Six-section private account shell '+width);
+              assert.equal(geom.pulse,false,'Pulse never overlaps member controls '+width);
               if(width===390||width===1366)await page.screenshot({path:'screenshots/quiet-desk/profile-'+width+'.png',fullPage:false,animations:'disabled'});
               await page.goto(origin+'/corner/settings/profile',{waitUntil:'networkidle'});
               await page.locator('form[data-account-form=profile]').waitFor();
-              assert.equal(await page.locator('[data-avatar-file]').count(),1,'Retain private photo editing '+width);
-              assert.equal(await page.locator('input[name=emailUpdates][role=switch]').count(),1,'Real preference switch '+width);
+              assert.equal(await page.locator('[data-avatar-file]').count(),1,'Photo and crop available '+width);
+              assert.equal(await page.locator('input[name=displayName]').count(),1,'Private display name available '+width);
               const editWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
-              assert.ok(editWidth<=width+1,'Edit profile no overflow '+width);
+              assert.ok(editWidth<=width+1,'Edit profile does not overflow '+width);
               if(width===390)await page.screenshot({path:'screenshots/quiet-desk/edit-profile-'+width+'.png',fullPage:false,animations:'disabled'});
             }
+            await page.setViewportSize({width:390,height:844});
+            await page.goto(origin+'/corner/saved',{waitUntil:'networkidle'});
+            await page.locator('[data-account-bookmarks]').waitFor();
+            await page.getByText('No saved stories yet.').waitFor({timeout:10000});
+            assert.equal(await page.locator('[data-bookmark-count]').textContent(),'0 saved','True count from first-party private bookmark API');
+            await page.screenshot({path:'screenshots/quiet-desk/saved-mobile.png',animations:'disabled'});
+            await page.goto(origin+'/corner/settings/preferences',{waitUntil:'networkidle'});
+            const pref=page.locator('form[data-account-form=preferences]');
+            await pref.waitFor();
+            assert.equal(await pref.locator('input[name=emailUpdates][role=switch]').count(),1,'Accessible optional email switch');
+            assert.equal(await pref.locator('input[name=emailUpdates]').isChecked(),false,'Optional email updates off unless opted in');
+            await pref.locator('select[name=locale]').selectOption('te');
+            await pref.locator('button[type=submit]').click();
+            await pref.getByText('Preferences saved.').waitFor();
+            await page.reload({waitUntil:'networkidle'});
+            assert.equal(await page.locator('select[name=locale]').inputValue(),'te','Preference persisted through the API');
+            await page.screenshot({path:'screenshots/quiet-desk/preferences-mobile.png',animations:'disabled'});
+            await page.goto(origin+'/corner/settings/privacy',{waitUntil:'networkidle'});
+            await page.locator('[data-account-export]').waitFor();
+            await page.locator('[data-account-delete]').click();
+            const dialog=page.locator('[data-account-delete-dialog]');
+            assert.equal(await dialog.isVisible(),true,'Account deletion requires explicit review');
+            await page.locator('[data-delete-cancel]').click();
+            assert.equal(await dialog.isVisible(),false,'Review can be dismissed without requesting deletion');
+            await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
+            await page.getByRole('heading',{name:'Active sessions.',exact:true}).waitFor();
+            await page.locator('[data-account-sessions]').getByText('Signed in').first().waitFor();
+            console.log('PASS Quiet Desk overview/edit 320–1366px, real bookmark count, preferences, privacy confirmation and session safety');
             // The public account menu must not expose Studio controls to members.
             await page.setViewportSize({width:390,height:844});
             await page.goto(origin+'/corner/',{waitUntil:'networkidle'});
@@ -147,8 +173,6 @@ jobs:
             await page.keyboard.press('Escape');
             assert.equal(await page.locator('#corner-profile-card').isVisible(),false);
             console.log('PASS Quiet Desk overview/edit 320–1366px, real saved stories, Pulse clearance, role-gated menu');
-            await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
-            await page.getByRole('heading', { name: 'Active sessions.', exact: true }).waitFor();
             await page.locator('[data-account-logout]').click();
             await page.waitForURL('**/corner/login',{timeout:12000});
             await page.close();
