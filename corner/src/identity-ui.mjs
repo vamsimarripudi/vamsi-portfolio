@@ -117,7 +117,7 @@ const quietHeading=(kicker,title,subtitle)=>'<header class="quiet-screen-heading
 const quietProfileScreen=(user)=>{
  const locale=({en:'English',te:'Telugu',hi:'Hindi'})[user.locale]||'English';
  return '<section class="quiet-screen quiet-overview" data-quiet-screen="overview">'+
-  '<div class="quiet-profile-hero"><div class="quiet-profile-cover" aria-hidden="true"><span>✦ YOUR OWN CORNER</span></div>'+
+  '<div class="quiet-profile-hero" data-profile-summary><div class="quiet-profile-cover" aria-hidden="true"><span>✦ YOUR OWN CORNER</span></div>'+
   '<div class="quiet-profile-person">'+quietPhoto(user)+
   '<div class="quiet-profile-person-text"><p class="quiet-eyebrow">MY PROFILE</p><h2>'+h(user.displayName||'Your profile')+'</h2>'+
   '<p>'+(user.bio?h(user.bio):'A little place for the stories you keep.')+'</p></div>'+
