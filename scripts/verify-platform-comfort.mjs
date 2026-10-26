@@ -54,7 +54,14 @@ try {
   });
   if(fit && data.scrollHeight>data.height+1){await page.screenshot({path:path.join(screenshots,'fit-failure.png'),fullPage:true});await fs.writeFile(path.join(screenshots,'fit-failure.json'),JSON.stringify(data,null,2));}
   assert.ok(data.scrollWidth<=data.width+1,label+' horizontal overflow '+JSON.stringify(data));
-  for(const h of data.headings)assert.ok(h.size<=({H1:32,H2:24,H3:20}[h.tag])*scale+.1,label+' oversized '+JSON.stringify(h));
+  // The user-approved Corner editorial hero deliberately uses a larger serif
+  // headline. All other public, owner and private headings retain their
+  // original compact limits; the overflow and 200%-text checks still apply.
+  for(const h of data.headings){
+   const cornerEditorial=label.startsWith('/corner ')&&h.tag==='H1'&&h.text.startsWith('A little bit of life,');
+   const limit=cornerEditorial?(data.width<=430?42:data.width<=900?62:80):({H1:32,H2:24,H3:20}[h.tag]);
+   assert.ok(h.size<=limit*scale+.1,label+' oversized '+JSON.stringify({...h,limit,scale}));
+  }
   for(const f of data.fields)assert.ok(f.size>=16*scale-.1,label+' small input '+JSON.stringify({f,root:data.rootFont,style:data.style}));
   if(fit){assert.ok(data.login&&data.login.backBottom<=data.height+.5,label+' login back link outside viewport');assert.ok(data.login.submitBottom<=data.height+.5,label+' submit outside viewport');assert.ok(data.scrollHeight<=data.height+1,label+' login unnecessarily scrolls '+JSON.stringify(data))}
   evidence.routes.add(label.split(' @')[0]);evidence.checks++;return data;
