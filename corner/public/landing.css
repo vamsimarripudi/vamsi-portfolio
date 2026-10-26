@@ -111,7 +111,7 @@ body.corner-comfort .corner-home-shell .corner-home-hero .next-wish {
 /* SIX CARD INDEX — all existing category destinations, no duplicate navigation. */
 body.corner-comfort .corner-home-shell .corner-explore {margin:0;padding:clamp(21px,2.5vw,34px) 0 18px}
 body.corner-comfort .corner-home-shell .corner-explore-heading {margin:0 0 16px}
-body.corner-comfort .corner-home-shell .corner-explore-heading h2 {
+body.corner-comfort #content.corner-home-shell .corner-explore-heading h2 {
   margin:0!important;font-family:var(--sans,system-ui);font-size:clamp(1.05rem,1.55vw,1.36rem)!important;
   letter-spacing:-.04em;font-weight:740!important;line-height:1.35!important;
 }
@@ -159,7 +159,7 @@ body.corner-comfort .corner-home-shell .feed-section {
 body.corner-comfort .corner-home-shell .feed-heading {margin:0 0 17px}
 body.corner-comfort .corner-home-shell .feed-heading>div{min-width:0}
 body.corner-comfort .corner-home-shell .feed-heading .eyebrow{font-size:.63rem;color:#9a765f;margin-bottom:6px}
-body.corner-comfort .corner-home-shell .feed-heading h2{
+body.corner-comfort #content.corner-home-shell .feed-heading h2{
   font-size:clamp(1.25rem,1.6vw,1.48rem)!important;line-height:1.35!important;
   font-weight:745;letter-spacing:-.045em;margin:0!important;
 }
@@ -224,7 +224,7 @@ body.corner-comfort .corner-home-shell .corner-journal-feed .story .story-copy{
 body.corner-comfort .corner-home-shell .corner-journal-feed .story .story-count{
   order:5;color:#8d8683;font-size:.62rem;letter-spacing:.015em;margin:10px 0 0;
 }
-body.corner-comfort .corner-home-shell .corner-journal-feed .story .story-copy h2{
+body.corner-comfort #content.corner-home-shell .corner-journal-feed .story .story-copy h2{
   margin:2px 0 1px!important;font-size:clamp(.91rem,1.15vw,1.05rem)!important;
   font-weight:730;line-height:1.45!important;letter-spacing:-.02em;
   text-wrap:pretty;overflow-wrap:anywhere;
@@ -265,7 +265,7 @@ body.corner-comfort .corner-home-shell .corner-spotlight-mark{
   text-shadow:0 4px 18px #0002;
 }
 body.corner-comfort .corner-home-shell .corner-spotlight-copy{display:grid;gap:7px}
-body.corner-comfort .corner-home-shell .corner-spotlight-copy h3{
+body.corner-comfort #content.corner-home-shell .corner-spotlight-copy h3{
   margin:0;font-size:.99rem!important;font-weight:750;line-height:1.4!important;letter-spacing:-.025em;
 }
 body.corner-comfort .corner-home-shell .corner-spotlight-copy p{
@@ -413,7 +413,7 @@ body.corner-comfort .corner-home-shell .corner-spotlight-link:hover{background:#
   body.corner-comfort .corner-home-shell .corner-journal-feed .stories{grid-template-columns:1fr;gap:13px}
   body.corner-comfort .corner-home-shell .corner-journal-feed .story .card-media,
   body.corner-comfort .corner-home-shell .corner-journal-feed .story .corner-story-visual{aspect-ratio:1.9}
-  body.corner-comfort .corner-home-shell .corner-journal-feed .story .story-copy h2{font-size:1rem!important}
+  body.corner-comfort #content.corner-home-shell .corner-journal-feed .story .story-copy h2{font-size:1rem!important}
   body.corner-comfort .corner-home-shell .corner-journal-feed .story .story-excerpt{font-size:.78rem}
   body.corner-comfort .corner-home-shell .corner-home-spotlight{margin-top:3px}
   body.corner-comfort:has(.corner-public-header) #content::before{
