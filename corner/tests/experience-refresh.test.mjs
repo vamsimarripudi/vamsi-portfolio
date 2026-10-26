@@ -105,7 +105,7 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
 
 
 test('Media Library has responsive filled columns, clear details actions, and caption clamps',()=>{
- const admin=asset('admin.js'),studio=asset('studio.css');
+ const admin=asset('admin.js'),studio=asset('media-library.css');
  assert.match(admin,/class="media-gallery corner-library-grid"/);
  assert.match(admin,/media-thumb--library/);
  assert.match(admin,/Edit details ↗/);
@@ -127,6 +127,7 @@ test('light editorial backdrop and compact centered search retain normal page co
  const adminPageHtml=basePage({path:'/admin',initial:{page:'admin'}});
  assert.match(publicPage,/href="\/refresh\.css\?v=20261026-clean1"/);
  assert.match(adminPageHtml,/href="\/studio\.css\?v=20261026-clean1"/);
+ assert.match(adminPageHtml,/href="\/media-library\.css\?v=20261026-clean1"/);
  const server=fs.readFileSync(new URL('../src/server.mjs',import.meta.url),'utf8');
  assert.match(server,/\['\.css','\.js'\]\.includes\(extension\)\?'public,max-age=0,must-revalidate'/);
 });
