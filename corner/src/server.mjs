@@ -219,7 +219,16 @@ async function api(req,res,pathName,url){
   if(reactMatch&&method==='DELETE'){limit(req,'reaction',45,60);const actor=visitor(req,res);return ok(res,store.setReaction(reactMatch[1],null,actor));}
   const commentMatch=pathName.match(/^\/api\/posts\/([A-Za-z0-9_-]+)\/comments$/);
   if(commentMatch&&method==='GET')return ok(res,store.getComments(commentMatch[1]));
-  if(commentMatch&&method==='POST'){limit(req,'comment',4,3600);const data=await readJSON(req,10000);return ok(res,store.comment(commentMatch[1],data.name,data.body))}
+  if(commentMatch&&method==='POST'){
+    limit(req,'comment',4,3600);
+    const cookies=cookieHeader(req);
+    const decode=name=>{try{return decodeURIComponent(cookies[name]||'')}catch{return ''}};
+    const actor=store.session(decode('corner_member_session'))||store.session(decode('corner_session'));
+    if(!actor)throw httpError(401,'Sign in to leave a comment.','AUTH_REQUIRED');
+    if(actor.role==='member'&&!identity.getProfile(actor.id)?.verified_at)throw httpError(403,'Verify your email before commenting.','EMAIL_VERIFICATION_REQUIRED');
+    const data=await readJSON(req,10000);
+    return ok(res,store.comment(commentMatch[1],actor.display_name,data.body));
+  }
   if(pathName==='/api/admin/login'&&method==='POST'){
     limit(req,'staff-login',7,900);const result=identity.loginAdmin(await readJSON(req,5000),sourceIp(req),req.headers['user-agent']||'');
     if(result.token){res.setHeader('set-cookie',adminCookie(result.token));return ok(res,{authenticated:true,expires:result.expires,user:result.user});}
@@ -332,7 +341,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/refresh.css','/experience.js','/comfort.css','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
