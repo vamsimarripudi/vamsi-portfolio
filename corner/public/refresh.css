@@ -282,3 +282,42 @@ html[data-studio-motion=off] .corner-comfort .admin-shell * {animation:none!impo
 #admin-view.corner-insights-focus>.corner-reading-details>summary small{display:none}
 #admin-view.corner-insights-focus>.corner-reading-details [data-reading-report]{margin-top:0}
 @media(max-width:767px){#admin-view.corner-insights-focus>.corner-reading-details>summary{top:-34px;padding:4px 9px;min-height:28px}}
+
+/* Staged Corner editor: attachments live in a focused native modal, never in a bottom card. */
+.corner-comfort .editor .editor-topline{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 18px}
+.corner-comfort .editor .editor-topline-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px 12px}
+.corner-comfort .editor .corner-attachments-open{display:inline-flex;align-items:center;gap:10px;min-height:42px;padding:9px 13px;border:1px solid #111;border-radius:11px;background:#111;color:#fff!important;-webkit-text-fill-color:#fff;font-size:.79rem;font-weight:720;cursor:pointer}
+.corner-comfort .editor .corner-attachments-open:is(:hover,:focus-visible){background:#303030;color:#fff!important}
+.corner-comfort .editor .corner-attachment-count{display:grid;place-items:center;min-width:25px;min-height:24px;padding:3px 6px;border-radius:7px;background:#fff3;color:#fff!important;-webkit-text-fill-color:#fff;font-size:.72rem;font-weight:750}
+.corner-attachments-dialog{position:fixed;inset:0;margin:auto;width:min(94vw,840px);max-width:none;max-height:min(92dvh,890px);padding:0;overflow:hidden;border:1px solid #dcd8d0;border-radius:22px;background:#fff;color:#111;box-shadow:0 28px 90px #0005}
+.corner-attachments-dialog::backdrop{background:rgba(8,8,8,.66);backdrop-filter:blur(5px)}
+.corner-attachments-dialog .post-media-editor{padding:0!important}
+.corner-attachments-shell{display:grid;grid-template-rows:auto minmax(0,1fr) auto;max-height:min(91dvh,875px);min-height:0}
+.corner-attachments-head{display:flex;align-items:start;justify-content:space-between;gap:14px;padding:clamp(18px,3vw,28px);border-bottom:1px solid #e9e5de;background:#fff}
+.corner-attachments-head .eyebrow{margin:0 0 7px}
+.corner-attachments-head h2{margin:0 0 7px;font-size:clamp(1.5rem,2.7vw,2rem);line-height:1.18;letter-spacing:-.045em}
+.corner-attachments-head p:last-child{margin:0;color:#5c5751;font-size:.83rem;line-height:1.55}
+.corner-attachments-head [data-media-close]{flex:none;display:grid;place-items:center;width:42px;height:42px;border:1px solid #dcd8d0;border-radius:12px;background:#fff;color:#111;font-size:1.4rem;cursor:pointer}
+.corner-attachments-content{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;padding:clamp(16px,3vw,27px)}
+.corner-attachments-content .post-media-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.corner-attachments-content .post-media-head h3{margin:0;font-size:1.04rem}
+.corner-attachments-content .post-media-head small{color:#5d5952;white-space:nowrap}
+.corner-attachments-content .media-gallery{margin-top:15px}
+.corner-attachments-content .upload-field{margin-top:18px}
+.corner-attachments-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px clamp(16px,3vw,27px);border-top:1px solid #e9e5de;background:#faf9f7}
+.corner-attachments-footer span{font-size:.79rem;color:#5a554e}
+.corner-attachments-footer [data-media-close]{min-height:43px;padding:10px 23px;border:1px solid #111;border-radius:11px;background:#111;color:#fff;font-weight:720;cursor:pointer}
+.corner-attachments-loading{padding:30px;font-size:.88rem;color:#57514b}
+.corner-attachments-dialog :is(button,input,textarea):focus-visible{outline:3px solid #3565ac;outline-offset:3px}
+@media(max-width:600px){
+ .corner-comfort .editor .editor-topline-actions{width:100%;justify-content:space-between}
+ .corner-comfort .editor .corner-attachments-open{min-height:43px}
+ .corner-attachments-dialog{width:calc(100vw - 18px);max-height:calc(100dvh - 18px);border-radius:16px}
+ .corner-attachments-shell{max-height:calc(100dvh - 20px)}
+ .corner-attachments-head{padding:15px}
+ .corner-attachments-head h2{font-size:1.43rem}
+ .corner-attachments-content{padding:15px}
+ .corner-attachments-footer{padding:12px 15px}
+ .corner-attachments-footer span{max-width:21ch}
+}
+@media(prefers-reduced-motion:reduce){.corner-attachments-dialog::backdrop{backdrop-filter:none}}

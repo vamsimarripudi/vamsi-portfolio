@@ -42,7 +42,7 @@
     root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">Edit ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
     $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
   }
-  function postFields(p={}){const lead=String(p.body||'').match(/^> ([^\n]{1,280})(?:\n\n|$)/);const main=lead?String(p.body).slice(lead[0].length):p.body||'';return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span></div>
+  function postFields(p={}){const lead=String(p.body||'').match(/^> ([^\n]{1,280})(?:\n\n|$)/);const main=lead?String(p.body).slice(lead[0].length):p.body||'';return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><div class="editor-topline-actions"><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span><button type="button" id="open-attachments" class="corner-attachments-open" aria-haspopup="dialog" aria-controls="editor-media">Attach files <span id="attachment-count" class="corner-attachment-count" aria-label="0 files attached" aria-live="polite">0</span></button></div></div>
     <div class="editor-inline"><label>Type<select name="type">${variantTypes.map(t=>`<option value="${t}" ${p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label><label>Symbol / emoji<input name="emoji" maxlength="8" placeholder="✳" value="${esc(p.emoji||'')}"></label></div>
     <label>Title<input name="title" maxlength="150" required placeholder="A small idea worth keeping." value="${esc(p.title||'')}"></label>
     <label>Short preview<input name="excerpt" maxlength="380" placeholder="One line to draw someone in." value="${esc(p.excerpt||'')}"></label>
@@ -60,8 +60,19 @@
   }
   function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
   async function editor(id=null){clearTimeout(active.saveTimer);active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:false,tags:[]};active.post=p;
-    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><div class="admin-section" id="editor-media"></div>`;
+    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-attachments-dialog" aria-labelledby="media-editor-title"><div class="corner-attachments-loading" role="status">Loading attachments…</div></dialog>`;
     const form=$('#post-editor');
+    const attachmentsDialog=$('#editor-media');
+    $('#open-attachments').onclick=()=>{
+      if(!attachmentsDialog.open)attachmentsDialog.showModal();
+      attachmentsDialog.querySelector('[data-media-close]')?.focus();
+    };
+    attachmentsDialog.addEventListener('click',event=>{
+      if(event.target.closest?.('[data-media-close]')&&attachmentsDialog.dataset.uploading!=='true')attachmentsDialog.close();
+    });
+    attachmentsDialog.addEventListener('cancel',event=>{
+      if(attachmentsDialog.dataset.uploading==='true')event.preventDefault();
+    });
     updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.id&&p.state==='draft'){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1250)}});
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
     async function save(quiet=false){if(!form.elements.title.value.trim()){if(!quiet)toast('Add a title first.','error');return null}clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';try{let value=formValues(form);if(p.id){p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...value,version:p.version});}else{p=await api('/corner/api/admin/posts','POST',value);active.post=p;}$('#save-indicator').textContent='Saved · v'+p.version;active.dirty=false;if(!quiet)toast('Draft saved.','success');return p;}catch(err){$('#save-indicator').textContent=err.status===409?'Edit conflict — reload':'Could not save';if(!quiet)toast(err.message,'error');return null}}
@@ -136,18 +147,23 @@
     const result=postId?await api('/corner/api/admin/posts/'+encodeURIComponent(postId)):null;
     const attachments=result?.media||[];
     showEditorCover(attachments);
-    section.innerHTML='<section class="admin-surface post-media-editor" aria-labelledby="media-editor-title">'+
-      '<div class="post-media-head"><div><p class="eyebrow">STORY PHOTOGRAPHS</p><h3 id="media-editor-title">Images & captions</h3></div>'+
-      '<small>'+attachments.length+' attached</small></div>'+
+    const badge=$('#attachment-count');
+    if(badge){badge.textContent=String(attachments.length);badge.setAttribute('aria-label',attachments.length+' files attached');}
+    section.innerHTML='<div class="post-media-editor corner-attachments-shell">'+
+      '<header class="corner-attachments-head"><div><p class="eyebrow">STORY MEDIA</p><h2 id="media-editor-title">Attachments</h2><p>Keep the story editor clean. Add, caption and manage media here.</p></div><button type="button" data-media-close aria-label="Close attachments">×</button></header>'+
+      '<div class="corner-attachments-content">'+
+      '<div class="post-media-head"><h3>Attached to this story</h3><small>'+attachments.length+' files</small></div>'+
       (attachments.length?'<div class="media-gallery">'+attachments.map(x=>mediaCard(x,true)).join('')+'</div>':
-       '<p class="admin-hint">Add photographs to give this story a visual chapter. Only published posts show media to visitors.</p>')+
+       '<p class="admin-hint">Nothing attached yet. Add a photo or video below; drafts stay private.</p>')+
       '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
       '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required></label>'+
       '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
-      '<p class="admin-hint">Add a description for each image and an optional caption. Draft photos stay private. JPG, PNG, WebP or GIF up to 8 MB; MP4/WebM up to 25 MB.</p>'+
+      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, WebP or GIF up to 8 MB; MP4/WebM up to 25 MB.</p>'+
       '<p data-upload-status role="status" aria-live="polite"></p>'+
       '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
-      '</form></section>';
+      '</form></div>'+
+      '<footer class="corner-attachments-footer"><span>Files remain private until you publish.</span><button type="button" data-media-close>Done</button></footer>'+
+      '</div>';
     $$('[data-media-edit]',section).forEach(button=>{
       button.onclick=()=>mediaEdit(button.dataset.mediaEdit,attachments,postId);
     });
@@ -165,6 +181,7 @@
           await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
           toast('Caption and description saved.','success');
           await mediaForPost(postId,ensureDraft);
+          section.querySelector('[data-media-close]')?.focus();
         }catch(error){toast(error.message,'error');button.disabled=false}
       };
     });
@@ -175,6 +192,11 @@
     const submit=form.querySelector('button[type=submit]');
     let pending=[];
     const cleanup=()=>{for(const entry of pending)if(entry.url)URL.revokeObjectURL(entry.url)};
+    section.onclose=()=>{
+      cleanup();pending=[];previewList.replaceChildren();fileInput.value='';
+      status.textContent='';submit.disabled=true;
+      $('#open-attachments')?.focus();
+    };
     const previewEntry=entry=>{
       const wrapper=document.createElement('div');
       wrapper.className='upload-preview-card';
@@ -244,6 +266,7 @@
       event.preventDefault();
       if(!pending.length)return;
       submit.disabled=true;
+      section.dataset.uploading='true';
       let sent=0;
       try{
         for(const entry of pending.filter(item=>!item.done)){
@@ -267,11 +290,12 @@
         toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
         cleanup();pending=[];
         await mediaForPost(postId,ensureDraft);
+        section.querySelector('[data-media-close]')?.focus();
       }catch(error){
         status.textContent=error.message+' Already uploaded files are preserved. Retry the remaining ones.';
         toast(error.message,'error');
         submit.disabled=false;
-      }
+      }finally{section.dataset.uploading='false'}
     };
   }
   function mediaCard(x,quickEdit=false){

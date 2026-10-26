@@ -59,3 +59,19 @@ test('Studio schedule, crop, basic Insights and switches have regression contrac
  assert.match(style,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(admin,/Publish at the right time/);
 });
+
+test('Studio attachment upload and management uses a modal instead of a bottom card',()=>{
+ const admin=asset('admin.js'),style=asset('refresh.css');
+ assert.match(admin,/id="open-attachments"/);
+ assert.match(admin,/aria-haspopup="dialog" aria-controls="editor-media"/);
+ assert.match(admin,/id="editor-media" class="corner-attachments-dialog" aria-labelledby="media-editor-title"/);
+ assert.match(admin,/attachmentsDialog\.showModal\(\)/);
+ assert.match(admin,/data-media-close/);
+ assert.match(admin,/section\.onclose=/);
+ assert.match(admin,/section\.dataset\.uploading='true'/);
+ assert.match(admin,/section\.dataset\.uploading='false'/);
+ assert.match(admin,/await mediaForPost\(postId,ensureDraft\)/);
+ assert.doesNotMatch(admin,/class="admin-section" id="editor-media"/);
+ assert.match(style,/\.corner-attachments-dialog::backdrop/);
+ assert.match(style,/@media\(max-width:600px\)/);
+});

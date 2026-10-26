@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": { "deploymentEnabled": { "work/corner-staged-changes-20261026": false } },
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "headers": [
