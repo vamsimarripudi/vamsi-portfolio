@@ -234,34 +234,46 @@
   }
   displayBookmarks();displaySessions();
   first('[data-account-logout]')?.addEventListener('click',async()=>{try{await api('auth/logout','POST',{});location.assign(base+'/login')}catch(error){alert(error.message)}});
+  const dataStatus=first('[data-account-data-status]');
+  const setDataStatus=text=>{if(dataStatus)dataStatus.textContent=text};
   first('[data-account-export]')?.addEventListener('click',async()=>{
-    const trigger=first('[data-account-export]'),status=first('[data-export-status]');
-    trigger.disabled=true;if(status)status.textContent='Preparing your export…';
+    setDataStatus('Preparing your account export…');
     try{
       const info=await api('me/export','POST',{});
-      const blob=new Blob([JSON.stringify(info,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-      a.href=url;a.download='corner-account-export.json';a.click();
+      const blob=new Blob([JSON.stringify(info,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download='corner-account-export.json';link.click();
       setTimeout(()=>URL.revokeObjectURL(url),10000);
-      if(status)status.textContent='Your export is ready.';
-    }catch(error){if(status)status.textContent=error.message||'Could not export this account.'}
-    finally{trigger.disabled=false}
+      setDataStatus('Your account export is ready.');
+    }catch(error){setDataStatus(error.message||'Could not export your account data.')}
   });
-  const deletionDialog=first('[data-account-delete-dialog]'),deletionButton=first('[data-account-delete]');
-  const deletionStatus=first('[data-delete-status]');
-  deletionButton?.addEventListener('click',()=>{
-    if(deletionDialog&&!deletionDialog.open)deletionDialog.showModal();
-  });
-  first('[data-delete-cancel]')?.addEventListener('click',()=>deletionDialog.close());
+  const deletionDialog=first('[data-account-delete-dialog]');
+  const deletionTrigger=first('[data-account-delete]');
+  const deletionConfirm=first('[data-account-delete-confirm]');
+  const deletionMessage=first('[data-account-delete-status]');
+  first('[data-account-delete-cancel]')?.addEventListener('click',()=>deletionDialog?.close());
   deletionDialog?.addEventListener('click',event=>{if(event.target===deletionDialog)deletionDialog.close()});
-  first('[data-delete-confirm]')?.addEventListener('click',async()=>{
-    const trigger=first('[data-delete-confirm]');
-    trigger.disabled=true;
-    if(deletionStatus)deletionStatus.textContent='Submitting a reviewed deletion request…';
+  const requestDeletion=async()=>{
+    if(deletionConfirm)deletionConfirm.disabled=true;
+    if(deletionMessage)deletionMessage.textContent='Submitting your request…';
     try{
       await api('me/deletion','POST',{});
-      deletionDialog.close();
-      if(deletionStatus)deletionStatus.textContent='Your request was received for review. Your account has not been immediately deleted.';
-    }catch(error){if(deletionStatus)deletionStatus.textContent=error.message||'Could not submit request.';deletionDialog.close()}
-    finally{trigger.disabled=false}
+      if(deletionDialog?.open)deletionDialog.close();
+      setDataStatus('Account deletion review requested. You will receive follow-up information through the existing account process.');
+    }catch(error){
+      const description=error.message||'Could not submit the deletion request.';
+      if(deletionMessage)deletionMessage.textContent=description;
+      else setDataStatus(description);
+    }finally{if(deletionConfirm)deletionConfirm.disabled=false}
+  };
+  deletionTrigger?.addEventListener('click',()=>{
+    if(deletionDialog?.showModal){
+      if(deletionMessage)deletionMessage.textContent='';
+      deletionDialog.showModal();
+      first('[data-account-delete-cancel]')?.focus();
+    }else if(confirm('Request review of your account deletion? This will not delete your posts or other people’s content.')){
+      void requestDeletion();
+    }
   });
+  deletionConfirm?.addEventListener('click',()=>{void requestDeletion()});
 })();
