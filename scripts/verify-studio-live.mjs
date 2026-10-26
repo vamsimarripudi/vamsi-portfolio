@@ -62,6 +62,28 @@ try{
  assert.equal(await page.locator('.preview-story-body').textContent(),'First line\nSecond line');assert.equal(await page.locator('.preview-symbol').textContent(),'✨');
  await page.locator('#save-post').click();await page.waitForFunction(()=>document.querySelector('#save-indicator').textContent.startsWith('Saved'));
  await page.locator('#post-editor textarea[name=body]').fill('Draft autosave still works.');await page.waitForFunction(()=>document.querySelector('#save-indicator').textContent.startsWith('Saved'));
+ // Real isolated attachment popup acceptance: open, Escape, upload and retained state.
+ await page.locator('#open-attachments').click();
+ const attachmentsDialog=page.locator('#editor-media');
+ await attachmentsDialog.locator('.post-media-editor').waitFor();
+ assert.equal(await attachmentsDialog.evaluate(node=>node.open),true,'Attachment manager is a native modal');
+ await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>!document.querySelector('#editor-media')?.open);
+ await page.locator('#open-attachments').click();
+ const tinyGif=Buffer.from('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=','base64');
+ await attachmentsDialog.locator('input[name=files]').setInputFiles({name:'corner-test.gif',mimeType:'image/gif',buffer:tinyGif});
+ await attachmentsDialog.locator('input[name=alt]').fill('Small transparent regression image');
+ await attachmentsDialog.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>document.querySelector('#attachment-count')?.textContent==='1',null,{timeout:20000});
+ assert.equal(await attachmentsDialog.locator('.media-gallery .media-thumb').count(),1,'Uploaded file appears in manager');
+ await attachmentsDialog.locator('[data-media-close]').last().click();
+ assert.equal(await attachmentsDialog.evaluate(node=>node.open),false,'Done closes attachment modal');
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('#open-attachments').click();
+ const modalBounds=await attachmentsDialog.boundingBox();
+ assert.ok(modalBounds.x>=-1&&modalBounds.x+modalBounds.width<=391,'Attachment modal remains within a small phone viewport');
+ await attachmentsDialog.locator('[data-media-close]').first().click();
+ await page.setViewportSize({width:1366,height:625});
  const sidebarBefore=await page.locator('.admin-sidebar').boundingBox();await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));assert.ok(await page.evaluate(()=>scrollY)>0);const sidebarAfter=await page.locator('.admin-sidebar').boundingBox();assert.equal(sidebarBefore.y,sidebarAfter.y,'Sidebar anchored while document scrolls');
  await page.locator('[data-studio-collapse]').click();assert.equal(await page.locator('html').getAttribute('data-studio-collapsed'),'true');assert.ok((await page.locator('.admin-sidebar').boundingBox()).width<90);await page.locator('[data-studio-collapse]').click();
  await page.goto(corner+'/corner/admin/v3/wishes');await page.locator('[data-v3w-form]').waitFor();assert.equal(await page.locator('.site-header').count(),0,'No public header in private editor');assert.equal(await page.locator('[data-v3w-preview]').count(),0,'Preview button removed');
@@ -99,6 +121,6 @@ try{
  const reduced=await browser.newContext({storageState:await context.storageState(),reducedMotion:'reduce'}),r=await reduced.newPage();let vendor=0;r.on('request',req=>{if(req.url().includes('/vendor/gsap'))vendor++});await r.goto(corner+'/corner/admin/v3/wishes');await r.locator('[data-v3w-form]').waitFor();await r.locator('[name=title]').fill('Reduced motion still previews');assert.equal(await r.locator('[data-v3w-title]').textContent(),'Reduced motion still previews');assert.equal(vendor,0);assert.equal(await r.locator('html').getAttribute('data-studio-motion'),'off');await reduced.close();
  const fallback=await browser.newContext({storageState:await context.storageState()}),f=await fallback.newPage();await f.route('**/vendor/gsap*',route=>route.abort());await f.goto(corner+'/corner/admin/v3/wishes');await f.locator('[name=title]').fill('Works without animation library');assert.equal(await f.locator('[data-v3w-title]').textContent(),'Works without animation library');await fallback.close();
  assert.deepEqual(errors,[],'No browser exceptions');
- await fs.writeFile(path.join(screenshots,'evidence.json'),JSON.stringify({checks:evidence.checks,widths,localPreview:true,slowSaveSafe:true,conflictSafe:true,sidebarFixed:true,reducedMotion:true,animationFallback:true,realReactions:true},null,2));
+ await fs.writeFile(path.join(screenshots,'evidence.json'),JSON.stringify({checks:evidence.checks,widths,localPreview:true,slowSaveSafe:true,conflictSafe:true,sidebarFixed:true,attachmentModal:true,mediaUpload:true,reducedMotion:true,animationFallback:true,realReactions:true},null,2));
  console.log('PASS Studio live preview, saved editing, slow-save/conflict safety, fixed/collapsed rail, 48 geometry checks, real reactions, GSAP/reduced-motion/failure fallback');
 }finally{await browser?.close();await vite?.close();child.kill('SIGTERM');await Promise.race([once(child,'exit'),new Promise(r=>setTimeout(r,1500))]);if(child.exitCode===null)child.kill('SIGKILL');await fs.rm(dir,{recursive:true,force:true})}
