@@ -355,7 +355,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/account-quiet.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -363,7 +363,7 @@ async function route(req,res){
       const staff=session&&privilegedRole(session.role)?session:null;
       return page(res,adminRouteState(staff),200,true);
     }
-    if(['/login','/register','/verify-email','/resend-verification','/forgot-password','/reset-password','/confirm-email','/profile','/settings/profile','/settings/security','/admin/register','/admin/mfa','/admin/invite'].includes(pathname)){
+    if(['/login','/register','/verify-email','/resend-verification','/forgot-password','/reset-password','/confirm-email','/profile','/saved','/settings/profile','/settings/preferences','/settings/security','/settings/privacy','/admin/register','/admin/mfa','/admin/invite'].includes(pathname)){
       const cookies=cookieHeader(req);
       const readToken=(name)=>{try{return decodeURIComponent(cookies[name]||'')}catch{return ''}};
       const staff=store.session(readToken('corner_session'));
