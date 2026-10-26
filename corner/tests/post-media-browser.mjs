@@ -95,7 +95,11 @@ try{
  // The Studio library must show full-width responsive cards, not tiny fixed
  // auto-fill columns that leave most of the panel empty.
  await page.locator('[data-admin-view="media"]').click();
- await page.locator('#admin-view .corner-media-library .corner-library-grid').waitFor({state:'visible',timeout:12000});
+ await page.locator('#admin-view .corner-media-library .corner-library-grid').waitFor({state:'visible',timeout:12000}).catch(async error=>{
+   const active=await page.locator('[data-admin-view="media"]').getAttribute('aria-current').catch(()=>null);
+   const view=await page.locator('#admin-view').innerText().catch(()=>'No Studio view');
+   throw new Error('Media library did not render; active='+active+' view='+view.slice(0,400)+' JS='+browserErrors.join(' | '),{cause:error});
+ });
  const libraryCards=page.locator('#admin-view .corner-library-grid .media-thumb--library');
  assert.equal(await libraryCards.count(),2,'Both uploaded assets appear in the clean Studio gallery');
  assert.equal(await libraryCards.locator('[data-media-edit]').count(),2,'Each library card has one edit-details action');
