@@ -233,3 +233,14 @@ html[data-studio-motion=off] .corner-comfort .admin-shell * {animation:none!impo
 .corner-comfort .category-tabs [data-profile-link]{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;gap:7px}
 .corner-comfort .category-tabs [data-profile-link] img{width:26px;height:26px;flex:none;border-radius:50%;object-fit:cover;border:1px solid #ddd}
 @media(max-width:550px){.account-shell .account-avatar-card{grid-template-columns:54px minmax(0,1fr);gap:12px;padding:13px}.account-avatar-visual{width:54px;height:54px;border-radius:16px}.account-avatar-monogram{font-size:1.7rem}.account-avatar-actions{flex-wrap:wrap}}
+
+.corner-diagnostic{display:grid;gap:12px;margin:17px 0 8px;padding:18px;border:1px solid #dedad3;border-radius:17px;background:#faf9f7}
+.corner-diagnostic strong{font-size:.96rem}
+.corner-diagnostic p{font-size:.83rem;color:#514c46;margin:7px 0 0}
+.corner-diagnostic dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+.corner-diagnostic dl>div{display:grid;gap:7px;min-width:0;padding:12px;border-radius:11px;background:#fff;border:1px solid #e7e3dc}
+.corner-diagnostic dt{font-size:.72rem;color:#59534c}
+.corner-diagnostic dd{font-size:.85rem;font-weight:650;margin:0;overflow-wrap:anywhere}
+.corner-diagnostic .corner-diagnostic-help{margin:0;font-size:.75rem}
+@media(max-width:850px){.corner-diagnostic dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:450px){.corner-diagnostic dl{grid-template-columns:1fr}}
