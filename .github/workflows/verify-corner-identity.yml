@@ -106,6 +106,47 @@ jobs:
             await page.waitForURL('**/corner/profile',{timeout:12000});
             await page.getByText('Signed in as '+email).waitFor();
             assert.match((await page.locator('body').textContent()),/Your quiet space/);
+            // Quiet Desk: exercise the actual authenticated UI against the same
+            // isolated session, never against production user records.
+            fs.mkdirSync('screenshots/quiet-desk',{recursive:true});
+            for(const width of [320,375,390,768,1024,1366]){
+              const height=width<768?844:900;
+              await page.setViewportSize({width,height});
+              await page.goto(origin+'/corner/profile',{waitUntil:'networkidle'});
+              await page.locator('.account-identity-card').waitFor({state:'visible'});
+              const geom=await page.evaluate(()=>({
+                viewport:innerWidth,body:document.documentElement.scrollWidth,
+                dashboard:!!document.querySelector('.account-workspace-layout'),
+                bookmarks:!!document.querySelector('[data-account-bookmarks]'),
+                privateAvatar:!!document.querySelector('.account-identity-avatar'),
+                pulse:!!document.querySelector('.corner-orbit-dock')
+              }));
+              assert.ok(geom.body<=geom.viewport+1,'No Quiet Desk horizontal overflow '+width+' '+JSON.stringify(geom));
+              assert.ok(geom.dashboard&&geom.bookmarks&&geom.privateAvatar,'Quiet Desk private sections '+width);
+              assert.equal(geom.pulse,false,'Pulse must not overlap account controls '+width);
+              await page.getByText('No saved stories yet.').waitFor({timeout:10000});
+              assert.equal(await page.locator('[data-account-saved-count]').textContent(),'0','Actual empty bookmark count '+width);
+              if(width===390||width===1366)await page.screenshot({path:'screenshots/quiet-desk/profile-'+width+'.png',fullPage:false,animations:'disabled'});
+              await page.goto(origin+'/corner/settings/profile',{waitUntil:'networkidle'});
+              await page.locator('form[data-account-form=profile]').waitFor();
+              assert.equal(await page.locator('[data-avatar-file]').count(),1,'Retain private photo editing '+width);
+              assert.equal(await page.locator('input[name=emailUpdates][role=switch]').count(),1,'Real preference switch '+width);
+              const editWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
+              assert.ok(editWidth<=width+1,'Edit profile no overflow '+width);
+              if(width===390)await page.screenshot({path:'screenshots/quiet-desk/edit-profile-'+width+'.png',fullPage:false,animations:'disabled'});
+            }
+            // The public account menu must not expose Studio controls to members.
+            await page.setViewportSize({width:390,height:844});
+            await page.goto(origin+'/corner/',{waitUntil:'networkidle'});
+            await page.locator('[data-profile-member]:not([hidden])').waitFor({state:'attached'});
+            await page.locator('[data-corner-profile-toggle]').click();
+            assert.equal(await page.locator('[data-profile-guest]').isVisible(),false);
+            assert.equal(await page.locator('[data-owner-studio]').isVisible(),false,'Owner Studio hidden for members');
+            assert.equal(await page.locator('[data-profile-logout]').isVisible(),true);
+            assert.equal(await page.locator('[data-profile-menu-name]').textContent(),'Synthetic Browser Member');
+            await page.keyboard.press('Escape');
+            assert.equal(await page.locator('#corner-profile-card').isVisible(),false);
+            console.log('PASS Quiet Desk overview/edit 320–1366px, real saved stories, Pulse clearance, role-gated menu');
             await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
             await page.getByRole('heading', { name: 'Active sessions.', exact: true }).waitFor();
             await page.locator('[data-account-logout]').click();
@@ -138,3 +179,11 @@ jobs:
             console.log('PASS compact 320–430px owner Studio navigation, no giant selected tab or horizontal overflow');
           }finally{await browser.close();server.kill('SIGTERM');await sleep(130);fs.rmSync(directory,{recursive:true,force:true})}
           JS
+      - name: Upload Quiet Desk account screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-quiet-desk-screenshots
+          path: screenshots/quiet-desk/
+          if-no-files-found: ignore
+          retention-days: 7
