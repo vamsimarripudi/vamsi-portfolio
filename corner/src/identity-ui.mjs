@@ -53,89 +53,6 @@ const avatarCard=user=>{
   '<button type="button" data-avatar-remove'+(!user.hasAvatar?' hidden':'')+'>Remove</button></div>'+
   '<p class="account-avatar-status" data-avatar-status role="status" aria-live="polite"></p></div></section>';
 };
-const accountGlyphPaths={"overview":"<circle cx=\"12\" cy=\"8\" r=\"3.4\"/><path d=\"M4.8 20v-2.1a7.2 7.2 0 0 1 14.4 0V20\"/>","edit":"<path d=\"m15 5 4 4M4 20l4.5-1 11-11a2 2 0 0 0-4-4l-11 11z\"/>","bookmark":"<path d=\"M5 4h14v17l-7-4.8L5 21z\"/>","settings":"<path d=\"M4 7h16M4 17h16M8 4v6M16 14v6\"/>","lock":"<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>","shield":"<path d=\"M12 22s8-4.2 8-10.1V5l-8-3-8 3v6.9C4 17.8 12 22 12 22Z\"/><path d=\"m9 12 2 2 4-4\"/>","arrow":"<path d=\"M5 12h14M13 6l6 6-6 6\"/>","signout":"<path d=\"M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5M14 16l4-4-4-4M8 12h10\"/>"};
-const accountIcon=name=>'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(accountGlyphPaths[name]||accountGlyphPaths.overview)+'</svg>';
-const accountAvatar=function accountAvatar(user){
-  const initial=h((user.displayName||'M').trim().slice(0,1).toUpperCase()||'M');
-  return user.hasAvatar?
-    '<img class="account-identity-image" src="/api/v1/me/avatar" width="88" height="88" alt="Your profile photo">':
-    `<span class="account-identity-initial" aria-label="Profile initial ${initial}">${initial}</span>`;
-};
-const accountDashboardNav=function accountDashboardNav(type,user){
-  const items=[
-   {label:'Overview',href:'/profile',icon:'overview',active:type==='/profile'},
-   {label:'Edit profile',href:'/settings/profile',icon:'edit',active:type==='/settings/profile'},
-   {label:'Saved stories',href:'/profile#account-saved',icon:'bookmark'},
-   {label:'Preferences',href:'/settings/profile#account-preferences',icon:'settings'},
-   {label:'Security',href:'/settings/security',icon:'lock',active:type==='/settings/security'},
-   {label:'Privacy & data',href:'/profile#account-data',icon:'shield'}
-  ];
-  const links=items.map(item=>'<a class="account-nav-link'+(item.active?' is-active':'')+'" href="'+item.href+'"'+(item.active?' aria-current="page"':'')+'>'+accountIcon(item.icon)+'<span>'+item.label+'</span></a>').join('');
-  const staff=['owner','admin','editor','moderator'].includes(user.role);
-  return '<aside class="account-workspace-sidebar"><nav class="account-workspace-nav" aria-label="Account sections">'+links+'</nav>'+
-   '<div class="account-workspace-sidebar-bottom">'+(staff?'<a class="account-studio-shortcut" href="/admin">'+accountIcon('arrow')+'<span>Owner Studio</span></a>':'')+
-   '<button type="button" class="account-nav-signout" data-account-logout>'+accountIcon('signout')+'<span>Sign out</span></button></div></aside>';
-};
-const profileOverview=function profileOverview(user){
- const name=h(user.displayName||'Your account'),bio=user.bio?h(user.bio):'A little space for things that matter.';
- const language=({en:'English',te:'Telugu',hi:'Hindi'})[user.locale]||'English';
- const updates=user.emailUpdates?'Enabled':'Off';
- return `<div class="account-overview-content">
-   <section class="account-identity-card" aria-labelledby="account-identity-title">
-     <div class="account-identity-cover" aria-hidden="true"><span>✦</span></div>
-     <div class="account-identity-main">
-       <div class="account-identity-avatar">${accountAvatar(user)}</div>
-       <div class="account-identity-copy">
-         <p class="account-overline">PRIVATE PROFILE</p><h2 id="account-identity-title">${name}</h2>
-         <p class="account-identity-bio">${bio}</p><span class="account-identity-email">${h(user.email||'')}</span>
-       </div>
-       <a class="account-identity-edit" href="/settings/profile">${accountIcon('edit')}<span>Edit profile</span></a>
-     </div>
-   </section>
-   <div class="account-overview-grid">
-     <section class="account-section-card account-bookmarks-card" id="account-saved" aria-labelledby="saved-stories-heading">
-       <header class="account-section-heading"><div><p class="account-overline">YOUR COLLECTION</p><h2 id="saved-stories-heading">Saved stories</h2></div><span class="account-count" data-account-saved-count hidden></span></header>
-       <p class="account-section-sub">Stories you’ve bookmarked to return to later.</p>
-       <div data-account-bookmarks aria-live="polite"><p class="account-loading">Loading saved stories…</p></div>
-     </section>
-     <div class="account-overview-side">
-       <section class="account-section-card account-preference-summary" aria-labelledby="account-pref-title">
-         <header class="account-section-heading"><div><p class="account-overline">PERSONALIZATION</p><h2 id="account-pref-title">Your preferences</h2></div></header>
-         <dl class="account-preference-list"><div><dt>Language</dt><dd>${h(language)}</dd></div><div><dt>Email updates</dt><dd>${updates}</dd></div></dl>
-         <a class="account-text-link" href="/settings/profile#account-preferences">Manage preferences ${accountIcon('arrow')}</a>
-       </section>
-       <section class="account-section-card account-security-summary" aria-labelledby="account-sec-title">
-         <header class="account-section-heading"><div><p class="account-overline">SECURITY</p><h2 id="account-sec-title">Account protection</h2></div></header>
-         <p class="account-section-sub">Change your password and manage signed-in devices.</p>
-         <a class="account-text-link" href="/settings/security">Security settings ${accountIcon('arrow')}</a>
-       </section>
-     </div>
-   </div>
-   <section class="account-section-card account-data-card" id="account-data" aria-labelledby="account-data-title">
-     <header class="account-section-heading"><div><p class="account-overline">PRIVACY FIRST</p><h2 id="account-data-title">Your data, your choice.</h2></div></header>
-     <div class="account-data-actions">
-       <button class="account-data-action" type="button" data-account-export>${accountIcon('shield')}<span><strong>Export account data</strong><small>Download a copy of your available account information.</small></span>${accountIcon('arrow')}</button>
-       <button class="account-data-action is-danger" type="button" data-account-delete>${accountIcon('shield')}<span><strong>Request account deletion</strong><small>Request review of account removal; this is not instant deletion.</small></span>${accountIcon('arrow')}</button>
-     </div>
-   </section>
- </div>`;
-};
-const accountDashboard=function accountDashboard({type,user,top,formHtml,sessions}){
-  const onProfile=type==='/profile',onEdit=type==='/settings/profile';
-  const title=onProfile?'Your quiet space.':onEdit?'Edit your profile.':'Account security.';
-  const intro=onProfile?'Your stories, preferences and account controls in one place.':onEdit?'A few details to make your Corner feel like yours.':'Keep your account safe and review signed-in devices.';
-  const body=onProfile?profileOverview(user):
-     onEdit?`<section class="account-section-card account-edit-panel" aria-label="Edit your profile"><div class="account-edit-avatar" id="account-avatar">${avatarCard(user)}</div>${formHtml}</section>`:
-     `<section class="account-section-card account-security-panel" aria-labelledby="account-password-heading"><header class="account-section-heading"><div><p class="account-overline">PASSWORD</p><h2 id="account-password-heading">Change password</h2></div></header><p class="account-section-sub">Use your current password to keep access secure.</p>${formHtml}</section>${sessions}`;
-  return `<div class="account-shell account-shell--dashboard" data-account-page="${h(type)}" data-signed-in="true">
-    ${top}<main id="content" class="account-workspace">
-      <header class="account-workspace-heading"><div><p class="account-overline">VAMSI’S CORNER / MY ACCOUNT</p><h1>${title}</h1><p>${intro}</p></div>${onProfile?'':'<a class="account-back-mobile" href="/profile">← My profile</a>'}</header>
-      <p class="account-session-note"><span class="account-session-dot" aria-hidden="true"></span>Signed in as ${h(user.email||'')}</p>
-      <div class="account-workspace-layout">${accountDashboardNav(type,user)}<section class="account-card account-workspace-panel">${body}</section></div>
-    </main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script>
-  </div>`;
-};
-
 const kind={
   '/login':{title:'Welcome back.',kicker:'MEMBER SIGN-IN',subtitle:'Your private space for saved posts and a few useful preferences.',form:signIn,foot:links([['Create account','/register'],['Forgot password?','/forgot-password']])},
   '/register':{title:'Keep your corner.',kicker:'MEMBER REGISTRATION',subtitle:'A private member profile. No public feed, no extra noise.',form:register,foot:links([['Already registered? Sign in','/login']])},
@@ -295,11 +212,8 @@ export function accountPage({type,user,registrationOpen=false}){
   const details=kind[type]||kind['/login'];
   const formHtml=typeof details.form==='function'?details.form(registrationOpen):details.form;
   const profileLocked=quietRoutes.has(type)&&!user;
-  const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:type==='/profile'&&user?profileOverview(user):formHtml;
-  const extra=type==='/profile'&&user?`<div class="account-side-section" id="account-saved"><h2>Saved stories.</h2><div data-account-bookmarks><p>Loading saved posts…</p></div></div><div class="account-side-section"><h2>Your information.</h2><button class="account-text-button" type="button" data-account-export>Export account data ↗</button><button class="account-text-button" type="button" data-account-delete>Request account deletion ↗</button></div>`:'';
-  const sessions=type==='/settings/security'&&user?`<div class="account-side-section"><h2>Active sessions.</h2><div data-account-sessions>Loading…</div></div>${user.role==='owner'?'<div class="account-side-section"><h2>Owner email.</h2><p>Change the owner address through your Railway identity configuration. This avoids breaking the existing owner record.</p></div>':`<div class="account-side-section"><h2>Change email.</h2>${changeEmail}</div>`}${['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled?'<div class="account-side-section"><h2>Authenticator security.</h2><a class="account-cta-link" href="/admin/mfa">Enable two-factor verification ↗</a></div>':''}`:'';
+  const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:formHtml;
   const top=`<div class="account-top"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true"><img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span><b>Vamsi's Corner</b></a><a class="account-back" href="/">← Back to stories</a></div>`;
-  const isDashboard=!!user&&['/profile','/settings/profile','/settings/security'].includes(type);
-  const body=isDashboard?accountDashboard({type,user,top,formHtml,sessions}):`<div class="account-shell" data-account-page="${h(type)}" data-signed-in="${user?'true':'false'}">${top}<main id="content" class="account-main"><section class="account-intro"><p class="eyebrow">${details.kicker}</p><h1>${details.title}</h1><p>${details.subtitle}</p><div class="account-geometry" aria-hidden="true"><span></span><span></span><span></span></div></section><section class="account-card">${user&&type==='/profile'?`<p class="account-status"><span>●</span> Signed in as ${h(user.email)}</p>`:''}${user&&['/profile','/settings/profile'].includes(type)?avatarCard(user):''}${inner}${details.foot}${extra}${sessions}${user?'<button type="button" class="account-text-button" data-account-logout>Sign out</button>':''}</section></main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script></div>`;
+  const body=`<div class="account-shell" data-account-page="${h(type)}" data-signed-in="${user?'true':'false'}">${top}<main id="content" class="account-main"><section class="account-intro"><p class="eyebrow">${details.kicker}</p><h1>${details.title}</h1><p>${details.subtitle}</p><div class="account-geometry" aria-hidden="true"><span></span><span></span><span></span></div></section><section class="account-card">${user&&type==='/profile'?`<p class="account-status"><span>●</span> Signed in as ${h(user.email)}</p>`:''}${inner}${details.foot}${user?'<button type="button" class="account-text-button" data-account-logout>Sign out</button>':''}</section></main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script></div>`;
   return basePage({path:type,title:details.title,noindex:true,content:body,initial:{page:'account',authenticated:!!user,account:user,memberCompactPasswords:compactMemberPasswords()}});
 }
