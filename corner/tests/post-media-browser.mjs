@@ -40,7 +40,12 @@ try{
  await page.locator('#create-from-overview').click();
  await page.locator('#post-editor input[name="title"]').fill('First photo-led Corner story');
  await page.locator('#post-editor textarea[name="body"]').fill('Two photographs with captions, tested in a real mobile browser.');
- const input=page.locator('#editor-upload input[type="file"]');
+ // Attachments are intentionally concealed until the accessible editor modal is opened.
+ await page.locator('#open-attachments').click();
+ const mediaDialog=page.locator('#editor-media');
+ await mediaDialog.locator('.post-media-editor').waitFor({state:'visible'});
+ assert.equal(await mediaDialog.evaluate(node=>node.open),true,'Attach files opens a native modal');
+ const input=mediaDialog.locator('#editor-upload input[type="file"]');
  await input.waitFor({state:'visible'});
  await input.setInputFiles([
   {name:'photo-one.png',mimeType:'image/png',buffer:png},
@@ -54,12 +59,15 @@ try{
  await cards.nth(1).locator('input[name="caption"]').fill('One more quiet moment.');
  await page.locator('#editor-upload button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===2,null,{timeout:18000});
+ assert.equal(await page.locator('#attachment-count').textContent(),'2','Editor badge reflects attachments');
  assert.equal(await page.locator('[data-editor-photo-preview] img').count(),1,'Attached image appears in Studio card preview');
  const inline=page.locator('#editor-media form[data-media-quick-edit]');
  assert.equal(await inline.count(),2,'Every existing image has inline caption editor');
  await inline.nth(1).locator('input[name="caption"]').fill('Second caption updated.');
  await inline.nth(1).locator('button[type="submit"]').click();
  await page.getByText('Caption and description saved.').first().waitFor({timeout:12000});
+ await mediaDialog.locator('[data-media-close]').last().click();
+ assert.equal(await mediaDialog.evaluate(node=>node.open),false,'Done closes the media manager');
  await page.locator('#publish-post').click();
  await page.waitForFunction(async()=>{
   try{
