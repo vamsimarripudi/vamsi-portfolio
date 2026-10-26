@@ -270,3 +270,15 @@ html[data-studio-motion=off] .corner-comfort .admin-shell * {animation:none!impo
 .corner-comfort .admin-shell .post-media-editor .upload-field>button[type=submit]:disabled{opacity:.48}
 @media(max-width:600px){.corner-comfort .admin-shell .post-media-editor .upload-field{padding:12px}.corner-comfort .admin-shell .post-media-editor input[type=file]{padding:10px}.corner-comfort .admin-shell .post-media-editor input[type=file]::file-selector-button{margin-bottom:6px}}
 @media(prefers-reduced-motion:no-preference){.corner-comfort .admin-sidebar-footer .studio-icon-button .studio-icon{transition:transform .25s cubic-bezier(.2,.8,.2,1)}.corner-comfort .admin-sidebar-footer .studio-icon-button:is(:hover,:focus-visible) .studio-icon{transform:translateY(-2px) rotate(-7deg)}}
+
+/* Preserve first-fold access to analysis while keeping the Collapse control keyboard reachable. */
+#admin-view.corner-insights-focus{position:relative}
+#admin-view.corner-insights-focus>.corner-reading-details{padding-top:0}
+#admin-view.corner-insights-focus>.corner-reading-details>summary{
+ position:absolute;top:-37px;right:0;z-index:8;display:inline-flex;min-height:30px;
+ padding:5px 10px;border:1px solid #ddd5c9;border-radius:9px;background:#fff;
+ font-size:.72rem;cursor:pointer
+}
+#admin-view.corner-insights-focus>.corner-reading-details>summary small{display:none}
+#admin-view.corner-insights-focus>.corner-reading-details [data-reading-report]{margin-top:0}
+@media(max-width:767px){#admin-view.corner-insights-focus>.corner-reading-details>summary{top:-34px;padding:4px 9px;min-height:28px}}
