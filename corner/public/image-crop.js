@@ -55,7 +55,7 @@
           const cropped=new File([blob],originalName(file,ext),{type:mime,lastModified:Date.now()});
           completed=true;resolve(cropped);
           dialog.close();
-        },mime,mime==='image/jpeg'||mime==='image/webp'?.9:undefined);
+        },mime,(mime==='image/jpeg'||mime==='image/webp')?0.9:undefined);
       });
       dialog.showModal();
       paint();
