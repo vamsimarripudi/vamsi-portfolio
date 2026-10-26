@@ -95,7 +95,7 @@ body.corner-comfort .corner-home-shell .corner-home-hero .hero-aside {
 body.corner-comfort .corner-home-shell .corner-home-hero .now-panel {
   width:100%;min-width:0;min-height:205px;padding:clamp(18px,2vw,26px);
   border:1px solid rgba(43,36,40,.09);border-radius:21px;
-  background:rgba(255,255,255,.94);box-shadow:0 18px 44px -35px #463c53a1;
+  background:#fff;box-shadow:0 18px 44px -35px #463c53a1;
 }
 body.corner-comfort .corner-home-shell .corner-home-hero .now-status {gap:11px;align-items:center}
 body.corner-comfort .corner-home-shell .corner-home-hero .now-panel>p {
