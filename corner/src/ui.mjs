@@ -157,7 +157,7 @@ export function feedPage({posts=[],status,active='Latest',featured,upcoming=[],c
   const feed=`<section id="feed" class="feed-section" aria-labelledby="feed-heading">
     <div class="feed-heading"><div><p class="eyebrow">${isHome?'THE LATEST FROM HERE':e(active.toUpperCase())} ${demo?'<span class="demo-pill">SAMPLE CONTENT</span>':''}</p>
     <h2 id="feed-heading">${isHome?'Latest from here.':e(active)}</h2>${isHome?'<p class="corner-feed-subtitle">A little of everything.</p>':''}</div>
-    ${isHome?'<a class="corner-feed-view-all" href="/archive">View all <span aria-hidden="true">↗</span></a>':`<span class="feed-updated">${posts.length?'FRESHLY PICKED / STORIES':'MORE TO COME'}</span>`}</div>
+    ${isHome?(process.env.CORNER_V3_SEARCH==='1'?'<a class="corner-feed-view-all" href="/archive">View all <span aria-hidden="true">↗</span></a>':(posts.length?'<a class="corner-feed-view-all" href="#stories">Browse stories <span aria-hidden="true">↓</span></a>':'<a class="corner-feed-view-all" href="/about">About Corner <span aria-hidden="true">↗</span></a>')):`<span class="feed-updated">${posts.length?'FRESHLY PICKED / STORIES':'MORE TO COME'}</span>`}</div>
     <div class="new-updates" data-new-updates hidden><button type="button" data-apply-updates>↑ <span>1 new update</span></button></div>
     ${isHome?`<div class="corner-journal-layout"><div class="corner-journal-feed">${stories}</div>${homeSpotlight(featured,posts,mediaByPost)}</div>`:stories}
     ${cursor?`<button class="load-more" data-load-more data-cursor="${e(cursor)}">More from the corner <span>↓</span></button>`:''}
