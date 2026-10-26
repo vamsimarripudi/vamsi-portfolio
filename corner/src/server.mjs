@@ -276,7 +276,21 @@ async function api(req,res,pathName,url){
   const mod=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)\/(approve|hide|delete)$/);
   if(mod&&method==='POST')return ok(res,store.moderate(mod[1],{approve:'approved',hide:'hidden',delete:'deleted'}[mod[2]],owner.id));
   if(pathName==='/api/admin/analytics/summary'&&method==='GET'){
-    let metrics=store.metrics();let top=store.all("SELECT post_id,count(*) AS visits FROM analytics_events WHERE type='post_open' AND post_id IS NOT NULL GROUP BY post_id ORDER BY visits DESC LIMIT 5");return ok(res,{...metrics,top});
+    const metrics=store.metrics();
+    const top=store.all("SELECT post_id,count(*) AS visits FROM analytics_events WHERE type='post_open' AND post_id IS NOT NULL GROUP BY post_id ORDER BY visits DESC LIMIT 5");
+    const firstParty=store.one('SELECT COUNT(*) AS total,MAX(occurred_at) AS last_event_at FROM analytics_events');
+    const readingTable=store.one("SELECT name FROM sqlite_master WHERE type='table' AND name='reading_views'");
+    const readingState=readingTable?store.one('SELECT COUNT(*) AS total,MAX(started_at) AS last_event_at FROM reading_views'):null;
+    return ok(res,{...metrics,top,diagnostics:{
+      basicEventsRecorded:Number(firstParty?.total||0),
+      basicLastEventAt:firstParty?.last_event_at||null,
+      consentedReadingsRecorded:Number(readingState?.total||0),
+      consentedReadingLastEventAt:readingState?.last_event_at||null,
+      readingCollectionEnabled:process.env.CORNER_READING_ANALYTICS!=='0',
+      excludesStaff:true,
+      respectsBrowserPrivacy:true,
+      privacyMinimum:5
+    }});
   }
   if(pathName==='/api/admin/settings'&&method==='GET')return ok(res,{title:store.setting('title',config.siteTitle),descriptor:store.setting('descriptor','Thoughts, updates & celebrations'),timezone:store.setting('timezone',config.timezone),commentsDefault:store.setting('commentsDefault',false),reactionsDefault:store.setting('reactionsDefault',true)});
   if(pathName==='/api/admin/settings'&&method==='PUT'){let b=await readJSON(req);
