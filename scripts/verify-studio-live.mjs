@@ -70,7 +70,7 @@ try{
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>!document.querySelector('#editor-media')?.open);
  await page.locator('#open-attachments').click();
- const tinyGif=Buffer.from('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=','base64');
+ const tinyGif=Buffer.from('R0lGODdhAQABAIEAAP///wAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw==','base64');
  await attachmentsDialog.locator('input[name=files]').setInputFiles({name:'corner-test.gif',mimeType:'image/gif',buffer:tinyGif});
  await attachmentsDialog.locator('input[name=alt]').fill('Small transparent regression image');
  await attachmentsDialog.locator('button[type=submit]').click();
