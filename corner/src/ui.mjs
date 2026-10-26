@@ -103,8 +103,8 @@ export function header(active='Latest',status=null){
   <div class="corner-menu-member" data-profile-member hidden>
     <div class="corner-menu-identity"><span class="corner-menu-avatar" data-profile-menu-avatar aria-hidden="true">M</span><div><p class="corner-profile-kicker">YOUR CORNER</p><strong data-profile-menu-name>My account</strong><small>Private profile</small></div></div>
     <a data-profile-link href="/profile" hidden>My profile</a>
-    <a href="/profile#account-saved">Saved stories <span aria-hidden="true">↗</span></a>
-    <a href="/settings/profile#account-preferences">Preferences <span aria-hidden="true">↗</span></a>
+    <a href="/saved">Saved stories <span aria-hidden="true">↗</span></a>
+    <a href="/settings/preferences">Preferences <span aria-hidden="true">↗</span></a>
     <a href="/settings/security">Security <span aria-hidden="true">↗</span></a>
     <a data-owner-studio href="/admin" hidden>Studio <span aria-hidden="true">↗</span></a>
     <div class="corner-profile-divider"></div>
