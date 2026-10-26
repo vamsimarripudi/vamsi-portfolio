@@ -458,10 +458,15 @@ body.corner-comfort .corner-rail-backdrop {display:none}
   body.corner-comfort .corner-brand-group .brand small {font-size:.45rem;letter-spacing:.07em}
 }
 @media (max-width:385px) {
-  body.corner-comfort .corner-brand-group .brand-mark {display:none}
+  body.corner-comfort .corner-brand-group {gap:5px}
+  body.corner-comfort .corner-brand-group .brand {gap:4px}
+  body.corner-comfort .corner-brand-group .brand-mark {display:grid;width:29px;height:29px;font-size:1.22rem;border-radius:9px}
   body.corner-comfort .corner-brand-group .brand small {display:none}
-  body.corner-comfort .corner-brand-group .brand strong {font-size:1.07rem}
-  body.corner-comfort .corner-public-header .header-right {gap:5px}
+  body.corner-comfort .corner-brand-group .brand strong {font-size:.94rem;white-space:nowrap}
+  body.corner-comfort .corner-public-header .header-row {gap:4px}
+  body.corner-comfort .corner-public-header .header-right {gap:4px}
+  body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle) {width:44px;height:44px;min-width:44px;min-height:44px}
+  body.corner-comfort .corner-rail-toggle {min-width:44px;min-height:44px}
 }
 .corner-welcome-card {
   position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));
