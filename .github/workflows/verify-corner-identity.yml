@@ -176,7 +176,15 @@ jobs:
             await page.locator('[data-corner-profile-toggle]').click();
             await page.locator('[data-profile-logout]').click();
             await page.waitForURL('**/corner/',{timeout:12000});
-            assert.equal(await page.locator('[data-profile-member]').isVisible(),false,'Sign out clears private account controls');
+            await page.waitForFunction(()=>document.querySelector('[data-profile-member]')?.hidden===true&&document.querySelector('[data-profile-guest]')?.hidden===false,null,{timeout:15000});
+            const signedOut=await page.evaluate(async()=>{
+              const response=await fetch('/corner/api/v1/auth/session',{credentials:'same-origin',cache:'no-store'});
+              return response.ok&&(await response.json())?.data?.authenticated===false;
+            });
+            assert.equal(signedOut,true,'Sign out invalidates the authenticated session');
+            await page.locator('[data-corner-profile-toggle]').click();
+            assert.equal(await page.locator('[data-profile-guest]').isVisible(),true,'Guest controls replace member options');
+            assert.equal(await page.locator('[data-profile-member]').isVisible(),false,'Private menu controls stay hidden after logout');
             await page.close();
             console.log('PASS authenticated browser registration, verification, session, profile, navigation and logout');
             // Render the same server-side owner Studio markup with synthetic
