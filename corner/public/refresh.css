@@ -496,3 +496,74 @@ body.corner-comfort .corner-welcome-card h2 {margin:0 22px 9px;font-size:1.24rem
  body.corner-comfort .corner-public-header .corner-rail .corner-rail-link,.corner-rail-label,.corner-welcome-card {transition:none!important;animation:none!important}
 }
 
+
+/* Corner's quiet luminous-paper background.
+ * Inspired by React Bits light-mode Aurora, but CSS-only and restrained to
+ * avoid shader downloads, intrusive particles and excessive contrast.
+ * Private Studio and every dialog keep their normal solid background. */
+body.corner-comfort:has(.corner-public-header) {
+  --corner-canvas:#faf9f6;
+  background-color:#faf9f6!important;
+  background-image:
+    radial-gradient(ellipse at 12% 10%,rgba(194,135,102,.045),transparent 38%),
+    radial-gradient(ellipse at 92% 22%,rgba(177,170,202,.045),transparent 44%);
+  background-repeat:no-repeat;background-attachment:scroll;
+}
+body.corner-comfort:has(.corner-public-header) #content {
+  position:relative;isolation:isolate;
+}
+body.corner-comfort:has(.corner-public-header) #content::before {
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  top:0;left:0;right:0;height:clamp(300px,49vw,650px);
+  background:
+    radial-gradient(ellipse 50% 54% at 24% 20%,rgba(236,196,164,.19),transparent 84%),
+    radial-gradient(ellipse 48% 49% at 75% 16%,rgba(209,205,226,.15),transparent 82%),
+    radial-gradient(ellipse 48% 40% at 54% 76%,rgba(207,220,209,.09),transparent 86%);
+  filter:blur(36px);opacity:.7;
+  transform:translate3d(0,0,0);
+  animation:corner-paper-glow 22s ease-in-out infinite alternate;
+}
+@keyframes corner-paper-glow {
+  from {transform:translate3d(-1.2%,0,0);opacity:.56}
+  to {transform:translate3d(1.2%,1.3%,0);opacity:.78}
+}
+/* A familiar compact search window, centered instead of pinned to the left edge.
+   Do not blur the entire page or turn mobile search into a full-screen sheet. */
+body.corner-comfort #search-dialog.search-dialog[open] {
+  position:fixed!important;inset:0!important;top:0!important;left:0!important;
+  right:0!important;bottom:0!important;margin:auto!important;transform:none!important;
+  display:block;width:min(570px,calc(100vw - 28px))!important;max-width:570px!important;
+  min-height:0!important;height:max-content;max-height:min(77dvh,520px)!important;
+  overflow-y:auto;padding:clamp(17px,2.5vw,25px)!important;
+  border:1px solid #ded8cf;border-radius:19px!important;
+  background:#fff!important;color:#171717;box-shadow:0 18px 72px -23px #0006;
+}
+body.corner-comfort #search-dialog.search-dialog::backdrop {
+  background:rgba(17,19,21,.30)!important;backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+body.corner-comfort #search-dialog .search-dialog-head {gap:12px;align-items:center;margin-bottom:12px}
+body.corner-comfort #search-dialog .search-dialog-head p {margin:0;font-size:.73rem;letter-spacing:.1em}
+body.corner-comfort #search-dialog .search-dialog-head button {min-width:43px;min-height:43px;flex:none;border-radius:12px}
+body.corner-comfort #search-dialog .search-field {padding:7px 0 12px}
+body.corner-comfort #search-dialog .search-field input {width:100%;min-height:46px;font-size:1rem}
+body.corner-comfort #search-dialog .search-results {min-height:62px;max-height:min(36dvh,235px);padding:10px 0}
+body.corner-comfort #search-dialog .search-results>p {padding:12px 0;font-size:.88rem}
+body.corner-comfort #search-dialog .search-footer {gap:8px;font-size:.68rem}
+@media(max-width:767px) {
+  body.corner-comfort:has(.corner-public-header) #content::before {
+    height:clamp(230px,58vh,430px);filter:blur(25px);opacity:.52;
+  }
+  body.corner-comfort #search-dialog.search-dialog[open] {
+    width:calc(100vw - 24px)!important;max-width:570px!important;
+    max-height:calc(100dvh - 32px)!important;min-height:0!important;
+    border-radius:16px!important;padding:18px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  body.corner-comfort:has(.corner-public-header) #content::before {animation:none!important;transform:none!important;opacity:.55}
+}
+@media(forced-colors:active) {
+  body.corner-comfort:has(.corner-public-header) #content::before {display:none}
+  body.corner-comfort #search-dialog.search-dialog[open] {border:2px solid CanvasText}
+}
