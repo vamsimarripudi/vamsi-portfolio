@@ -14,7 +14,7 @@ export const isIdentityPath=(path)=>path==='/api/admin/invitations'||path==='/ap
  * elevate a member role from a request body, cookie name, or API version alias.
  * Registration is feature-gated until the email provider has been verified.
  */
-export function identityRoutes({ identity,store,config,readJSON,ok,json,limit,sourceIp,cookieHeader }){
+export function identityRoutes({ identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader }){
   const fail=(status,message,code)=>{throw httpError(status,message,code)};
   const memberCookie=(token='',seconds=0)=>cookieFor('corner_member_session',token,seconds,config.basePath,config.prod);
   const staffCookie=(token='',seconds=0)=>cookieFor('corner_session',token,seconds,config.basePath,config.prod);
@@ -107,6 +107,29 @@ export function identityRoutes({ identity,store,config,readJSON,ok,json,limit,so
       const result=identity.changePassword(user.actor,await readJSON(req,5000));
       res.setHeader('set-cookie',[memberCookie(),staffCookie()]);
       return jsonResult(res,result);
+    }
+    if(path==='/api/me/avatar'){
+      const user=requireUser(req);
+      if(method==='GET'||method==='HEAD'){
+        const item=identity.avatar(user.actor);
+        if(!item)fail(404,'Profile photo not found.','AVATAR_NOT_FOUND');
+        const bytes=item.image_webp;
+        res.writeHead(200,{'content-type':'image/webp','content-length':bytes.length,'cache-control':'private, no-store','x-content-type-options':'nosniff','vary':'Cookie'});
+        if(method==='HEAD')return res.end();
+        return res.end(bytes);
+      }
+      if(method==='POST'){
+        limit(req,'profile-avatar-upload',8,3600);
+        const mime=String(req.headers['content-type']||'').split(';')[0].trim().toLowerCase();
+        if(!['image/jpeg','image/png','image/webp'].includes(mime))fail(415,'Choose a JPEG, PNG or WebP file.','AVATAR_TYPE');
+        const buffer=await readBody(req,3*1024*1024);
+        return jsonResult(res,await identity.saveAvatar(user.actor,buffer,mime));
+      }
+      if(method==='DELETE'){
+        limit(req,'profile-avatar-delete',8,3600);
+        return jsonResult(res,identity.deleteAvatar(user.actor));
+      }
+      fail(405,'Method not allowed.','METHOD_NOT_ALLOWED');
     }
     if(path==='/api/me'&&method==='GET'){
       const user=requireUser(req);return jsonResult(res,identity.safeMe(identity.account(user.actor.id)));
