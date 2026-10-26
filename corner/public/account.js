@@ -12,7 +12,7 @@
   const response=(form,text,wrong=false)=>{const el=first('[data-account-response]',form);if(el){el.textContent=text;el.dataset.error=String(wrong);el.dataset.success=String(!wrong)}};
   let token='';
   try{const params=new URLSearchParams(location.hash.replace(/^#/,''));token=params.get('token')||''}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
-  if(location.hash){history.replaceState(history.state,'',location.pathname+location.search)}
+  if(token&&location.hash){history.replaceState(history.state,'',location.pathname+location.search)}
   many('[data-fragment-token]').forEach(field=>{field.value=token});
   async function api(name,method='GET',body){
     const options={method,credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(18000),headers:{accept:'application/json'}};
@@ -171,14 +171,41 @@
       finally{setBusy(false)}
     });
   }
-  async function displayBookmarks(){const target=first('[data-account-bookmarks]');if(!target)return;
-    try{const books=await api('me/bookmarks');target.replaceChildren();if(!books.length){target.textContent='No saved stories yet.';return}
-      const list=document.createElement('ul');for(const book of books){const li=document.createElement('li'),a=document.createElement('a');a.href=base+'/post/'+encodeURIComponent(book.slug);a.textContent=book.title;li.append(a);list.append(li)}target.append(list);
-    }catch(error){target.textContent=error.message}
+  async function displayBookmarks(){
+    const target=first('[data-account-bookmarks]');if(!target)return;
+    const counter=first('[data-account-saved-count]');
+    try{
+      const books=await api('me/bookmarks');
+      if(!Array.isArray(books))throw Error('Saved stories are not available right now.');
+      target.replaceChildren();
+      if(counter){counter.textContent=String(books.length);counter.hidden=false}
+      if(!books.length){
+        const empty=document.createElement('div');empty.className='account-empty-state';
+        const artwork=document.createElement('span');artwork.className='account-empty-glyph';artwork.setAttribute('aria-hidden','true');artwork.textContent='◇';
+        const title=document.createElement('strong');title.textContent='No saved stories yet.';
+        const desc=document.createElement('p');desc.textContent='Keep stories you like to read them again later.';
+        const action=document.createElement('a');action.href=base+'/';action.textContent='Explore stories ↗';
+        empty.append(artwork,title,desc,action);target.append(empty);return;
+      }
+      const list=document.createElement('ul');list.className='account-bookmark-list';
+      for(const book of books){
+        if(!book||typeof book.slug!=='string'||typeof book.title!=='string')continue;
+        const li=document.createElement('li'),a=document.createElement('a');
+        a.href=base+'/post/'+encodeURIComponent(book.slug);a.textContent=book.title;
+        li.append(a);list.append(li);
+      }
+      target.append(list);
+    }catch(error){
+      target.replaceChildren();
+      const message=document.createElement('p');message.className='account-help';message.textContent=error.message||'Saved stories could not be loaded.';
+      target.append(message);
+      if(counter)counter.hidden=true;
+    }
   }
   async function displaySessions(){const target=first('[data-account-sessions]');if(!target)return;
     try{const sessions=await api('me/sessions');target.replaceChildren();const list=document.createElement('ul');
-      for(const s of sessions.filter(x=>!x.revoked_at)){const li=document.createElement('li'),info=document.createElement('span'),btn=document.createElement('button');info.textContent='Signed in '+new Date(s.created_at).toLocaleDateString();btn.type='button';btn.className='account-text-button';btn.textContent='Revoke';btn.onclick=async()=>{await api('me/sessions/'+encodeURIComponent(s.id),'DELETE');displaySessions()};li.append(info,btn);list.append(li)}target.append(list);
+      const active=sessions.filter(x=>!x.revoked_at);if(!active.length){target.textContent='No active sessions found.';return}
+      for(const s of active){const li=document.createElement('li'),info=document.createElement('span'),btn=document.createElement('button');info.textContent='Signed in '+new Date(s.created_at).toLocaleDateString();btn.type='button';btn.className='account-text-button';btn.textContent='Revoke';btn.onclick=async()=>{btn.disabled=true;try{await api('me/sessions/'+encodeURIComponent(s.id),'DELETE');await displaySessions()}catch(error){target.textContent=error.message||'Could not revoke this session.'}};li.append(info,btn);list.append(li)}target.append(list);
     }catch(error){target.textContent=error.message}
   }
   displayBookmarks();displaySessions();
