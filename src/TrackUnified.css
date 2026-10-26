@@ -127,3 +127,16 @@
  #root .track-unified-shell .ws-metrics article {padding:10px}
 }
 @media(prefers-reduced-motion:reduce) {#root .track-unified-shell * {scroll-behavior:auto!important}}
+
+/* Useful zero-data and disabled-source states occupy one compact strip. */
+#root .track-unified-shell .ws-measurement-status {
+  display:grid;gap:5px;margin:12px 0;padding:13px 15px;
+  border:1px solid #cbd7ed;border-left:3px solid #4f74bb;border-radius:11px;
+  background:#eef3fa;color:#283a51;
+}
+#root .track-unified-shell .ws-measurement-status>div {display:flex;align-items:center;gap:9px;font-size:.84rem}
+#root .track-unified-shell .ws-measurement-status p {max-width:91ch;margin:0;font-size:.78rem;line-height:1.55;color:#43546a}
+#root .track-unified-shell .ws-measurement-status a {justify-self:start;color:#254b9c;font-size:.78rem;font-weight:720;text-decoration:underline;text-underline-offset:3px}
+.ws-measurement-indicator {display:block;width:8px;height:8px;flex:none;border-radius:50%;background:#7c94b9;box-shadow:0 0 0 4px #dce6f3}
+#root .track-unified-shell .ws-collection-warning {margin:12px 0;padding:13px;border-left:3px solid #ad654a;border-radius:10px;background:#fff3eb;color:#584338}
+@media(max-width:767px){#root .track-unified-shell .ws-measurement-status{padding:11px 12px}}
