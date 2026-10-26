@@ -156,7 +156,7 @@ const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-s
  '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
  'Save preferences')+'</div></section>';
 const quietSecurityScreen=(user)=>{
- const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions</h3><p>See and revoke devices that have access.</p></div></div>'+
+ const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
   '<div data-account-sessions role="status" aria-live="polite"><p>Loading active sessions…</p></div></section>';
  const email=user.role==='owner'
   ?'<section class="quiet-panel"><h3>Account email</h3><p class="quiet-data-hint">Changes to the owner address require additional verification through your administrator.</p></section>'
@@ -183,6 +183,7 @@ const quietPrivacyScreen=()=>'<section class="quiet-screen" data-quiet-screen="p
  '<dialog class="quiet-confirm-dialog" data-account-delete-dialog aria-labelledby="quiet-delete-title">'+
  '<div class="quiet-confirm-inner"><span class="quiet-panel-symbol">'+quietIcon('shield')+'</span><h3 id="quiet-delete-title">Review account deletion request?</h3>'+
  '<p>This requests review of your account deletion. No immediate deletion happens when you continue.</p>'+
+ '<p class="quiet-confirm-status" data-account-delete-status role="status" aria-live="polite"></p>'+
  '<div class="quiet-confirm-actions"><button type="button" data-delete-cancel>Keep my account</button>'+
  '<button type="button" data-delete-confirm>Request review</button></div></div></dialog>'+
  '</section>';
@@ -199,7 +200,8 @@ function quietDeskPage(type,user){
   '<img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span>'+
   '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts"><a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
  const main='<main class="quiet-main" id="content"><div class="quiet-page-heading"><p class="quiet-eyebrow">VAMSI’S CORNER / MEMBERS</p>'+
-  '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p></div><div class="quiet-desk-grid">'+
+  '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
+  '<p class="quiet-session-note"><span aria-hidden="true">●</span> Signed in as '+h(user.email||'')+'</p></div><div class="quiet-desk-grid">'+
   quietNav(type,user)+'<div class="quiet-desk-content">'+panes[type]+'</div></div></main>';
  const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a></footer>';
  const content='<div class="account-shell account-shell--quiet" data-account-page="'+h(type)+'" data-account-workspace data-signed-in="true">'+
