@@ -16,6 +16,19 @@ try{
    await page.setViewportSize({width,height});
    const res=await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
    assert.equal(res.status(),200,'Corner home '+width);
+   const vm=page.locator('.brand-mark--vm img.corner-brand-image');
+   await vm.waitFor({state:'visible'});
+   const logo=await vm.evaluate(async img=>{
+     await img.decode();
+     const rect=img.getBoundingClientRect();
+     return {complete:img.complete,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,width:rect.width,height:rect.height,url:img.getAttribute('src')};
+   });
+   assert.equal(logo.complete,true,'Uploaded VM logo loads on '+width);
+   assert.equal(logo.naturalWidth,96,'VM logo renders from the uploaded artwork on '+width);
+   assert.ok(logo.width>=28&&logo.width<=64,'VM logo remains compact without distortion '+width);
+   assert.ok(Math.abs(logo.width-logo.height)<1,'VM logo retains its square proportions '+width);
+   assert.ok(logo.url.includes('/corner/mark.svg?v=vm-20261027'),'Logo is served from Corner, not an external URL');
+
    const details=await page.evaluate(()=>({
      scrollWidth:document.documentElement.scrollWidth,
      viewport:innerWidth,scrollbar:getComputedStyle(document.documentElement).scrollbarWidth,
