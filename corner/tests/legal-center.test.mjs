@@ -42,7 +42,7 @@ test('legal pages use full navigation, semantic sections and responsive styles',
   assert.match(html,/class="legal-mobile-index"/);
   assert.match(html,/class="legal-backtop"/);
   assert.match(html,/mailto:connect@vamsimarripudi\.me/);
-  assert.match(html,/Reviewed <span class="legal-date">27 October 2026<\/span>/);
+  assert.match(html,/Prepared <span class="legal-date">27 October 2026<\/span>/);
   assert.match(html,/href="\/policies"/);
   assert.doesNotMatch(html,/YOUR_POLICY_TITLE|TODO-LEGAL/i);
  }
