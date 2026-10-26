@@ -107,7 +107,7 @@ body.corner-comfort:has(.account-shell--quiet){
 .corner-comfort .account-shell--quiet .quiet-screen{display:grid;gap:16px;align-content:start;min-width:0}
 .corner-comfort .account-shell--quiet .quiet-screen-heading{display:grid;gap:4px;margin:0 0 2px}
 .corner-comfort .account-shell--quiet .quiet-screen-heading h2{
-  margin:0!important;font-size:clamp(1.23rem,2vw,1.55rem)!important;
+  margin:0!important;font-size:clamp(1.23rem,2vw,1.5rem)!important;
   font-weight:735;letter-spacing:-.045em!important;line-height:1.3!important;color:#222;
 }
 .corner-comfort .account-shell--quiet .quiet-screen-heading>p:last-child {margin:2px 0 0;color:var(--quiet-muted);font-size:.8rem;line-height:1.55}
@@ -135,7 +135,7 @@ body.corner-comfort:has(.account-shell--quiet){
 .corner-comfort .account-shell--quiet .quiet-profile-person>.quiet-avatar{margin-top:-29px}
 .corner-comfort .account-shell--quiet .quiet-profile-person-text{display:grid;gap:3px;flex:1 1 175px;min-width:0;padding-top:10px}
 .corner-comfort .account-shell--quiet .quiet-profile-person-text h2{
-  margin:0!important;font-size:clamp(1.3rem,2vw,1.6rem)!important;
+  margin:0!important;font-size:clamp(1.3rem,2vw,1.5rem)!important;
   line-height:1.3!important;font-weight:770;letter-spacing:-.055em!important;overflow-wrap:anywhere;
 }
 .corner-comfort .account-shell--quiet .quiet-profile-person-text p:last-child{
