@@ -22,7 +22,7 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span>✳</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+  function showView(view){window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
@@ -348,7 +348,8 @@
     let loaded=false;
     details.addEventListener('toggle',async()=>{
       root.classList.toggle('corner-insights-focus',details.open);
-      if(!details.open||loaded||active.view!=='analytics')return;
+      if(!details.open){root.removeAttribute('data-advanced-analytics');return}
+      if(loaded||active.view!=='analytics')return;
       loaded=true;
       try{
         if(!window.CornerAnalysis)await new Promise((resolve,reject)=>{
@@ -356,7 +357,10 @@
           script.src='/corner/analysis-studio.js';script.onload=resolve;
           script.onerror=()=>reject(Error('Reading analysis could not load.'));document.head.append(script);
         });
-        if(active.view==='analytics')await window.CornerAnalysis.mount(details.querySelector('[data-reading-report]'));
+        if(active.view==='analytics'){
+          root.setAttribute('data-advanced-analytics','');
+          await window.CornerAnalysis.mount(details.querySelector('[data-reading-report]'));
+        }
       }catch(error){loaded=false;const slot=details.querySelector('[data-reading-report]');if(slot)slot.textContent=error.message;}
     });
     // An existing report deep link must open the advanced analysis automatically.
