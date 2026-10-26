@@ -460,3 +460,17 @@ body.corner-comfort:has(.account-shell) .corner-orbit-dock{display:none!importan
   .corner-comfort .account-shell--quiet .quiet-sidebar{border:2px solid CanvasText;background:Canvas;color:CanvasText}
   .corner-comfort .account-shell--quiet .quiet-nav-link.is-current{background:Highlight;color:HighlightText}
 }
+
+
+/* Quiet Desk signed-in identity is visible to its owner, never as an intrusive
+   profile banner. Long email addresses can wrap at 320px without overflow. */
+.corner-comfort .account-shell--quiet .quiet-session-note {
+  display:flex;align-items:center;gap:7px;min-width:0;max-width:100%;
+  margin:6px 0 0;color:#5a554f;font-size:.74rem;
+  font-weight:550;line-height:1.5;overflow-wrap:anywhere;
+}
+.corner-comfort .account-shell--quiet .quiet-session-note span{
+  color:#15865d;flex:none;font-size:.74rem;
+}
+.corner-comfort .account-shell--quiet .quiet-topbar nav{min-width:0}
+.corner-comfort .account-shell--quiet .quiet-desk-content{min-width:0}
