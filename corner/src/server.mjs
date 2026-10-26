@@ -96,7 +96,7 @@ function staticFile(res,filepath){
   const rel=decodeURIComponent(filepath).replace(/^\//,'');if(!/^[A-Za-z0-9_./-]+$/.test(rel)||rel.includes('..'))throw httpError(404,'Not found');
   const filename=path.resolve(staticRoot,rel);if(!filename.startsWith(staticRoot+path.sep))throw httpError(404,'Not found');
   if(!fs.existsSync(filename)||!fs.statSync(filename).isFile())throw httpError(404,'Not found');
-  const extension=path.extname(filename).toLowerCase();end(res,200,fs.readFileSync(filename),{'content-type':mimeTypes[extension]||'application/octet-stream','cache-control':'public,max-age=3600','x-content-type-options':'nosniff'});
+  const extension=path.extname(filename).toLowerCase();end(res,200,fs.readFileSync(filename),{'content-type':mimeTypes[extension]||'application/octet-stream','cache-control':['.css','.js'].includes(extension)?'public,max-age=0,must-revalidate':'public,max-age=3600','x-content-type-options':'nosniff'});
 }
 function fileMagic(buf,declared){
   if(declared==='image/jpeg'&&buf[0]===0xff&&buf[1]===0xd8&&buf[2]===0xff)return '.jpg';
