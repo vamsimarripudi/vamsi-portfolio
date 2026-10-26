@@ -33,7 +33,16 @@ try{
     scroll:document.documentElement.scrollWidth,
     visible:innerWidth
    }));
-   assert.ok(size.scroll<=size.visible+1,label+' at '+width+'px document overflow: '+JSON.stringify(size));
+   if(size.scroll>size.visible+1){
+     const offenders=await page.evaluate(()=>[...document.body.querySelectorAll('*')].map(el=>{
+       const r=el.getBoundingClientRect(),c=getComputedStyle(el);
+       return {tag:el.tagName.toLowerCase(),className:String(el.className).slice(0,85),
+         width:Math.round(r.width),left:Math.round(r.left),right:Math.round(r.right),
+         display:c.display,position:c.position,overflowX:c.overflowX}
+     }).filter(el=>el.right>innerWidth+2&&el.position!=='fixed'&&el.display!=='none')
+       .sort((a,b)=>b.right-a.right).slice(0,18));
+     assert.fail(label+' at '+width+'px document overflow: '+JSON.stringify({size,offenders}));
+   }
   };
   const fontPx=selector=>page.locator(selector).first().evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   const maxPublic=width<=430?53:width<=820?92:115;
