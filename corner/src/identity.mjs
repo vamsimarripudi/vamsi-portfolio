@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import sharp from 'sharp';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -321,6 +320,7 @@ export class IdentityService{
     if(!['image/jpeg','image/png','image/webp'].includes(declared))throw httpError(415,'Use a JPEG, PNG or WebP photo.','AVATAR_TYPE');
     let output;
     try{
+      const sharp=(await import('sharp')).default;
       const pipeline=sharp(source,{failOn:'error',limitInputPixels:20_000_000,animated:false});
       const metadata=await pipeline.metadata();
       const formats={'image/jpeg':'jpeg','image/png':'png','image/webp':'webp'};
