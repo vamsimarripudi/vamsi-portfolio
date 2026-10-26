@@ -1,0 +1,71 @@
+/* Media Library 2.0 — filled responsive columns and uncluttered asset previews.
+   Scoped to Studio's media page; post attachment-dialog editing is unchanged. */
+.corner-comfort .admin-shell #admin-view .corner-media-library {width:100%;min-width:0;max-width:none}
+.corner-comfort .admin-shell #admin-view .corner-library-heading {
+  display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;
+  gap:12px 20px;margin:0 0 18px
+}
+.corner-comfort .admin-shell #admin-view .corner-library-heading>div {min-width:0;flex:1 1 260px}
+.corner-comfort .admin-shell #admin-view .corner-library-heading .eyebrow {margin:0 0 5px;color:#817569;font-size:.69rem}
+.corner-comfort .admin-shell #admin-view .corner-library-heading h2 {margin:0 0 6px;font-size:clamp(1.4rem,2vw,1.85rem)!important;line-height:1.25;letter-spacing:-.045em}
+.corner-comfort .admin-shell #admin-view .corner-library-heading p:not(.eyebrow) {margin:0;max-width:64ch;color:#655e56;font-size:.86rem;line-height:1.55}
+.corner-comfort .admin-shell #admin-view .corner-library-count {
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  min-width:70px;min-height:37px;padding:8px 13px;
+  border:1px solid #dedad3;border-radius:100px;background:#fff;
+  color:#514b44;font-size:.75rem;font-weight:710;white-space:nowrap;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-surface {
+  width:100%;min-width:0;max-width:none;padding:clamp(12px,2vw,22px);
+  background:#fff;border:1px solid #e5e0d8;border-radius:20px;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+  align-items:stretch;gap:clamp(13px,1.5vw,21px);width:100%;min-width:0;
+  margin:0;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library {
+  display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0;
+  width:100%;max-width:none;margin:0;padding:0;overflow:hidden;
+  border:1px solid #e4ded6;border-radius:17px;background:#fff;
+  box-shadow:0 12px 32px -28px #0007;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-view-link {
+  display:block;flex:none;width:100%;height:clamp(190px,24vw,270px);
+  overflow:hidden;border-radius:0;background:#f7f6f2;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-view-link :is(img,video) {
+  display:block;width:100%;height:100%;max-width:100%;
+  aspect-ratio:auto;object-fit:contain;border-radius:0;background:#f5f4f0;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-card-caption {
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  line-clamp:2;overflow:hidden;max-width:100%;min-width:0;
+  margin:14px 16px 5px;color:#282521;font-size:.86rem;
+  line-height:1.5;overflow-wrap:anywhere;word-break:normal;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library>small {
+  display:block;margin:10px 16px 0;color:#77716c;
+  font-size:.73rem;line-height:1.5;overflow-wrap:anywhere;word-break:break-word;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library>[data-media-edit] {
+  align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;
+  min-height:44px;margin:14px 16px 17px;padding:10px 16px;
+  border:1px solid #101010;border-radius:11px;background:#101010;
+  color:#fff!important;font-size:.8rem;font-weight:730;line-height:1.35;
+  text-decoration:none;
+}
+.corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library>[data-media-edit]:is(:hover,:focus-visible) {
+  border-color:#303030;background:#303030;color:#fff!important;
+}
+@media (min-width:768px) and (max-width:1150px) {
+  .corner-comfort .admin-shell #admin-view .corner-library-grid {grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+}
+@media (max-width:600px) {
+  .corner-comfort .admin-shell #admin-view .corner-library-surface {padding:10px;border-radius:15px}
+  .corner-comfort .admin-shell #admin-view .corner-library-grid {grid-template-columns:minmax(0,1fr);gap:12px}
+  .corner-comfort .admin-shell #admin-view .corner-library-grid .media-view-link {height:clamp(180px,58vw,290px)}
+  .corner-comfort .admin-shell #admin-view .corner-library-grid .media-card-caption {margin:12px 13px 3px}
+  .corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library>small {margin:8px 13px 0}
+  .corner-comfort .admin-shell #admin-view .corner-library-grid .media-thumb--library>[data-media-edit] {margin:12px 13px 14px}
+}
