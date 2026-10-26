@@ -252,3 +252,21 @@ html[data-studio-motion=off] .corner-comfort .admin-shell * {animation:none!impo
 #admin-view.corner-insights-focus>.corner-reading-details{margin:0;padding:8px 0 0;border:0;border-radius:0;background:transparent}
 #admin-view.corner-insights-focus>.corner-reading-details>summary{min-height:36px;justify-content:start;gap:8px;align-items:center;font-size:.79rem}
 #admin-view.corner-insights-focus>.corner-reading-details [data-reading-report]{margin-top:8px}
+
+/* Photo attachment area: a purposeful input rather than a bare browser file control. */
+.corner-comfort .admin-shell .post-media-editor{padding:clamp(17px,2vw,26px)}
+.corner-comfort .admin-shell .post-media-editor .post-media-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.corner-comfort .admin-shell .post-media-editor .upload-field{display:grid;gap:15px;margin-top:18px;padding:clamp(14px,2vw,19px);border:1px dashed #bbb3a8;border-radius:17px;background:#fbfaf8}
+.corner-comfort .admin-shell .post-media-editor .upload-field>label{display:grid;gap:12px;font-size:.89rem;font-weight:700;color:#1b1916}
+.corner-comfort .admin-shell .post-media-editor input[type=file]{display:block;width:100%;min-width:0;padding:16px;border:1px solid #e5ded5;border-radius:13px;background:#fff;color:#59534d;font:.84rem var(--sans)}
+.corner-comfort .admin-shell .post-media-editor input[type=file]::file-selector-button{margin-right:12px;padding:11px 16px;background:#0b0b0b;color:#fff;border:0;border-radius:9px;font:.8rem var(--sans);font-weight:700;cursor:pointer}
+.corner-comfort .admin-shell .post-media-editor input[type=file]:hover::file-selector-button{background:#333}
+.corner-comfort .admin-shell .post-media-editor .upload-preview-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:13px}
+.corner-comfort .admin-shell .post-media-editor .upload-preview-card{min-width:0;padding:12px;border:1px solid #e8e3db;border-radius:14px;background:white}
+.corner-comfort .admin-shell .post-media-editor .upload-preview-card figure{margin:0}
+.corner-comfort .admin-shell .post-media-editor .upload-preview-card :is(img,video){max-height:230px;object-fit:cover;border-radius:11px}
+.corner-comfort .admin-shell .post-media-editor .upload-preview-card label{font-size:.81rem}
+.corner-comfort .admin-shell .post-media-editor .upload-field>button[type=submit]{justify-self:start;min-height:45px;padding:10px 19px;border:1px solid #0b0b0b;border-radius:11px;background:#0b0b0b;color:white!important;font-weight:700}
+.corner-comfort .admin-shell .post-media-editor .upload-field>button[type=submit]:disabled{opacity:.48}
+@media(max-width:600px){.corner-comfort .admin-shell .post-media-editor .upload-field{padding:12px}.corner-comfort .admin-shell .post-media-editor input[type=file]{padding:10px}.corner-comfort .admin-shell .post-media-editor input[type=file]::file-selector-button{margin-bottom:6px}}
+@media(prefers-reduced-motion:no-preference){.corner-comfort .admin-sidebar-footer .studio-icon-button .studio-icon{transition:transform .25s cubic-bezier(.2,.8,.2,1)}.corner-comfort .admin-sidebar-footer .studio-icon-button:is(:hover,:focus-visible) .studio-icon{transform:translateY(-2px) rotate(-7deg)}}
