@@ -124,9 +124,13 @@ try{
    }
  }
  await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.locator('#admin-view .corner-library-grid .media-quick-edit').count(),0,'Library shows no attachment edit forms');
+ const captions=(await libraryCards.locator('.media-card-caption').allTextContents()).map(c=>c.trim()).sort();
+ assert.deepEqual(captions,['A new Corner beginning.','Second caption updated.'].sort(),'Both saved captions appear without depending on gallery order');
+ const selectedCaption=(await libraryCards.first().locator('.media-card-caption').textContent()).trim();
  await libraryCards.first().locator('[data-media-edit]').click();
  await page.locator('#media-editor textarea[name="alt"]').waitFor({state:'visible'});
- assert.equal(await page.locator('#media-editor input[name="caption"]').inputValue(),'A new Corner beginning.');
+ assert.equal(await page.locator('#media-editor input[name="caption"]').inputValue(),selectedCaption,'Edit details opens selected asset');
  await page.locator('#back-media').click();
  await page.locator('#admin-view .corner-library-grid').waitFor({state:'visible'});
  console.log('PASS Studio media gallery: responsive card widths, captions, details editor and mobile fit');
