@@ -7,7 +7,7 @@ export const CORE_LEGAL=[
 {
  slug:'privacy',group:'Privacy & control',title:'Privacy Policy',summary:'What Corner collects, why, with whom it is shared, and how you can control it.',
  updated:'27 October 2026',readingMinutes:12,
- highlights:['First-party, personal publication','Optional measurement remains off without consent','Private accounts and avatar files','No sale of personal data'],
+ highlights:['First-party, personal publication','Detailed reading analytics is off until you opt in','Private accounts and avatar files','No sale of personal data'],
  sections:[
  {id:'who',title:'1. Who operates this space?',paragraphs:[
   "Vamsi’s Corner at vamsimarripudi.me/corner is a personal publication operated by Vamsi Marripudi (referred to as “Corner”, “we” or “us”). It shares stories, projects, notes, wishes and moments, with optional member accounts and owner-managed publishing.",
@@ -22,11 +22,11 @@ export const CORE_LEGAL=[
   "Private profile data: optional short bio, language selection, optional email-update preference, saved/bookmarked stories and a private uploaded profile image. Profile images are resized and processed to remove embedded metadata where supported.",
   "Contribution data: comment text, the account display name associated with verified comments, moderation state and timestamps; where enabled, guestbook name/message and the consent to submit it.",
   "Optional publication subscriptions: an email address (protected in storage), chosen topics and frequency, verification/withdrawal records and confirmation history when the opt-in follow feature is enabled.",
-  "Optional first-party measurement: coarse page or story category, reading-depth milestones, visible active time, broad device/source group and selected interaction outcomes. The system does not intentionally record typed form text, full search contents, screen replays, precise GPS locations or the full referring URL."
+  "Limited first-party basic events: page/story opens, shares and coarse device details can be recorded during public interaction unless the browser has explicitly declined analytics. Separately, optional reading-depth milestones, visible active time, broad source/device groups and selected feedback require an affirmative reading-analytics choice. These flows do not intentionally record typed form text, full search contents, screen replays, precise GPS locations or full referring URLs."
  ]},
  {id:'purposes',title:'3. Why that information is used',paragraphs:[
   "We use account and session information to create and secure access, verify email addresses, allow users to edit private profiles, provide bookmarked content and recover credentials. We use the visitor token to maintain consistent reactions and protect against repeated automated requests. Contributions are processed to review, publish, hide or remove user-submitted messages.",
-  "Optional first-party reading data is processed only where the browser has actively allowed that category of measurement and privacy signals do not block it. Optional publication emails require their own opt-in and verification; creating an account alone does not subscribe someone to a mailing list.",
+  "Detailed first-party reading data is processed only where the browser has actively allowed that category of measurement and privacy signals do not block it. A separate limited basic event endpoint may register page/story/share events before an optional choice, but it is blocked when the Corner analytics cookie is set to deny or an applicable browser privacy signal is present. Optional publication emails require their own opt-in and verification; creating an account alone does not subscribe someone to a mailing list.",
   "Limited operational processing also supports error investigation, access control, fraud/abuse prevention, backup recovery, lawful requests and the security and continuity of the publication."
  ]},
  {id:'legal-basis',title:'4. Permission, necessity and withdrawal',paragraphs:[
@@ -106,7 +106,7 @@ export const CORE_LEGAL=[
   "There is no cookie requirement to simply read a public post. Some basic connection and security metadata is necessarily processed by infrastructure when a page is requested."
  ]},
  {id:'analytics',title:'4. Reading analytics and portfolio analytics',paragraphs:[
-  "Corner reading analytics is opt-in and measures broad reading-depth, visible active time and selected interaction events. A browser privacy signal such as Global Privacy Control or Do Not Track disables that collection. Server-side identifiers are HMAC-protected; the owner sees aggregated reports rather than raw personal reading timelines.",
+  "Corner's detailed reading analytics is opt-in and measures broad reading-depth, visible active time and selected interaction events. A separate limited basic event endpoint can count page/story/share actions until an explicit refusal; this distinction is disclosed here. A browser privacy signal such as Global Privacy Control or Do Not Track disables the reading collector, and the basic event endpoint also refuses those signals. Server-side identifiers are HMAC-protected; aggregate owner reports are not individual reading profiles.",
   "Portfolio website analytics is a separate, independently consented first-party collector. It is generally configured through the portfolio’s privacy controls at vamsimarripudi.me/privacy. A choice for one collector does not imply permission for the other.",
   "Turning a category off stops future eligible events and attempts to revoke the active tab journey. Earlier observations can remain until ordinary retention has run. Both raw measurement stores have a 90-day cleanup cycle."
  ]},
@@ -148,7 +148,7 @@ export const CORE_LEGAL=[
   "The full data-category inventory, providers, cross-border possibilities and retention practices are set out in the Privacy Policy. Corner does not require an account for ordinary public reading."
  ]},
  {id:'notice-consent',title:'4. Notice and meaningful choice',paragraphs:[
-  "Where consent is the appropriate legal ground, notices will identify which data is requested, what the service will do with it, and how consent can be withdrawn. Optional reader measurement is off unless affirmatively allowed; declining it does not block reading the website.",
+  "Where consent is the appropriate legal ground, notices will identify which data is requested, what the service will do with it, and how consent can be withdrawn. Detailed reading analytics is off unless affirmatively allowed; a distinct basic event collector currently operates with an explicit refusal option. Declining measurement does not block reading the website. Before applicable consent requirements commence, the operator must assess whether that basic event flow also requires additional opt-in.",
   "Account registration, public-comment submission and optional email subscriptions are different purposes. Agreeing to member account creation does not automatically subscribe a person to publication emails or permit optional reading analytics.",
   "Any new data collection that materially changes these purposes will require its own product review and clear notice before activation."
  ]},
