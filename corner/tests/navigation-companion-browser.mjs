@@ -68,7 +68,7 @@ try{
    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow),'hidden','Sign-in freezes background scroll');
    await page.locator('[data-auth-close]').click();
    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow!=='hidden'),true,'Scroll restored on auth close');
-   await page.locator('.corner-welcome-card [data-welcome-close]').click().catch(()=>{});
+   if(await page.locator('.corner-welcome-card [data-welcome-close]').count())await page.locator('.corner-welcome-card [data-welcome-close]').click();
    await page.evaluate(()=>window.scrollTo(0,0));
    await page.mouse.wheel(0,500);
    await page.waitForFunction(()=>scrollY>0);
@@ -83,7 +83,7 @@ try{
  assert.equal(await page.locator('#corner-orbit-card').isVisible(),false,'Pulse is unobtrusive when closed');
  await toy.click();
  await page.locator('#corner-orbit-card').waitFor({state:'visible'});
- await page.waitForFunction(()=>document.querySelector('[data-orbit-status]')?.textContent!=='Checking the Corner…',{timeout:10000});
+ await page.waitForFunction(()=>document.querySelector('[data-orbit-status]')?.textContent!=='Checking the Corner…',null,{timeout:10000});
  assert.equal(await toy.getAttribute('aria-expanded'),'true');
  const status=await page.evaluate(async()=>{let r=await fetch('/corner/api/status');return (await r.json()).data?.status?.label});
  const shown=await page.locator('[data-orbit-status]').textContent();
