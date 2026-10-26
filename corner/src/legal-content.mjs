@@ -1,0 +1,233 @@
+/* Corner Legal Library · publication-ready content candidate, 27 October 2026.
+ * Editorial and compliance language is grounded in the product's implemented
+ * routes/storage. Counsel and site owner must review before production release.
+ * All documents are scoped to Vamsi's Corner and its member/Studio services.
+ */
+export const LEGAL_PREPARED_ON = '27 October 2026';
+export const LEGAL_CONTACT = 'connect@vamsimarripudi.me';
+export const LEGAL_ORDER=[
+ '/privacy','/dpdp','/cookies','/terms','/terms-of-use','/disclaimer',
+ '/viewership','/community-guidelines','/copyright','/grievance','/accessibility'
+];
+const document=(slug,group,title,lead,summary,sections)=>({
+ path:slug,group,title,lead,summary,
+ sections:sections.map(([id,title,content])=>({id,title,content}))
+});
+export const LEGAL_DOCUMENTS={
+ '/privacy':document('/privacy','Privacy & data','Privacy Policy',
+  'How information is handled when you read, react, register or manage your Corner account.',
+  'The Corner is a personal publication. Private accounts stay private, non-essential reading measurements require opt-in, and visitor data is not sold.',[
+ ['scope','1. Who this policy covers',`
+ <p>This policy applies to the Vamsi’s Corner website at <strong>vamsimarripudi.me/corner</strong>, including its published stories, comments, reader preferences, private accounts and authorized publishing Studio. Vamsi Marripudi operates this personal publication and is the point of contact for questions about these practices. The wider portfolio at vamsimarripudi.me may provide additional services with their own notices; this policy is specifically about the Corner.</p>
+ <p>For questions or requests, write to <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. Please never send passwords, one-time codes or government identity documents in an ordinary email.</p>`],
+ ['data','2. Information that may be processed',`
+ <div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Information</th><th>When it arises</th><th>Why it is used</th></tr></thead><tbody>
+ <tr><td>Account identity: email, display name, password hash, verification state and optional bio</td><td>When you create or maintain an account</td><td>Authentication, email verification and recovery, displaying your profile to you and recording preferences</td></tr>
+ <tr><td>Optional avatar and language/update preferences</td><td>When you change profile settings</td><td>Personalizing your private account. Uploaded avatar images are resized and stripped of embedded metadata before storage</td></tr>
+ <tr><td>Saved stories and account activity</td><td>When you save or manage content</td><td>Providing your reading shelf, troubleshooting and account security</td></tr>
+ <tr><td>Comments, reactions and guestbook contributions (if enabled)</td><td>When you actively submit them</td><td>Publication, moderation, abuse prevention and the interactions you request</td></tr>
+ <tr><td>Publication email subscription (if enabled)</td><td>When you opt in and confirm by email</td><td>Sending the selected updates, honoring opt-outs and maintaining consent records</td></tr>
+ <tr><td>Short-lived device/session and security metadata</td><td>When you sign in or use the website</td><td>Protecting sessions, throttling abuse and investigating failures; account session records use hashed network and browser identifiers</td></tr>
+ <tr><td>Coarse engagement signals and optional reading measurements</td><td>When pages are used or when you separately permit detailed reading analytics</td><td>Understanding high-level use and improving reliability; see the distinct analytics explanation below</td></tr>
+ </tbody></table></div>
+ <p>You do not have to open an account just to read public stories. We do not ask readers for precise location, financial details, contact lists or health records to read the Corner.</p>`],
+ ['purposes','3. Purposes and choices',`
+ <p>Account credentials and session data are used to deliver the sign-in, password recovery and private profile features you request. Comments and voluntarily submitted guestbook notes may become public only after the relevant moderation process. Your registered account does not automatically subscribe you to marketing or publish your profile.</p>
+ <p>Some essential processing is necessary to fulfill your request or secure the service; other processing, such as detailed reading analytics and optional email updates, relies on your choice. You can decline optional measurements and still read public content. See the <a href="/dpdp">standalone DPDP Notice</a> for an itemized purpose-by-purpose explanation and <a href="/cookies">Cookie Policy</a> for browser controls.</p>`],
+ ['analytics','4. Essential interaction signals versus optional reading analytics',`
+ <p>The website may record limited first-party events such as page opens, story opens, shares and reactions to operate the Corner, detect misuse and understand basic usage. A signed first-party <code>corner_visitor</code> cookie may be set when an interaction requires a consistent pseudonymous identifier. These basic events are different from the <strong>optional reading analytics</strong> described below. Declining reading analytics also stops the basic analytics event endpoint for that browser.</p>
+ <p>Detailed reading measurement is <strong>off by default</strong>. If enabled, it records coarse reading milestones (for example 25%, 50%, 75% and 90%), active reading time, broad source/device categories, selected interaction outcomes and optional multiple-choice feedback. It does not record your typed text, precise location, full referrer URLs, screen recordings or individual reading identities. The Corner does not send this reading data to Google Analytics.</p>
+ <p>The browser’s Do Not Track and Global Privacy Control signals are respected by the reading-measurement endpoint. The reporting interface suppresses groups with fewer than five observations. The optional reading choice can be changed through <a href="/privacy#reading-preferences">Reading analytics preferences</a>; revoking it requests deletion of that tab’s current measurement journey. Older observations follow their retention lifecycle.</p>`],
+ ['cookies','5. Cookies and local browser storage',`
+ <p>Essential cookies keep members and Studio staff signed in. A pseudonymous reaction cookie can help prevent repeated reactions and basic abuse. Browser storage may remember whether you dismissed a one-time welcome card. Separate consent storage records your optional analytics preference. These items have different purposes and expiry periods; the <a href="/cookies">Cookie Policy</a> provides an itemized inventory, durations and ways to control them.</p>
+ <p>Blocking every cookie can break sign-in or reaction continuity. Blocking optional reading analytics does not prevent viewing public stories.</p>`],
+ ['public','6. Public posts, photos and conversations',`
+ <p>Published stories, authorized photographs, captions, approved comments and guestbook messages are intended for readers and can be shared or indexed by search engines. A comment may show the account display name and text the commenter submits. Account email addresses, saved-story lists, private avatars and security settings are not displayed as public profile fields by default.</p>
+ <p>Please avoid publishing addresses, phone numbers or someone else’s confidential information in public comments. Published content may remain visible in other people’s screenshots, caches or search indexes even after it is changed on this site.</p>`],
+ ['processors','7. Providers, disclosures and transfers',`
+ <p>Hosting, delivery and account email rely on service providers used by the Corner, including the configured website infrastructure and email processor. The current implementation uses Railway-hosted application infrastructure, Vercel-facing website delivery and Resend for transactional account emails when that service is enabled. Those providers may process limited data needed to supply infrastructure, security or email services under their respective arrangements.</p>
+ <p>Data can be shared where necessary to provide the requested features, to investigate security incidents, to satisfy valid legal requests or to protect users and the service. We do not sell member profiles or visitor analytics to advertisers. Network routing and providers may involve processing outside India; applicable transfer restrictions and contractual protections must be evaluated based on the final deployed configuration.</p>`],
+ ['security','8. How data is protected',`
+ <p>Controls built into the Corner include password hashing, authenticated sessions with HttpOnly cookies, access controls for private pages and Studio operations, rate limits, moderation, audit records, and private avatar storage with image-metadata removal. The operator also uses operational backups and recovery procedures.</p>
+ <p>No online service can guarantee absolute security. If you suspect account misuse, change your password, revoke suspicious sessions from Security settings, and contact the operator. Breach responses and legally required notifications will follow applicable law and the facts known at the time.</p>`],
+ ['retention','9. Retention, deletion and backup restoration',`
+ <div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Category</th><th>Current approach</th></tr></thead><tbody>
+ <tr><td>Raw basic events and opted-in reading observations</td><td>Site cleanup targets a rolling 90-day lifetime; a withdrawn current tab journey is requested for deletion sooner</td></tr>
+ <tr><td>Short-lived public realtime events</td><td>Site cleanup targets approximately three days</td></tr>
+ <tr><td>Member and Studio sessions</td><td>Session access expires by type; expired records are cleared through maintenance. Security and audit records may follow separate periods</td></tr>
+ <tr><td>Active accounts and saved content</td><td>Kept while needed to provide the account, respond to requests or satisfy applicable lawful retention duties</td></tr>
+ <tr><td>Verification and recovery tokens</td><td>Time-limited, single-purpose tokens; current flows generally expire after 20–30 minutes, with other invitation or subscription windows varying by flow</td></tr>
+ <tr><td>Operational offsite backups</td><td>A default 30-day pruning window is configured, but at least two verified copies are preserved for resilience. Actual deletion can therefore take longer</td></tr>
+ </tbody></table></div>
+ <p>Removal from an active service does not instantly erase all records from a restored backup, preserved evidence, mail delivery logs or independent search indexes. Restored copies are subject to the applicable recovery, retention and deletion procedure. We do not promise immediate, irreversible deletion where that cannot be verified.</p>`],
+ ['rights','10. Your controls and requests',`
+ <p>Signed-in readers can change their display name, avatar, bio and language; turn optional account updates on or off; manage saved stories; view or revoke sessions; and request account export or deletion review. Reading analytics consent can be changed on the privacy page without opening an account.</p>
+ <p>You may also email <a href="mailto:connect@vamsimarripudi.me?subject=Corner%20privacy%20request">connect@vamsimarripudi.me</a> to ask about access, correction, erasure, consent withdrawal or a concern. Requests may require reasonable verification using your account or registered address. The <a href="/dpdp">DPDP Notice</a> explains statutory rights and their phased commencement in India; the <a href="/grievance">Grievance & Requests</a> page explains the request process.</p>`],
+ ['children','11. Children and sensitive information',`
+ <p>Vamsi’s Corner is a general personal publication and does not target children with advertising or behavioral profiling. Private accounts and public submissions are not designed as child-directed services. Anyone under 18 should use the service with a parent or lawful guardian; where legally required, age-appropriate safeguards and verifiable parental consent must be established before processing child data.</p>
+ <p>Do not publish another person’s sensitive private facts, children’s identifying details or confidential records without the right to do so. Contact the operator to report possible exposure so it can be reviewed and restricted where appropriate.</p>`],
+ ['international','12. Visitors outside India',`
+ <p>The Corner is operated from India but can be accessed from other countries. The availability of privacy rights, transfer protections and legal processes varies by location. If a legal regime applies to an individual or a processing activity, the operator must meet that regime’s mandatory requirements. This policy does not remove those rights.</p>`],
+ ['changes','13. Updates to this notice',`
+ <p>Changes to material data practices will be reflected in a revised notice and, where required, an additional consent request or other notification. This draft’s date appears at the top. Changes to legal text alone do not expand permission to use personal data beyond the choices already provided.</p>`],
+ ['contact','14. Contact and related documents',`
+ <p>Email <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a> for privacy questions and verified rights requests. Also see <a href="/dpdp">DPDP Notice</a>, <a href="/cookies">Cookie Policy</a>, <a href="/grievance">Grievance & Requests</a>, <a href="/community-guidelines">Community Guidelines</a> and <a href="/terms">Terms & Conditions</a>.</p>`]
+ ]),
+ '/dpdp':document('/dpdp','Privacy & data','India DPDP Notice',
+  'A standalone account of personal data, purposes, consent choices and rights under India’s phased digital privacy law.',
+  'Itemized data uses, withdrawal methods, rights, grievances and the current commencement timeline—in one readable notice.',[
+ ['status','1. Legislative status and when provisions apply',`
+ <p>India’s <strong>Digital Personal Data Protection Act, 2023</strong> and the <strong>Digital Personal Data Protection Rules, 2025</strong> commenced in phases following the November 2025 Gazette notifications. As prepared on 27 October 2026, certain establishment and rule-making provisions are already operative; principal duties dealing with notice, consent, most Data Fiduciary obligations and individual rights are scheduled for <strong>13 May 2027</strong>, unless a later lawful notification changes the timetable. Certain consent-manager provisions were scheduled separately for <strong>13 November 2026</strong>.</p>
+ <p>This page prepares the Corner’s notice and request process and describes controls available today. It must not be read as claiming that every DPDP provision is already enforceable, or as a certificate of legal compliance. See <a href="https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa">MeitY’s official Rules and enforcement notices</a> and <a href="https://www.indiacode.nic.in/indiacode/handle/123456789/22037?view_type=browse">India Code’s DPDP Act</a>.</p>`],
+ ['fiduciary','2. Operator and contact',`
+ <p>For this personal publication, the operational contact is Vamsi Marripudi, Vamsi’s Corner, <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>. This email is the published contact for questions, access or correction requests and grievances; it is not represented as an appointed statutory Data Protection Officer where no such appointment has been verified.</p>`],
+ ['data-purpose','3. Itemized data and specific purposes',`
+ <div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Personal data or signal</th><th>Purpose / enabled service</th><th>Choice or necessity</th></tr></thead><tbody>
+ <tr><td>Email, chosen name and verification state</td><td>Create a member identity, verify addresses, restore access and communicate about account security</td><td>Required if you open an account; public reading does not require an account</td></tr>
+ <tr><td>Password-derived hash and session token</td><td>Prove login and keep an authorized account session active</td><td>Required for secure sign-in</td></tr>
+ <tr><td>Optional profile photo, short bio and selected language</td><td>Show and personalize the private account interface</td><td>Optional and editable by the member</td></tr>
+ <tr><td>Saved-story choices</td><td>Build and maintain the member’s personal reading shelf</td><td>Created only when a member saves a story</td></tr>
+ <tr><td>Display name and the text of a comment or guestbook note</td><td>Moderate and, when approved, display a submitted contribution</td><td>Submitted deliberately by the contributor</td></tr>
+ <tr><td>Reaction choice and pseudonymous browser identifier</td><td>Operate reactions and prevent simple repeated or abusive activity</td><td>Used when those features are invoked</td></tr>
+ <tr><td>Coarse page/story/share events</td><td>Maintain basic first-party readership and reliability measurements</td><td>Limited collection may occur during public use; an analytics refusal cookie stops the event endpoint</td></tr>
+ <tr><td>Optional reading depth, active time, broad device/source group and selected feedback</td><td>Evaluate accessibility, reading completion and faults</td><td>Collected only after separate opt-in, subject to Do Not Track / Global Privacy Control</td></tr>
+ <tr><td>Optional publication-subscription email, topics and opt-in history</td><td>Send expressly selected updates, process unsubscription and preserve consent evidence</td><td>Only when the feature is enabled and the visitor requests and verifies the subscription</td></tr>
+ <tr><td>Hashed network/browser metadata, timestamps and security events</td><td>Detect misuse, investigate incidents, revoke sessions and maintain security records</td><td>Used for safety and system operation</td></tr>
+ </tbody></table></div>
+ <p>No credit card, health or precise geolocation data is required to browse public notes. The Corner does not create a public personal profile simply because you register.</p>`],
+ ['consent','4. Giving and withdrawing choices',`
+ <p>Optional reading measurement is disabled until you explicitly select <strong>Allow reading analytics</strong> under <a href="/privacy#reading-preferences">Reading analytics preferences</a>. The same interface lets you select <strong>Keep reading analytics off</strong> later. The browser records the consent state; a refusal also blocks the existing basic analytics event endpoint. Withdrawal stops new optional collection and requests erasure of the identifiable current tab journey where available.</p>
+ <p>Optional account emails can be turned off under <a href="/settings/preferences">Preferences</a> after signing in. Optional publication-follow emails, if enabled, use a separate confirmation and unsubscribe flow. Closing an account or revoking optional consent may affect only those optional services; essential records may still need retention for security or lawful purposes.</p>`],
+ ['rights','5. Access, correction, erasure, grievance and nomination',`
+ <p>As the applicable provisions commence, eligible Data Principals can exercise statutory rights to information about processing, correction and completion of inaccurate data, erasure when appropriate, grievance redressal, and nomination of another person to exercise rights where the Act allows. Those rights are subject to their statutory scope and lawful exceptions—not an unconditional promise that every stored copy disappears immediately.</p>
+ <p>The Corner already offers profile correction, saved-story management, data export and deletion-review requests. For other requests, contact <a href="mailto:connect@vamsimarripudi.me?subject=DPDP%20rights%20request">connect@vamsimarripudi.me</a> and indicate the request type. Do not send identity documents unless specifically requested through a verified channel.</p>`],
+ ['complaints','6. Contact, verification and complaints',`
+ <p>You can submit a concern about processing, consent or an unresolved privacy request by emailing <a href="mailto:connect@vamsimarripudi.me?subject=Corner%20DPDP%20grievance">connect@vamsimarripudi.me</a>. Describe the issue and, where relevant, the registered email address or affected content URL. The operator will assess the request, may verify account control, and respond in accordance with applicable requirements.</p>
+ <p>Where the relevant DPDP complaint/appeal mechanisms have commenced and apply, the statutory route to the Data Protection Board of India will be available subject to the legally required steps. The <a href="/grievance">Grievance & Requests</a> page explains how to contact the operator first. Do not mistake this page for the Board’s official portal.</p>`],
+ ['children','7. Children’s data',`
+ <p>India’s DPDP framework defines a child as an individual below 18 and provides additional rules regarding parental consent and protection of children’s data, subject to the relevant commencement dates and exemptions. Corner is not a child-directed advertising service; it does not offer an independently verified parental-consent workflow today. Child-specific account or submission use must therefore be assessed before enabled processing that requires such consent.</p>
+ <p>Guardians may report data they believe was supplied by a child without appropriate authority at the contact address above. The operator will review such requests and take proportionate steps.</p>`],
+ ['breaches','8. Data security and breach response',`
+ <p>Controls include password hashing, authenticated sessions, role-based restrictions, restricted avatar access, input validation, auditing, rate limits, and operational backups. Where notification rules apply to a confirmed data breach, notices to individuals and the Board will be made in the legally prescribed form and timeframe. Do not rely on any blanket claim that no incident can occur.</p>`],
+ ['transfer','9. Processors, cross-border handling and retention',`
+ <p>Infrastructure and transactional email providers can handle minimum necessary information to deliver their services. Hosting or network routing may involve processing outside India. Any restriction imposed by applicable law must be assessed for the actual deployment and destinations. See <a href="/privacy#processors">providers and transfers</a> and <a href="/privacy#retention">retention information</a> for the current product position.</p>`],
+ ['publication','10. Changes and interpretation',`
+ <p>This is a standalone notice prepared for clear consent and rights information, not a replacement for the longer <a href="/privacy">Privacy Policy</a>. If the implementation, processor list or law changes, the notice must be updated and relevant new consents obtained when required. The <a href="/cookies">Cookie Policy</a> contains the browser-level inventory.</p>`]
+ ]),
+ '/cookies':document('/cookies','Privacy & data','Cookie & Storage Policy',
+  'A practical guide to session cookies, reaction identifiers, consent choices and local browser storage.',
+  'Necessary session cookies are distinct from optional analytics choices. You control what your browser permits.',[
+ ['what','1. What a cookie is',`
+ <p>Cookies are small values stored by your browser and sent with eligible requests. The Corner also uses browser local storage or session storage for limited interface and reading-session state. Not every stored value identifies a named visitor, but a stable identifier can still relate to a person’s browsing activity.</p>
+ <p>This inventory is based on the current first-party Corner implementation. Hosting or email providers may operate their own necessary network or abuse-prevention systems subject to their policies.</p>`],
+ ['inventory','2. Current Corner cookie inventory',`
+ <div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Name</th><th>Purpose</th><th>Approximate lifetime</th><th>Type</th></tr></thead><tbody>
+ <tr><td><code>corner_session</code></td><td>Authorized Studio session and access checks</td><td>Up to 8 hours, unless revoked sooner</td><td>Essential; HttpOnly, SameSite Strict</td></tr>
+ <tr><td><code>corner_member_session</code></td><td>Verified member login, bookmarks and private profile</td><td>Up to 7 days, unless revoked sooner</td><td>Essential for account features; HttpOnly, SameSite Strict</td></tr>
+ <tr><td><code>corner_visitor</code></td><td>Signed pseudonymous identifier for reactions and some basic first-party events</td><td>Up to 365 days</td><td>Functional/abuse prevention and limited measurement</td></tr>
+ <tr><td><code>corner_reading_consent</code></td><td>Records <code>allow</code> or <code>deny</code> for optional reading analytics</td><td>Up to 180 days</td><td>Consent/preference</td></tr>
+ </tbody></table></div>
+ <p>Production session and preference cookies are set with the relevant Secure, SameSite and/or HttpOnly attributes supported by their function. You cannot read an HttpOnly session value from a normal page script, and clearing a cookie signs out the associated session locally.</p>`],
+ ['storage','3. Other browser storage',`
+ <p>The site may use <code>corner-welcome-v1</code> in local storage to remember dismissal of the first-visit greeting. That value remains until cleared through browser settings or site logic. Optional reading analytics uses short-lived tab/session identifiers kept in session storage; journeys are bounded by inactivity and age to avoid becoming long-lived cross-site identities. Some UI state is ephemeral and disappears on reload.</p>
+ <p>Neither local storage nor an essential session cookie is the same as agreeing to optional analytics.</p>`],
+ ['analytics','4. Basic analytics versus optional reading analytics',`
+ <p>Some public interaction endpoints can create first-party basic engagement events, even when the optional detailed reading preference has not been granted. Such events are not advertising trackers. The current server refuses these events when the visitor has explicitly selected <code>deny</code> for the Corner reading consent cookie and honors applicable privacy signals. Detailed reading measurements require <code>allow</code> before collection.</p>
+ <p>This distinction is disclosed rather than describing all site analytics as opt-in. Before expanded statutory DPDP consent requirements commence, the operator should verify that the basic event flow and any consent controls meet those requirements. See the <a href="/dpdp">DPDP Notice</a>.</p>`],
+ ['choices','5. How to set or change preferences',`
+ <p><strong>Optional reading analytics:</strong> open <a href="/privacy#reading-preferences">Reading analytics preferences</a> and choose Allow or Keep off. The chosen state is not a condition of reading public notes. <strong>Optional email updates:</strong> manage them after sign-in under <a href="/settings/preferences">Account preferences</a>.</p>
+ <p>You can also clear site data and block cookies through your browser settings. If all cookies are blocked, sign-in, reactions or remembered choices may not work normally.</p>`],
+ ['third-party','6. Third-party tools and embedded content',`
+ <p>The Corner does not intentionally place third-party behavioral advertising cookies or a Google Analytics reading tracker. Pages may contain links to other sites; leaving the Corner can expose you to the destination’s separate cookies and policies. If future embedded tools or analytics are introduced, this inventory should be updated before the change.</p>`],
+ ['privacy-signal','7. Browser privacy signals',`
+ <p>Do Not Track and Global Privacy Control signals disable the optional reading collector where supported by the site. Security logs that are required for operating the service are not removed by those signals, but detailed optional reading measurement is not activated against them.</p>`],
+ ['lifetimes','8. Expiry, withdrawal and deletion',`
+ <p>Deleting a consent cookie can remove a remembered choice, but it does not necessarily delete previously recorded events. Use the in-site opt-out to request deletion of the active tab journey and contact the operator for broader data requests. Backup, audit and lawful-retention duties are described in the <a href="/privacy#retention">Privacy Policy</a>.</p>`],
+ ['contact','9. Questions',`
+ <p>For questions about a cookie, browser storage or a particular interaction, contact <a href="mailto:connect@vamsimarripudi.me?subject=Corner%20cookies">connect@vamsimarripudi.me</a>. For detailed rights information, review <a href="/dpdp">the DPDP Notice</a> and <a href="/grievance">request process</a>.</p>`]
+ ]),
+ '/terms':document('/terms','Use & conduct','Terms & Conditions',
+  'The agreement for access to Vamsi’s Corner, reading and optional account features.',
+  'Read, explore and participate respectfully. Member accounts are personal, private and subject to reasonable security rules.',[
+ ['agreement','1. Acceptance and scope',`
+ <p>These Terms & Conditions apply to your use of Vamsi’s Corner, including public pages, its member area and any authorized owner or staff Studio access. By continuing to access or use the relevant service after these terms are published, you agree to follow applicable terms where a contractual agreement can lawfully be formed. If you do not agree, discontinue account features and content submissions; public mandatory rights under applicable law remain unaffected.</p>
+ <p>Vamsi’s Corner is a personal publication, not a financial service, medical provider, investment advisory platform or guaranteed subscription service. Separate linked websites may have their own terms.</p>`],
+ ['reading','2. Public reading and viewership',`
+ <p>Public stories can ordinarily be read without a registered account. You may share ordinary links and quote limited portions with attribution as allowed by law. Using public pages does not transfer copyright or permission to republish complete articles, private photos or site code.</p>
+ <p>For more reader-specific guidance, see <a href="/viewership">Viewership & Reading Policy</a> and <a href="/copyright">Copyright & Permissions</a>.</p>`],
+ ['accounts','3. Eligibility and member accounts',`
+ <p>Optional accounts provide saved stories, a private profile, approved commenting and preferences. You must provide accurate information you are entitled to use, secure your credentials and avoid letting others use your session. Public reading itself does not require registration. Members are not automatically granted publishing, moderation or administrator powers.</p>
+ <p>Access by children or persons needing a guardian must comply with applicable legal rules. This publication is not designed to solicit minors’ personal data or to supply child-directed behavioral advertising.</p>`],
+ ['studio','4. Studio and privileged roles',`
+ <p>Owner Studio access is restricted to explicitly authorized roles. Invited staff may access only their authorized functions. You must not attempt to bypass session controls, impersonate administrators, use someone else’s invitation, tamper with evidence or exploit technical weaknesses. Owner control and recovery procedures remain subject to authentication and security requirements.</p>`],
+ ['submissions','5. Comments, reactions and submitted material',`
+ <p>If you submit a comment, guestbook entry, avatar or other content, you confirm that you have the authority to submit it and that it complies with the <a href="/community-guidelines">Community Guidelines</a>. Comments and certain submissions may be reviewed, rejected, hidden or removed to address legal violations, safety or the purpose of the publication. Moderation is not a guarantee that every submitted statement is accurate.</p>
+ <p>For material you submit, you retain whatever intellectual property rights you lawfully hold. You give the operator a limited, non-exclusive permission to store, moderate, format, display and technically process the material as needed to provide the feature you chose, subject to your privacy rights and applicable law.</p>`],
+ ['acceptable','6. Prohibited conduct',`
+ <p>Do not harass or threaten people; post illegal, hateful, invasive, defamatory, sexually exploitative or abusive content; impersonate others; infringe copyrights; deploy malicious software; scrape private areas; flood APIs; attempt credential theft; or bypass security controls. Do not submit others’ private information without a lawful basis.</p>
+ <p>The <a href="/terms-of-use">Terms of Use</a> and <a href="/community-guidelines">Community Guidelines</a> give more examples. Nothing in this section authorizes removal of lawful criticism merely because the operator disagrees with a viewpoint.</p>`],
+ ['features','7. Feature changes and availability',`
+ <p>Some planned features—such as guestbooks, following by email, memories, translations or additional content collections—are activated only when ready. Their appearance in documentation is not a promise of launch dates or permanent availability. The operator may adjust, pause or retire features for security, reliability or editorial reasons, taking into account applicable legal obligations.</p>`],
+ ['availability','8. Maintenance, outside services and security',`
+ <p>Access may be temporarily unavailable due to maintenance, network failures, third-party providers or security events. Reasonable measures are used to protect the website, but continuous availability, uninterrupted delivery and error-free operation cannot be guaranteed.</p>`],
+ ['privacy','9. Privacy, cookies and account controls',`
+ <p>Use of personal information is described in the <a href="/privacy">Privacy Policy</a>, <a href="/dpdp">DPDP Notice</a> and <a href="/cookies">Cookie Policy</a>. Acceptance of these Terms does not constitute consent to optional reading analytics or email subscriptions. Those choices have their own controls.</p>`],
+ ['liability','10. Disclaimers and liability',`
+ <p>Material is provided for personal, editorial and general informational purposes. To the extent permitted by law, it is provided without a promise of fitness for a particular result or freedom from every error. Nothing in these terms excludes liability for intentional wrongdoing, fraud or rights that cannot legally be excluded or limited.</p>
+ <p>See the separate <a href="/disclaimer">Disclaimer</a> for editorial reliance, external links and personal opinions.</p>`],
+ ['termination','11. Suspension and ending use',`
+ <p>A member may sign out, stop using features or request account deletion review. Accounts or contributions may be limited where necessary for safety, suspected abuse or legal compliance, subject to applicable notice, review and appeal requirements. Revoking a session ends that credential’s access but does not automatically delete all content or audit records.</p>`],
+ ['law','12. Governing law and resolving disputes',`
+ <p>These terms are intended to be interpreted under the laws of India, subject to applicable mandatory consumer, privacy and other protections. Any court jurisdiction is determined by applicable law; no clause here removes a right to seek relief before a competent authority.</p>
+ <p>Please raise questions through <a href="/grievance">Grievance & Requests</a> so the operator has an opportunity to address them.</p>`],
+ ['amendments','13. Updates and contact',`
+ <p>The terms may be revised when features or legal requirements change. Material changes should be made visible on the site or otherwise notified where required. Continued use after a lawful effective date may be treated in accordance with the rules applicable to that change.</p>
+ <p>Contact <a href="mailto:connect@vamsimarripudi.me?subject=Corner%20terms">connect@vamsimarripudi.me</a> with questions.</p>`]
+ ]),
+ '/terms-of-use':document('/terms-of-use','Use & conduct','Terms of Use',
+  'Practical conditions for browsing stories, using links, saving content and interacting respectfully.',
+  'A readable companion to the formal Terms & Conditions: what you can do, what you cannot, and how the site is moderated.',[
+ ['permitted','1. Things readers may do',`
+ <p>Read available articles, explore categories, use search, share ordinary links, bookmark published stories with an account, and submit permitted reactions or comments when those features are enabled. Use reasonable excerpts and attribution where copyright law permits; contact the operator for republication requests.</p>`],
+ ['responsibility','2. Use the Corner responsibly',`
+ <p>Keep sign-in details private, respect individual privacy and avoid uploading another person’s confidential or copyrighted material without authority. Do not use the site to spread malware, impersonate people, target individuals for harassment, automate requests excessively or bypass access restrictions.</p>`],
+ ['submissions','3. Your submissions and moderation',`
+ <p>Submitted comments may be held for review and are not necessarily visible immediately. A display name is not proof of a statement’s truth. The operator can remove contributions that violate safety or legal standards, subject to applicable duties and review opportunities. <a href="/community-guidelines">Community Guidelines</a> explain the editorial rules.</p>`],
+ ['links','4. Links, embeds and external destinations',`
+ <p>Links to external products, articles, social networks or services are provided for convenience or reference. The Corner does not control those destinations. Any endorsement, sponsorship or paid relationship should be disclosed where relevant rather than inferred from the presence of a link.</p>`],
+ ['reuse','5. Text, illustrations, code and reuse',`
+ <p>Viewing a publicly available page is not a transfer of ownership. Unless explicitly licensed, do not resell, mirror, systematically reproduce or train a commercial database on the complete publication or its protected media. Applicable fair dealing, quotation, accessibility and other statutory exceptions remain available.</p>`],
+ ['account','6. Account functions',`
+ <p>Accounts remain private by default. Registered readers can edit supported profile fields, change optional updates, control sessions and request data access through the existing interface. There is no implied entitlement to owner Studio capabilities. Inactive or suspicious accounts may be subject to reasonable security checks.</p>`],
+ ['technical','7. Prohibited technical interference',`
+ <p>Do not attempt denial-of-service activity, unauthorized access, scraping of private APIs, credential stuffing, forging session tokens, overriding consent choices of others or disrupting availability. Report a suspected vulnerability privately to the operator instead of exploiting it.</p>`],
+ ['availability','8. Changes to features',`
+ <p>Search, stories, comments, reading preferences and other features may be altered or limited. A feature described here may not be available in every deployment. No paid plan, subscription or particular publication frequency is guaranteed by this document.</p>`],
+ ['contact','9. Related terms and questions',`
+ <p>See <a href="/terms">Terms & Conditions</a>, <a href="/viewership">Viewership Policy</a>, <a href="/copyright">Copyright & Permissions</a>, <a href="/disclaimer">Disclaimer</a> and <a href="/grievance">Grievance & Requests</a>. Send issues to <a href="mailto:connect@vamsimarripudi.me">connect@vamsimarripudi.me</a>.</p>`]
+ ]),
+ '/disclaimer':document('/disclaimer','Use & conduct','Disclaimer',
+  'The limits of personal stories, opinions, research notes, external resources and automated features.',
+  'A personal publication is not a substitute for qualified advice. Read thoughtfully and verify information independently.',[
+ ['editorial','1. Personal publication and viewpoints',`
+ <p>Posts describe personal experiences, creative ideas, experiments, wishes and observations at the time they were written. They are individual editorial opinions unless clearly identified otherwise. A post may become outdated or incomplete as knowledge, software and circumstances change.</p>`],
+ ['advice','2. No professional advice',`
+ <p>Stories, technical notes and general explanations are not personalized medical, legal, financial, investment, tax, employment or safety advice. They do not create a professional-client relationship. Seek an appropriately qualified person when decisions carry legal, health, financial or physical consequences.</p>`],
+ ['technical','3. Software, builds and tutorials',`
+ <p>Published code examples, product experiments, workflows or configuration suggestions can contain errors, unavailable features or compatibility limits. Verify licenses, security settings, backups, accessibility and the current documentation before trying a technique. Test on non-production data first and do not copy configuration containing credentials.</p>`],
+ ['accuracy','4. Accuracy, completeness and availability',`
+ <p>Reasonable editorial care does not guarantee that content is entirely accurate, complete or continuously current. Products and linked resources may change, be removed or acquire different terms. Availability of this site can be affected by connectivity, hosting or maintenance.</p>`],
+ ['outside','5. External links and third-party services',`
+ <p>External sites and providers are outside the Corner’s direct control. Linking to an item is not automatically endorsement, paid placement or verification of its security. Read the destination’s terms and privacy notice before sharing information or paying for anything there.</p>`],
+ ['media','6. Images and illustrative visuals',`
+ <p>Creative illustrations, photographs, screenshots and design mockups may be edited or illustrative. Unless a post expressly says a depicted product is live and verified, do not treat a visual demonstration as proof that an underlying service, feature or device exists or works as shown.</p>`],
+ ['ai','7. Automated and AI-assisted material',`
+ <p>Some creative or draft material may use digital or AI-assisted tools when disclosed in context. Such assistance does not guarantee truth or originality. Corner Pulse is an interface for first-party status and published stories; it is not a human representative, licensed adviser or independent AI support agent.</p>`],
+ ['viewers','8. Reader comments and contributions',`
+ <p>Comments and guestbook contributions are their authors’ submissions. Moderation and publication do not certify their accuracy. The operator may moderate submissions for the site’s rules but cannot promise real-time review of every statement.</p>`],
+ ['limits','9. Liability and non-waivable rights',`
+ <p>To the extent legally permitted, the operator does not accept responsibility for loss caused solely by unverified reliance on general editorial material. This does not exclude statutory remedies, liabilities for fraud or deliberate misconduct, or consumer and data rights that law does not permit a website to waive.</p>`],
+ ['corrections','10. Corrections and contact',`
+ <p>Point out inaccuracies, privacy concerns, broken links or accessibility issues by emailing <a href="mailto:connect@vamsimarripudi.me?subject=Corner%20correction">connect@vamsimarripudi.me</a>. You can also consult <a href="/copyright">Copyright & Permissions</a> and <a href="/grievance">Grievance & Requests</a>.</p>`]
+ ])
+};
