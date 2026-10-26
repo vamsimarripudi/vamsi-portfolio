@@ -264,6 +264,10 @@ body.corner-comfort:has(.account-shell--dashboard) {
 .corner-comfort .account-shell--dashboard .account-switch-row input:focus-visible+.account-switch-track{outline:3px solid #3b61b8;outline-offset:3px}
 .corner-comfort .account-shell--dashboard .account-submit{min-height:46px;margin:0;font-size:.83rem}
 .corner-comfort .account-shell--dashboard .account-security-panel .account-pass-wrap input{padding-right:77px}
+.corner-comfort .account-shell--dashboard .account-workspace-panel>.account-side-section{
+  margin:15px 0 0;padding:18px 21px;border:1px solid var(--qd-line);
+  border-radius:18px;background:#fff;
+}
 .corner-comfort .account-shell--dashboard .account-side-section{min-width:0;margin:0;padding:17px 0 0;border-top:1px solid var(--qd-line)}
 .corner-comfort .account-shell--dashboard .account-side-section h2{margin:0 0 10px;font-size:1rem!important}
 .corner-comfort .account-shell--dashboard .account-side-section ul{gap:4px}
@@ -291,7 +295,13 @@ body.corner-comfort:has(.account-shell--dashboard) {
   }
   .corner-comfort .account-shell--dashboard .account-nav-link svg{width:16px;height:16px}
   .corner-comfort .account-shell--dashboard .account-nav-link.is-active{box-shadow:inset 0 -3px 0 #bf7b5d}
-  .corner-comfort .account-shell--dashboard .account-workspace-sidebar-bottom{display:none}
+  .corner-comfort .account-shell--dashboard .account-workspace-sidebar-bottom{
+    display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;
+    gap:6px;margin-top:6px;padding-top:5px;border-top:1px solid var(--qd-line);
+  }
+  .corner-comfort .account-shell--dashboard .account-workspace-sidebar-bottom :is(a,button){
+    min-height:41px;font-size:.7rem;padding:8px 11px;
+  }
   .corner-comfort .account-shell--dashboard .account-overview-side{grid-template-columns:1fr}
   .corner-comfort .account-shell--dashboard .account-workspace-panel.account-card{width:100%}
   .corner-comfort .account-shell--dashboard .account-workspace-heading h1{font-size:clamp(1.5rem,5.3vw,1.9rem)!important}
