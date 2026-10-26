@@ -22,8 +22,8 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span>✳</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){window.CornerAnalysis?.unmount();clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
-    const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Analytics',settings:'Settings'};
+  function showView(view){window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+    const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
@@ -42,31 +42,71 @@
     root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">Edit ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
     $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
   }
-  function postFields(p={}){return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span></div>
+  function postFields(p={}){const lead=String(p.body||'').match(/^> ([^\n]{1,280})(?:\n\n|$)/);const main=lead?String(p.body).slice(lead[0].length):p.body||'';return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span></div>
     <div class="editor-inline"><label>Type<select name="type">${variantTypes.map(t=>`<option value="${t}" ${p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label><label>Symbol / emoji<input name="emoji" maxlength="8" placeholder="✳" value="${esc(p.emoji||'')}"></label></div>
     <label>Title<input name="title" maxlength="150" required placeholder="A small idea worth keeping." value="${esc(p.title||'')}"></label>
     <label>Short preview<input name="excerpt" maxlength="380" placeholder="One line to draw someone in." value="${esc(p.excerpt||'')}"></label>
-    <label>Full story<textarea name="body" minlength="2" maxlength="25000" rows="9" placeholder="Tell the story here, in your own words…">${esc(p.body||'')}</textarea></label>
+    <label>Opening quote (optional)<textarea name="quote" rows="2" maxlength="280" placeholder="A sentence worth remembering.">${esc(lead?.[1]||'')}</textarea></label>
+    <label>Full story<textarea name="body" minlength="2" maxlength="25000" rows="9" placeholder="Tell the story here, in your own words…">${esc(main)}</textarea></label>
     <label>Tags <input name="tags" maxlength="200" placeholder="Builds, ideas, things worth sharing" value="${esc((p.tags||[]).join(', '))}"></label>
     <div class="editor-checks"><label><input type="checkbox" name="featured" ${p.featured?'checked':''}> Feature</label><label><input type="checkbox" name="pinned" ${p.pinned?'checked':''}> Pin</label><label><input type="checkbox" name="milestone" ${p.milestone?'checked':''}> Milestone</label><label><input type="checkbox" name="allowComments" ${p.allow_comments?'checked':''}> Comments</label><label><input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}> Reactions</label><label><input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}> Public Coming Up teaser</label></div>
     <div class="editor-actions"><button type="button" class="secondary" id="save-post">Save changes</button><button type="button" id="publish-post">Publish</button><button type="button" class="secondary" id="schedule-post">Schedule</button>${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div>`}
-  function formValues(form){return {type:form.elements.type.value,title:form.elements.title.value,emoji:form.elements.emoji.value,excerpt:form.elements.excerpt.value,body:form.elements.body.value,tags:form.elements.tags.value,featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};}
+  function formValues(form){return {type:form.elements.type.value,title:form.elements.title.value,emoji:form.elements.emoji.value,excerpt:form.elements.excerpt.value,body:(form.elements.quote.value.trim()?'> '+form.elements.quote.value.trim()+'\n\n':'')+form.elements.body.value,tags:form.elements.tags.value,featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};}
   function updatePreview(form){let p=formValues(form);let card=$('.preview-card');if(!card)return;card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
     $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title||'Your next story.';$('.preview-excerpt',card).textContent=p.excerpt||'Just enough to invite someone in.';
-    $('.preview-story-body',card).textContent=p.body||'';$('.preview-symbol',card).textContent=p.emoji||'✳';
+    const quote=$('.preview-story-quote',card);if(quote){quote.textContent=form.elements.quote.value.trim();quote.hidden=!quote.textContent}
+    $('.preview-story-body',card).textContent=form.elements.body.value||'';$('.preview-symbol',card).textContent=p.emoji||'✳';
     $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
   }
-  function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
+  function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
   async function editor(id=null){clearTimeout(active.saveTimer);active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:false,tags:[]};active.post=p;
-    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><div class="admin-section" id="schedule-panel" hidden></div><div class="admin-section" id="editor-media"></div>`;
+    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><div class="admin-section" id="editor-media"></div>`;
     const form=$('#post-editor');
     updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.id&&p.state==='draft'){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1250)}});
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
     async function save(quiet=false){if(!form.elements.title.value.trim()){if(!quiet)toast('Add a title first.','error');return null}clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';try{let value=formValues(form);if(p.id){p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...value,version:p.version});}else{p=await api('/corner/api/admin/posts','POST',value);active.post=p;}$('#save-indicator').textContent='Saved · v'+p.version;active.dirty=false;if(!quiet)toast('Draft saved.','success');return p;}catch(err){$('#save-indicator').textContent=err.status===409?'Edit conflict — reload':'Could not save';if(!quiet)toast(err.message,'error');return null}}
     $('#save-post').onclick=()=>save();$('#publish-post').onclick=async()=>{let saved=await save(true);if(!saved)return;try{p=await api('/corner/api/admin/posts/'+p.id+'/publish','POST');toast('Published. Your story is live.','success');editor(p.id)}catch(err){toast(err.message,'error')}};
-    $('#schedule-post').onclick=()=>{const panel=$('#schedule-panel');panel.hidden=false;panel.innerHTML=`<form id="schedule-form" class="admin-surface admin-form"><p class="eyebrow">SET A MOMENT</p><h2>Publish at the right time.</h2><div class="editor-inline"><label>Date and time<input type="datetime-local" name="localTime" required></label><label>Timezone<input name="timezone" required value="${esc(p.timezone||'Asia/Kolkata')}"></label></div><label>Recurrence<select name="recurrence"><option value="none">One time</option><option value="yearly">Every year (wishes)</option></select></label><label>End recurrence after year (optional)<input type="number" name="recurrenceEndYear" min="2026" max="2200" placeholder="Leave blank for every year"></label><div class="editor-inline"><label>Feature starts (optional)<input type="datetime-local" name="featureStartLocal"></label><label>Feature ends (optional)<input type="datetime-local" name="featureEndLocal"></label></div><div class="editor-inline"><label>Pin starts (optional)<input type="datetime-local" name="pinStartLocal"></label><label>Pin ends (optional)<input type="datetime-local" name="pinEndLocal"></label></div><p class="admin-hint">The server handles scheduling and yearly wishes even when your browser is closed.</p><button type="submit">Confirm schedule →</button></form>`;
-      $('#schedule-form').onsubmit=async event=>{event.preventDefault();let saved=await save(true);if(!saved)return;let ff=event.currentTarget;try{p=await api('/corner/api/admin/posts/'+p.id+'/schedule','POST',{localTime:ff.elements.localTime.value,timezone:ff.elements.timezone.value,recurrence:ff.elements.recurrence.value,recurrenceEndYear:ff.elements.recurrenceEndYear.value,featureStartLocal:ff.elements.featureStartLocal.value,featureEndLocal:ff.elements.featureEndLocal.value,pinStartLocal:ff.elements.pinStartLocal.value,pinEndLocal:ff.elements.pinEndLocal.value});toast('Scheduled successfully.','success');editor(p.id)}catch(err){toast(err.message,'error')}};
-      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    $('#schedule-post').onclick=()=>{
+      const panel=$('#schedule-panel');
+      if(!panel)return;
+      const repeat=p.type==='wish'
+        ?'<label class="corner-schedule-repeat">Repeat<select name="recurrence"><option value="none">Only this time</option><option value="yearly">Every year</option></select></label>'
+        :'<input type="hidden" name="recurrence" value="none">';
+      const tz=esc(p.timezone||'Asia/Kolkata');
+      panel.innerHTML='<div class="corner-schedule-inner"><header><div><p class="eyebrow">ONE SIMPLE STEP</p><h2 id="corner-schedule-title">Schedule publication</h2><p>Choose the date and time. We handle the rest.</p></div><button type="button" data-schedule-cancel aria-label="Close scheduling dialog">×</button></header>'+
+        '<form id="schedule-form" class="corner-schedule-form"><label>Publish on<input type="datetime-local" name="localTime" step="60" required></label>'+
+        '<p class="corner-schedule-timezone">Time zone: '+tz+'</p><input name="timezone" type="hidden" value="'+tz+'">'+repeat+
+        '<details><summary>Advanced timing (optional)</summary><div class="corner-schedule-advanced">'+
+        '<label>Stop annual repeats after year<input type="number" name="recurrenceEndYear" min="2026" max="2200" placeholder="Keep repeating"></label>'+
+        '<label>Feature from<input type="datetime-local" name="featureStartLocal"></label>'+
+        '<label>Feature until<input type="datetime-local" name="featureEndLocal"></label>'+
+        '<label>Pin from<input type="datetime-local" name="pinStartLocal"></label>'+
+        '<label>Pin until<input type="datetime-local" name="pinEndLocal"></label></div></details>'+
+        '<p class="corner-schedule-message" role="status" aria-live="polite"></p>'+
+        '<div class="corner-schedule-actions"><button type="button" class="corner-schedule-secondary" data-schedule-cancel>Cancel</button><button type="submit">Confirm schedule ↗</button></div></form></div>';
+      panel.querySelectorAll('[data-schedule-cancel]').forEach(button=>button.addEventListener('click',()=>panel.close()));
+      panel.querySelector('#schedule-form').onsubmit=async event=>{
+        event.preventDefault();
+        const formSchedule=event.currentTarget,button=formSchedule.querySelector('[type=submit]');
+        const feedback=formSchedule.querySelector('[role=status]');
+        button.disabled=true;feedback.textContent='Saving the schedule…';
+        try{
+          const saved=await save(true);if(!saved)throw Error('Save your story and add a title before scheduling.');
+          p=await api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
+            localTime:formSchedule.elements.localTime.value,
+            timezone:formSchedule.elements.timezone.value,
+            recurrence:formSchedule.elements.recurrence.value,
+            recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
+            featureStartLocal:formSchedule.elements.featureStartLocal.value,
+            featureEndLocal:formSchedule.elements.featureEndLocal.value,
+            pinStartLocal:formSchedule.elements.pinStartLocal.value,
+            pinEndLocal:formSchedule.elements.pinEndLocal.value
+          });
+          panel.close();toast('Scheduled successfully.','success');editor(p.id);
+        }catch(error){feedback.textContent=error.message||'Scheduling failed. Please try again.';button.disabled=false;}
+      };
+      panel.showModal();
+      panel.querySelector('[name=localTime]').focus();
     };
     $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
     $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
@@ -164,6 +204,24 @@
       entry.caption.placeholder='A moment worth remembering…';
       captionLabel.append(entry.caption);
       fields.append(altLabel,captionLabel);
+      if(entry.file.type==='image/jpeg'||entry.file.type==='image/png'||entry.file.type==='image/webp'){
+        const crop=document.createElement('button');crop.type='button';crop.dataset.cropUpload='';crop.className='corner-crop-trigger';crop.textContent='Crop / reframe ↗';
+        crop.onclick=async()=>{
+          if(!window.CornerImageCrop)return;
+          crop.disabled=true;
+          try{
+            const adjusted=await window.CornerImageCrop.open(entry.file);
+            if(adjusted){
+              if(entry.url)URL.revokeObjectURL(entry.url);
+              entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;
+              filename.textContent=adjusted.name;
+              status.textContent='Crop applied. Add the image description, then attach.';
+            }
+          }catch(error){status.textContent=error.message||'Could not crop this image.'}
+          finally{crop.disabled=false}
+        };
+        fields.append(crop);
+      }
       wrapper.append(figure,fields);
       previewList.append(wrapper);
     };
@@ -180,6 +238,7 @@
       }
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
+      if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
     };
     form.onsubmit=async event=>{
       event.preventDefault();
@@ -267,8 +326,46 @@
     }));
   }
   async function analytics(){
-    if(!window.CornerAnalysis){await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/corner/analysis-studio.js';script.onload=resolve;script.onerror=()=>reject(Error('Analytics UI could not load.'));document.head.append(script)})}
-    if(active.view==='analytics')await window.CornerAnalysis.mount(root);
+    const summary=await api('/corner/api/admin/analytics/summary');
+    if(active.view!=='analytics')return;
+    const figures=[['Page views',summary.page_view||0],['Story opens',summary.post_open||0],['Shares',summary.share||0]];
+    const diag=summary.diagnostics||{};
+    const noData=figures.every(([,n])=>Number(n)===0);
+    const observed=diag.basicLastEventAt?new Date(diag.basicLastEventAt).toLocaleString('en-IN'):'No event recorded yet';
+    const diagnosticHtml='<section class="corner-diagnostic"><div><strong>Measurement status</strong><p>'+(
+      noData?'No first-party events in this seven-day window. That is not a database connectivity failure.':'First-party events are stored and available for this report.'
+    )+'</p></div><dl><div><dt>Last basic event</dt><dd>'+esc(observed)+'</dd></div>'+
+    '<div><dt>Recorded basic events</dt><dd>'+Number(diag.basicEventsRecorded||0).toLocaleString('en-IN')+'</dd></div>'+
+    '<div><dt>Consent-based readings</dt><dd>'+Number(diag.consentedReadingsRecorded||0).toLocaleString('en-IN')+'</dd></div>'+
+    '<div><dt>Reading collection</dt><dd>'+(diag.readingCollectionEnabled?'Enabled with visitor permission':'Paused')+'</dd></div></dl>'+
+    '<p class="corner-diagnostic-help">Studio staff, browser privacy signals and readers who decline reading consent are excluded where required. Small reading groups remain hidden for privacy.</p></section>';
+    root.innerHTML='<section class="corner-insights-intro"><div><p class="eyebrow">A CLEARER PICTURE</p><h2>Insights, together.</h2><p>Verified first-party event counts from the last seven days. Reading depth requires an additional visitor opt-in.</p></div><button type="button" data-insights-refresh>Refresh ↗</button></section>'+
+      '<div class="corner-insights-cards">'+figures.map(([label,n])=>'<article><small>'+esc(label)+'</small><strong>'+Number(n).toLocaleString('en-IN')+'</strong></article>').join('')+'</div>'+
+      diagnosticHtml+
+      '<details class="corner-reading-details"><summary><span>Advanced reading analysis</span><small>Consent-based · private · open to investigate journeys</small></summary><div data-reading-report></div></details>';
+    root.querySelector('[data-insights-refresh]').onclick=()=>analytics();
+    const details=root.querySelector('.corner-reading-details');
+    let loaded=false;
+    details.addEventListener('toggle',async()=>{
+      root.classList.toggle('corner-insights-focus',details.open);
+      if(!details.open){root.removeAttribute('data-advanced-analytics');return}
+      if(loaded||active.view!=='analytics')return;
+      loaded=true;
+      try{
+        if(!window.CornerAnalysis)await new Promise((resolve,reject)=>{
+          const script=document.createElement('script');
+          script.src='/corner/analysis-studio.js';script.onload=resolve;
+          script.onerror=()=>reject(Error('Reading analysis could not load.'));document.head.append(script);
+        });
+        if(active.view==='analytics'){
+          root.setAttribute('data-advanced-analytics','');
+          await window.CornerAnalysis.mount(details.querySelector('[data-reading-report]'));
+        }
+      }catch(error){loaded=false;const slot=details.querySelector('[data-reading-report]');if(slot)slot.textContent=error.message;}
+    });
+    // An existing report deep link must open the advanced analysis automatically.
+    // Ordinary Studio navigation defaults to the compact, basic Insights summary.
+    if(new URLSearchParams(location.search).has('ar'))details.open=true;
   }
   async function settings(){let s=await api('/corner/api/admin/settings');root.innerHTML=`<section class="admin-section"><header><h2>The essentials.</h2></header><form class="admin-form admin-surface" id="settings-editor"><label>Site title<input name="title" value="${esc(s.title)}"></label><label>Short descriptor<input name="descriptor" value="${esc(s.descriptor)}"></label><label>Site timezone<input name="timezone" value="${esc(s.timezone)}"></label><div class="editor-checks"><label><input type="checkbox" name="commentsDefault" ${s.commentsDefault?'checked':''}> Comments by default</label><label><input type="checkbox" name="reactionsDefault" ${s.reactionsDefault?'checked':''}> Reactions by default</label></div><button type="submit">Save settings</button></form></section><section class="admin-section"><header><h2>Site status.</h2></header><button class="admin-secondary" id="settings-status">Update current status ↗</button></section>`;
     if(initial.ownerRole==='owner'){const invite=document.createElement('a');invite.className='admin-secondary';invite.textContent='Invite a studio collaborator ↗';invite.href='/corner/admin/invite';invite.style.display='inline-flex';invite.style.marginTop='18px';root.append(invite)}$('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/settings','PUT',{title:f.elements.title.value,descriptor:f.elements.descriptor.value,timezone:f.elements.timezone.value,commentsDefault:f.elements.commentsDefault.checked,reactionsDefault:f.elements.reactionsDefault.checked});toast('Settings saved.','success')}catch(err){toast(err.message,'error')}};

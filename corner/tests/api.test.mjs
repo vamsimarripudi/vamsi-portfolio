@@ -66,11 +66,13 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  const feed=await parsed(await request('/api/posts'));assert.equal(feed.data.length,1);
  const search=await parsed(await request('/api/search?q=verified'));assert.equal(search.data.length,1);
  const react=await parsed(await request('/api/posts/'+post.id+'/reactions','POST',{reaction:'❤️'}));assert.equal(react.data.counts['❤️'],1);
- const comment=await parsed(await request('/api/posts/'+post.id+'/comments','POST',{name:'Reader',body:'What a thoughtful tiny note.'}));assert.equal(comment.data.state,'pending');
+ const guestComment=await parsed(await request('/api/posts/'+post.id+'/comments','POST',{name:'Unverified visitor',body:'An unauthenticated message.'}));assert.equal(guestComment.status,401,'anonymous comments are never stored');
+ const comment=await parsed(await request('/api/posts/'+post.id+'/comments','POST',{name:'Spoofed name',body:'What a thoughtful tiny note.'},cookie));assert.equal(comment.data.state,'pending');
  const publicComments=await parsed(await request('/api/posts/'+post.id+'/comments'));assert.equal(publicComments.data.length,0);
  const pending=await parsed(await request('/api/admin/comments','GET',undefined,cookie));assert.equal(pending.data.length,1);
  const approved=await parsed(await request('/api/admin/comments/'+pending.data[0].id+'/approve','POST',{},cookie));assert.equal(approved.data.state,'approved');
  const after=await parsed(await request('/api/posts/'+post.id+'/comments'));assert.equal(after.data.length,1);
+ assert.equal(after.data[0].author_name,'Vamsi','author name comes from authenticated owner identity, not the submitted form');
  const status=await parsed(await request('/api/admin/status','PUT',{label:'Testing the corner',detail:'Everything is local and real.',isActive:true},cookie));assert.equal(status.data.label,'Testing the corner');
  const publicStatus=await parsed(await request('/api/status'));assert.equal(publicStatus.data.status.label,'Testing the corner');
  const stream=await fetch(base+'/api/realtime/stream');assert.equal(stream.headers.get('content-type'),'text/event-stream');stream.body.cancel();

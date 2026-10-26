@@ -7,8 +7,11 @@ test('V3 owner features are discoverable only with flags enabled and owner role'
  try {
   for(const key of flags)process.env[key]='1';
   const html=adminPage({owner:{id:'owner',email:'owner@example.test',role:'owner'}});
-  for(const slug of ['memories','wishes','insights','languages'])
+  for(const slug of ['memories','wishes','languages'])
    assert.match(html,new RegExp('href="/admin/v3/'+slug+'"'),slug+' is linked in owner Studio');
+  assert.match(html,/data-admin-view="analytics"/,'unified private Insights navigation is available');
+  assert.equal((html.match(/class="studio-nav-label">Insights/g)||[]).length,1,'Insights only appears once');
+  assert.doesNotMatch(html,/href="\/admin\/v3\/insights"/,'legacy Insights deep-link stays operational without duplicate nav');
   for(const role of ['moderator','editor','admin']){
    const page=adminPage({owner:{id:role,email:role+'@example.test',role}});
    for(const slug of ['memories','wishes','insights','languages'])

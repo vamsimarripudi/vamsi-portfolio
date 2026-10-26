@@ -42,7 +42,7 @@ try{
  await page.goto(corner+'/corner/admin');await page.locator('#admin-login input[name=email]').fill(owner);await page.locator('#admin-login input[name=password]').fill(secret);await page.locator('#admin-login button[type=submit]').click();await page.locator('.admin-shell').waitFor();console.log('SIGNED IN');
  const navigation=async(view,p=page)=>{console.log('NAV',view,p.viewportSize().width);
   await p.locator('[data-admin-view="'+view+'"]').click();
-  await p.waitForFunction(view=>document.querySelector('#admin-heading')?.textContent.startsWith(view[0].toUpperCase()+view.slice(1))&&!document.querySelector('.admin-loading'),view);
+  await p.waitForFunction(view=>document.querySelector('#admin-heading')?.textContent.startsWith(view==='analytics'?'Insights':view[0].toUpperCase()+view.slice(1))&&!document.querySelector('.admin-loading'),view);
  };
  const geometry=async(p,label)=>{
   await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));

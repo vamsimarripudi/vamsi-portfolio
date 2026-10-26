@@ -73,7 +73,9 @@ test('REST v1: OpenAPI, CRUD, CSRF, reaction idempotence, legacy support, concur
  assert.equal((await call(reactions,'DELETE',undefined,visitor)).status,200);
  const deleteAgain=await read(await call(reactions,'DELETE',undefined,visitor));
  assert.equal(deleteAgain.result.data.counts['❤️']||0,0,'DELETE idempotent');
- const posted=await read(await call('/api/v1/posts/'+post.id+'/comments','POST',{name:'QA user',body:'This should be moderated.'}));
+ const anonymous=await read(await call('/api/v1/posts/'+post.id+'/comments','POST',{name:'QA user',body:'Anonymous comments should be denied.'}));
+ assert.equal(anonymous.status,401,'comments require a signed-in verified account');
+ const posted=await read(await call('/api/v1/posts/'+post.id+'/comments','POST',{name:'Imposter',body:'This should be moderated.'},session));
  const cid=posted.result.data.id;assert.equal(posted.result.data.state,'pending');
  assert.equal((await read(await call('/api/v1/admin/comments/'+cid,'GET',undefined,session))).result.data.state,'pending');
  assert.equal((await read(await call('/api/v1/admin/comments/'+cid,'PATCH',{state:'approved'},session))).result.data.state,'approved');

@@ -24,10 +24,10 @@ export function wishesStudioPage(wishes,actor,delivery=null){
   '<button type="button" data-v3w-new aria-label="New wish" title="New wish">'+studioIcon('plus')+' New</button></div>'+
   '<p class="v3w-feedback" role="status" aria-live="polite"></p></form>';
  const schedule='<form class="v3w-form" data-v3w-schedule><h2>Schedule</h2>'+
-  '<p class="v3w-muted">Save a draft before scheduling. Times follow your chosen time zone.</p>'+
+  '<p class="v3w-muted">Choose a time. Your latest edits will be saved automatically.</p>'+
   '<label>Publish on<input type="datetime-local" name="localTime" required></label>'+
   '<label>Repeat<select name="recurrence"><option value="none">Once</option><option value="yearly">Every year</option></select></label>'+
-  '<label>Final repeat year (optional)<input name="recurrenceEndYear" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"></label>'+
+  '<details class="corner-wish-advanced"><summary>Advanced repeat settings</summary><label>Final repeat year (optional)<input name="recurrenceEndYear" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"></label></details>'+
   '<button type="submit">Schedule wish ↗</button><p role="status" aria-live="polite" class="v3w-feedback"></p></form>';
  const preview='<section class="v3w-panel v3w-preview" aria-label="Private wish preview"><div class="studio-preview-top"><span class="v3w-overline">LIVE PREVIEW</span><span data-preview-state class="studio-preview-state">Live preview</span></div>'+
   '<span data-v3w-emoji class="v3w-star" aria-hidden="true">✳</span><h2 data-v3w-title>Your wish appears here</h2>'+

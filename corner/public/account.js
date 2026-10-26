@@ -124,6 +124,53 @@
     for(const key of ['displayName','bio','locale']){const el=profileForm.elements[key];if(el)el.value=p[key]||''}
     profileForm.elements.emailUpdates.checked=!!p.emailUpdates;
   }
+  // Profile image: local crop, server-side WebP sanitization and private session access.
+  const avatarPanel=first('[data-account-avatar]');
+  if(avatarPanel){
+    const input=first('[data-avatar-file]',avatarPanel),status=first('[data-avatar-status]',avatarPanel);
+    const imageHolder=first('.account-avatar-visual',avatarPanel);
+    const remove=first('[data-avatar-remove]',avatarPanel);
+    const setBusy=busy=>{input.disabled=busy;remove.disabled=busy;avatarPanel.setAttribute('aria-busy',String(busy))};
+    const showImage=()=>{
+      imageHolder.replaceChildren();
+      const img=document.createElement('img');
+      img.dataset.avatarImage='';img.alt='Your profile photo';img.width=80;img.height=80;
+      img.src=base+'/api/v1/me/avatar?updated='+Date.now();
+      imageHolder.append(img);remove.hidden=false;
+    };
+    input.addEventListener('change',async()=>{
+      const selected=input.files?.[0];
+      if(!selected)return;
+      setBusy(true);status.textContent='Preparing your image…';
+      try{
+        if(selected.size>3*1024*1024)throw Error('Choose a photo smaller than 3 MB.');
+        if(!['image/jpeg','image/png','image/webp'].includes(selected.type))throw Error('Choose a JPEG, PNG or WebP image.');
+        const cropped=window.CornerImageCrop?await window.CornerImageCrop.open(selected):selected;
+        if(!cropped){status.textContent='Photo not changed.';return}
+        status.textContent='Uploading your cropped photo…';
+        const response=await fetch(base+'/api/v1/me/avatar',{
+          method:'POST',credentials:'same-origin',cache:'no-store',
+          headers:{'content-type':cropped.type},body:cropped,signal:AbortSignal.timeout(20000)
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok)throw Error(data.error?.message||'Photo upload failed.');
+        showImage();status.textContent='Your profile photo is saved securely.';
+      }catch(error){status.textContent=error.name==='TimeoutError'?'Upload timed out. Try again.':error.message}
+      finally{input.value='';setBusy(false)}
+    });
+    remove.addEventListener('click',async()=>{
+      if(!confirm('Remove your profile photo?'))return;
+      setBusy(true);status.textContent='Removing your photo…';
+      try{
+        const response=await fetch(base+'/api/v1/me/avatar',{method:'DELETE',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)});
+        if(!response.ok){const body=await response.json().catch(()=>({}));throw Error(body.error?.message||'Could not remove the photo.')}
+        imageHolder.replaceChildren();
+        const letter=document.createElement('span');letter.className='account-avatar-monogram';letter.dataset.avatarPlaceholder='';letter.textContent=(initial.account?.displayName||'M').slice(0,1).toUpperCase();
+        imageHolder.append(letter);remove.hidden=true;status.textContent='Profile photo removed.';
+      }catch(error){status.textContent=error.message||'Could not remove the photo.'}
+      finally{setBusy(false)}
+    });
+  }
   async function displayBookmarks(){const target=first('[data-account-bookmarks]');if(!target)return;
     try{const books=await api('me/bookmarks');target.replaceChildren();if(!books.length){target.textContent='No saved stories yet.';return}
       const list=document.createElement('ul');for(const book of books){const li=document.createElement('li'),a=document.createElement('a');a.href=base+'/post/'+encodeURIComponent(book.slug);a.textContent=book.title;li.append(a);list.append(li)}target.append(list);

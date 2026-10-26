@@ -78,3 +78,10 @@ CREATE TRIGGER IF NOT EXISTS identity_unique_owner_guard BEFORE INSERT ON users
 CREATE TRIGGER IF NOT EXISTS identity_unique_owner_update_guard BEFORE UPDATE OF role ON users
   WHEN NEW.role='owner' AND EXISTS (SELECT 1 FROM users WHERE role='owner' AND id<>NEW.id)
   BEGIN SELECT RAISE(ABORT,'A single owner already exists'); END;
+
+-- Small, sanitised WebP avatar per verified/staff account; no raw uploads are retained.
+CREATE TABLE IF NOT EXISTS identity_avatars (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  image_webp BLOB NOT NULL,
+  updated_at TEXT NOT NULL
+);

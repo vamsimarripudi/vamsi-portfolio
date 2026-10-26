@@ -51,17 +51,21 @@
   list.replaceChildren(fragment);notes(root.querySelector('[data-v3w-total]'),records.length+' total');
   root.querySelectorAll('[data-v3w-count]').forEach(node=>{node.textContent=records.filter(p=>p.state===node.dataset.v3wCount).length;window.CornerMotion?.count(node)});
  }
- editor.addEventListener('submit',async event=>{
-  event.preventDefault();if(saving||!editor.reportValidity())return;
-  saving=true;const button=editor.querySelector('[type=submit]'),started=revision,id=editor.elements.id.value;button.disabled=true;editor.setAttribute('aria-busy','true');notes(editorStatus,'Saving…');
+ async function saveWish(){
+  if(saving||!editor.reportValidity())return null;
+  saving=true;const button=editor.querySelector('[type=submit]'),started=revision,id=editor.elements.id.value;
+  button.disabled=true;editor.setAttribute('aria-busy','true');notes(editorStatus,'Saving…');
   try{
    const saved=await call(id?'/'+encodeURIComponent(id):'',id?'PATCH':'POST',id?{...model(),version:Number(editor.elements.version.value)}:model());
-   // A slow response must never overwrite newer typing or mark those edits saved.
-   editor.elements.id.value=saved.id;editor.elements.version.value=saved.version;editor.querySelector('[data-save-label]').textContent='Save edits';dirty=revision!==started;
+   editor.elements.id.value=saved.id;editor.elements.version.value=saved.version;
+   editor.querySelector('[data-save-label]').textContent='Save edits';dirty=revision!==started;
    notes(editorStatus,dirty?'Saved earlier edits. Newer edits are not saved yet.':'Saved privately.');syncPreview();
    try{await refreshLibrary()}catch{notes(editorStatus,'Saved. Library refresh failed; reload after saving any newer edits.')}
-  }catch(e){notes(editorStatus,e.message)}finally{saving=false;button.disabled=false;editor.removeAttribute('aria-busy')}
- });
+   return dirty?null:saved;
+  }catch(e){notes(editorStatus,e.message);return null}
+  finally{saving=false;button.disabled=false;editor.removeAttribute('aria-busy')}
+ }
+ editor.addEventListener('submit',async event=>{event.preventDefault();await saveWish()});
  root.querySelector('[data-v3w-new]')?.addEventListener('click',()=>{if(saving||!confirmDiscard())return;fill();editor.elements.title.focus()});
  root.addEventListener('click',async event=>{
   const button=event.target.closest('button');if(!button||button.disabled)return;
@@ -84,8 +88,13 @@
  });
  schedule.addEventListener('submit',async event=>{
   event.preventDefault();if(!schedule.reportValidity())return;
+  if(dirty||!editor.elements.id.value){
+    notes(scheduleStatus,'Saving your wish before scheduling…');
+    const saved=await saveWish();
+    if(!saved){notes(scheduleStatus,'Could not save your wish. Check the editor message and try again.');return}
+  }
   const id=editor.elements.id.value,version=Number(editor.elements.version.value);
-  if(!id||!version||dirty||saving){notes(scheduleStatus,'Save or select a saved wish before scheduling.');return}
+  if(!id||!version||saving){notes(scheduleStatus,'A saved wish is required.');return}
   const action=schedule.querySelector('[type=submit]');if(action.disabled)return;action.disabled=true;
   try{const data=await call('/'+encodeURIComponent(id)+'/schedule','POST',{localTime:schedule.elements.localTime.value,timezone:editor.elements.timezone.value,recurrence:schedule.elements.recurrence.value,recurrenceEndYear:schedule.elements.recurrenceEndYear.value||null,version});if(data?.version)editor.elements.version.value=data.version;notes(scheduleStatus,'Scheduled.');await refreshLibrary()}
   catch(e){notes(scheduleStatus,e.message)}finally{action.disabled=false}

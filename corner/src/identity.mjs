@@ -93,7 +93,8 @@ export class IdentityService{
   safeMe(user){
     if(!user)return null;
     const profile=this.getProfile(user.id),mfa=this.store.one('SELECT enabled_at FROM identity_mfa WHERE user_id=?',user.id);
-    return {id:user.id,email:user.email,displayName:user.display_name,role:user.role,verified:!!profile?.verified_at,bio:profile?.bio||'',locale:profile?.locale||'en',emailUpdates:!!profile?.email_updates,visibility:'private',mfaEnabled:!!mfa?.enabled_at,createdAt:user.created_at||null,lastLoginAt:user.last_login_at||null};
+    const hasAvatar=!!this.store.one('SELECT user_id FROM identity_avatars WHERE user_id=?',user.id);
+    return {id:user.id,email:user.email,displayName:user.display_name,role:user.role,verified:!!profile?.verified_at,bio:profile?.bio||'',locale:profile?.locale||'en',emailUpdates:!!profile?.email_updates,visibility:'private',hasAvatar,avatarUrl:hasAvatar?'/api/v1/me/avatar':null,mfaEnabled:!!mfa?.enabled_at,createdAt:user.created_at||null,lastLoginAt:user.last_login_at||null};
   }
   findByEmail(email){return this.store.one('SELECT * FROM users WHERE email=? AND disabled_at IS NULL',email)}
   async registerMember(data){
@@ -311,6 +312,41 @@ export class IdentityService{
       this.store.audit(actor.id,'profile.updated','user',actor.id);
     });
     return this.safeMe(this.account(actor.id));
+  }
+  async saveAvatar(actor,source,mimeType){
+    if(!actor?.id||!this.account(actor.id))throw httpError(401,'Sign in to change your profile photo.','AUTH_REQUIRED');
+    if(!Buffer.isBuffer(source)||source.length===0||source.length>3*1024*1024)throw httpError(413,'Choose an image smaller than 3 MB.','AVATAR_SIZE');
+    const declared=String(mimeType||'').split(';')[0].trim().toLowerCase();
+    if(!['image/jpeg','image/png','image/webp'].includes(declared))throw httpError(415,'Use a JPEG, PNG or WebP photo.','AVATAR_TYPE');
+    let output;
+    try{
+      const sharp=(await import('sharp')).default;
+      const pipeline=sharp(source,{failOn:'error',limitInputPixels:20_000_000,animated:false});
+      const metadata=await pipeline.metadata();
+      const formats={'image/jpeg':'jpeg','image/png':'png','image/webp':'webp'};
+      if(metadata.format!==formats[declared])throw httpError(415,'The image content does not match its file type.','AVATAR_TYPE');
+      output=await pipeline.rotate().resize(320,320,{fit:'cover',position:'attention'}).webp({quality:78,effort:4}).toBuffer();
+    }catch(error){
+      if(error?.status)throw error;
+      throw httpError(415,'This image could not be processed. Choose another photo.','AVATAR_INVALID');
+    }
+    if(output.length>256*1024)throw httpError(413,'This photo could not be compressed enough.','AVATAR_SIZE');
+    const stamp=now();
+    this.store.transaction(()=>{
+      this.store.exec('INSERT INTO identity_avatars(user_id,image_webp,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET image_webp=excluded.image_webp,updated_at=excluded.updated_at',actor.id,output,stamp);
+      this.store.audit(actor.id,'profile.avatar.updated','user',actor.id);
+    });
+    return {hasAvatar:true,updatedAt:stamp};
+  }
+  avatar(actor){
+    if(!actor?.id)throw httpError(401,'Sign in to view your profile photo.','AUTH_REQUIRED');
+    return this.store.one('SELECT image_webp,updated_at FROM identity_avatars WHERE user_id=?',actor.id);
+  }
+  deleteAvatar(actor){
+    if(!actor?.id)throw httpError(401,'Sign in to remove your profile photo.','AUTH_REQUIRED');
+    const info=this.store.exec('DELETE FROM identity_avatars WHERE user_id=?',actor.id);
+    if(info.changes)this.store.audit(actor.id,'profile.avatar.deleted','user',actor.id);
+    return {hasAvatar:false};
   }
   sessions(actor){return this.store.all('SELECT id,created_at,expires_at,revoked_at FROM sessions WHERE user_id=? ORDER BY created_at DESC LIMIT 50',actor.id)}
   revokeSession(actor,sessionId){const affected=this.store.exec('UPDATE sessions SET revoked_at=? WHERE id=? AND user_id=? AND revoked_at IS NULL',now(),sessionId,actor.id);return {revoked:affected.changes===1}}
