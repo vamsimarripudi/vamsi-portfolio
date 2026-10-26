@@ -59,6 +59,40 @@
       const body=await response.json();
       loggedIn=body?.data?.authenticated===true;
       const user=body?.data?.user;
+      const guestMenu=document.querySelector('[data-profile-guest]');
+      const memberMenu=document.querySelector('[data-profile-member]');
+      if(guestMenu)guestMenu.hidden=loggedIn;
+      if(memberMenu)memberMenu.hidden=!loggedIn;
+      const studio=document.querySelector('[data-owner-studio]');
+      const staff=loggedIn&&['owner','admin','editor','moderator'].includes(user?.role);
+      if(studio){
+        studio.hidden=!staff;
+        if(staff){
+          const label=user.role==='owner'?'Owner Studio':'Studio';
+          studio.replaceChildren(document.createTextNode(label+' '));
+          const arrow=document.createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';studio.append(arrow);
+        }
+      }
+      const identityName=document.querySelector('[data-profile-menu-name]');
+      const menuAvatar=document.querySelector('[data-profile-menu-avatar]');
+      const trigger=document.querySelector('[data-corner-profile-toggle]');
+      const triggerAvatar=document.querySelector('[data-profile-trigger-avatar]');
+      if(identityName&&loggedIn&&user)identityName.textContent=user.displayName||'My profile';
+      const updateAvatar=(holder,size)=>{
+        if(!holder)return;
+        holder.replaceChildren();
+        if(loggedIn&&user?.hasAvatar){
+          const pic=document.createElement('img');pic.alt='';pic.width=size;pic.height=size;
+          pic.src=prefix+'/api/v1/me/avatar';holder.append(pic);
+        }else holder.textContent=(user?.displayName||'M').trim().slice(0,1).toUpperCase()||'M';
+      };
+      if(loggedIn&&user){updateAvatar(menuAvatar,44);updateAvatar(triggerAvatar,30)}
+      if(trigger&&triggerAvatar){
+        triggerAvatar.hidden=!loggedIn;
+        const portraitIcon=trigger.querySelector('svg');
+        if(portraitIcon)portraitIcon.hidden=loggedIn;
+        trigger.setAttribute('aria-label',loggedIn?'Open my account menu':'Open profile options');
+      }
       document.querySelectorAll('[data-auth-open]').forEach(link=>{
         if(!dialog.contains(link))link.hidden=loggedIn;
       });
@@ -95,6 +129,21 @@
       // The signed-out view is the safe fallback when session checks fail.
     }
   }
+  const menuLogout=document.querySelector('[data-profile-logout]');
+  menuLogout?.addEventListener('click',async()=>{
+    menuLogout.disabled=true;
+    const notice=document.querySelector('[data-profile-notice]');
+    if(notice)notice.textContent='Signing out…';
+    try{
+      const response=await fetch(prefix+'/api/v1/auth/logout',{method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'content-type':'application/json'},body:'{}',signal:AbortSignal.timeout(15000)});
+      if(!response.ok)throw Error('Could not sign out. Please try again.');
+      location.assign(prefix+'/');
+    }catch(error){
+      menuLogout.disabled=false;
+      if(notice)notice.textContent=error.message||'Could not sign out.';
+    }
+  });
   for(const form of dialog.querySelectorAll('[data-auth-form]')){
     form.addEventListener('submit',async event=>{
       event.preventDefault();
