@@ -153,7 +153,7 @@ const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-s
  '<small>Choose your preferred language for your account.</small></label>'+
  '<label class="quiet-switch-row"><span class="quiet-switch-copy"><strong>Optional email updates</strong>'+
  '<small>Receive occasional Corner updates. Off unless you choose otherwise.</small></span>'+
- '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
+ '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" role="switch" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
  'Save preferences')+'</div></section>';
 const quietSecurityScreen=(user)=>{
  const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
