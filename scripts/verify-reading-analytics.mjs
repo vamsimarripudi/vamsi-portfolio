@@ -89,7 +89,7 @@ try{
  const reportResponse=await admin.request.get(origin+'/corner/api/admin/analytics/reading?range=custom&start='+firstDate+'&end='+lastDate+'&compare=none');assert.equal(reportResponse.status(),200);assert.equal(reportResponse.headers()['cache-control'],'private, no-store');const report=(await reportResponse.json()).data;
  assert.deepEqual(report.funnel.steps.map(s=>s.value),[40,30,20,10]);assert.ok(!JSON.stringify(report).includes('journey_key'));assert.ok(!JSON.stringify(report).includes('view_key'));
  await ownerPage.goto(origin+'/corner/admin?ar=custom&start='+firstDate+'&end='+lastDate+'&cmp=none#analytics');
- await ownerPage.locator('.corner-reading-details summary').click();
+ await ownerPage.locator('.corner-reading-details[open]').waitFor();
  await ownerPage.getByText('Report loaded.',{exact:true}).waitFor();
  assert.equal(await ownerPage.locator('.ca-step').count(),4);
  for(const width of [320,390,600,768,834,1024,1366,1920]){
