@@ -32,4 +32,11 @@ export default defineConfig([
       globals: { ...globals.node, ...globals.browser },
     },
   },
+  {
+    // Storage can be denied and a stopped audio oscillator can throw during
+    // cleanup. These optional browser-capability failures intentionally do not
+    // interrupt the page; all other empty blocks remain lint errors.
+    files: ['corner/public/companion.js'],
+    rules: { 'no-empty': ['error', { allowEmptyCatch: true }] },
+  },
 ])
