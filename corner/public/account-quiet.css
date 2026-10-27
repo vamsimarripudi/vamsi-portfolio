@@ -474,3 +474,47 @@ body.corner-comfort:has(.account-shell) .corner-orbit-dock{display:none!importan
 }
 .corner-comfort .account-shell--quiet .quiet-topbar nav{min-width:0}
 .corner-comfort .account-shell--quiet .quiet-desk-content{min-width:0}
+
+
+/* Final mobile polish: all six account sections should be discoverable
+ * without a hidden horizontal carousel. Security is where email belongs. */
+.corner-comfort .account-shell--quiet .quiet-current-email{
+  display:grid;gap:3px;min-width:0;margin:4px 0 6px;
+  padding:12px 14px;border:1px solid #eae1db;border-radius:11px;background:#faf7f4;
+}
+.corner-comfort .account-shell--quiet .quiet-current-email span{
+  font-size:.68rem;font-weight:730;color:#736967;
+}
+.corner-comfort .account-shell--quiet .quiet-current-email strong{
+  min-width:0;color:#30272b;font-size:.78rem;font-weight:730;
+  line-height:1.5;overflow-wrap:anywhere;
+}
+@media(max-width:700px){
+  .corner-comfort .account-shell--quiet .quiet-navigation{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;
+    width:100%;min-width:0;max-width:100%;gap:6px;padding:4px 0 7px;
+    overflow:visible;scroll-snap-type:none;
+  }
+  .corner-comfort .account-shell--quiet .quiet-nav-link{
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    min-width:0;width:100%;min-height:67px;height:auto;
+    padding:7px 4px;gap:5px;white-space:normal;font-size:.68rem;line-height:1.22;
+  }
+  .corner-comfort .account-shell--quiet .quiet-nav-link span{
+    display:block;max-width:100%;min-width:0;white-space:normal;
+    overflow:visible;text-overflow:clip;text-align:center;line-height:1.22;
+  }
+  .corner-comfort .account-shell--quiet .quiet-side-signout{
+    justify-self:end;align-self:end;min-height:44px;
+    margin:0;padding:6px 10px;
+  }
+  .corner-comfort .account-shell--quiet .quiet-studio-link{
+    justify-self:start;min-height:44px;padding:8px 10px;
+  }
+}
+@media(max-width:350px){
+  .corner-comfort .account-shell--quiet .quiet-navigation{gap:4px}
+  .corner-comfort .account-shell--quiet .quiet-nav-link{
+    min-height:65px;padding:6px 2px;font-size:.62rem;
+  }
+}
