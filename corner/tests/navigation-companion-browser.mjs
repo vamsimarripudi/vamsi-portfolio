@@ -144,6 +144,13 @@ try{
  assert.ok((await page.locator('.corner-orbit-explainer').textContent()).includes('No AI chat'));
  await page.screenshot({path:'screenshots/corner-pulse-390.png',fullPage:false,animations:'disabled'});
  await page.keyboard.press('Escape');
+ // Native dialog close/focus events run after the keyboard task. Wait for the
+ // completed transition rather than racing its accessibility state update.
+ await page.locator('#corner-orbit-card').waitFor({state:'hidden'});
+ await page.waitForFunction(()=>{
+   const trigger=document.querySelector('.corner-orbit-toggle');
+   return trigger?.getAttribute('aria-expanded')==='false'&&document.activeElement===trigger;
+ });
  assert.equal(await toy.getAttribute('aria-expanded'),'false');
  assert.equal(await toy.evaluate(el=>el===document.activeElement),true);
  const reduced=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
