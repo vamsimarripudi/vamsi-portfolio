@@ -158,9 +158,10 @@ const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-s
 const quietSecurityScreen=(user)=>{
  const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
   '<div data-account-sessions role="status" aria-live="polite"><p>Loading active sessions…</p></div></section>';
+ const currentEmail='<p class="quiet-current-email"><span>Email address</span><strong>'+h(user.email||'')+'</strong></p>';
  const email=user.role==='owner'
-  ?'<section class="quiet-panel"><h3>Account email</h3><p class="quiet-data-hint">Changes to the owner address require additional verification through your administrator.</p></section>'
-  :'<section class="quiet-panel"><h3>Change email address</h3><p class="quiet-data-hint">A verification link will be sent to the new address.</p>'+changeEmail+'</section>';
+  ?'<section class="quiet-panel"><h3>Account email</h3>'+currentEmail+'<p class="quiet-data-hint">Changes to the owner address require additional verification through your administrator.</p></section>'
+  :'<section class="quiet-panel"><h3>Change email address</h3>'+currentEmail+'<p class="quiet-data-hint">A verification link will be sent to the new address.</p>'+changeEmail+'</section>';
  const mfa=['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled
   ?'<section class="quiet-panel"><h3>Authenticator protection</h3><p class="quiet-data-hint">Studio access can be protected with a one-time authenticator code.</p>'+
   '<a class="quiet-action-link" href="/admin/mfa">Set up authenticator '+quietIcon('arrow')+'</a></section>':'';
@@ -208,7 +209,7 @@ function quietDeskPage(type,user){
   '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts"><a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
  const main='<main class="quiet-main" id="content"><div class="quiet-page-heading"><p class="quiet-eyebrow">VAMSI’S CORNER / MEMBERS</p>'+
   '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
-  '<p class="quiet-session-note"><span aria-hidden="true">●</span> Signed in as '+h(user.email||'')+'</p></div><div class="quiet-desk-grid">'+
+  '<p class="quiet-session-note"><span aria-hidden="true">●</span> Private account · Signed in</p></div><div class="quiet-desk-grid">'+
   quietNav(type,user)+'<div class="quiet-desk-content">'+panes[type]+'</div></div></main>';
  const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/policies">Legal & Trust</a><a href="/privacy">Privacy</a><a href="/cookies">Cookies</a><a href="/dpdp">DPDP rights</a><a href="/terms">Terms</a></footer>';
  const content='<div class="account-shell account-shell--quiet" data-account-page="'+h(type)+'" data-account-workspace data-signed-in="true">'+
