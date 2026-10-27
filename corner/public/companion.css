@@ -156,3 +156,20 @@ body.corner-comfort .corner-profile-toggle .corner-profile-trigger-avatar img{
 @media(prefers-reduced-motion:reduce){
   body.corner-comfort .corner-profile-card--quiet *{animation:none!important;transition:none!important}
 }
+
+/* A once-per-browser welcome letter: no intrusive full-screen takeover. */
+.corner-welcome-letter{position:fixed;right:clamp(12px,3vw,38px);bottom:clamp(24px,5vh,62px);z-index:95;width:min(410px,calc(100vw - 24px));max-height:calc(100dvh - 110px);overflow:auto;border:1px solid #e4d8d0;border-radius:24px;background:rgba(255,253,250,.97);box-shadow:0 22px 72px -19px #34252b66;backdrop-filter:blur(20px);color:#252123}
+.corner-letter-inner{padding:clamp(20px,3vw,29px)}
+.corner-letter-seal{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#211d22;color:#fff;font:800 1.1rem system-ui;letter-spacing:-.04em;border:2px solid #c77a5e}
+.corner-letter-kicker{margin:16px 0 9px;color:#ab674d;font:750 .65rem/1.45 ui-monospace,monospace;letter-spacing:.13em}
+.corner-welcome-letter h2{font:550 clamp(1.58rem,3vw,2.05rem)/1.16 Georgia,serif!important;letter-spacing:-.045em!important;margin:0 36px 17px 0!important;color:#191619}
+.corner-welcome-letter .corner-letter-inner>p:not(.corner-letter-kicker):not(.corner-letter-signoff){font-size:.87rem;line-height:1.75;color:#534b4b;margin:0 0 11px}
+.corner-letter-signoff{margin:18px 0;color:#764b40;font:italic 1rem Georgia,serif}
+.corner-letter-signoff span{display:block;margin:4px 0 0;font-size:.9rem}
+.corner-letter-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:18px}
+.corner-letter-actions a{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:10px 14px;border-radius:12px;border:1px solid #221e21;background:#221e21;color:#fff!important;text-decoration:none;font-weight:710;font-size:.75rem}
+.corner-letter-actions a+a{background:#fff;border-color:#ddd0c8;color:#281f22!important}
+.corner-letter-close{position:absolute;right:15px;top:15px;width:42px;height:42px;border-radius:12px;border:1px solid #e2dad5;background:#fff;color:#231f22;font-size:1.4rem;cursor:pointer}
+.corner-welcome-letter :is(a,button):focus-visible{outline:3px solid #3565bc;outline-offset:3px}
+@media(max-width:900px){.corner-welcome-letter{bottom:calc(98px + env(safe-area-inset-bottom,0px));left:12px;right:12px;width:auto;max-height:calc(100dvh - 210px)}.corner-welcome-letter h2{font-size:1.5rem!important}.corner-letter-inner{padding:19px}.corner-welcome-letter .corner-letter-inner>p:not(.corner-letter-kicker):not(.corner-letter-signoff){font-size:.8rem}}
+@media(prefers-reduced-motion:reduce){.corner-welcome-letter,.corner-welcome-letter *{animation:none!important;transition:none!important}}
