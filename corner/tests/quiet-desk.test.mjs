@@ -150,8 +150,11 @@ test('User-provided text is escaped in private account markup',()=>{
   const html=page('/profile',dangerous);
   assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(html,/&lt;script&gt;window\.sneaky=true&lt;\/script&gt;/);
-  assert.match(html,/fake&lt;b&gt;@example\.test/);
+  const security=page('/settings/security',dangerous);
+  assert.match(security,/class="quiet-current-email"/,'Email is shown in Security, not Overview');
+  assert.match(security,/fake&lt;b&gt;@example\.test/,'Email markup remains escaped');
   assert.doesNotMatch(html,/<script>window\.sneaky/);
+  assert.doesNotMatch(security,/<b>@example\.test/);
 });
 
 test('Public profile menu is compact and role-gated by authenticated session',()=>{
