@@ -71,23 +71,34 @@
   const path=location.pathname.replace(/\/$/,'')||'/';
   const isHome=path==='/corner'||path==='/';
   if(!isHome)return;
+  // New letter edition uses a distinct key. Older visitors who dismissed the
+  // original tiny note get one opportunity to see the proper introduction.
+  const welcomeKey='corner-welcome-letter-v2';
   let seen=false;
-  try{seen=localStorage.getItem('corner-welcome-v1')==='seen';}catch{seen=false}
-  if(seen)return;
-  const card=document.createElement('aside');
-  card.className='corner-welcome-card';
-  card.setAttribute('role','region');
-  card.setAttribute('aria-labelledby','corner-welcome-heading');
-  card.innerHTML='<button type="button" class="corner-welcome-close" data-welcome-close aria-label="Dismiss welcome card">×</button>'+
-   '<p class="corner-welcome-kicker">✳ A LITTLE HELLO</p>'+
-   '<h2 id="corner-welcome-heading">Welcome to the Corner.</h2>'+
-   '<p>Little stories, good wishes, and moments worth keeping. Take a look around; there’s no rush.</p>'+
-   '<div class="corner-welcome-actions"><a href="#feed" data-welcome-explore>Explore stories <span aria-hidden="true">↗</span></a><button type="button" data-auth-open="register">Join the Corner</button></div>';
-  const dismiss=()=>{card.remove();try{localStorage.setItem('corner-welcome-v1','seen')}catch{ /* Private browsing may disable local storage. */ }};
-  card.querySelector('[data-welcome-close]').addEventListener('click',dismiss);
-  card.querySelector('[data-welcome-explore]').addEventListener('click',dismiss);
-  card.querySelector('[data-auth-open]').addEventListener('click',dismiss);
-  document.body.append(card);
+  try{seen=localStorage.getItem(welcomeKey)==='seen';}catch{ /* Private browsing: display without persistence. */ }
+  if(seen||document.querySelector('.corner-welcome-letter'))return;
+  const letter=document.createElement('section');
+  letter.className='corner-welcome-letter';
+  letter.setAttribute('role','region');
+  letter.setAttribute('aria-labelledby','corner-welcome-letter-title');
+  letter.innerHTML='<button type="button" class="corner-letter-close" data-letter-dismiss aria-label="Close welcome letter">×</button>'+
+    '<div class="corner-letter-inner">'+
+    '<span class="corner-letter-seal" aria-hidden="true">VM.</span>'+
+    '<p class="corner-letter-kicker">A NOTE FROM THE CORNER</p>'+
+    '<h2 id="corner-welcome-letter-title">A little hello, from me to you.</h2>'+
+    '<p>Welcome to Vamsi’s Corner. This is my small place to keep thoughts, projects, celebrations, and memories that are worth sharing.</p>'+
+    '<p>There’s no feed to keep up with and no pressure to stay. Explore a story, leave a kind thought, or simply look around whenever you like.</p>'+
+    '<p class="corner-letter-signoff">Glad you found your way here.<span>— Vamsi</span></p>'+
+    '<div class="corner-letter-actions"><a href="#feed" data-letter-explore>Explore the stories <span aria-hidden="true">↗</span></a><a href="/corner/register" data-auth-open="register" data-letter-join>Make this your space</a></div>'+
+    '</div>';
+  const dismiss=()=>{
+    letter.remove();
+    try{localStorage.setItem(welcomeKey,'seen');}catch{ /* Storage may be blocked. */ }
+  };
+  letter.querySelector('[data-letter-dismiss]').addEventListener('click',dismiss);
+  letter.querySelector('[data-letter-explore]').addEventListener('click',dismiss);
+  letter.querySelector('[data-letter-join]').addEventListener('click',dismiss);
+  document.body.append(letter);
 })();
 
 /* Corner Pulse: original tiny companion. Not a chatbot or simulated user; every update comes from Corner's first-party API. */

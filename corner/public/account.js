@@ -121,8 +121,8 @@
         else if(kind==='verify')response(form,'Email verified. You can sign in now.');
         else if(kind==='reset')response(form,'Password changed. Return to sign-in.');
         else if(kind==='password-change'){response(form,'Password changed; your sessions have been revoked. Sign in again.');setTimeout(()=>location.assign(base+'/login'),1200)}
-        else if(kind==='profile'){response(form,'Profile updated.');location.assign(base+'/profile');return}
-        else if(kind==='preferences')response(form,'Preferences saved.');
+        else if(kind==='profile'){markClean(form);response(form,'Profile updated.');location.assign(base+'/profile');return}
+        else if(kind==='preferences'){markClean(form);response(form,'Preferences saved.');}
         else response(form,'Saved.');
       }catch(error){response(form,error.message||'Please try again.',true)}
       finally{if(button.type==='submit')button.disabled=false}
@@ -142,6 +142,85 @@
     preferencesForm.elements.locale.value=initial.account.locale||'en';
     preferencesForm.elements.emailUpdates.checked=!!initial.account.emailUpdates;
   }
+
+  // Unsaved changes protection: only editable profile/preference forms. Form
+  // submission is not blocked. Native beforeunload is used for browser
+  // navigation/refresh (browsers do not allow a custom message there).
+  const dirtyForms=[profileForm,preferencesForm].filter(Boolean);
+  const originals=new WeakMap();
+  const formSnapshot=form=>JSON.stringify([...new FormData(form).entries()].sort(([a],[b])=>a.localeCompare(b)));
+  function markClean(form){
+    if(!form)return;
+    originals.set(form,formSnapshot(form));
+    form.dataset.unsaved='false';
+  }
+  const isDirty=form=>form&&originals.has(form)&&formSnapshot(form)!==originals.get(form);
+  const anythingDirty=()=>dirtyForms.some(isDirty);
+  const markState=form=>{form.dataset.unsaved=String(isDirty(form));};
+  const discardDialog=document.createElement('dialog');
+  discardDialog.className='quiet-discard-dialog';
+  discardDialog.setAttribute('aria-labelledby','quiet-discard-title');
+  discardDialog.innerHTML='<div class="quiet-discard-content"><p class="quiet-discard-eyebrow">UNSAVED CHANGES</p><h2 id="quiet-discard-title">Discard your changes?</h2><p>You have edits that have not been saved. Leaving now will lose them.</p><div class="quiet-discard-actions"><button type="button" data-discard-cancel>Keep editing</button><button type="button" data-discard-confirm>Discard changes</button></div></div>';
+  if(dirtyForms.length){
+    document.body.append(discardDialog);
+    for(const form of dirtyForms){
+      markClean(form);
+      form.addEventListener('input',()=>markState(form));
+      form.addEventListener('change',()=>markState(form));
+    }
+    window.addEventListener('beforeunload',event=>{
+      if(!anythingDirty())return;
+      event.preventDefault();
+      event.returnValue='';
+    });
+    let pendingHref=null;
+    const cancel=discardDialog.querySelector('[data-discard-cancel]');
+    const confirm=discardDialog.querySelector('[data-discard-confirm]');
+    const openDiscard=href=>{
+      pendingHref=href;
+      if(typeof discardDialog.showModal==='function')discardDialog.showModal();
+      else if(window.confirm('Discard unsaved changes?')){
+        dirtyForms.forEach(markClean);
+        location.assign(href);
+      }
+    };
+    cancel.addEventListener('click',()=>{pendingHref=null;discardDialog.close();});
+    discardDialog.addEventListener('cancel',()=>{pendingHref=null;});
+    discardDialog.addEventListener('click',event=>{if(event.target===discardDialog){pendingHref=null;discardDialog.close();}});
+    confirm.addEventListener('click',()=>{
+      const href=pendingHref;
+      pendingHref=null;
+      dirtyForms.forEach(markClean);
+      discardDialog.close();
+      if(href)location.assign(href);
+      else{
+        for(const form of dirtyForms){form.reset();markClean(form);}
+        location.reload();
+      }
+    });
+    document.addEventListener('click',event=>{
+      const anchor=event.target.closest('a[href]');
+      if(!anchor||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||!anythingDirty())return;
+      const target=anchor.getAttribute('target');
+      if(target&&target!=='_self')return;
+      const href=new URL(anchor.href,location.href);
+      if(href.origin!==location.origin||href.pathname===location.pathname&&href.search===location.search&&href.hash!==location.hash)return;
+      event.preventDefault();
+      openDiscard(href.href);
+    },true);
+    const controls=document.createElement('div');
+    controls.className='quiet-edit-exit';
+    controls.innerHTML='<button type="button" class="quiet-discard-button" data-discard-edits>Discard edits</button><a href="/corner/profile" data-edit-cancel>Cancel &amp; return</a>';
+    const current=dirtyForms[0];
+    const responseEl=current.querySelector('[data-account-response]');
+    (responseEl?.parentElement||current).append(controls);
+    controls.querySelector('[data-discard-edits]').addEventListener('click',()=>{
+      if(anythingDirty())openDiscard(null);
+      else response(current,'Nothing to discard.');
+    });
+    // Cancel & return is handled by the document link interceptor if dirty.
+  }
+
   // Profile image: local crop, server-side WebP sanitization and private session access.
   const avatarPanel=first('[data-account-avatar]');
   if(avatarPanel){
