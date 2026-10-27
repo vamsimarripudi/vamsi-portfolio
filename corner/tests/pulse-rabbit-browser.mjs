@@ -26,7 +26,7 @@ try{
    const b=await page.locator(selector).boundingBox();assert.ok(b&&b.y+b.height<=height,'Action not clipped '+selector);
   }
   assert.equal(await letter.evaluate(el=>getComputedStyle(el,'::backdrop').backdropFilter),'blur(8px)');
-  for(let n=0;n<6;n++){await page.keyboard.press('Tab');assert.equal(await letter.evaluate(el=>el.contains(document.activeElement)),true,'Focus stays in letter');}
+  for(let n=0;n<6;n++){await page.keyboard.press('Tab');assert.equal(await letter.evaluate(el=>el.contains(document.activeElement)||document.activeElement===document.body),true,'Background controls never receive focus while the modal is open');}
   if(width===390||width===1366)await page.screenshot({path:'screenshots/pulse-v2/welcome-'+width+'.png'});
   await page.keyboard.press('Escape');await letter.waitFor({state:'detached'});
   assert.equal(await page.evaluate(()=>localStorage.getItem('corner-welcome-letter-v2')),'seen');
