@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {accountPage} from '../src/identity-ui.mjs';
 import {header} from '../src/ui.mjs';
 
-const asset=path=>fs.fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const asset=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const person={
   id:'synthetic-verified-member',role:'member',email:'verified@example.test',displayName:'Vamsi',
   bio:'A little space for real stories.',locale:'en',emailUpdates:false,
