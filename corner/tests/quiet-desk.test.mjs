@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {accountPage} from '../src/identity-ui.mjs';
 import {header} from '../src/ui.mjs';
 
-const asset=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const asset=path=>fs.fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const person={
   id:'synthetic-verified-member',role:'member',email:'verified@example.test',displayName:'Vamsi',
   bio:'A little space for real stories.',locale:'en',emailUpdates:false,
@@ -194,8 +194,8 @@ test('Quiet Desk is mobile-first and preserves accessibility and account APIs',(
 
 
 test('editing has explicit discard and cancel with guarded navigation and safe save',()=>{
- const account=readFileSync(new URL('../public/account.js',import.meta.url),'utf8');
- const css=readFileSync(new URL('../public/account-quiet.css',import.meta.url),'utf8');
+ const account=fs.readFileSync(new URL('../public/account.js',import.meta.url),'utf8');
+ const css=fs.readFileSync(new URL('../public/account-quiet.css',import.meta.url),'utf8');
  assert.match(account,/const dirtyForms=/);
  assert.match(account,/new WeakMap\(\)/);
  assert.match(account,/new FormData\(form\)/);
@@ -210,8 +210,8 @@ test('editing has explicit discard and cancel with guarded navigation and safe s
  assert.match(css,/\.quiet-edit-exit/);
 });
 test('first-visit letter is a real one-time introduction and not the obsolete note',()=>{
- const js=readFileSync(new URL('../public/companion.js',import.meta.url),'utf8');
- const css=readFileSync(new URL('../public/companion.css',import.meta.url),'utf8');
+ const js=fs.readFileSync(new URL('../public/companion.js',import.meta.url),'utf8');
+ const css=fs.readFileSync(new URL('../public/companion.css',import.meta.url),'utf8');
  assert.match(js,/corner-welcome-letter-v2/);
  assert.doesNotMatch(js,/corner-welcome-v1/);
  assert.match(js,/A little hello, from me to you\./);
