@@ -1,11 +1,11 @@
-name: Verify Pulse rabbit and welcome modal
+name: Verify Pulse companion and welcome modal
 on:
   pull_request:
     paths:
       - 'corner/public/app.js'
       - 'corner/public/companion.js'
       - 'corner/public/companion.css'
-      - 'corner/tests/pulse-rabbit*'
+      - 'corner/tests/pulse-*'
       - '.github/workflows/verify-corner-pulse.yml'
   workflow_dispatch:
 permissions:
@@ -29,8 +29,10 @@ jobs:
           npx playwright install chromium --with-deps
       - name: Event, private-page and transfer-budget contracts
         run: node --test corner/tests/pulse-rabbit.test.mjs corner/tests/v3-performance-budget.test.mjs
-      - name: Isolated six-width modal and rabbit locomotion acceptance
+      - name: Isolated welcome and companion locomotion acceptance
         run: node corner/tests/pulse-rabbit-browser.mjs
+      - name: Sweet interactions and optional phone motion acceptance
+        run: node corner/tests/pulse-sweet-browser.mjs
       - name: Upload actual browser screenshots
         if: always()
         uses: actions/upload-artifact@v4

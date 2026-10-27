@@ -1,9 +1,8 @@
-/* Pulse v2 — layered SVG, native dialogs, local behavior; no asset downloads. */
+/* Corner Pulse v3.1 — articulated Doraemon, opt-in play and sound. */
 body.corner-comfort .pulse-text-control{appearance:none;display:inline-flex;align-items:center;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit;font:650 .8rem/1.4 var(--sans,system-ui);cursor:pointer;text-decoration:underline;text-underline-offset:4px}
 body.corner-comfort .pulse-text-control:focus-visible{outline:2px solid #3563a5;outline-offset:3px}
-body.corner-comfort .pulse-text-control[hidden],body.corner-comfort .pulse-pet[hidden]{display:none!important}
+body.corner-comfort :is(.pulse-text-control,.pulse-pet,.pulse-greeting)[hidden]{display:none!important}
 html.corner-welcome-open{overflow:hidden!important;overscroll-behavior:none}
-/* Background alone is dimmed/blurred: the letter and controls remain opaque. */
 body.corner-comfort dialog.corner-welcome-letter.pulse-welcome-modal{position:fixed;inset:0!important;box-sizing:border-box;margin:auto!important;width:min(520px,calc(100vw - 28px));max-width:520px;min-width:0;height:fit-content;max-height:calc(100dvh - 40px);padding:0;border:1px solid #e0d5cb;border-radius:24px;background:#fffdf9;color:#26202b;box-shadow:0 24px 85px #26192b4d;overflow:hidden;z-index:120}
 body.corner-comfort dialog.corner-welcome-letter.pulse-welcome-modal[open]{display:flex;flex-direction:column}
 body.corner-comfort dialog.corner-welcome-letter.pulse-welcome-modal:not([open]){display:none}
@@ -23,100 +22,135 @@ body.corner-comfort .pulse-welcome-modal .corner-letter-actions a+a{background:#
 body.corner-comfort .pulse-welcome-modal :is(button,a):focus-visible{outline:3px solid #365f9a;outline-offset:3px}
 body.corner-comfort .pulse-welcome-modal .corner-letter-inner:focus-visible{outline:2px solid #365f9a;outline-offset:-4px}
 body.corner-comfort .pulse-welcome-modal.pulse-letter-inline{position:relative;margin:22px auto!important}
-/* The moving hit target is precisely the rabbit footprint, never a giant overlay. */
-body.corner-comfort .corner-orbit-dock.pulse-pet{position:fixed;left:var(--pet-x,12px)!important;top:var(--pet-y,140px)!important;right:auto!important;bottom:auto!important;display:block;width:var(--pet-w,76px);height:var(--pet-h,104px);max-width:none;min-width:0;margin:0;padding:0;pointer-events:none;z-index:75;transform:none!important;contain:layout style;isolation:isolate}
-body.corner-comfort .pulse-pet .corner-orbit-toggle{display:block;position:relative;pointer-events:auto;width:100%;height:100%;min-width:44px;min-height:44px;margin:0;padding:0;overflow:visible;border:0;border-radius:28px;background:transparent!important;box-shadow:none!important;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transform:none!important}
-body.corner-comfort .pulse-pet .corner-orbit-toggle:focus-visible{outline:2px solid #3d649b;outline-offset:3px;background:#fffaf2!important}
-body.corner-comfort .pulse-pet .corner-orbit-toy{display:block;width:100%;height:100%;overflow:visible;border:0;background:none;box-shadow:none;border-radius:0;filter:drop-shadow(0 4px 4px #64495e25);animation:none;pointer-events:none}
-.pulse-rabbit :is(.pulse-body,.pulse-head,.pulse-ear,.pulse-arm,.pulse-foot,.pulse-eyes,.pulse-pupils,.pulse-shadow){transform-box:view-box}
-.pulse-rabbit .pulse-body{transform-origin:60px 133px}
-.pulse-rabbit .pulse-head{transform-origin:60px 97px}
-.pulse-rabbit .pulse-ear-left{transform-origin:44px 60px}
-.pulse-rabbit .pulse-ear-right{transform-origin:77px 60px}
-.pulse-rabbit .pulse-arm-left{transform-origin:37px 101px}
-.pulse-rabbit .pulse-arm-right{transform-origin:82px 101px}
-.pulse-rabbit .pulse-foot-left{transform-origin:46px 132px}
-.pulse-rabbit .pulse-foot-right{transform-origin:73px 132px}
-.pulse-rabbit .pulse-eyes{transform-origin:60px 79px;animation:pulse-blink 7.7s infinite}
-.pulse-rabbit .pulse-pupils{transform:translateX(var(--gaze,0px))}
-.pulse-rabbit .pulse-glory{opacity:0}
-.pulse-rabbit .pulse-shadow{transform-origin:60px 150px}
-.pulse-pet[data-facing=left] .pulse-head{--head-turn:-3deg}
-.pulse-pet[data-facing=right] .pulse-head{--head-turn:3deg}
-.pulse-pet[data-pose=sit] .pulse-body{transform:translateY(5px) scaleY(.95);animation:pulse-breathe 5.6s ease-in-out infinite}
-.pulse-pet[data-pose=sit] .pulse-arm-left{transform:rotate(-16deg)}
-.pulse-pet[data-pose=sit] .pulse-arm-right{transform:rotate(16deg)}
-.pulse-pet[data-pose=sit] .pulse-ear-right{animation:pulse-ear-twitch 10.6s ease-in-out infinite}
-.pulse-pet[data-pose=walk] .pulse-body{animation:pulse-walk-body .72s linear infinite}
-.pulse-pet[data-pose=walk] .pulse-foot-left{animation:pulse-step .72s linear infinite}
-.pulse-pet[data-pose=walk] .pulse-foot-right{animation:pulse-step .72s linear -.36s infinite}
-.pulse-pet[data-pose=walk] .pulse-arm-left{animation:pulse-arm-swing .72s linear -.36s infinite}
-.pulse-pet[data-pose=walk] .pulse-arm-right{animation:pulse-arm-swing .72s linear infinite}
-.pulse-pet[data-pose=walk] .pulse-head{animation:pulse-nod .72s linear infinite}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-body{animation:pulse-hop .72s ease-in-out infinite}
-.pulse-pet[data-pose=run] .pulse-body{animation-duration:.46s}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-ear-left{animation:pulse-run-ear .72s ease-in-out infinite}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-ear-right{animation:pulse-run-ear .72s ease-in-out -.1s infinite}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-foot-left{animation:pulse-spring .72s ease-in-out infinite}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-foot-right{animation:pulse-spring .72s ease-in-out -.08s infinite}
-.pulse-pet:is([data-pose=hop],[data-pose=run]) .pulse-shadow{animation:pulse-shadow-hop .72s ease-in-out infinite}
-.pulse-pet[data-pose=run] :is(.pulse-ear,.pulse-foot,.pulse-shadow){animation-duration:.46s}
-.pulse-pet[data-pose=wave] .pulse-arm-right{animation:pulse-wave .55s ease-in-out 3;transform-origin:82px 101px}
-.pulse-pet[data-pose=wave] .pulse-head{transform:rotate(-5deg)}
-.pulse-pet[data-pose=happy] .pulse-glory{opacity:1;animation:pulse-eye-shine .7s ease-in-out 3}
+body.corner-comfort .pulse-stage{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:75;contain:layout paint style;isolation:isolate}
+body.corner-comfort .pulse-stage .corner-orbit-dock.pulse-pet{position:absolute!important;left:var(--pet-x,12px)!important;top:var(--pet-y,140px)!important;right:auto!important;bottom:auto!important;display:block;width:var(--pet-w,82px);height:var(--pet-h,98px);max-width:none;min-width:0;margin:0;padding:0;pointer-events:none;transform:none!important;isolation:isolate}
+body.corner-comfort .pulse-pet .corner-orbit-toggle{display:block;position:relative;pointer-events:auto;width:100%;height:100%;min-width:44px;min-height:44px;margin:0;padding:0;overflow:visible;border:0;border-radius:24px;background:transparent!important;box-shadow:none!important;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transform:none!important}
+body.corner-comfort .pulse-pet .corner-orbit-toggle:focus-visible{outline:2px solid #3d649b;outline-offset:2px;background:#fffaf2!important}
+body.corner-comfort .pulse-pet .corner-orbit-toy{display:block;width:100%;height:100%;overflow:visible;border:0;background:none;box-shadow:none;border-radius:0;filter:drop-shadow(0 3px 3px #254e6824);animation:none;pointer-events:none}
+.pulse-doraemon :is(.pulse-body,.pulse-head,.pulse-arm,.pulse-foot,.pulse-eyes,.pulse-pupils,.pulse-shadow,.pulse-bell){transform-box:view-box}
+.pulse-doraemon .pulse-body{transform-origin:60px 129px}
+.pulse-doraemon .pulse-head{transform-origin:60px 88px}
+.pulse-doraemon .pulse-arm-left{transform-origin:34px 93px}
+.pulse-doraemon .pulse-arm-right{transform-origin:87px 93px}
+.pulse-doraemon .pulse-foot-left{transform-origin:43px 127px}
+.pulse-doraemon .pulse-foot-right{transform-origin:77px 127px}
+.pulse-doraemon .pulse-bell{transform-origin:60px 90px}
+.pulse-doraemon .pulse-shadow{transform-origin:60px 137px}
+.pulse-doraemon .pulse-eyes{transform-origin:60px 40px;animation:pulse-blink 7.7s infinite}
+.pulse-doraemon .pulse-pupils{transform:translateX(var(--gaze,0px));transition:transform .15s ease-out}
+.pulse-doraemon :is(.pulse-glory,.pulse-smile,.pulse-tongue){opacity:0}
+.pulse-pet[data-pose=sit] .pulse-body{transform:translateY(2px) scaleY(.985);animation:pulse-breathe 5.6s ease-in-out infinite}
+.pulse-pet[data-pose=sit] .pulse-arm-left{transform:rotate(-9deg)}
+.pulse-pet[data-pose=sit] .pulse-arm-right{transform:rotate(9deg)}
+.pulse-pet[data-pose=turn][data-facing=left] .pulse-head{transform:translateX(-2px) rotate(-3deg);transition:transform .16s ease-out}
+.pulse-pet[data-pose=turn][data-facing=right] .pulse-head{transform:translateX(2px) rotate(3deg);transition:transform .16s ease-out}
+.pulse-pet[data-pose=arrive] :is(.pulse-body,.pulse-foot,.pulse-arm,.pulse-head,.pulse-bell){transition:transform .17s ease-out}
+.pulse-pet[data-pose=wave] .pulse-arm-right{animation:pulse-wave .6s ease-in-out 2;transform-origin:87px 93px}
+.pulse-pet[data-pose=wave] .pulse-head{transform:rotate(-4deg)}
+.pulse-pet:is([data-pose=wave],[data-pose=happy],[data-pose=peek],[data-pose=pocket]) :is(.pulse-smile,.pulse-tongue){opacity:1}
+.pulse-pet:is([data-pose=wave],[data-pose=happy],[data-pose=peek],[data-pose=pocket]) .pulse-mouth{opacity:0}
+.pulse-pet[data-pose=happy] .pulse-glory{opacity:1;animation:pulse-eye-shine .7s ease-in-out 2}
 .pulse-pet[data-pose=happy] .pulse-eyes{animation:none}
-.pulse-pet[data-pose=happy] .pulse-body{transform:translateY(5px) scaleY(.95)}
-.pulse-pet[data-pose=happy] .pulse-arm-left{transform:rotate(-22deg)}
-.pulse-pet[data-pose=happy] .pulse-arm-right{transform:rotate(22deg)}
-.pulse-pet[data-pose=happy] .pulse-ear-left{transform:rotate(-6deg)}
-.pulse-pet[data-pose=happy] .pulse-ear-right{transform:rotate(6deg)}
-.pulse-pet[data-pose=curious] .pulse-head{transform:rotate(-13deg)}
-.pulse-pet[data-pose=curious] .pulse-ear-right{transform:rotate(17deg)}
-body.corner-comfort .pulse-caption{position:absolute;left:50%;bottom:0;transform:translateX(-50%);padding:3px 7px;border-radius:9px;background:#fffaf1;border:1px solid #e4d3c5;color:#765640;font:650 10px/1.4 system-ui;white-space:nowrap;pointer-events:none}
+.pulse-pet[data-pose=happy] .pulse-body{transform:translateY(2px) scaleY(.98)}
+.pulse-pet[data-pose=happy] .pulse-arm-left{transform:rotate(-20deg)}
+.pulse-pet[data-pose=happy] .pulse-arm-right{transform:rotate(20deg)}
+.pulse-pet[data-pose=curious] .pulse-head{transform:rotate(-11deg)}
+.pulse-pet[data-pose=pocket] .pulse-arm-left{transform:rotate(-30deg)}
+.pulse-pet[data-pose=pocket] .pulse-arm-right{transform:rotate(30deg)}
+.pulse-pet[data-pose=pocket] .pulse-head{transform:rotate(3deg)}
+.pulse-pet[data-pose=peek][data-edge=right] .pulse-body{transform-origin:100px 130px;transform:rotate(-16deg)}
+.pulse-pet[data-pose=peek][data-edge=left] .pulse-body{transform-origin:20px 130px;transform:rotate(16deg)}
+.pulse-pet[data-pose=peek] .pulse-arm-right{transform:rotate(-22deg)}
+.pulse-pet[data-pose=edge-hidden]{pointer-events:none!important}
+.pulse-pet[data-pose=edge-hidden] .corner-orbit-toggle{pointer-events:none!important}
+.pulse-pet:is([data-pose=walk],[data-pose=run],[data-pose=edge-exit]) .pulse-body{animation:none}
+body.corner-comfort .pulse-caption{position:absolute;left:50%;bottom:0;transform:translateX(-50%);max-width:150px;padding:3px 7px;border-radius:9px;background:#fffaf1;border:1px solid #e4d3c5;color:#765640;font:650 10px/1.4 system-ui;white-space:nowrap;pointer-events:none}
 body.corner-comfort .pulse-caption:empty{display:none}
-/* Preferences and status are in a stationary, keyboard-accessible dialog. */
-body.corner-comfort dialog.corner-orbit-card.pulse-controls{position:fixed;inset:0!important;margin:auto!important;width:min(385px,calc(100vw - 24px));max-width:385px;height:max-content;max-height:calc(100dvh - 30px);padding:23px;border:1px solid #ded4ce;border-radius:23px;background:#fffdf9;color:#302630;box-shadow:0 24px 80px #26192b4d;overflow:auto;z-index:120;font-family:var(--sans,system-ui)}
+body.corner-comfort .pulse-greeting{position:fixed;z-index:110;box-sizing:border-box;width:max-content;max-width:min(250px,calc(100vw - 20px));padding:11px 15px;border:1px solid #e0d7cf;border-radius:15px;background:#fffdf9;color:#38303a;font:650 .82rem/1.45 var(--sans,system-ui);box-shadow:0 10px 28px -13px #30253250;pointer-events:auto;animation:pulse-greet-in .17s ease-out}
+body.corner-comfort dialog.corner-orbit-card.pulse-controls{position:fixed;inset:auto;left:24px;top:120px;margin:0!important;box-sizing:border-box;width:min(368px,calc(100vw - 24px));max-width:368px;height:max-content;max-height:calc(100dvh - 34px);padding:20px;border:1px solid #ded4ce;border-radius:22px;background:#fffdf9;color:#302630;box-shadow:0 20px 64px #26192b33;overflow:auto;overscroll-behavior:contain;z-index:115;font-family:var(--sans,system-ui);scrollbar-width:thin}
 body.corner-comfort dialog.corner-orbit-card.pulse-controls:not([open]){display:none}
-body.corner-comfort dialog.corner-orbit-card.pulse-controls::backdrop{background:#211b214d;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
 body.corner-comfort .pulse-controls .corner-orbit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 body.corner-comfort .pulse-controls .corner-orbit-kicker{margin:0 0 5px;color:#9b624d;font:750 .6rem/1.4 var(--mono,monospace);letter-spacing:.09em}
-body.corner-comfort .pulse-controls #corner-orbit-heading{margin:0!important;font:650 1.45rem/1.2 Georgia,serif!important;letter-spacing:-.04em!important}
-body.corner-comfort .pulse-controls .corner-orbit-close{display:grid;place-items:center;flex:none;width:44px;min-height:44px;padding:0;border:1px solid #ddd1c9;border-radius:13px;background:#fff;color:#2c222c;font-size:24px}
-body.corner-comfort .pulse-controls .corner-orbit-explainer{font-size:.78rem;line-height:1.65;color:#66596a;margin:14px 0}
-body.corner-comfort .pulse-mode{padding:0;border:0;margin:0;min-width:0}
-body.corner-comfort .pulse-mode legend{font-size:.8rem;font-weight:730;margin-bottom:8px}
+body.corner-comfort .pulse-controls #corner-orbit-heading{margin:0!important;font:650 1.4rem/1.2 Georgia,serif!important;letter-spacing:-.04em!important}
+body.corner-comfort .pulse-controls .corner-orbit-close{display:grid;place-items:center;flex:none;width:44px;min-height:44px;padding:0;border:1px solid #ddd1c9;border-radius:13px;background:#fff;color:#2c222c;font-size:24px;cursor:pointer}
+body.corner-comfort .pulse-intro{font-size:.8rem;line-height:1.55;color:#776270;margin:12px 0 15px}
+body.corner-comfort .pulse-quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body.corner-comfort .pulse-quick-actions>button{display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:49px;padding:10px 11px;background:#f5f0eb;color:#342932;border:1px solid #e6dcd2;border-radius:12px;font:680 .73rem/1.4 var(--sans,system-ui);cursor:pointer;text-align:left}
+body.corner-comfort .pulse-quick-actions>button:first-child{background:#28232b;color:#fff;border-color:#28232b}
+body.corner-comfort .pulse-quick-actions>button:hover{box-shadow:0 5px 12px -8px #42323d80}
+body.corner-comfort .pulse-quick-actions>button:disabled{opacity:.6;cursor:wait}
+body.corner-comfort .pulse-result{padding:15px;margin-top:13px;border:1px solid #ead7c6;border-radius:14px;background:linear-gradient(145deg,#fff8ee,#fffdf9)}
+body.corner-comfort .pulse-result [data-result-kicker]{font:750 .6rem/1.4 var(--mono,monospace);letter-spacing:.07em;color:#986049;margin:0 0 7px}
+body.corner-comfort .pulse-result [data-result-title]{font:720 1rem/1.4 var(--sans,system-ui)!important;margin:0 0 7px!important;letter-spacing:-.025em;color:#352b34;overflow-wrap:anywhere}
+body.corner-comfort .pulse-result [data-result-description]{font-size:.78rem;line-height:1.55;margin:0;color:#6b5e63;overflow-wrap:anywhere}
+body.corner-comfort .pulse-result [data-result-link]{display:inline-flex;align-items:center;min-height:44px;color:#81492d;font-size:.77rem;font-weight:720;text-underline-offset:3px;margin-top:5px}
+body.corner-comfort .pulse-tour-buttons{display:flex;gap:8px;margin-top:7px}
+body.corner-comfort .pulse-tour-buttons button{min-height:44px;border:1px solid #d3c3b5;border-radius:11px;padding:8px 15px;background:#fff;color:#3c3138;font:650 .75rem var(--sans,system-ui);cursor:pointer}
+.pulse-tour-target{outline:2px solid #b87b5f!important;outline-offset:5px!important}
+body.corner-comfort .pulse-controls details{border-top:1px solid #e9e0d9;margin-top:14px;padding-top:6px}
+body.corner-comfort .pulse-controls details>summary{display:list-item;min-height:44px;align-content:center;font:680 .75rem/1.5 var(--sans,system-ui);color:#51444e;cursor:pointer}
+body.corner-comfort .pulse-mode{padding:0;border:0;margin:7px 0 11px;min-width:0}
+body.corner-comfort .pulse-mode legend{font-size:.75rem;font-weight:730;margin-bottom:8px}
 body.corner-comfort .pulse-mode>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-body.corner-comfort .pulse-mode button{min-height:44px;padding:8px 3px;background:#fff;border:1px solid #dacfc8;border-radius:11px;color:#3c313b;font:650 .72rem/1.3 system-ui;cursor:pointer}
+body.corner-comfort .pulse-mode button{min-height:44px;padding:8px 3px;background:#fff;border:1px solid #dacfc8;border-radius:11px;color:#3c313b;font:650 .7rem/1.3 system-ui;cursor:pointer}
 body.corner-comfort .pulse-mode button[aria-pressed=true]{color:#fff;background:#28212a;border-color:#28212a}
-body.corner-comfort .pulse-preference-note{margin:7px 0 17px;color:#716570;font-size:.67rem;line-height:1.5}
-body.corner-comfort .pulse-controls :is(.corner-orbit-reading,.corner-orbit-latest){display:grid;gap:6px;padding:13px;margin-bottom:10px;border:1px solid #e7ddd5;border-radius:14px;background:#faf7f3}
-body.corner-comfort .pulse-controls .corner-orbit-status-label{color:#8c6b5b;font:730 .62rem/1.4 var(--mono,monospace);letter-spacing:.07em}
-body.corner-comfort .pulse-controls [data-orbit-status]{font-size:.86rem;line-height:1.45}
-body.corner-comfort .pulse-controls :is([data-orbit-detail],[data-orbit-story-empty]){margin:0;color:#72636a;font-size:.76rem;line-height:1.6}
-body.corner-comfort .pulse-controls [data-orbit-story]{color:#332235;font-size:.81rem;line-height:1.5;text-underline-offset:3px}
+body.corner-comfort .pulse-controls [data-pulse-sound]{min-height:44px;padding:9px 13px;background:#fff;border:1px solid #d7cbc1;border-radius:11px;color:#42333e;font-weight:680;font-size:.76rem;cursor:pointer}
+body.corner-comfort .pulse-volume{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;font-size:.73rem;color:#584956}
+body.corner-comfort .pulse-volume input{width:48%;min-width:0;min-height:44px;accent-color:#157faf}
+body.corner-comfort .pulse-preference-note{margin:6px 0 10px;color:#746773;font-size:.66rem;line-height:1.5}
+body.corner-comfort .pulse-controls :is(.corner-orbit-reading,.corner-orbit-latest){display:grid;gap:6px;padding:12px;margin:8px 0;border:1px solid #e7ddd5;border-radius:12px;background:#faf7f3}
+body.corner-comfort .pulse-controls .corner-orbit-status-label{color:#8c6b5b;font:730 .6rem/1.4 var(--mono,monospace);letter-spacing:.07em}
+body.corner-comfort .pulse-controls [data-orbit-status]{font-size:.81rem;line-height:1.45}
+body.corner-comfort .pulse-controls :is([data-orbit-detail],[data-orbit-story-empty]){margin:0;color:#72636a;font-size:.74rem;line-height:1.6}
+body.corner-comfort .pulse-controls [data-orbit-story]{color:#332235;font-size:.79rem;line-height:1.5;text-underline-offset:3px}
 body.corner-comfort .pulse-controls [hidden]{display:none!important}
-body.corner-comfort .pulse-controls .corner-orbit-live-line{margin:15px 0 0;font-size:.68rem;color:#70616c}
-body.corner-comfort .pulse-controls :is(button,a):focus-visible{outline:3px solid #36609e;outline-offset:3px}
+body.corner-comfort .pulse-controls .corner-orbit-live-line{margin:12px 0 0;font-size:.66rem;color:#70616c}
+body.corner-comfort .pulse-controls .corner-orbit-explainer{font-size:.68rem;line-height:1.6;color:#776676;margin:10px 0 0}
+body.corner-comfort .pulse-controls :is(button,a,summary,input):focus-visible{outline:3px solid #36609e;outline-offset:2px}
+body.corner-comfort .pulse-perch{display:inline-block;flex:0 0 82px;width:82px;height:98px;vertical-align:middle;pointer-events:none;margin:0 6px}
 .corner-rail-icon svg{transform-origin:center;transition:transform .24s}
 body.corner-comfort .corner-rail .corner-rail-link:is(:hover,:focus-visible) .corner-rail-icon svg{transform:translateY(-2px) rotate(-6deg)}
-@keyframes pulse-blink{0%,40%,43%,100%{transform:scaleY(1)}41%,42%{transform:scaleY(.08)}}
-@keyframes pulse-breathe{0%,100%{transform:translateY(5px) scaleY(.95)}50%{transform:translateY(4px) scaleY(.97)}}
-@keyframes pulse-ear-twitch{0%,70%,100%{transform:rotate(0)}73%{transform:rotate(9deg)}76%{transform:rotate(-3deg)}}
-@keyframes pulse-walk-body{0%,50%,100%{transform:translateY(0)}25%,75%{transform:translateY(-3px)}}
-@keyframes pulse-step{0%,100%{transform:translateY(0) rotate(-15deg)}50%{transform:translateY(-5px) rotate(15deg)}}
-@keyframes pulse-arm-swing{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
-@keyframes pulse-nod{0%,100%{transform:rotate(var(--head-turn,0deg))}50%{transform:translateY(1px) rotate(0)}}
-@keyframes pulse-hop{0%,100%{transform:translateY(0) scaleY(.97)}18%{transform:translateY(3px) scaleY(.9)}48%{transform:translateY(-11px) scaleY(1.04)}82%{transform:translateY(1px) scaleY(.94)}}
-@keyframes pulse-run-ear{0%,100%{transform:rotate(0)}45%{transform:rotate(-10deg)}75%{transform:rotate(6deg)}}
-@keyframes pulse-spring{0%,100%{transform:rotate(0)}45%{transform:rotate(-18deg)}75%{transform:rotate(12deg)}}
-@keyframes pulse-shadow-hop{0%,100%{transform:scaleX(1);opacity:.15}48%{transform:scaleX(.65);opacity:.08}}
-@keyframes pulse-wave{0%,100%{transform:rotate(-25deg)}50%{transform:rotate(-65deg)}}
-@keyframes pulse-eye-shine{0%,100%{opacity:.8}50%{opacity:1}}
-body.corner-comfort .pulse-pet:is([data-mode=paused],[data-mode=hidden],[data-suspended=true]) *{animation-play-state:paused!important}
-body.corner-comfort:has(dialog[open]) .pulse-pet{visibility:hidden!important;pointer-events:none!important}
-@media(max-width:600px){body.corner-comfort dialog.corner-welcome-letter.pulse-welcome-modal{width:calc(100vw - 22px);max-height:calc(100dvh - 24px);border-radius:21px}body.corner-comfort .pulse-letter-header{padding:14px 16px 12px;gap:10px}body.corner-comfort .pulse-letter-header>span{font-size:.59rem}body.corner-comfort .pulse-welcome-modal .corner-letter-inner{padding:20px}body.corner-comfort .pulse-welcome-modal .corner-letter-inner>p{font-size:.85rem;line-height:1.65}body.corner-comfort .pulse-welcome-modal .corner-letter-actions{padding:13px 16px max(14px,env(safe-area-inset-bottom,0px))}body.corner-comfort dialog.corner-orbit-card.pulse-controls{padding:19px}}
-@media(max-height:530px){body.corner-comfort .pulse-letter-header{padding:9px 15px}body.corner-comfort .pulse-welcome-modal .corner-letter-inner{padding:13px 19px}body.corner-comfort .pulse-welcome-modal .corner-letter-actions{padding:10px 15px}body.corner-comfort .pulse-welcome-modal #corner-welcome-letter-title{font-size:1.4rem!important}}
-@media(prefers-reduced-motion:reduce){.pulse-pet *,body.corner-comfort .pulse-welcome-modal,.pulse-controls{animation:none!important;transition:none!important;scroll-behavior:auto!important}.corner-rail-icon svg{transition:none!important}}
-@media(forced-colors:active){body.corner-comfort :is(.pulse-welcome-modal,.pulse-controls){border:2px solid CanvasText;background:Canvas;color:CanvasText}body.corner-comfort .pulse-pet .corner-orbit-toggle{border:2px solid CanvasText;background:Canvas!important}.pulse-rabbit{forced-color-adjust:none}body.corner-comfort .pulse-mode button[aria-pressed=true]{background:Highlight;color:HighlightText}}
-
-body.corner-comfort .pulse-perch{display:inline-block;flex:0 0 76px;width:76px;height:104px;vertical-align:middle;pointer-events:none;margin:0 6px} @media(max-width:900px){body.corner-comfort .pulse-perch{flex-basis:62px;width:62px;height:84px}}
+@keyframes pulse-blink{0%,40%,43%,100%{transform:scaleY(1)}41%,42%{transform:scaleY(.1)}}
+@keyframes pulse-breathe{0%,100%{transform:translateY(2px) scaleY(.985)}50%{transform:translateY(1px) scaleY(1)}}
+@keyframes pulse-wave{0%,100%{transform:rotate(-105deg)}50%{transform:rotate(-133deg)}}
+@keyframes pulse-eye-shine{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes pulse-greet-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(max-width:900px){body.corner-comfort .pulse-perch{flex-basis:64px;width:64px;height:77px}body.corner-comfort dialog.corner-orbit-card.pulse-controls{padding:17px;border-radius:19px}}
+@media(max-width:480px){body.corner-comfort dialog.corner-welcome-letter.pulse-welcome-modal{width:calc(100vw - 24px);max-height:calc(100dvh - 28px);border-radius:21px}body.corner-comfort .pulse-letter-header{padding:15px 17px;gap:9px}body.corner-comfort .pulse-letter-header>span{font-size:.57rem}body.corner-comfort .pulse-welcome-modal .corner-letter-inner{padding:19px 20px}body.corner-comfort .pulse-welcome-modal .corner-letter-inner>p{font-size:.84rem;line-height:1.65}body.corner-comfort .pulse-welcome-modal .corner-letter-actions{padding:13px 17px max(15px,env(safe-area-inset-bottom,0px))}body.corner-comfort .pulse-welcome-modal .corner-letter-actions a{flex-basis:130px;font-size:.74rem}}
+@media(prefers-reduced-motion:reduce){.pulse-doraemon *,.pulse-greeting,.pulse-pet,.pulse-controls{animation:none!important;transition:none!important}.pulse-doraemon .pulse-eyes{transform:none!important}.pulse-pet[data-pose=wave] .pulse-arm-right{transform:none!important}.pulse-doraemon .pulse-glory{opacity:0!important}}
+body.corner-comfort .pulse-pet:is([data-mode=paused],[data-mode=hidden],[data-suspended=true]) .pulse-doraemon *{animation-play-state:paused!important}
+@media(forced-colors:active){body.corner-comfort :is(.pulse-welcome-modal,.pulse-controls,.pulse-greeting){border:2px solid CanvasText;background:Canvas;color:CanvasText}body.corner-comfort .pulse-pet .corner-orbit-toggle{border:2px solid CanvasText;background:Canvas!important}.pulse-doraemon{forced-color-adjust:none}body.corner-comfort .pulse-mode button[aria-pressed=true]{background:Highlight;color:HighlightText}.pulse-tour-target{outline-color:Highlight!important}}
+/* Finite gentle expressions. Sensor input is opt-in; typed text has one full accessible equivalent. */
+.pulse-sr{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+body.corner-comfort .pulse-play-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:5px 0}
+body.corner-comfort .pulse-play-grid :is(button,a),body.corner-comfort [data-pulse-motion]{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px;border:1px solid #d8cbc2;border-radius:12px;background:#fffaf5;color:#483440;font:650 .75rem/1.45 var(--sans,system-ui);text-decoration:none;cursor:pointer}
+body.corner-comfort .pulse-play-grid :is(button,a):hover{background:#f6e8dc}
+body.corner-comfort .pulse-controls :is(.pulse-small-note,[data-motion-status]){font-size:.7rem;line-height:1.6;color:#705f69;margin:10px 0}
+body.corner-comfort [data-pulse-motion][aria-pressed=true]{background:#243640;color:#fff;border-color:#243640}
+body.corner-comfort .pulse-spot{display:grid;gap:6px;font-size:.75rem;margin-top:10px}
+body.corner-comfort .pulse-spot select{min-height:44px;padding:8px;border:1px solid #d8cbc2;border-radius:10px;color:#41323c;background:#fff;font:inherit}
+body.corner-comfort .pulse-release{display:block;margin-top:10px;color:#746773;font-size:.65rem}
+body.corner-comfort .pulse-greeting{max-width:min(255px,calc(100vw - 24px));width:max-content;overflow-wrap:anywhere;cursor:pointer}
+.pulse-pet:is([data-pose=laugh],[data-pose=shy],[data-pose=highfive],[data-pose=balance]) :is(.pulse-smile,.pulse-tongue){opacity:1}
+.pulse-pet:is([data-pose=laugh],[data-pose=shy],[data-pose=highfive],[data-pose=balance]) .pulse-mouth{opacity:0}
+.pulse-pet[data-pose=startled] .pulse-body{animation:pulse-shudder .5s ease-out 1}
+.pulse-pet[data-pose=startled] .pulse-head{transform:rotate(-7deg)}
+.pulse-pet[data-pose=startled] .pulse-arm-left{transform:rotate(110deg)}
+.pulse-pet[data-pose=startled] .pulse-arm-right{transform:rotate(-110deg)}
+.pulse-pet[data-pose=startled] .pulse-eyes{animation:none;transform:scaleY(1.08)}
+.pulse-pet[data-pose=startled] .pulse-bell{animation:pulse-bell-settle .7s ease-out 1}
+.pulse-pet[data-pose=laugh] .pulse-body{animation:pulse-soft-giggle .45s ease-in-out 3}
+.pulse-pet[data-pose=laugh] .pulse-eyes{animation:none;transform:scaleY(.66)}
+.pulse-pet[data-pose=shy] .pulse-head{transform:rotate(-8deg) translateY(1px)}
+.pulse-pet[data-pose=shy] .pulse-arm-left{transform:rotate(-24deg)}
+.pulse-pet[data-pose=shy] .pulse-arm-right{transform:rotate(24deg)}
+.pulse-pet[data-pose=highfive] .pulse-arm-right{transform:rotate(-127deg);transition:transform .28s ease-out}
+.pulse-pet[data-pose=highfive] .pulse-head{transform:rotate(4deg)}
+.pulse-pet[data-pose=balance] .pulse-body{animation:pulse-small-balance 1.8s ease-in-out 1;transform-origin:62px 133px}
+.pulse-pet[data-pose=balance] .pulse-arm-left{transform:rotate(60deg)}
+.pulse-pet[data-pose=balance] .pulse-arm-right{transform:rotate(-60deg)}
+@keyframes pulse-shudder{0%,100%{transform:translateX(0)}18%{transform:translateX(-2px) rotate(-2deg)}38%{transform:translateX(2px) rotate(2deg)}58%{transform:translateX(-1px) rotate(-1deg)}78%{transform:translateX(1px)}}
+@keyframes pulse-bell-settle{0%,100%{transform:rotate(0)}20%{transform:rotate(13deg)}45%{transform:rotate(-8deg)}70%{transform:rotate(4deg)}}
+@keyframes pulse-soft-giggle{0%,100%{transform:translateY(1px)}50%{transform:translateY(3px) scaleY(.985)}}
+@keyframes pulse-small-balance{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}60%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){.pulse-pet:is([data-pose=startled],[data-pose=laugh],[data-pose=balance]) *{animation:none!important;transform:none!important}}
