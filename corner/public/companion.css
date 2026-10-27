@@ -1,5 +1,4 @@
-/* Corner Pulse v3 — articulated Doraemon, stable non-modal controls and original
-   opt-in audio. No image/font/CDN downloads. Welcome remains a true modal. */
+/* Corner Pulse v3.1 — articulated Doraemon, opt-in play and sound. */
 body.corner-comfort .pulse-text-control{appearance:none;display:inline-flex;align-items:center;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit;font:650 .8rem/1.4 var(--sans,system-ui);cursor:pointer;text-decoration:underline;text-underline-offset:4px}
 body.corner-comfort .pulse-text-control:focus-visible{outline:2px solid #3563a5;outline-offset:3px}
 body.corner-comfort :is(.pulse-text-control,.pulse-pet,.pulse-greeting)[hidden]{display:none!important}
@@ -23,8 +22,6 @@ body.corner-comfort .pulse-welcome-modal .corner-letter-actions a+a{background:#
 body.corner-comfort .pulse-welcome-modal :is(button,a):focus-visible{outline:3px solid #365f9a;outline-offset:3px}
 body.corner-comfort .pulse-welcome-modal .corner-letter-inner:focus-visible{outline:2px solid #365f9a;outline-offset:-4px}
 body.corner-comfort .pulse-welcome-modal.pulse-letter-inline{position:relative;margin:22px auto!important}
-/* Clipped viewport stage: an off-screen actor cannot expand page scroll width.
-   No hit-testing area other than the visible character footprint. */
 body.corner-comfort .pulse-stage{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:75;contain:layout paint style;isolation:isolate}
 body.corner-comfort .pulse-stage .corner-orbit-dock.pulse-pet{position:absolute!important;left:var(--pet-x,12px)!important;top:var(--pet-y,140px)!important;right:auto!important;bottom:auto!important;display:block;width:var(--pet-w,82px);height:var(--pet-h,98px);max-width:none;min-width:0;margin:0;padding:0;pointer-events:none;transform:none!important;isolation:isolate}
 body.corner-comfort .pulse-pet .corner-orbit-toggle{display:block;position:relative;pointer-events:auto;width:100%;height:100%;min-width:44px;min-height:44px;margin:0;padding:0;overflow:visible;border:0;border-radius:24px;background:transparent!important;box-shadow:none!important;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transform:none!important}
@@ -42,7 +39,6 @@ body.corner-comfort .pulse-pet .corner-orbit-toy{display:block;width:100%;height
 .pulse-doraemon .pulse-eyes{transform-origin:60px 40px;animation:pulse-blink 7.7s infinite}
 .pulse-doraemon .pulse-pupils{transform:translateX(var(--gaze,0px));transition:transform .15s ease-out}
 .pulse-doraemon :is(.pulse-glory,.pulse-smile,.pulse-tongue){opacity:0}
-/* Grounded locomotion is distance-driven in JS; CSS only shapes resting poses. */
 .pulse-pet[data-pose=sit] .pulse-body{transform:translateY(2px) scaleY(.985);animation:pulse-breathe 5.6s ease-in-out infinite}
 .pulse-pet[data-pose=sit] .pulse-arm-left{transform:rotate(-9deg)}
 .pulse-pet[data-pose=sit] .pulse-arm-right{transform:rotate(9deg)}
@@ -70,17 +66,15 @@ body.corner-comfort .pulse-pet .corner-orbit-toy{display:block;width:100%;height
 .pulse-pet:is([data-pose=walk],[data-pose=run],[data-pose=edge-exit]) .pulse-body{animation:none}
 body.corner-comfort .pulse-caption{position:absolute;left:50%;bottom:0;transform:translateX(-50%);max-width:150px;padding:3px 7px;border-radius:9px;background:#fffaf1;border:1px solid #e4d3c5;color:#765640;font:650 10px/1.4 system-ui;white-space:nowrap;pointer-events:none}
 body.corner-comfort .pulse-caption:empty{display:none}
-/* Hover/focus greeting remains hoverable and Escape-dismissible. */
 body.corner-comfort .pulse-greeting{position:fixed;z-index:110;box-sizing:border-box;width:max-content;max-width:min(250px,calc(100vw - 20px));padding:11px 15px;border:1px solid #e0d7cf;border-radius:15px;background:#fffdf9;color:#38303a;font:650 .82rem/1.45 var(--sans,system-ui);box-shadow:0 10px 28px -13px #30253250;pointer-events:auto;animation:pulse-greet-in .17s ease-out}
-/* A small stationary non-modal menu. No blur/full-screen takeover for taps. */
 body.corner-comfort dialog.corner-orbit-card.pulse-controls{position:fixed;inset:auto;left:24px;top:120px;margin:0!important;box-sizing:border-box;width:min(368px,calc(100vw - 24px));max-width:368px;height:max-content;max-height:calc(100dvh - 34px);padding:20px;border:1px solid #ded4ce;border-radius:22px;background:#fffdf9;color:#302630;box-shadow:0 20px 64px #26192b33;overflow:auto;overscroll-behavior:contain;z-index:115;font-family:var(--sans,system-ui);scrollbar-width:thin}
 body.corner-comfort dialog.corner-orbit-card.pulse-controls:not([open]){display:none}
 body.corner-comfort .pulse-controls .corner-orbit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-body.corner-comfort .pulse-controls .corner-orbit-kicker{margin:0 0 5px;color:#9b624d;font:750 .58rem/1.4 var(--mono,monospace);letter-spacing:.1em}
-body.corner-comfort .pulse-controls #corner-orbit-heading{margin:0!important;font:600 1.4rem/1.2 Georgia,serif!important;letter-spacing:-.04em!important}
-body.corner-comfort .pulse-controls .corner-orbit-close{display:grid;place-items:center;flex:none;width:44px;min-height:44px;padding:0;border:1px solid #ddd1c9;border-radius:12px;background:#fff;color:#2c222c;font-size:24px;cursor:pointer}
-body.corner-comfort .pulse-controls .pulse-intro{font-size:.81rem;line-height:1.5;color:#6a5e66;margin:11px 0 16px}
-body.corner-comfort .pulse-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body.corner-comfort .pulse-controls .corner-orbit-kicker{margin:0 0 5px;color:#9b624d;font:750 .6rem/1.4 var(--mono,monospace);letter-spacing:.09em}
+body.corner-comfort .pulse-controls #corner-orbit-heading{margin:0!important;font:650 1.4rem/1.2 Georgia,serif!important;letter-spacing:-.04em!important}
+body.corner-comfort .pulse-controls .corner-orbit-close{display:grid;place-items:center;flex:none;width:44px;min-height:44px;padding:0;border:1px solid #ddd1c9;border-radius:13px;background:#fff;color:#2c222c;font-size:24px;cursor:pointer}
+body.corner-comfort .pulse-intro{font-size:.8rem;line-height:1.55;color:#776270;margin:12px 0 15px}
+body.corner-comfort .pulse-quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 body.corner-comfort .pulse-quick-actions>button{display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:49px;padding:10px 11px;background:#f5f0eb;color:#342932;border:1px solid #e6dcd2;border-radius:12px;font:680 .73rem/1.4 var(--sans,system-ui);cursor:pointer;text-align:left}
 body.corner-comfort .pulse-quick-actions>button:first-child{background:#28232b;color:#fff;border-color:#28232b}
 body.corner-comfort .pulse-quick-actions>button:hover{box-shadow:0 5px 12px -8px #42323d80}
@@ -126,3 +120,37 @@ body.corner-comfort .corner-rail .corner-rail-link:is(:hover,:focus-visible) .co
 @media(prefers-reduced-motion:reduce){.pulse-doraemon *,.pulse-greeting,.pulse-pet,.pulse-controls{animation:none!important;transition:none!important}.pulse-doraemon .pulse-eyes{transform:none!important}.pulse-pet[data-pose=wave] .pulse-arm-right{transform:none!important}.pulse-doraemon .pulse-glory{opacity:0!important}}
 body.corner-comfort .pulse-pet:is([data-mode=paused],[data-mode=hidden],[data-suspended=true]) .pulse-doraemon *{animation-play-state:paused!important}
 @media(forced-colors:active){body.corner-comfort :is(.pulse-welcome-modal,.pulse-controls,.pulse-greeting){border:2px solid CanvasText;background:Canvas;color:CanvasText}body.corner-comfort .pulse-pet .corner-orbit-toggle{border:2px solid CanvasText;background:Canvas!important}.pulse-doraemon{forced-color-adjust:none}body.corner-comfort .pulse-mode button[aria-pressed=true]{background:Highlight;color:HighlightText}.pulse-tour-target{outline-color:Highlight!important}}
+/* Finite gentle expressions. Sensor input is opt-in; typed text has one full accessible equivalent. */
+.pulse-sr{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+body.corner-comfort .pulse-play-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:5px 0}
+body.corner-comfort .pulse-play-grid :is(button,a),body.corner-comfort [data-pulse-motion]{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px;border:1px solid #d8cbc2;border-radius:12px;background:#fffaf5;color:#483440;font:650 .75rem/1.45 var(--sans,system-ui);text-decoration:none;cursor:pointer}
+body.corner-comfort .pulse-play-grid :is(button,a):hover{background:#f6e8dc}
+body.corner-comfort .pulse-controls :is(.pulse-small-note,[data-motion-status]){font-size:.7rem;line-height:1.6;color:#705f69;margin:10px 0}
+body.corner-comfort [data-pulse-motion][aria-pressed=true]{background:#243640;color:#fff;border-color:#243640}
+body.corner-comfort .pulse-spot{display:grid;gap:6px;font-size:.75rem;margin-top:10px}
+body.corner-comfort .pulse-spot select{min-height:44px;padding:8px;border:1px solid #d8cbc2;border-radius:10px;color:#41323c;background:#fff;font:inherit}
+body.corner-comfort .pulse-release{display:block;margin-top:10px;color:#746773;font-size:.65rem}
+body.corner-comfort .pulse-greeting{max-width:min(255px,calc(100vw - 24px));width:max-content;overflow-wrap:anywhere;cursor:pointer}
+.pulse-pet:is([data-pose=laugh],[data-pose=shy],[data-pose=highfive],[data-pose=balance]) :is(.pulse-smile,.pulse-tongue){opacity:1}
+.pulse-pet:is([data-pose=laugh],[data-pose=shy],[data-pose=highfive],[data-pose=balance]) .pulse-mouth{opacity:0}
+.pulse-pet[data-pose=startled] .pulse-body{animation:pulse-shudder .5s ease-out 1}
+.pulse-pet[data-pose=startled] .pulse-head{transform:rotate(-7deg)}
+.pulse-pet[data-pose=startled] .pulse-arm-left{transform:rotate(110deg)}
+.pulse-pet[data-pose=startled] .pulse-arm-right{transform:rotate(-110deg)}
+.pulse-pet[data-pose=startled] .pulse-eyes{animation:none;transform:scaleY(1.08)}
+.pulse-pet[data-pose=startled] .pulse-bell{animation:pulse-bell-settle .7s ease-out 1}
+.pulse-pet[data-pose=laugh] .pulse-body{animation:pulse-soft-giggle .45s ease-in-out 3}
+.pulse-pet[data-pose=laugh] .pulse-eyes{animation:none;transform:scaleY(.66)}
+.pulse-pet[data-pose=shy] .pulse-head{transform:rotate(-8deg) translateY(1px)}
+.pulse-pet[data-pose=shy] .pulse-arm-left{transform:rotate(-24deg)}
+.pulse-pet[data-pose=shy] .pulse-arm-right{transform:rotate(24deg)}
+.pulse-pet[data-pose=highfive] .pulse-arm-right{transform:rotate(-127deg);transition:transform .28s ease-out}
+.pulse-pet[data-pose=highfive] .pulse-head{transform:rotate(4deg)}
+.pulse-pet[data-pose=balance] .pulse-body{animation:pulse-small-balance 1.8s ease-in-out 1;transform-origin:62px 133px}
+.pulse-pet[data-pose=balance] .pulse-arm-left{transform:rotate(60deg)}
+.pulse-pet[data-pose=balance] .pulse-arm-right{transform:rotate(-60deg)}
+@keyframes pulse-shudder{0%,100%{transform:translateX(0)}18%{transform:translateX(-2px) rotate(-2deg)}38%{transform:translateX(2px) rotate(2deg)}58%{transform:translateX(-1px) rotate(-1deg)}78%{transform:translateX(1px)}}
+@keyframes pulse-bell-settle{0%,100%{transform:rotate(0)}20%{transform:rotate(13deg)}45%{transform:rotate(-8deg)}70%{transform:rotate(4deg)}}
+@keyframes pulse-soft-giggle{0%,100%{transform:translateY(1px)}50%{transform:translateY(3px) scaleY(.985)}}
+@keyframes pulse-small-balance{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}60%{transform:rotate(6deg)}80%{transform:rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){.pulse-pet:is([data-pose=startled],[data-pose=laugh],[data-pose=balance]) *{animation:none!important;transform:none!important}}

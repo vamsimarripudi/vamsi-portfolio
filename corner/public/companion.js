@@ -1,6 +1,6 @@
-/* Corner Pulse v3: Doraemon motion, purposeful interactions, opt-in local SFX.
+/* Corner Pulse v3.1: gentle English, playful expressions, opt-in motion and SFX.
  * One public event stream. No AI inference, private-text analysis, external
- * artwork/audio downloads, tracking, microphone, or new browser storage.
+ * artwork/audio downloads, tracking, microphone, or new browser storage. Release: sweet-20261027.
  */
 (() => {
   'use strict';
@@ -14,7 +14,6 @@
   const narrow=matchMedia('(max-width:900px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
   // PULSE_SHARED_STREAM_START
   const initial=window.__CORNER__||{},postId=initial.postId;
-  /* Retained public SSE lifecycle: never replay celebrations or expose text. */
   if(window.EventSource&&!initial.demo&&['feed','detail'].includes(initial.page)){
     let stream=null,cursor=Math.max(0,Number(initial.eventCursor)||0),liveAfter=Date.now()-1000;
     const reactionTotals=new Map();
@@ -110,7 +109,7 @@
   if((path==='/corner'||path==='/')&&!seen)openWelcome(profileButton);
 
   // Newly drawn articulated Doraemon artwork; no third-party image/voice files.
-  // Rights clearance is a release review item, not implied by this implementation.
+  // Public-use rights are not conferred by this implementation.
   const art=`<svg class="corner-orbit-toy pulse-doraemon" viewBox="0 0 120 144" aria-hidden="true" focusable="false">
     <defs><linearGradient id="pulse-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#24b7ed"/><stop offset=".5" stop-color="#0796d0"/><stop offset="1" stop-color="#087bb3"/></linearGradient><linearGradient id="pulse-white" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#e6f4f8"/></linearGradient><radialGradient id="pulse-bell"><stop stop-color="#ffe98a"/><stop offset="1" stop-color="#edb93a"/></radialGradient></defs>
     <ellipse class="pulse-shadow" cx="60" cy="137" rx="33" ry="4.5" fill="#173e54" opacity=".17"/>
@@ -138,17 +137,20 @@
       <g class="pulse-bell"><circle cx="60" cy="97" r="7.5" fill="url(#pulse-bell)"/><path d="M53 94h14m-13 2h12" stroke-width="1"/><circle cx="60" cy="99" r="1.8" fill="#704823" stroke="none"/><path d="M60 101v3"/></g>
     </g></svg>`;
   const stage=document.createElement('div');stage.className='pulse-stage';
-  const dock=document.createElement('div');dock.className='corner-orbit-dock pulse-pet';dock.dataset.pose='sit';dock.dataset.mode='calm';
+  const dock=document.createElement('div');dock.className='corner-orbit-dock pulse-pet';dock.dataset.pose='sit';dock.dataset.mode='calm';dock.dataset.release='sweet-20261027';
   dock.innerHTML=`<button type="button" class="corner-orbit-toggle" aria-label="Open Corner Pulse, latest stories and live updates" aria-haspopup="dialog" aria-expanded="false" aria-controls="corner-orbit-card">${art}</button><span class="pulse-caption" aria-hidden="true"></span>`;
   stage.append(dock);
   const pet=$('.corner-orbit-toggle',dock),caption=$('.pulse-caption',dock);
   const card=document.createElement('dialog');card.id='corner-orbit-card';card.className='corner-orbit-card pulse-controls';card.setAttribute('aria-labelledby','corner-orbit-heading');
   card.innerHTML=`<header class="corner-orbit-head"><div><p class="corner-orbit-kicker">YOUR CORNER COMPANION</p><h2 id="corner-orbit-heading">Hi! How are you?</h2></div><button type="button" class="corner-orbit-close" aria-label="Close Corner Pulse">×</button></header>
-    <p class="pulse-intro">Fancy exploring something together?</p>
+    <p class="pulse-intro">A little story, a little smile. Shall we?</p>
     <div class="pulse-quick-actions"><button type="button" data-pulse-action="latest">Latest story <span>↗</span></button><button type="button" data-pulse-action="surprise">Surprise me <span>✦</span></button><button type="button" data-pulse-action="tour">Show me around <span>→</span></button><button type="button" data-pulse-action="peek">A little hide &amp; peek <span>☺</span></button></div>
     <section class="pulse-result" aria-live="polite" hidden><p data-result-kicker></p><h3 data-result-title></h3><p data-result-description></p><a data-result-link hidden>Read the story ↗</a><div class="pulse-tour-buttons" hidden><button type="button" data-tour-next>Next</button><button type="button" data-tour-stop>Stop tour</button></div></section>
-    <details class="pulse-settings"><summary>Motion &amp; sound</summary><fieldset class="pulse-mode"><legend>How should I behave?</legend><div><button type="button" data-pulse-mode="calm" aria-pressed="true">Calm</button><button type="button" data-pulse-mode="playful" aria-pressed="false">Playful</button><button type="button" data-pulse-mode="paused" aria-pressed="false">Pause</button><button type="button" data-pulse-mode="hidden" aria-pressed="false">Hide</button></div></fieldset><button type="button" data-pulse-sound aria-pressed="false">Enable sound</button><label class="pulse-volume">Sound level <input type="range" min="0" max="40" step="1" value="12" aria-label="Companion sound volume" data-pulse-volume></label><p class="pulse-preference-note">This page only. Sound starts off. Reduced motion takes priority.</p></details>
-    <details class="pulse-status"><summary>From the Corner</summary><div class="corner-orbit-reading"><span class="corner-orbit-status-label">CURRENTLY</span><strong data-orbit-status>Checking the Corner…</strong><p data-orbit-detail></p></div><div class="corner-orbit-latest"><span class="corner-orbit-status-label">LATEST STORY</span><a data-orbit-story hidden></a><p data-orbit-story-empty>Checking published stories…</p></div><p class="corner-orbit-live-line" data-orbit-live role="status">Updates on demand</p><p class="corner-orbit-explainer">No AI chat or invented activity. Reactions use confirmed Corner events, not your private messages.</p></details>`;
+    <details class="pulse-play"><summary>Play a little</summary><div class="pulse-play-grid"><button type="button" data-pulse-play="highfive">A tiny high five</button><button type="button" data-pulse-play="surprise">Surprise him</button><button type="button" data-pulse-play="joke">Make me smile</button><button type="button" data-pulse-play="balance">A balancing trick</button></div><p class="pulse-small-note">Little games, only when you ask.</p></details>
+    <details class="pulse-discover"><summary>Find my kind of story</summary><div class="pulse-play-grid"><button type="button" data-pulse-filter="build">Things being built</button><button type="button" data-pulse-filter="journal">A quiet thought</button><button type="button" data-pulse-filter="wish">Something cheerful</button><a href="${prefix}/saved">My saved stories ↗</a></div><p class="pulse-small-note">Chosen from the latest published stories. Nothing invented.</p></details>
+    <details class="pulse-phone"><summary>Phone play</summary><button type="button" data-pulse-motion aria-pressed="false">Enable shake reactions</button><p data-motion-status role="status">Off. Optional motion stays on this device; nothing is recorded or sent.</p><p class="pulse-small-note">A gentle movement is enough. The Surprise him button does the same thing without sensors.</p></details>
+    <details class="pulse-settings"><summary>Motion &amp; sound</summary><fieldset class="pulse-mode"><legend>How should I behave?</legend><div><button type="button" data-pulse-mode="calm" aria-pressed="true">Calm</button><button type="button" data-pulse-mode="playful" aria-pressed="false">Playful</button><button type="button" data-pulse-mode="paused" aria-pressed="false">Pause</button><button type="button" data-pulse-mode="hidden" aria-pressed="false">Hide</button></div></fieldset><button type="button" data-pulse-sound aria-pressed="false">Enable sound</button><label class="pulse-volume">Sound level <input type="range" min="0" max="40" step="1" value="12" aria-label="Companion sound volume" data-pulse-volume></label><label class="pulse-spot">Resting side <select data-pulse-side aria-label="Preferred companion resting side"><option value="auto">Find a clear spot</option><option value="left">Left</option><option value="right">Right</option></select></label><p class="pulse-preference-note">For this page only. Sound and sensors start off. Reduced motion takes priority.</p></details>
+    <details class="pulse-status"><summary>From the Corner</summary><div class="corner-orbit-reading"><span class="corner-orbit-status-label">CURRENTLY</span><strong data-orbit-status>Checking the Corner…</strong><p data-orbit-detail></p></div><div class="corner-orbit-latest"><span class="corner-orbit-status-label">LATEST STORY</span><a data-orbit-story hidden></a><p data-orbit-story-empty>Checking published stories…</p></div><p class="corner-orbit-live-line" data-orbit-live role="status">Updates on demand</p><p class="corner-orbit-explainer">No AI chat or invented activity. Just a little character reacting to real Corner events. No private messages are read.</p><small class="pulse-release">Companion 3.1 · sweet-20261027</small></details>`;
   const tip=document.createElement('div');tip.className='pulse-greeting';tip.id='pulse-greeting';tip.setAttribute('role','tooltip');tip.textContent='Hi! How are you?';tip.hidden=true;
   document.body.append(stage,card,tip);
   const perch=document.createElement('span');perch.className='pulse-perch';perch.setAttribute('aria-hidden','true');
@@ -161,6 +163,7 @@
   const inputSelector='input,textarea,select,[contenteditable="true"]';
   let mode='calm',position=null,motion=null,frame=0,phase=0,velocity=0,poseTimer=0,layoutTimer=0,idleTimer=0,edgeTimer=0,tipTimer=0;
   let lastReaction=-Infinity,quietUntil=0,suspended=false,hovered=false,tipHovered=false,tipSuppressed=false,routeMemory=null,edge=null,greetingCount=0,layoutVersion=0,lastEdge=-Infinity;
+  let speechTimer=0,speechHold=0,playTimer=0,playIndex=0,fullSentence='',preferredSide='auto',lastPlay=-Infinity;
   let cache={g:null,blocks:[]},sound=false,audio=null,masterGain=null,volume=.12,lastSound=-Infinity,footIndex=0,turnTimer=0;
   const audioNodes=new Set();
   const otherDialog=()=>all('dialog[open]').some(el=>el!==card);
@@ -173,7 +176,7 @@
     return {x:v.x+8,y:v.y+8,w,h,maxX:v.x+v.w-w-8,maxY:floor-h,screenX:v.x,screenRight:v.x+v.w};
   }
   function obstacles(){
-    return all('a,button,input,textarea,select,nav,header,footer,h1,h2,h3,p,blockquote,figure,.card-media,[role="alert"],[role="status"]').filter(el=>!stage.contains(el)&&!card.contains(el)&&!tip.contains(el)&&!el.closest('dialog')&&el!==restore&&el!==reopen&&!el.hidden).map(el=>{
+    return all('a,button,input,textarea,select,nav,header,footer,h1,h2,h3,p,blockquote,figure,.card-media,.now-panel,.editorial-chip,.aside-cap,.now-status,[role="alert"],[role="status"]').filter(el=>!stage.contains(el)&&!card.contains(el)&&!tip.contains(el)&&!el.closest('dialog')&&el!==restore&&el!==reopen&&!el.hidden).map(el=>{
       const r=el.getBoundingClientRect(),visible=r.width>0&&r.height>0&&getComputedStyle(el).visibility!=='hidden';
       return {left:r.left-5,right:r.right+5,top:r.top-5,bottom:r.bottom+5,visible};
     }).filter(r=>r.visible&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth);
@@ -209,14 +212,14 @@
   function pose(value){clearTimeout(poseTimer);dock.dataset.pose=value;}
   function resetRig(){for(const el of Object.values(limbs))el?.style.removeProperty('transform');}
   function stop(reset=true){
-    clearTimeout(turnTimer);clearTimeout(edgeTimer);cancelAnimationFrame(frame);frame=0;motion=null;velocity=0;
+    clearTimeout(turnTimer);clearTimeout(edgeTimer);clearTimeout(playTimer);playTimer=0;cancelAnimationFrame(frame);frame=0;motion=null;velocity=0;
     if(reset){pose('sit');resetRig();caption.textContent='';}
   }
   function draw(){
     if(!position)return;const g=cache.g||geometry();
     dock.style.setProperty('--pet-x',position.x+'px');dock.style.setProperty('--pet-y',position.y+'px');dock.style.setProperty('--pet-w',g.w+'px');dock.style.setProperty('--pet-h',g.h+'px');
   }
-  // Stride phase comes from pixels travelled, not an unrelated CSS timer.
+  // Stride phase follows travelled pixels, not an unrelated animation timer.
   function gait(distance){
     phase+=distance/(narrow.matches?39:49)*Math.PI*2;
     const swing=Math.sin(phase),liftL=Math.max(0,Math.cos(phase)),liftR=Math.max(0,-Math.cos(phase));
@@ -229,19 +232,29 @@
     limbs.shadow.style.transform=`scaleX(${1-Math.abs(swing)*.07})`;
     const nextFoot=Math.floor(phase/Math.PI);if(nextFoot>footIndex){footIndex=nextFoot;if(mode==='playful')tone('step');}
   }
-  function hideTip(){clearTimeout(tipTimer);tip.hidden=true;pet.removeAttribute('aria-describedby');}
+  function hideTip(){clearTimeout(tipTimer);clearTimeout(speechTimer);clearTimeout(speechHold);tip.hidden=true;tip.style.removeProperty('min-height');pet.removeAttribute('aria-describedby');}
   function positionTip(){
-    if(tip.hidden||!position)return;const g=cache.g||geometry(),v=viewport();
-    const r=tip.getBoundingClientRect(),left=clamp(position.x+g.w/2-r.width/2,v.x+9,v.x+v.w-r.width-9);
-    const top=position.y>r.height+18?position.y-r.height-10:position.y+g.h+7;
-    tip.style.left=left+'px';tip.style.top=clamp(top,v.y+8,v.y+v.h-r.height-8)+'px';
+    if(tip.hidden||!position)return false;
+    const g=cache.g||geometry(),v=viewport();tip.style.width='';
+    const blocks=cache.blocks.concat([{left:position.x-3,right:position.x+g.w+3,top:position.y-3,bottom:position.y+g.h+3}]);
+    for(const width of [Math.min(255,v.w-24),Math.min(185,v.w-24)]){
+      tip.style.width=width+'px';const r=tip.getBoundingClientRect();
+      const minX=v.x+9,maxX=v.x+v.w-width-9,minY=v.y+8,maxY=Math.max(minY,g.maxY+g.h-r.height-8);
+      const candidates=[];
+      for(let y=minY;y<=maxY;y+=12)for(const x of [minX,maxX,clamp(position.x+g.w/2-width/2,minX,maxX)]){
+        const box={x,y,w:width,h:r.height};
+        if(!blocks.some(block=>hits(box,box,block)))candidates.push(box);
+      }
+      candidates.sort((a,b)=>Math.hypot(a.x+width/2-position.x-g.w/2,a.y+r.height/2-position.y-g.h/2)-Math.hypot(b.x+width/2-position.x-g.w/2,b.y+r.height/2-position.y-g.h/2));
+      if(candidates.length){tip.style.left=candidates[0].x+'px';tip.style.top=candidates[0].y+'px';return true;}
+    }
+    tip.hidden=true;pet.removeAttribute('aria-describedby');return false;
   }
   function greet(){
     if(mode==='hidden'||blocked()||card.open||tipSuppressed)return;
     stop();quietUntil=performance.now()+7000;
     if(edge){const g=geometry();position.x=clamp(position.x,g.x,g.maxX);edge=null;dock.dataset.edge='';draw();}
-    tip.textContent=greetingCount++%2===0?'Hi! How are you?':'Nice to see you. Shall we explore?';tip.hidden=false;
-    pet.setAttribute('aria-describedby',tip.id);positionTip();if(canAnimate())pose('wave');
+    say(['Hi! How are you?','A little hello, just for you.','Shall we find a lovely story?','Hello again. I saved you a little wave.'][greetingCount++%4],false);if(canAnimate())pose('wave');
   }
   function leaveGreeting(){clearTimeout(tipTimer);tipTimer=setTimeout(()=>{if(!hovered&&!tipHovered&&!pet.matches(':focus-visible')){hideTip();pose('sit');idle();}},180);}
   function updateLayout(){
@@ -250,8 +263,6 @@
     if(mode==='hidden'||blocked()){stop();hideTip();dock.hidden=true;restore.hidden=mode!=='hidden';return;}
     pet.tabIndex=edge?.phase==='hidden'?-1:0;
     if(edge){
-      // Non-geometric DOM updates must not cancel an explicit peek halfway
-      // through. Scroll/resize already clear the sequence in scheduleLayout.
       let previous=position;
       const remaining=!motion||motion.steps.slice(motion.index).every(next=>{
         const clear=clearLine(previous,next,g,blocks,motion.outside);previous=next;return clear;
@@ -262,14 +273,14 @@
     if(motion){let prior=position;if(motion.steps.slice(motion.index).every(p=>{const ok=clearLine(prior,p,g,blocks);prior=p;return ok;})){draw();return;}stop();}
     if(!position||!safe(position,g,blocks)){
       stop();routeMemory=null;const points=pockets(g,blocks),home=perch.getBoundingClientRect(),atHome={x:home.left,y:home.top};
-      points.sort((a,b)=>Math.hypot(a.x-g.maxX,a.y-g.maxY)-Math.hypot(b.x-g.maxX,b.y-g.maxY));
-      position=safe(atHome,g,blocks)?atHome:points[0]||null;
+      const side=preferredSide==='left'?g.x:g.maxX;
+      points.sort((a,b)=>Math.hypot(a.x-side,a.y-g.maxY)-Math.hypot(b.x-side,b.y-g.maxY));
+      position=preferredSide==='auto'&&safe(atHome,g,blocks)?atHome:points[0]||null;
     }
     dock.hidden=!position;restore.hidden=!!position;restore.textContent=position?'Show Pulse':'Pulse controls';draw();positionTip();
     if(card.open)positionPanel();
   }
   function scheduleLayout(){
-    // Freeze during scroll rather than disappear on every scroll event.
     stop();hideTip();routeMemory=null;edge=null;dock.dataset.edge='';quietUntil=performance.now()+1100;layoutVersion++;
     clearTimeout(layoutTimer);layoutTimer=setTimeout(updateLayout,110);
   }
@@ -298,11 +309,9 @@
     },160);return true;
   }
   const walk=(target,done)=>{if(!position)return false;return walkSteps(route(position,target,cache.g,cache.blocks),done);};
-
   function edgeJourney(){
     if(!canMove()||!position||edge)return false;
     cache={g:geometry(),blocks:obstacles()};const {g,blocks}=cache;
-    // Only an unobstructed exit lane is eligible; never walk through a rail.
     const options=[];
     for(const side of ['right','left'])for(let y=g.y;y<=g.maxY;y+=26){
       const anchor={x:side==='right'?g.maxX:g.x,y},out={x:side==='right'?g.screenRight+4:g.screenX-g.w-4,y};
@@ -381,7 +390,6 @@
     const button=$('[data-pulse-sound]',card);
     if(sound){sound=false;silence();if(audio?.state==='running')void audio.suspend().catch(()=>{});button.setAttribute('aria-pressed','false');button.textContent='Enable sound';return;}
     try{
-      // This is the sole audio construction site: only an explicit button click.
       const Context=window.AudioContext||window.webkitAudioContext;if(!Context)throw Error('unsupported');
       if(!audio){audio=new Context();masterGain=audio.createGain();masterGain.gain.value=volume*.42;masterGain.connect(audio.destination);}
       await audio.resume();sound=audio.state==='running';
@@ -454,10 +462,10 @@
     if(card.open){event.preventDefault();closePanel();}
     if(!tip.hidden){event.preventDefault();hideTip();tipSuppressed=true;pose('sit');}
   });
-  pet.addEventListener('pointerenter',event=>{if(event.pointerType==='touch')return;hovered=true;tipSuppressed=false;stop();tipTimer=setTimeout(greet,240);});
+  pet.addEventListener('pointerenter',event=>{if(event.pointerType==='touch')return;hovered=true;tipSuppressed=false;if(playTimer)return;stop();tipTimer=setTimeout(greet,240);});
   pet.addEventListener('pointerleave',()=>{hovered=false;leaveGreeting();});
   tip.addEventListener('pointerenter',()=>{tipHovered=true;clearTimeout(tipTimer);});tip.addEventListener('pointerleave',()=>{tipHovered=false;leaveGreeting();});
-  pet.addEventListener('focus',()=>{stop();quietUntil=performance.now()+7000;if(pet.matches(':focus-visible')){tipSuppressed=false;greet();}});
+  pet.addEventListener('focus',()=>{if(playTimer)return;stop();quietUntil=performance.now()+7000;if(pet.matches(':focus-visible')){tipSuppressed=false;greet();}});
   pet.addEventListener('blur',leaveGreeting);pet.addEventListener('pointerdown',()=>stop());pet.addEventListener('click',openPanel);menuControl.addEventListener('click',openPanel);
   for(const button of all('[data-pulse-mode]',card))button.addEventListener('click',()=>{
     mode=button.dataset.pulseMode;dock.dataset.mode=mode;stop();hideTip();edge=null;routeMemory=null;dock.dataset.edge='';pet.tabIndex=0;
@@ -475,8 +483,6 @@
     if(action==='tour'){tour(0);return;}
     if(action==='peek'){
       if(!canAnimate()){showResult('MOTION IS QUIET','No rush.','Choose Calm or Playful to move. Reduced motion stays respected.');return;}
-      // Begin only after the dialog close lifecycle has restored the scene.
-      // Starting before close dispatch would cancel the new path immediately.
       card.addEventListener('close',()=>{
         hovered=false;pet.blur();quietUntil=0;updateLayout();
         if(!edgeJourney()){openPanel();showResult('KEEPING THINGS CLEAR','A little wave instead.','This part of the page is too crowded for a safe edge walk. I won’t cover your reading or buttons.');}
@@ -512,21 +518,144 @@
   document.addEventListener('corner:live-state',event=>{const state=event.detail?.state;$('[data-orbit-live]',card).textContent=state==='open'?'Live Corner updates connected':state==='paused'?'Updates paused while away':state==='error'?'Connection interrupted — retrying':'Updates on demand';});
   document.addEventListener('corner:welcome-closed',()=>{updateLayout();if(canAnimate()&&!dock.hidden){pose('wave');poseTimer=setTimeout(()=>pose('sit'),1600);}});
   const observer=new MutationObserver(records=>{
-    if(records.every(r=>stage.contains(r.target)||card.contains(r.target)||r.target===restore||r.target===reopen||r.target===tip))return;
+    if(records.every(r=>stage.contains(r.target)||card.contains(r.target)||r.target===restore||r.target===reopen||r.target===tip||tip.contains(r.target)))return;
     clearTimeout(layoutTimer);layoutTimer=setTimeout(updateLayout,60);
   });
   const observation={subtree:true,childList:true,attributes:true,attributeFilter:['open','hidden','aria-expanded']};observer.observe(document.body,observation);
   window.addEventListener('resize',scheduleLayout,{passive:true});window.addEventListener('scroll',scheduleLayout,{passive:true});
   window.visualViewport?.addEventListener('resize',scheduleLayout,{passive:true});window.visualViewport?.addEventListener('scroll',scheduleLayout,{passive:true});
-  document.addEventListener('focusin',event=>{if(event.target.matches(inputSelector)){scheduleLayout();dock.hidden=true;silence();}});
-  document.addEventListener('focusout',event=>{if(event.target.matches(inputSelector))scheduleLayout();});
-  reduced.addEventListener('change',()=>{stop();edge=null;updateLayout();idle();});
+  document.addEventListener('focusin',event=>{if(event.target.matches(inputSelector)){scheduleLayout();dock.hidden=true;silence();syncMotion();}});
+  document.addEventListener('focusout',event=>{if(event.target.matches(inputSelector)){scheduleLayout();setTimeout(syncMotion,0);}});
+  reduced.addEventListener('change',()=>{stop();hideTip();edge=null;updateLayout();syncMotion();idle();});
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden){suspended=true;stop();hideTip();clearTimeout(idleTimer);clearTimeout(layoutTimer);dock.hidden=true;silence();if(audio?.state==='running')void audio.suspend().catch(()=>{});}
     else{suspended=false;sound=false;$('[data-pulse-sound]',card).setAttribute('aria-pressed','false');$('[data-pulse-sound]',card).textContent='Enable sound';quietUntil=performance.now()+2000;updateLayout();idle();}
   });
   window.addEventListener('pagehide',()=>{suspended=true;stop();hideTip();clearTimeout(idleTimer);clearTimeout(layoutTimer);panelController?.abort();observer.disconnect();silence();sound=false;if(audio?.state==='running')void audio.suspend().catch(()=>{});});
   window.addEventListener('pageshow',event=>{if(event.persisted){suspended=false;observer.observe(document.body,observation);$('[data-pulse-sound]',card).setAttribute('aria-pressed','false');$('[data-pulse-sound]',card).textContent='Enable sound';updateLayout();idle();}});
-  window.CornerPulse=Object.freeze({snapshot:()=>({version:3,character:'Doraemon',mode,pose:dock.dataset.pose,moving:!!motion,position:position?{...position}:null,visible:!dock.hidden,reduced:reduced.matches,suspended,edge:edge?.phase||null,phase,sound,audioState:audio?.state||'not-created',patrolTrips:routeMemory?.trips||0}),open:openPanel});
+
+  /* Gentle authored personality. No emotion inference or private-text access.
+     Only explicit play or opted-in motion starts these finite scenes. */
+  const spoken=document.createElement('span');spoken.className='pulse-sr';spoken.setAttribute('role','status');spoken.setAttribute('aria-live','polite');spoken.setAttribute('aria-atomic','true');stage.append(spoken);
+  const jokes=[
+    ['I packed a tiny joke in my pocket...','Oh. It is hiding behind a biscuit. Hee-hee!'],
+    ['Why did the bookmark smile?','It finally found its place.'],
+    ['I tried to tiptoe very quietly...','My little bell had other plans.'],
+    ['One story, I said. Just one.','My pocket has asked for another.']
+  ];
+  function say(message,announce=true){
+    clearTimeout(speechTimer);clearTimeout(speechHold);fullSentence=String(message).slice(0,140);
+    tip.replaceChildren();
+    const visual=document.createElement('span'),accessible=document.createElement('span');
+    visual.className='pulse-tip-text';visual.setAttribute('aria-hidden','true');visual.textContent=fullSentence;
+    accessible.className='pulse-sr';accessible.textContent=fullSentence;tip.append(visual,accessible);
+    tip.hidden=false;pet.setAttribute('aria-describedby',tip.id);positionTip();
+    tip.style.minHeight=Math.ceil(tip.getBoundingClientRect().height)+'px';
+    if(announce)spoken.textContent=fullSentence;
+    if(reduced.matches){visual.textContent=fullSentence;return;}
+    const letters=Array.from(fullSentence);let at=0;visual.textContent='';
+    const type=()=>{if(tip.hidden||document.hidden)return;visual.textContent=letters.slice(0,++at).join('');if(at<letters.length)speechTimer=setTimeout(type,/[.!?]/.test(letters[at-1])?125:23);};
+    type();
+  }
+  tip.addEventListener('click',()=>{clearTimeout(speechTimer);const text=$('.pulse-tip-text',tip);if(text)text.textContent=fullSentence;});
+  function finishPlay(){
+    playTimer=0;
+    if(blocked()||mode==='hidden'){hideTip();return;}
+    pose('sit');resetRig();idle();speechHold=setTimeout(()=>{if(!hovered&&!tipHovered&&!pet.matches(':focus-visible'))hideTip();},6500);
+  }
+  function playScene(kind,sensor=false){
+    if(blocked()||mode==='hidden'||document.hidden)return;
+    const now=performance.now();if(now-lastPlay<(sensor?12000:900))return;
+    lastPlay=now;stop();hideTip();edge=null;dock.dataset.edge='';pet.tabIndex=0;routeMemory=null;
+    quietUntil=now+11000;updateLayout();
+    const quiet=reduced.matches||mode==='paused';
+    const start=(message,expression)=>{if(!quiet)pose(expression);say(message);};
+    if(!position){openPanel();showResult('A LITTLE SMILE','I am right here.','This spot is a bit crowded. We can still explore stories together.');return;}
+    if(kind==='surprise'){
+      start('Oh! What happened?',quiet?'sit':'startled');tone('hello');
+      playTimer=setTimeout(()=>{if(blocked()||mode==='hidden')return;start('You surprised my little whiskers! I am all right.','shy');playTimer=setTimeout(finishPlay,1300);},quiet?1100:1700);
+    }else if(kind==='highfive'){
+      start('A tiny high five? Ready...','highfive');
+      playTimer=setTimeout(()=>{if(blocked()||mode==='hidden')return;start('Boop! That was a lovely high five.','laugh');tone('happy');playTimer=setTimeout(finishPlay,1100);},quiet?900:1400);
+    }else if(kind==='joke'){
+      const lines=jokes[playIndex++%jokes.length];start(lines[0],'curious');
+      playTimer=setTimeout(()=>{if(blocked()||mode==='hidden')return;start(lines[1],'laugh');tone('hello');playTimer=setTimeout(finishPlay,1500);},Math.max(1800,lines[0].length*30));
+    }else if(kind==='balance'){
+      start('Steady... steady... my toes are doing their best.','balance');
+      playTimer=setTimeout(()=>{if(blocked()||mode==='hidden')return;start('Ta-da! A very small victory.','shy');playTimer=setTimeout(finishPlay,1000);},quiet?1300:2300);
+    }
+  }
+  function requestPlay(kind){
+    const begin=()=>{hovered=false;tipHovered=false;pet.blur();playScene(kind);};
+    if(card.open){card.addEventListener('close',begin,{once:true});closePanel(false);}else begin();
+  }
+  for(const button of all('[data-pulse-play]',card))button.addEventListener('click',()=>requestPlay(button.dataset.pulsePlay));
+  $('[data-pulse-side]',card).addEventListener('change',event=>{preferredSide=['auto','left','right'].includes(event.target.value)?event.target.value:'auto';stop();position=null;routeMemory=null;updateLayout();});
+  for(const button of all('[data-pulse-filter]',card))button.addEventListener('click',async()=>{
+    button.disabled=true;endTour();
+    try{
+      if(!posts.length||Date.now()-lastFetch>60000)await refresh();if(!card.open)return;
+      const category=button.dataset.pulseFilter,item=posts.find(post=>post.type===category||(category==='journal'&&post.type==='tech-note'));
+      if(!item){showResult('FROM RECENT STORIES','A little space for something new.',lastFetch?'There is no matching story in the latest collection yet. Try Latest story.':'The stories could not be loaded. Please try again.');return;}
+      showResult('A LITTLE FIND FOR YOU',item.title||'A Corner story',String(item.excerpt||'Take your time. This one is ready to read.').slice(0,220),prefix+'/post/'+encodeURIComponent(item.slug));
+      resultLink.textContent='Read the story ↗';if(canAnimate())pose('pocket');tone('hello');
+    }finally{button.disabled=false;}
+  });
+  /* Off -> requesting -> waiting -> active. Consent is per page, never saved.
+     Only a rolling local vector is held; no sensor history is retained. */
+  const sensorButton=$('[data-pulse-motion]',card),sensorLabel=$('[data-motion-status]',card);
+  let motionWanted=false,motionListening=false,sensorState='off',permissionEpoch=0,sensorTimer=0,readings=0,lastSample=0,lastPeak=0,lastShake=-Infinity,peaks=0,lastSign=0,windowStart=0,gravity=null;
+  const sensorCopy={off:'Off. Optional motion stays on this device; nothing is recorded or sent.',requesting:'Waiting for your permission...',waiting:'Permission accepted. Checking for usable movement readings...',active:'On. A gentle shake can surprise him. Nothing is recorded or sent.',paused:'Motion is paused while you are away, typing, or using Quiet controls.',denied:'No problem. Motion was not allowed. Surprise him still works.',unavailable:'Motion is not available here. Use Surprise him instead.'};
+  function showSensor(state){sensorState=state;sensorLabel.textContent=sensorCopy[state]||sensorCopy.off;sensorButton.setAttribute('aria-pressed',String(motionWanted));sensorButton.textContent=motionWanted?'Turn off shake reactions':'Enable shake reactions';}
+  function detachMotion(){window.removeEventListener('devicemotion',onMotion);motionListening=false;clearTimeout(sensorTimer);gravity=null;peaks=0;lastSign=0;lastSample=0;}
+  function turnMotionOff(state='off'){permissionEpoch++;motionWanted=false;detachMotion();showSensor(state);}
+  function syncMotion(){
+    if(!motionWanted){detachMotion();return;}
+    if(document.hidden||otherDialog()||mode==='hidden'||mode==='paused'||reduced.matches||!!document.activeElement?.matches(inputSelector)){
+      detachMotion();showSensor('paused');return;
+    }
+    if(motionListening)return;
+    readings=0;motionListening=true;showSensor('waiting');window.addEventListener('devicemotion',onMotion,{passive:true});
+    sensorTimer=setTimeout(()=>{if(motionListening&&readings<2)turnMotionOff('unavailable');},4500);
+  }
+  function onMotion(event){
+    if(!motionWanted||!motionListening)return;
+    const a=event.acceleration,g=event.accelerationIncludingGravity;
+    let vector=a&&[a.x,a.y,a.z].every(Number.isFinite)?[a.x,a.y,a.z]:null;
+    if(!vector&&g&&[g.x,g.y,g.z].every(Number.isFinite)){
+      const raw=[g.x,g.y,g.z];if(!gravity)gravity=raw.slice();
+      gravity=gravity.map((value,i)=>value*.86+raw[i]*.14);vector=raw.map((value,i)=>value-gravity[i]);
+    }
+    if(!vector)return;
+    readings++;if(readings>=2&&sensorState!=='active'){clearTimeout(sensorTimer);showSensor('active');}
+    const now=performance.now();if(now-lastSample<70)return;lastSample=now;
+    if(readings<4||blocked()||card.open||!canAnimate()||now-lastShake<12000||now-lastPlay<12000)return;
+    const value=vector.reduce((best,n)=>Math.abs(n)>Math.abs(best)?n:best,0),magnitude=Math.hypot(...vector);
+    if(magnitude<11||Math.abs(value)<8)return;
+    if(now-windowStart>1000){windowStart=now;peaks=0;lastSign=0;}
+    const sign=Math.sign(value);
+    if(sign===lastSign||now-lastPeak<90)return;
+    lastPeak=now;lastSign=sign;peaks++;
+    if(peaks>=3){peaks=0;lastShake=now;playScene('surprise',true);}
+  }
+  sensorButton.addEventListener('click',async()=>{
+    if(motionWanted||sensorState==='requesting'){turnMotionOff();return;}
+    const Motion=window.DeviceMotionEvent,policy=document.permissionsPolicy||document.featurePolicy;
+    if(!window.isSecureContext||!Motion||(policy?.allowsFeature&&!policy.allowsFeature('accelerometer'))){showSensor('unavailable');return;}
+    const epoch=++permissionEpoch;showSensor('requesting');
+    try{
+      const permission=typeof Motion.requestPermission==='function'?await Motion.requestPermission():'granted';
+      if(epoch!==permissionEpoch||document.hidden)return;
+      if(permission!=='granted'){turnMotionOff('denied');return;}
+      motionWanted=true;syncMotion();
+    }catch{if(epoch===permissionEpoch)turnMotionOff('denied');}
+  });
+  for(const button of all('[data-pulse-mode]',card))button.addEventListener('click',()=>{clearTimeout(playTimer);hideTip();syncMotion();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(playTimer);hideTip();}syncMotion();});
+  document.addEventListener('corner:welcome-closed',syncMotion);
+  document.addEventListener('focusin',()=>{if(motionWanted)syncMotion();});
+  document.addEventListener('focusout',()=>{if(motionWanted)setTimeout(syncMotion,0);});
+  window.addEventListener('pagehide',()=>{clearTimeout(playTimer);hideTip();turnMotionOff();});
+  window.CornerPulse=Object.freeze({snapshot:()=>({version:3,release:'sweet-20261027',motionPermission:sensorState,motionEnabled:motionWanted,motionListening,character:'Doraemon',mode,pose:dock.dataset.pose,moving:!!motion,position:position?{...position}:null,visible:!dock.hidden,reduced:reduced.matches,suspended,edge:edge?.phase||null,phase,sound,audioState:audio?.state||'not-created',patrolTrips:routeMemory?.trips||0}),open:openPanel});
   updateLayout();idle();
 })();

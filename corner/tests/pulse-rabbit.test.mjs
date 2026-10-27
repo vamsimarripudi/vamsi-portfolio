@@ -1,4 +1,4 @@
-// Existing CI entrypoint retained; companion is now the requested Doraemon v3.
+// Legacy CI entrypoint retained for the Doraemon 3.1 companion.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -19,7 +19,7 @@ test('one public stream, freshness and valid reactions stay authoritative',()=>{
 test('Doraemon has articulated parts, true distance-driven stride and bounded edge routines',()=>{
   for(const name of ['pulse-doraemon','pulse-foot-left','pulse-foot-right','pulse-arm-left','pulse-arm-right','pulse-whiskers','pulse-bell','pulse-pocket','pulse-glory'])assert.ok(pulse.includes(name),name);
   assert.doesNotMatch(pulse,/pulse-rabbit|pulse-ear-left|pulse-ear-right/);
-  for(const name of ['walk','run','sit','wave','happy','curious','peek','edge-hidden'])assert.ok(css.includes('data-pose='+name),name);
+  for(const name of ['walk','run','sit','wave','happy','curious','peek','edge-hidden','startled','laugh','shy','highfive','balance'])assert.ok(css.includes('data-pose='+name),name);
   for(const mode of ['calm','playful','paused','hidden'])assert.ok(pulse.includes('data-pulse-mode="'+mode+'"'));
   for(const pattern of [/phase\+=distance\//,/function edgeJourney/,/routeMemory\.reverse/,/requestAnimationFrame\(tick\)/,/cancelAnimationFrame/,/clearLine/,/visualViewport/,/\.account-shell/,/dialog\[open\]/])assert.match(pulse,pattern);
   assert.match(css,/pulse-stage[^}]*overflow:hidden/);
@@ -41,13 +41,19 @@ test('audio is opt-in, original local synthesis, bounded volume and lifecycle cl
 test('private page is excluded before any DOM, sound or network initialization',()=>{
   let calls=0;vm.runInNewContext(pulse,{document:{querySelector(selector){calls++;assert.match(selector,/account-shell/);return {};}}},{timeout:1000});assert.equal(calls,1);
 });
-test('syntax and explicit optional payload budgets',()=>{
-  assert.doesNotThrow(()=>new vm.Script(pulse));assert.ok(Buffer.byteLength(pulse)<50000);
-  assert.ok(Buffer.byteLength(css)<19000);assert.ok(gzipSync(pulse).length<16000);assert.ok(gzipSync(css).length<5000);
+test('syntax and reviewed optional payload budgets for play and sensor support',()=>{
+  assert.doesNotThrow(()=>new vm.Script(pulse));assert.ok(Buffer.byteLength(pulse)<65000,'Optional companion under 65 KB raw');
+  assert.ok(Buffer.byteLength(css)<23000);assert.ok(gzipSync(pulse).length<21000);assert.ok(gzipSync(css).length<6000);
 });
 test('original core has no second stream and keeps its transfer budget',{skip:!app},()=>{
   assert.equal((app.match(/new EventSource\(/g)||[]).length,0);
   assert.doesNotThrow(()=>new vm.Script(app));assert.ok(Buffer.byteLength(app)+1604+5610+4955+2197<24000);
+});
+test('motion is opt-in with real readings, disable, timeout and alternative controls',()=>{
+  for(const pattern of [/motionWanted=false/,/await Motion\.requestPermission\(\)/,/window\.isSecureContext/,/readings<2/,/turnMotionOff\('denied'\)/,/turnMotionOff\('unavailable'\)/,/removeEventListener\('devicemotion',onMotion\)/,/now-lastShake<12000/,/data-pulse-play="surprise"/,/data-pulse-play="highfive"/,/data-pulse-play="joke"/,/data-pulse-play="balance"/,/speechTimer/,/aria-atomic/])assert.match(pulse,pattern);
+  assert.match(pulse,/\.now-panel,\.editorial-chip/);
+  assert.match(pulse,/release:'sweet-20261027'/);
+  assert.doesNotMatch(pulse,/localStorage\.setItem\((?!welcomeKey)/,'No new stored sensor or preference history');
 });
 test('stream rejects duplicate/stale/private events and reaction removals',()=>{
   class Doc extends EventTarget {hidden=false;querySelector(){return null;}querySelectorAll(){return [];}}
