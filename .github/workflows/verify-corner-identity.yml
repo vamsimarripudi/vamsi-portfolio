@@ -104,7 +104,7 @@ jobs:
             await login.locator('input[name="password"]').fill(pass);
             await login.locator('button[type="submit"]').click();
             await page.waitForURL('**/corner/profile',{timeout:12000});
-            await page.getByText('Signed in as '+email).waitFor();
+            await page.getByText('Private account · Signed in').waitFor();
             assert.match((await page.locator('body').textContent()),/Your quiet space/);
             // Quiet Desk is exercised using the isolated synthetic member
             // and its real first-party auth cookie, never a production account.
@@ -123,6 +123,21 @@ jobs:
               }));
               assert.ok(geom.body<=geom.viewport+1,'No Quiet Desk overview overflow '+width+' '+JSON.stringify(geom));
               assert.ok(geom.desk&&geom.menu===6&&geom.photo,'Six-section private account shell '+width);
+              if(width<=700){
+                const nav=page.locator('.quiet-navigation');
+                const layout=await nav.evaluate(el=>({
+                  display:getComputedStyle(el).display,
+                  columns:getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
+                  items:[...el.querySelectorAll('.quiet-nav-link')].map(link=>{
+                    const rect=link.getBoundingClientRect();
+                    return {left:rect.left,right:rect.right,width:rect.width};
+                  })
+                }));
+                assert.equal(layout.display,'grid','All account options use visible mobile grid '+width);
+                assert.equal(layout.columns,3,'Six controls in a two-row mobile grid '+width);
+                assert.ok(layout.items.length===6&&layout.items.every(item=>item.width>=67&&item.left>=-1&&item.right<=width+1),
+                  'All account sections fit without scrolling horizontally '+width+' '+JSON.stringify(layout));
+              }
               assert.equal(geom.pulse,false,'Pulse never overlaps member controls '+width);
               if(width===390||width===1366)await page.screenshot({path:'screenshots/quiet-desk/profile-'+width+'.png',fullPage:false,animations:'disabled'});
               await page.goto(origin+'/corner/settings/profile',{waitUntil:'networkidle'});
