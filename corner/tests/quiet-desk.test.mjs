@@ -191,3 +191,35 @@ test('Quiet Desk is mobile-first and preserves accessibility and account APIs',(
   assert.match(js,/api\('me\/sessions'\)/);
   assert.match(js,/data-account-delete-dialog/);
 });
+
+
+test('editing has explicit discard and cancel with guarded navigation and safe save',()=>{
+ const account=readFileSync(new URL('../public/account.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../public/account-quiet.css',import.meta.url),'utf8');
+ assert.match(account,/const dirtyForms=/);
+ assert.match(account,/new WeakMap\(\)/);
+ assert.match(account,/new FormData\(form\)/);
+ assert.match(account,/window\.addEventListener\('beforeunload'/);
+ assert.match(account,/data-discard-cancel/);
+ assert.match(account,/data-discard-confirm/);
+ assert.match(account,/data-discard-edits/);
+ assert.match(account,/data-edit-cancel/);
+ assert.match(account,/markClean\(form\);response\(form,'Profile updated\.'/);
+ assert.match(account,/markClean\(form\);response\(form,'Preferences saved\.'/);
+ assert.match(css,/\.quiet-discard-dialog/);
+ assert.match(css,/\.quiet-edit-exit/);
+});
+test('first-visit letter is a real one-time introduction and not the obsolete note',()=>{
+ const js=readFileSync(new URL('../public/companion.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../public/companion.css',import.meta.url),'utf8');
+ assert.match(js,/corner-welcome-letter-v2/);
+ assert.doesNotMatch(js,/corner-welcome-v1/);
+ assert.match(js,/A little hello, from me to you\./);
+ assert.match(js,/Glad you found your way here/);
+ assert.match(js,/data-letter-explore/);
+ assert.match(js,/data-letter-dismiss/);
+ assert.match(js,/data-letter-join/);
+ assert.match(js,/localStorage\.setItem\(welcomeKey,'seen'\)/);
+ assert.match(css,/\.corner-welcome-letter/);
+ assert.match(css,/safe-area-inset-bottom/);
+});
