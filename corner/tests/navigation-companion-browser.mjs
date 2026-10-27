@@ -141,6 +141,37 @@ try{
  const animation=await reduced.locator('.corner-orbit-toy').evaluate(el=>getComputedStyle(el).animationName);
  assert.equal(animation,'none','No mascot animation for reduced-motion');
  await reduced.close();
+ // Policy UX regression: the public Legal & Trust Center stays readable and
+ // route-complete at phone, tablet and desktop sizes without accepting consent.
+ for(const [width,height] of [[320,720],[390,844],[768,1024],[1366,850]]){
+   await page.setViewportSize({width,height});
+   for(const route of ['/policies','/privacy','/cookies','/dpdp','/terms','/viewership','/disclaimer','/grievances']){
+     const res=await page.goto(origin+'/corner'+route,{waitUntil:'domcontentloaded'});
+     assert.equal(res.status(),200,'Legal document route '+route+' at '+width);
+     await page.locator('.legal-hero h1').waitFor({state:'visible'});
+     const bounds=await page.evaluate(()=>{
+       const main=document.querySelector('#content'),article=document.querySelector('.legal-article'),mainRect=main.getBoundingClientRect();
+       return {scroll:document.documentElement.scrollWidth,width:innerWidth,mainLeft:mainRect.left,mainRight:mainRect.right,
+          articleLeft:article?.getBoundingClientRect().left,articleRight:article?.getBoundingClientRect().right};
+     });
+     assert.ok(bounds.scroll<=width+1,'Legal document has no horizontal overflow '+route+' '+width+' '+JSON.stringify(bounds));
+     assert.ok(bounds.mainLeft>=-1&&bounds.mainRight<=width+2,'Policy shell fits device '+route+' '+width);
+     if(route!=='/policies')assert.ok(bounds.articleLeft>=-1&&bounds.articleRight<=width+2,'Legal article fits viewport '+route+' '+width);
+     if(route==='/cookies'){
+       const table=page.locator('.legal-table-scroll');
+       await table.waitFor({state:'visible'});
+       assert.equal(await table.locator('tbody tr').count(),8,'Exact cookie/storage inventory remains visible');
+       assert.equal(await page.locator('.legal-choice-panel a[href="#reading-preferences"]').count(),1,'Can access optional reader consent');
+     }
+     if(route==='/privacy'){
+       await page.locator('#reading-preferences').waitFor({state:'visible'});
+       assert.equal(await page.locator('.reading-preferences [data-reading-choice]').count(),1,'Existing reading consent controls are retained');
+     }
+     if(width===390&&['/policies','/privacy','/cookies','/terms'].includes(route))
+       await page.screenshot({path:'screenshots/legal-'+route.slice(1)+'-390.png',animations:'disabled',fullPage:false});
+   }
+   console.log('PASS original policy hub, DPDP, rights & consent '+width+'x'+height);
+ }
  assert.deepEqual(errors,[],'No Corner navigation/companion browser errors');
  console.log('PASS floating toy real status, latest story action, Escape and reduced motion');
 }finally{await browser.close()}

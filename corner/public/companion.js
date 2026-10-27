@@ -45,7 +45,7 @@
     profilePanel.hidden=!open;
     profileButton.setAttribute('aria-expanded',String(open));
     profileButton.setAttribute('aria-label',open?'Close profile options':'Open profile options');
-    if(open)profilePanel.querySelector('a:not([hidden])')?.focus();
+    if(open)[...profilePanel.querySelectorAll('a,button')].find(el=>!el.hidden&&el.getClientRects().length)?.focus();
   });
   profilePanel.addEventListener('click',event=>{
     if(event.target.closest('a[href]'))closeProfile();
@@ -94,7 +94,7 @@
 (() => {
   'use strict';
   const prefix=location.pathname.startsWith('/corner')?'/corner':'';
-  if(!prefix||document.querySelector('.admin-shell,.signin-wrap'))return;
+  if(!prefix||document.querySelector('.admin-shell,.signin-wrap,.account-shell'))return;
   const dock=document.createElement('div');
   dock.className='corner-orbit-dock';
   dock.innerHTML=

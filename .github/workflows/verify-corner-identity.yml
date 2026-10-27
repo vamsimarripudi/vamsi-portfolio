@@ -104,12 +104,102 @@ jobs:
             await login.locator('input[name="password"]').fill(pass);
             await login.locator('button[type="submit"]').click();
             await page.waitForURL('**/corner/profile',{timeout:12000});
-            await page.getByText('Signed in as '+email).waitFor();
+            await page.getByText('Private account · Signed in').waitFor();
             assert.match((await page.locator('body').textContent()),/Your quiet space/);
+            // Quiet Desk is exercised using the isolated synthetic member
+            // and its real first-party auth cookie, never a production account.
+            fs.mkdirSync('screenshots/quiet-desk',{recursive:true});
+            for(const width of [320,375,390,768,1024,1366]){
+              const height=width<768?844:900;
+              await page.setViewportSize({width,height});
+              await page.goto(origin+'/corner/profile',{waitUntil:'networkidle'});
+              await page.locator('.quiet-profile-hero').waitFor({state:'visible'});
+              const geom=await page.evaluate(()=>({
+                viewport:innerWidth,body:document.documentElement.scrollWidth,
+                desk:!!document.querySelector('.quiet-desk-grid'),
+                menu:document.querySelectorAll('.quiet-nav-link').length,
+                photo:!!document.querySelector('.quiet-avatar'),
+                pulse:!!document.querySelector('.corner-orbit-dock')
+              }));
+              assert.ok(geom.body<=geom.viewport+1,'No Quiet Desk overview overflow '+width+' '+JSON.stringify(geom));
+              assert.ok(geom.desk&&geom.menu===6&&geom.photo,'Six-section private account shell '+width);
+              if(width<=700){
+                const nav=page.locator('.quiet-navigation');
+                const layout=await nav.evaluate(el=>({
+                  display:getComputedStyle(el).display,
+                  columns:getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
+                  items:[...el.querySelectorAll('.quiet-nav-link')].map(link=>{
+                    const rect=link.getBoundingClientRect();
+                    return {left:rect.left,right:rect.right,width:rect.width};
+                  })
+                }));
+                assert.equal(layout.display,'grid','All account options use visible mobile grid '+width);
+                assert.equal(layout.columns,3,'Six controls in a two-row mobile grid '+width);
+                assert.ok(layout.items.length===6&&layout.items.every(item=>item.width>=67&&item.left>=-1&&item.right<=width+1),
+                  'All account sections fit without scrolling horizontally '+width+' '+JSON.stringify(layout));
+              }
+              assert.equal(geom.pulse,false,'Pulse never overlaps member controls '+width);
+              if(width===390||width===1366)await page.screenshot({path:'screenshots/quiet-desk/profile-'+width+'.png',fullPage:false,animations:'disabled'});
+              await page.goto(origin+'/corner/settings/profile',{waitUntil:'networkidle'});
+              await page.locator('form[data-account-form=profile]').waitFor();
+              assert.equal(await page.locator('[data-avatar-file]').count(),1,'Photo and crop available '+width);
+              assert.equal(await page.locator('input[name=displayName]').count(),1,'Private display name available '+width);
+              const editWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
+              assert.ok(editWidth<=width+1,'Edit profile does not overflow '+width);
+              if(width===390)await page.screenshot({path:'screenshots/quiet-desk/edit-profile-'+width+'.png',fullPage:false,animations:'disabled'});
+            }
+            await page.setViewportSize({width:390,height:844});
+            await page.goto(origin+'/corner/saved',{waitUntil:'networkidle'});
+            await page.locator('[data-account-bookmarks]').waitFor();
+            await page.getByText('No saved stories yet.').waitFor({timeout:10000});
+            assert.equal(await page.locator('[data-bookmark-count]').textContent(),'0 saved','True count from first-party private bookmark API');
+            await page.screenshot({path:'screenshots/quiet-desk/saved-mobile.png',animations:'disabled'});
+            await page.goto(origin+'/corner/settings/preferences',{waitUntil:'networkidle'});
+            const pref=page.locator('form[data-account-form=preferences]');
+            await pref.waitFor();
+            assert.equal(await pref.locator('input[name=emailUpdates][role=switch]').count(),1,'Accessible optional email switch');
+            assert.equal(await pref.locator('input[name=emailUpdates]').isChecked(),false,'Optional email updates off unless opted in');
+            await pref.locator('select[name=locale]').selectOption('te');
+            await pref.locator('button[type=submit]').click();
+            await pref.getByText('Preferences saved.').waitFor();
+            await page.reload({waitUntil:'networkidle'});
+            assert.equal(await page.locator('select[name=locale]').inputValue(),'te','Preference persisted through the API');
+            await page.screenshot({path:'screenshots/quiet-desk/preferences-mobile.png',animations:'disabled'});
+            await page.goto(origin+'/corner/settings/privacy',{waitUntil:'networkidle'});
+            await page.locator('[data-account-export]').waitFor();
+            await page.locator('[data-account-delete]').click();
+            const dialog=page.locator('[data-account-delete-dialog]');
+            assert.equal(await dialog.isVisible(),true,'Account deletion requires explicit review');
+            await page.locator('[data-delete-cancel]').click();
+            assert.equal(await dialog.isVisible(),false,'Review can be dismissed without requesting deletion');
             await page.goto(origin+'/corner/settings/security',{waitUntil:'networkidle'});
-            await page.getByRole('heading', { name: 'Active sessions.', exact: true }).waitFor();
-            await page.locator('[data-account-logout]').click();
-            await page.waitForURL('**/corner/login',{timeout:12000});
+            await page.getByRole('heading',{name:'Active sessions.',exact:true}).waitFor();
+            await page.locator('[data-account-sessions]').getByText('Signed in').first().waitFor();
+            console.log('PASS Quiet Desk overview/edit 320–1366px, real bookmark count, preferences, privacy confirmation and session safety');
+            // The public account menu must not expose Studio controls to members.
+            await page.setViewportSize({width:390,height:844});
+            await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
+            await page.waitForFunction(()=>document.querySelector('[data-profile-member]')?.hidden===false);
+            await page.locator('[data-corner-profile-toggle]').click();
+            assert.equal(await page.locator('[data-profile-guest]').isVisible(),false);
+            assert.equal(await page.locator('[data-owner-studio]').isVisible(),false,'Owner Studio hidden for members');
+            assert.equal(await page.locator('[data-profile-logout]').isVisible(),true);
+            assert.equal(await page.locator('[data-profile-menu-name]').textContent(),'Synthetic Browser Member');
+            await page.keyboard.press('Escape');
+            assert.equal(await page.locator('#corner-profile-card').isVisible(),false);
+            console.log('PASS Quiet Desk overview/edit 320–1366px, real saved stories, Pulse clearance, role-gated menu');
+            await page.locator('[data-corner-profile-toggle]').click();
+            await page.locator('[data-profile-logout]').click();
+            await page.waitForURL('**/corner/',{timeout:12000});
+            await page.waitForFunction(()=>document.querySelector('[data-profile-member]')?.hidden===true&&document.querySelector('[data-profile-guest]')?.hidden===false,null,{timeout:15000});
+            const signedOut=await page.evaluate(async()=>{
+              const response=await fetch('/corner/api/v1/auth/session',{credentials:'same-origin',cache:'no-store'});
+              return response.ok&&(await response.json())?.data?.authenticated===false;
+            });
+            assert.equal(signedOut,true,'Sign out invalidates the authenticated session');
+            await page.locator('[data-corner-profile-toggle]').click();
+            assert.equal(await page.locator('[data-profile-guest]').isVisible(),true,'Guest controls replace member options');
+            assert.equal(await page.locator('[data-profile-member]').isVisible(),false,'Private menu controls stay hidden after logout');
             await page.close();
             console.log('PASS authenticated browser registration, verification, session, profile, navigation and logout');
             // Render the same server-side owner Studio markup with synthetic
@@ -138,3 +228,11 @@ jobs:
             console.log('PASS compact 320–430px owner Studio navigation, no giant selected tab or horizontal overflow');
           }finally{await browser.close();server.kill('SIGTERM');await sleep(130);fs.rmSync(directory,{recursive:true,force:true})}
           JS
+      - name: Upload Quiet Desk account screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-quiet-desk-screenshots
+          path: screenshots/quiet-desk/
+          if-no-files-found: ignore
+          retention-days: 7

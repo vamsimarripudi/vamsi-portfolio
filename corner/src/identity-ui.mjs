@@ -67,12 +67,161 @@ const kind={
   '/settings/security':{title:'Security settings.',kicker:'ACCOUNT SECURITY',subtitle:'Change your password and inspect active sessions.',form:change,foot:links([['My profile','/profile']])},
   '/profile':{title:'Your quiet space.',kicker:'PRIVATE PROFILE',subtitle:'Your private account and saved stories.',form:'',foot:links([['Edit profile','/settings/profile'],['Account security','/settings/security']])},
   '/settings/profile':{title:'Profile settings.',kicker:'ACCOUNT PREFERENCES',subtitle:'Update your bio, display name, language and preferences.',form:profile,foot:links([['Back to my profile','/profile'],['Account security','/settings/security']])},
+  '/saved':{title:'Saved stories.',kicker:'YOUR LIBRARY',subtitle:'Your private saved stories.',form:'',foot:links([['My profile','/profile']])},
+  '/settings/preferences':{title:'Preferences.',kicker:'PERSONALIZATION',subtitle:'Your language and optional updates.',form:'',foot:links([['My profile','/profile']])},
+  '/settings/privacy':{title:'Privacy & data.',kicker:'YOUR INFORMATION',subtitle:'Your account data controls.',form:'',foot:links([['My profile','/profile']])},
 };
 
+/* Quiet Desk — first-party private member controls. Data is always the actor's,
+ * supplied by identity.safeMe(); never infer activity counts or roles client-side. */
+const quietRoutes=new Set(['/profile','/settings/profile','/saved','/settings/preferences','/settings/security','/settings/privacy']);
+const quietIcons={
+ user:'<circle cx="12" cy="8" r="3.5"/><path d="M4.4 21v-2a7.6 7.6 0 0 1 15.2 0v2"/>',
+ pen:'<path d="m15 5 4 4M4 20l5-.8L20 8a2.1 2.1 0 0 0-3-3L5 16.2z"/>',
+ bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',
+ sliders:'<path d="M4 7h16M4 17h16M8 4v6M16 14v6"/>',
+ shield:'<path d="m12 2 8 4v6c0 5-3.5 8.4-8 10-4.5-1.6-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/>',
+ lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
+ arrow:'<path d="m5 12 14 0m-6-6 6 6-6 6"/>',
+ image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 18 6-5 4 3 3-2 4 4"/>',
+ logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m6 14 5-5-5-5m5 5H9"/>',
+ home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+ download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
+ trash:'<path d="M4 7h16m-10-3h4m-8 3 1 14h10l1-14M10 11v7m4-7v7"/>',
+ key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9 2 2-3 3 2 2-3 3-2-2-2 2"/>',
+ chevron:'<path d="m9 18 6-6-6-6"/>'
+};
+const quietIcon=name=>'<svg class="quiet-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(quietIcons[name]||quietIcons.user)+'</svg>';
+const quietPhoto=(user,size='large')=>'<span class="quiet-avatar quiet-avatar--'+h(size)+'">'+
+ (user.hasAvatar?'<img alt="Your profile photo" src="/api/v1/me/avatar" width="80" height="80" loading="lazy">':
+ '<span aria-hidden="true">'+h((user.displayName||'M').trim().slice(0,1).toUpperCase()||'M')+'</span>')+'</span>';
+const quietNavItems=[
+ ['/profile','Overview','user'],['/settings/profile','Edit profile','pen'],
+ ['/saved','Saved stories','bookmark'],['/settings/preferences','Preferences','sliders'],
+ ['/settings/security','Security','shield'],['/settings/privacy','Privacy & data','lock']
+];
+const quietNav=(type,user)=>{
+ const items=quietNavItems.map(([href,label,icon])=>
+  '<a class="quiet-nav-link'+(type===href?' is-current':'')+'" href="'+href+'"'+(type===href?' aria-current="page"':'')+'>'+quietIcon(icon)+'<span>'+label+'</span>'+quietIcon('chevron')+'</a>').join('');
+ const studio=['owner','admin','editor','moderator'].includes(user.role)
+  ?'<a class="quiet-studio-link" href="/admin">'+quietIcon('pen')+' Open Studio '+quietIcon('arrow')+'</a>':'';
+ return '<aside class="quiet-sidebar" aria-label="Account navigation"><div class="quiet-sidebar-identity">'+quietPhoto(user,'small')+
+   '<div class="quiet-sidebar-identity-copy"><strong>'+h(user.displayName||'Your profile')+'</strong><small>Private account</small></div></div>'+
+   '<nav class="quiet-navigation" aria-label="My account sections">'+items+'</nav>'+studio+
+   '<button type="button" class="quiet-side-signout" data-account-logout>'+quietIcon('logout')+' Sign out</button></aside>';
+};
+const quietRow=(label,detail,url,icon,emphasis='')=>'<a class="quiet-link-row '+emphasis+'" href="'+url+'"><span class="quiet-row-icon">'+quietIcon(icon)+'</span>'+
+ '<span class="quiet-row-content"><strong>'+label+'</strong><small>'+detail+'</small></span>'+quietIcon('chevron')+'</a>';
+const quietHeading=(kicker,title,subtitle)=>'<header class="quiet-screen-heading"><p class="quiet-eyebrow">'+kicker+'</p><h2>'+title+'</h2><p>'+subtitle+'</p></header>';
+const quietProfileScreen=(user)=>{
+ const locale=({en:'English',te:'Telugu',hi:'Hindi'})[user.locale]||'English';
+ return '<section class="quiet-screen quiet-overview" data-quiet-screen="overview">'+
+  '<div class="quiet-profile-hero"><div class="quiet-profile-cover" aria-hidden="true"><span>✦ YOUR OWN CORNER</span></div>'+
+  '<div class="quiet-profile-person">'+quietPhoto(user)+
+  '<div class="quiet-profile-person-text"><p class="quiet-eyebrow">MY PROFILE</p><h2>'+h(user.displayName||'Your profile')+'</h2>'+
+  '<p>'+(user.bio?h(user.bio):'A little place for the stories you keep.')+'</p></div>'+
+  '<a class="quiet-edit-pill" href="/settings/profile">'+quietIcon('pen')+' Edit profile</a></div></div>'+
+  '<div class="quiet-overview-grid"><section class="quiet-panel quiet-panel--intro">'+
+  '<div class="quiet-panel-heading"><h3>Your space, your way.</h3><p>Everything important is one tap away.</p></div>'+
+  quietRow('Edit profile','Photo, name and short bio','/settings/profile','pen')+
+  quietRow('Saved stories','Return to the notes you kept','/saved','bookmark')+
+  quietRow('Preferences',locale+' · Email updates '+(user.emailUpdates?'on':'off'),'/settings/preferences','sliders')+
+  quietRow('Security & sessions','Protect your account and active devices','/settings/security','shield')+
+  '</section><section class="quiet-panel quiet-panel--subtle"><div class="quiet-panel-heading"><h3>Private by design.</h3>'+
+  '<p>Your profile and saved stories are yours, not a public feed.</p></div>'+
+  quietRow('Your information','Export data and deletion requests','/settings/privacy','lock')+
+  '<p class="quiet-panel-footnote">You control what is saved and which optional updates you receive.</p></section></div>'+
+  '</section>';
+};
+const quietEditScreen=(user)=>'<section class="quiet-screen" data-quiet-screen="edit">'+
+ quietHeading('PERSONAL DETAILS','Edit profile.','Update how your private Corner account feels to you.')+
+ '<div class="quiet-panel quiet-editor-panel">'+avatarCard(user)+
+ form('profile',field('displayName','Display name','text','name','maxlength="60"')+
+ '<label class="account-field"><span>Short bio</span><textarea name="bio" maxlength="280" rows="3" placeholder="A little about you…"></textarea>'+
+ '<small class="quiet-bio-count" data-bio-count>0 / 280</small></label>','Save changes')+
+ '<p class="quiet-data-hint">Your photo, name and bio are part of your private profile. Language and updates live in Preferences.</p></div></section>';
+const quietSavedScreen=()=>'<section class="quiet-screen" data-quiet-screen="saved">'+
+ quietHeading('YOUR READING SHELF','Saved stories.','A collection of the published stories you chose to keep.')+
+ '<div class="quiet-panel quiet-saved-panel"><div class="quiet-panel-top"><h3>Your collection</h3><span class="quiet-count" data-bookmark-count aria-live="polite">—</span></div>'+
+ '<div class="quiet-bookmarks" data-account-bookmarks role="status" aria-live="polite"><p>Loading saved stories…</p></div>'+
+ '</div></section>';
+const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-screen="preferences">'+
+ quietHeading('PERSONALIZATION','Preferences.','Just the essentials. You decide how your Corner behaves.')+
+ '<div class="quiet-panel quiet-editor-panel">'+form('preferences',
+ '<label class="account-field"><span>Reading language</span><select name="locale"><option value="en">English</option><option value="te">Telugu</option><option value="hi">Hindi</option></select>'+
+ '<small>Choose your preferred language for your account.</small></label>'+
+ '<label class="quiet-switch-row"><span class="quiet-switch-copy"><strong>Optional email updates</strong>'+
+ '<small>Receive occasional Corner updates. Off unless you choose otherwise.</small></span>'+
+ '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" role="switch" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
+ 'Save preferences')+'</div></section>';
+const quietSecurityScreen=(user)=>{
+ const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
+  '<div data-account-sessions role="status" aria-live="polite"><p>Loading active sessions…</p></div></section>';
+ const currentEmail='<p class="quiet-current-email"><span>Email address</span><strong>'+h(user.email||'')+'</strong></p>';
+ const email=user.role==='owner'
+  ?'<section class="quiet-panel"><h3>Account email</h3>'+currentEmail+'<p class="quiet-data-hint">Changes to the owner address require additional verification through your administrator.</p></section>'
+  :'<section class="quiet-panel"><h3>Change email address</h3>'+currentEmail+'<p class="quiet-data-hint">A verification link will be sent to the new address.</p>'+changeEmail+'</section>';
+ const mfa=['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled
+  ?'<section class="quiet-panel"><h3>Authenticator protection</h3><p class="quiet-data-hint">Studio access can be protected with a one-time authenticator code.</p>'+
+  '<a class="quiet-action-link" href="/admin/mfa">Set up authenticator '+quietIcon('arrow')+'</a></section>':'';
+ return '<section class="quiet-screen" data-quiet-screen="security">'+
+  quietHeading('ACCOUNT SAFETY','Security.','Passwords, verification and active sessions stay in one place.')+
+  '<div class="quiet-security-grid"><section class="quiet-panel"><h3>Change password</h3>'+
+  '<p class="quiet-data-hint">Changing your password signs out your existing sessions.</p>'+change+'</section>'+
+  active+email+mfa+'</div></section>';
+};
+const quietPrivacyScreen=()=>'<section class="quiet-screen" data-quiet-screen="privacy">'+
+ quietHeading('YOUR INFORMATION','Privacy & data.','Clear controls for the personal information in your Corner.')+
+ '<div class="quiet-privacy-grid"><section class="quiet-panel"><span class="quiet-panel-symbol">'+quietIcon('download')+'</span><h3>Export your information</h3>'+
+ '<p>Download a copy of the account information and saved stories available to you.</p>'+
+ '<button class="quiet-secondary-action" type="button" data-account-export>'+quietIcon('download')+' Export account data</button>'+
+ '<p class="quiet-action-status" role="status" data-export-status aria-live="polite"></p></section>'+
+ '<section class="quiet-panel quiet-panel--danger"><span class="quiet-panel-symbol">'+quietIcon('trash')+'</span>'+
+ '<h3>Request account deletion</h3><p>This begins a reviewed request. It does not immediately remove other people’s content or bypass legal retention obligations.</p>'+
+ '<button class="quiet-danger-action" type="button" data-account-delete>'+quietIcon('trash')+' Request deletion review</button>'+
+ '<p class="quiet-action-status" role="status" data-delete-status aria-live="polite"></p></section></div>'+
+ '<section class="quiet-panel quiet-policy-links" aria-labelledby="quiet-policy-links-heading">'+
+ '<div class="quiet-panel-top"><div><h3 id="quiet-policy-links-heading">Your privacy in writing.</h3><p>Learn what the site collects, what your choices mean, and how Indian privacy rights apply.</p></div></div>'+
+ quietRow('Privacy Policy','Our actual personal data practices','/privacy','shield')+
+ quietRow('Cookie choices','Required and optional browser storage','/cookies','sliders')+
+ quietRow('India DPDP rights','Statutory rights and phased commencement','/dpdp','lock')+
+ quietRow('Contact & grievances','Request assistance or raise a concern','/grievances','mail')+
+ '</section>'+
+'<dialog class="quiet-confirm-dialog" data-account-delete-dialog aria-labelledby="quiet-delete-title">'+
+ '<div class="quiet-confirm-inner"><span class="quiet-panel-symbol">'+quietIcon('shield')+'</span><h3 id="quiet-delete-title">Review account deletion request?</h3>'+
+ '<p>This requests review of your account deletion. No immediate deletion happens when you continue.</p>'+
+ '<p class="quiet-confirm-status" data-account-delete-status role="status" aria-live="polite"></p>'+
+ '<div class="quiet-confirm-actions"><button type="button" data-delete-cancel>Keep my account</button>'+
+ '<button type="button" data-delete-confirm>Request review</button></div></div></dialog>'+
+ '</section>';
+function quietDeskPage(type,user){
+ const panes={
+  '/profile':quietProfileScreen(user),'/settings/profile':quietEditScreen(user),'/saved':quietSavedScreen(),
+  '/settings/preferences':quietPreferencesScreen(user),'/settings/security':quietSecurityScreen(user),
+  '/settings/privacy':quietPrivacyScreen()
+ };
+ const title={ '/profile':'My Corner','/settings/profile':'Edit profile','/saved':'Saved stories',
+  '/settings/preferences':'Preferences','/settings/security':'Security','/settings/privacy':'Privacy & data' }[type]||'My Corner';
+ const role=['owner','admin','editor','moderator'].includes(user.role)?'<a href="/admin" class="quiet-top-studio">Studio '+quietIcon('arrow')+'</a>':'';
+ const top='<header class="account-top quiet-topbar"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true">'+
+  '<img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span>'+
+  '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts"><a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
+ const main='<main class="quiet-main" id="content"><div class="quiet-page-heading"><p class="quiet-eyebrow">VAMSI’S CORNER / MEMBERS</p>'+
+  '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
+  '<p class="quiet-session-note"><span aria-hidden="true">●</span> Private account · Signed in</p></div><div class="quiet-desk-grid">'+
+  quietNav(type,user)+'<div class="quiet-desk-content">'+panes[type]+'</div></div></main>';
+ const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/policies">Legal & Trust</a><a href="/privacy">Privacy</a><a href="/cookies">Cookies</a><a href="/dpdp">DPDP rights</a><a href="/terms">Terms</a></footer>';
+ const content='<div class="account-shell account-shell--quiet" data-account-page="'+h(type)+'" data-account-workspace data-signed-in="true">'+
+  top+main+footer+'<script src="/account.js?v=quiet1" defer></script></div>';
+ return basePage({path:type,title,noindex:true,content,initial:{page:'account',authenticated:true,account:user,memberCompactPasswords:compactMemberPasswords()}});
+}
+
 export function accountPage({type,user,registrationOpen=false}){
+  if(quietRoutes.has(type)&&user)return quietDeskPage(type,user);
   const details=kind[type]||kind['/login'];
   const formHtml=typeof details.form==='function'?details.form(registrationOpen):details.form;
-  const profileLocked=(type==='/profile'||type==='/settings/profile'||type==='/settings/security')&&!user;
+  const profileLocked=quietRoutes.has(type)&&!user;
   const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:type==='/profile'&&user?profileOverview(user):formHtml;
   const extra=type==='/profile'&&user?`<div class="account-side-section" id="account-saved"><h2>Saved stories.</h2><div data-account-bookmarks><p>Loading saved posts…</p></div></div><div class="account-side-section"><h2>Your information.</h2><button class="account-text-button" type="button" data-account-export>Export account data ↗</button><button class="account-text-button" type="button" data-account-delete>Request account deletion ↗</button></div>`:'';
   const sessions=type==='/settings/security'&&user?`<div class="account-side-section"><h2>Active sessions.</h2><div data-account-sessions>Loading…</div></div>${user.role==='owner'?'<div class="account-side-section"><h2>Owner email.</h2><p>Change the owner address through your Railway identity configuration. This avoids breaking the existing owner record.</p></div>':`<div class="account-side-section"><h2>Change email.</h2>${changeEmail}</div>`}${['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled?'<div class="account-side-section"><h2>Authenticator security.</h2><a class="account-cta-link" href="/admin/mfa">Enable two-factor verification ↗</a></div>':''}`:'';

@@ -64,12 +64,21 @@ test('member and owner can return from stories to Account without reauthenticati
  const profile=await go('/profile',{cookie:memberCookie});
  const html=await profile.text();
  assert.equal(profile.status,200);
- assert.match(html,/data-profile-summary/);
+ assert.match(html,/data-quiet-screen="overview"/);
+ assert.match(html,/class="quiet-desk-grid"/);
+ assert.match(html,/href="\/corner\/saved"/);
+ assert.match(html,/href="\/corner\/settings\/preferences"/);
  assert.doesNotMatch(html,/data-account-form="profile"/);
  assert.match(html,/href="\/corner\/settings\/profile"/);
  const settings=await go('/settings/profile',{cookie:memberCookie});
  assert.equal(settings.status,200);
  assert.match(await settings.text(),/data-account-form="profile"/);
+ const prefs=await go('/settings/preferences',{cookie:memberCookie});
+ assert.equal(prefs.status,200);
+ assert.match(await prefs.text(),/data-account-form="preferences"/);
+ const saved=await go('/saved',{cookie:memberCookie});
+ assert.equal(saved.status,200);
+ assert.match(await saved.text(),/data-account-bookmarks/);
  const newBio='My <private> biography stays escaped';
  const edited=await go('/api/v1/me',{method:'PATCH',cookie:memberCookie,
   data:{displayName:'Account Tester Updated',bio:newBio,locale:'te',emailUpdates:false}});
