@@ -97,16 +97,16 @@
     const join=$('[data-letter-join]',letter),member=$('[data-profile-member]');
     const syncMember=()=>{const signed=member?.hidden===false;join.textContent=signed?'My profile':'Create profile';join.href=prefix+(signed?'/profile':'/register');};
     syncMember();if(member){memberObserver=new MutationObserver(syncMember);memberObserver.observe(member,{attributes:true,attributeFilter:['hidden']});}
-    const dismiss=()=>{try{localStorage.setItem(welcomeKey,'seen');}catch{}if(letter.open)letter.close();else letter.remove();};
+    const dismiss=()=>{try{localStorage.setItem(welcomeKey,'seen');}catch{/* Optional browser capability; the page remains usable. */}if(letter.open)letter.close();else letter.remove();};
     $('[data-letter-dismiss]',letter).addEventListener('click',dismiss);$('[data-letter-explore]',letter).addEventListener('click',dismiss);join.addEventListener('click',dismiss);
     letter.addEventListener('click',event=>{const r=letter.getBoundingClientRect();if(event.target===letter&&(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom))dismiss();});
-    letter.addEventListener('close',()=>{try{localStorage.setItem(welcomeKey,'seen');}catch{}memberObserver?.disconnect();memberObserver=null;letter.remove();welcome=null;document.documentElement.classList.remove('corner-welcome-open');if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});document.dispatchEvent(new CustomEvent('corner:welcome-closed'));},{once:true});
+    letter.addEventListener('close',()=>{try{localStorage.setItem(welcomeKey,'seen');}catch{/* Optional browser capability; the page remains usable. */}memberObserver?.disconnect();memberObserver=null;letter.remove();welcome=null;document.documentElement.classList.remove('corner-welcome-open');if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});document.dispatchEvent(new CustomEvent('corner:welcome-closed'));},{once:true});
     document.body.append(letter);
     if(typeof letter.showModal==='function'){document.documentElement.classList.add('corner-welcome-open');letter.showModal();}
     else{letter.setAttribute('open','');letter.classList.add('pulse-letter-inline');$('[data-letter-dismiss]',letter).addEventListener('click',()=>{letter.remove();welcome=null;},{once:true});}
   }
   reopen.addEventListener('click',()=>openWelcome(reopen));
-  let seen=false;try{seen=localStorage.getItem(welcomeKey)==='seen';}catch{}
+  let seen=false;try{seen=localStorage.getItem(welcomeKey)==='seen';}catch{/* Optional browser capability; the page remains usable. */}
   if((path==='/corner'||path==='/')&&!seen)openWelcome(profileButton);
 
   // Newly drawn articulated Doraemon artwork; no third-party image/voice files.
@@ -160,7 +160,7 @@
   const viewport=()=>{const v=window.visualViewport;return {x:v?.offsetLeft||0,y:v?.offsetTop||0,w:v?.width||innerWidth,h:v?.height||innerHeight,scale:v?.scale||1};};
   const inputSelector='input,textarea,select,[contenteditable="true"]';
   let mode='calm',position=null,motion=null,frame=0,phase=0,velocity=0,poseTimer=0,layoutTimer=0,idleTimer=0,edgeTimer=0,tipTimer=0;
-  let lastReaction=-Infinity,quietUntil=0,suspended=false,hovered=false,tipHovered=false,tipSuppressed=false,routeMemory=null,edge=null,greetingCount=0,layoutVersion=0;
+  let lastReaction=-Infinity,quietUntil=0,suspended=false,hovered=false,tipHovered=false,tipSuppressed=false,routeMemory=null,edge=null,greetingCount=0,layoutVersion=0,lastEdge=-Infinity;
   let cache={g:null,blocks:[]},sound=false,audio=null,masterGain=null,volume=.12,lastSound=-Infinity,footIndex=0,turnTimer=0;
   const audioNodes=new Set();
   const otherDialog=()=>all('dialog[open]').some(el=>el!==card);
@@ -248,7 +248,17 @@
     clearTimeout(layoutTimer);cache={g:geometry(),blocks:obstacles()};const {g,blocks}=cache;
     dock.dataset.suspended=String(blocked());
     if(mode==='hidden'||blocked()){stop();hideTip();dock.hidden=true;restore.hidden=mode!=='hidden';return;}
-    if(edge){stop();edge=null;dock.dataset.edge='';}
+    pet.tabIndex=edge?.phase==='hidden'?-1:0;
+    if(edge){
+      // Non-geometric DOM updates must not cancel an explicit peek halfway
+      // through. Scroll/resize already clear the sequence in scheduleLayout.
+      let previous=position;
+      const remaining=!motion||motion.steps.slice(motion.index).every(next=>{
+        const clear=clearLine(previous,next,g,blocks,motion.outside);previous=next;return clear;
+      });
+      if(safe(edge.anchor,g,blocks)&&clearLine(edge.anchor,edge.out,g,blocks,true)&&remaining){draw();return;}
+      stop();edge=null;dock.dataset.edge='';pet.tabIndex=0;
+    }
     if(motion){let prior=position;if(motion.steps.slice(motion.index).every(p=>{const ok=clearLine(prior,p,g,blocks);prior=p;return ok;})){draw();return;}stop();}
     if(!position||!safe(position,g,blocks)){
       stop();routeMemory=null;const points=pockets(g,blocks),home=perch.getBoundingClientRect(),atHome={x:home.left,y:home.top};
@@ -321,7 +331,7 @@
           },1200);
         },true);
       };
-      if(walkSteps(approach,exit))return true;edge=null;
+      if(walkSteps(approach,exit)){lastEdge=performance.now();return true;}edge=null;
     }
     return false;
   }
@@ -329,15 +339,15 @@
     if(!canMove()||!position||motion||edge)return;
     cache={g:geometry(),blocks:obstacles()};const {g,blocks}=cache;
     if(routeMemory&&safe(routeMemory.a,g,blocks)&&safe(routeMemory.b,g,blocks)){
-      const target=routeMemory.reverse?routeMemory.a:routeMemory.b;
-      if(walk(target,()=>{if(routeMemory){routeMemory.reverse=!routeMemory.reverse;routeMemory.trips++;}}))return;
+      const steps=routeMemory.reverse?[...routeMemory.steps.slice(0,-1).reverse(),routeMemory.a]:routeMemory.steps;
+      if(walkSteps(steps,()=>{if(routeMemory){routeMemory.reverse=!routeMemory.reverse;routeMemory.trips++;}}))return;
     }
     const limit=mode==='playful'?Math.max(viewport().w,viewport().h):180;
     const candidates=pockets(g,blocks).filter(p=>Math.hypot(p.x-position.x,p.y-position.y)>55&&Math.hypot(p.x-position.x,p.y-position.y)<limit);
     candidates.sort((a,b)=>Math.hypot(b.x-position.x,b.y-position.y)-Math.hypot(a.x-position.x,a.y-position.y));
     for(const target of candidates.slice(0,16)){
       const steps=route(position,target,g,blocks);if(!steps.length)continue;
-      routeMemory={a:{...position},b:{...target},reverse:false,trips:0};
+      routeMemory={a:{...position},b:{...target},steps:steps.map(p=>({...p})),reverse:false,trips:0};
       walkSteps(steps,()=>{if(routeMemory){routeMemory.reverse=true;routeMemory.trips++;}});break;
     }
   }
@@ -346,7 +356,7 @@
     idleTimer=setTimeout(()=>{
       if(canMove()&&performance.now()>quietUntil&&!motion&&!edge){
         updateLayout();
-        if(mode==='playful'&&(!routeMemory||routeMemory.trips>=2)){if(!edgeJourney())patrol();}
+        if(mode==='playful'&&performance.now()-lastEdge>45000&&(!routeMemory||routeMemory.trips>=2)){if(!edgeJourney())patrol();}
         else patrol();
       }
       idle();
@@ -366,7 +376,7 @@
       oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();audioNodes.delete(oscillator);};
     }
   }
-  function silence(){for(const node of audioNodes){try{node.stop();}catch{}}audioNodes.clear();}
+  function silence(){for(const node of audioNodes){try{node.stop();}catch{/* Optional browser capability; the page remains usable. */}}audioNodes.clear();}
   async function toggleSound(){
     const button=$('[data-pulse-sound]',card);
     if(sound){sound=false;silence();if(audio?.state==='running')void audio.suspend().catch(()=>{});button.setAttribute('aria-pressed','false');button.textContent='Enable sound';return;}
@@ -465,9 +475,13 @@
     if(action==='tour'){tour(0);return;}
     if(action==='peek'){
       if(!canAnimate()){showResult('MOTION IS QUIET','No rush.','Choose Calm or Playful to move. Reduced motion stays respected.');return;}
-      closePanel(false);hovered=false;pet.blur();quietUntil=0;updateLayout();
-      if(!edgeJourney()){openPanel();showResult('KEEPING THINGS CLEAR','A little wave instead.','This part of the page is too crowded for a safe edge walk. I won’t cover your reading or buttons.');}
-      return;
+      // Begin only after the dialog close lifecycle has restored the scene.
+      // Starting before close dispatch would cancel the new path immediately.
+      card.addEventListener('close',()=>{
+        hovered=false;pet.blur();quietUntil=0;updateLayout();
+        if(!edgeJourney()){openPanel();showResult('KEEPING THINGS CLEAR','A little wave instead.','This part of the page is too crowded for a safe edge walk. I won’t cover your reading or buttons.');}
+      },{once:true});
+      closePanel(false);return;
     }
     button.disabled=true;
     try{

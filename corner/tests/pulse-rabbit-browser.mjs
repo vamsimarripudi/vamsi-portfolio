@@ -98,5 +98,17 @@ try{
     assert.deepEqual(await page.evaluate(()=>CornerPulse.snapshot().position),position,'Pause freezes actual position');
     await page.close();console.log('PASS distance-driven walk, edge hide/peek, overflow and Pause '+width);
   }
+  // Explicit menu action must survive the close event and later DOM updates.
+  const peek=await start(1366,850,{seen:true,clock:true});
+  await openMenu(peek);await peek.locator('[data-pulse-action=peek]').click();await peek.mouse.move(0,0);
+  const sequence=[];
+  for(let i=0;i<55;i++){
+    await peek.clock.runFor(500);const state=await peek.evaluate(()=>CornerPulse.snapshot());sequence.push(state.pose);
+    if(state.pose==='edge-hidden')assert.equal(await peek.locator('.corner-orbit-toggle').evaluate(el=>el.tabIndex),-1,'Offscreen control is removed from keyboard order');
+  }
+  assert.ok(sequence.includes('edge-hidden')&&sequence.includes('peek'),'Explicit hide/peek completes after menu closes: '+sequence);
+  assert.equal(await peek.locator('.corner-orbit-toggle').evaluate(el=>el.tabIndex),0,'Returned character is keyboard reachable');
+  assert.equal(await peek.locator('.pulse-controls').evaluate(el=>el.open),false);
+  await peek.close();console.log('PASS explicit hide-and-peek action and focus restoration');
   assert.deepEqual(errors,[]);
 }finally{await browser.close();}
