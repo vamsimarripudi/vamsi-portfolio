@@ -23,6 +23,8 @@ test('Quiet Desk is a coherent private six-screen account workspace with real us
     assert.match(html,/href="\/account-quiet\.css\?v=quiet1"/,route);
     assert.match(html,/src="\/account\.js\?v=quiet1"/,route);
     assert.match(html,/verified@example\.test/,route);
+    assert.match(html,/Private account · Signed in/,route);
+    assert.doesNotMatch(html,/class="quiet-session-note"[^>]*>[^<]*Signed in as/, 'Account status should not repeat the email on every screen');
     assert.match(html,/role="navigation"|<nav class="quiet-navigation"/,route);
     assert.match(html,/src="\/mark\.svg\?v=vm-20261027"/,route);
     assert.doesNotMatch(html,/12 Stories|8 Moments|5 Saved/,'Never inject mockup counts');
@@ -97,6 +99,9 @@ test('Preferences use the existing PATCH endpoint and an accessible on/off switc
 test('Security preserves active sessions, owner restrictions, email verification and MFA',()=>{
   const member=page('/settings/security'),admin=page('/settings/security',owner);
   assert.match(member,/data-quiet-screen="security"/);
+  assert.match(member,/quiet-current-email/);
+  assert.match(member,/verified@example\.test/);
+  assert.match(admin,/owner@example\.test/);
   assert.match(member,/data-account-form="password-change"/);
   assert.match(member,/name="currentPassword"/);
   assert.match(member,/name="newPassword"/);
@@ -170,6 +175,7 @@ test('Quiet Desk is mobile-first and preserves accessibility and account APIs',(
   const js=asset('public/account.js'),server=asset('src/server.mjs');
   assert.match(css,/\.quiet-desk-grid/);
   assert.match(css,/\.quiet-navigation/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css,/\.quiet-profile-hero/);
   assert.match(css,/\.quiet-bookmarks/);
   assert.match(css,/\.quiet-switch input:focus-visible/);
