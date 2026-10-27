@@ -16,6 +16,17 @@ try{
    await page.setViewportSize({width,height});
    const res=await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
    assert.equal(res.status(),200,'Corner home '+width);
+   if(width===320){
+     const welcome=page.locator('.corner-welcome-letter');
+     await welcome.waitFor({state:'visible',timeout:10000});
+     assert.match(await welcome.innerText(),/A little hello, from me to you/);
+     assert.match(await welcome.innerText(),/Glad you found your way here/);
+     assert.equal(await welcome.locator('[data-letter-explore]').count(),1);
+     await welcome.locator('[data-letter-dismiss]').click();
+     assert.equal(await page.evaluate(()=>localStorage.getItem('corner-welcome-letter-v2')),'seen');
+   }else{
+     assert.equal(await page.locator('.corner-welcome-letter').count(),0,'Dismissed welcome does not reappear');
+   }
    const vm=page.locator('.brand-mark--vm img.corner-brand-image');
    await vm.waitFor({state:'visible'});
    const logo=await vm.evaluate(async img=>{
@@ -110,7 +121,7 @@ try{
    assert.equal(search.paper,'rgb(255, 255, 255)','Search popup keeps a normal white background');
    await page.keyboard.press('Escape');
    assert.equal(await searchDialog.evaluate(el=>el.open),false,'Escape closes the centered search popup');
-   if(await page.locator('.corner-welcome-card [data-welcome-close]').count())await page.locator('.corner-welcome-card [data-welcome-close]').click();
+   assert.equal(await page.locator('.corner-welcome-letter').count(),0,'Welcome dismissal persists');
    await page.evaluate(()=>window.scrollTo(0,0));
    await page.mouse.wheel(0,500);
    await page.waitForFunction(()=>scrollY>0);
