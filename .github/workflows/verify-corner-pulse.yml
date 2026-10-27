@@ -1,0 +1,41 @@
+name: Verify Pulse rabbit and welcome modal
+on:
+  pull_request:
+    paths:
+      - 'corner/public/app.js'
+      - 'corner/public/companion.js'
+      - 'corner/public/companion.css'
+      - 'corner/tests/pulse-rabbit*'
+      - '.github/workflows/verify-corner-pulse.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies and pinned Chromium
+        run: |
+          npm ci
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium --with-deps
+      - name: Event, private-page and transfer-budget contracts
+        run: node --test corner/tests/pulse-rabbit.test.mjs corner/tests/v3-performance-budget.test.mjs
+      - name: Isolated six-width modal and rabbit locomotion acceptance
+        run: node corner/tests/pulse-rabbit-browser.mjs
+      - name: Upload actual browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corner-pulse-rabbit-screenshots
+          path: screenshots/pulse-v2/
+          if-no-files-found: ignore
+          retention-days: 7

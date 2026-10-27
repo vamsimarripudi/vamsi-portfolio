@@ -180,6 +180,14 @@ jobs:
             await page.setViewportSize({width:390,height:844});
             await page.goto(origin+'/corner/',{waitUntil:'domcontentloaded'});
             await page.waitForFunction(()=>document.querySelector('[data-profile-member]')?.hidden===false);
+            // First public visit legitimately opens the welcome modal. Dismiss
+            // it before checking the background profile menu, as a user does.
+            const welcome=page.locator('.pulse-welcome-modal');
+            if(await welcome.count()){
+              assert.equal(await welcome.evaluate(el=>el.matches(':modal')),true);
+              await welcome.locator('[data-letter-dismiss]').click();
+              await welcome.waitFor({state:'detached'});
+            }
             await page.locator('[data-corner-profile-toggle]').click();
             assert.equal(await page.locator('[data-profile-guest]').isVisible(),false);
             assert.equal(await page.locator('[data-owner-studio]').isVisible(),false,'Owner Studio hidden for members');
