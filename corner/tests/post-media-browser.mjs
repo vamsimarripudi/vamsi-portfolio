@@ -65,7 +65,9 @@ try{
  const cards=page.locator('#editor-upload .upload-preview-card');
  await page.waitForFunction(()=>document.querySelectorAll('#editor-upload .upload-preview-card').length===4,null,{timeout:5000}).catch(async error=>{
    const status=await page.locator('[data-upload-status]').textContent().catch(()=>'');
-   throw new Error('Pending preview cards did not render. status='+status+' browserErrors='+browserErrors.join(' | '),{cause:error});
+   const selected=await input.evaluate(el=>({count:el.files?.length||0,onchange:typeof el.onchange,oninput:typeof el.oninput,html:el.outerHTML})).catch(()=>({}));
+   const toastText=await page.locator('#toast-stack').innerText().catch(()=>'');
+   throw new Error('Pending preview cards did not render. status='+status+' selected='+JSON.stringify(selected)+' toasts='+toastText+' browserErrors='+browserErrors.join(' | '),{cause:error});
  });
  assert.equal(await cards.count(),4,'Every selected file gets a local preview');
  assert.equal(await cards.locator('.upload-preview-remove').count(),4,'Every pending image has a red-X remove control');
