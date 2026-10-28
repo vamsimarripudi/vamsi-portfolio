@@ -245,7 +245,7 @@ async function api(req,res,pathName,url){
     if(req.cornerApiV1)return created(res,post,(config.basePath||'')+'/api/v1/admin/posts/'+post.id);
     return ok(res,post);
   }
-  const adminPost=pathName.match(/^\/api\/admin\/posts\/([A-Za-z0-9_-]+)(?:\/(publish|archive|restore|schedule|duplicate))?$/);
+  const adminPost=pathName.match(/^\/api\/admin\/posts\/([A-Za-z0-9_-]+)(?:\/(publish|archive|restore|schedule|duplicate|media-order))?$/);
   if(adminPost){const [,id,action]=adminPost;
     if(method==='GET'&&!action){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');return ok(res,{post:p,media:store.listMedia(id)})}
     if(method==='PATCH'&&!action)return ok(res,store.savePost(id,await readJSON(req),owner.id));
@@ -262,6 +262,7 @@ async function api(req,res,pathName,url){
       }catch{throw httpError(400,'Invalid local date or timezone')}
       return ok(res,store.schedule(id,b,owner.id));}
     if(method==='POST'&&action==='duplicate'){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');let copy=store.createPost({...p,title:p.title+' (copy)',allowComments:p.allow_comments,allowReactions:p.allow_reactions},owner.id);return ok(res,copy)}
+    if(method==='POST'&&action==='media-order'){const body=await readJSON(req,16000);return ok(res,store.reorderMedia(id,body.ids,owner.id));}
   }
   if(pathName==='/api/admin/status'&&method==='PUT'){const data=await readJSON(req);return ok(res,memories.enabled()?memories.recordNow(owner,data):store.updateStatus(data,owner.id));}
   if(pathName==='/api/admin/comments'&&method==='GET')return ok(res,store.pendingComments(url.searchParams.get('state')||'pending'));
