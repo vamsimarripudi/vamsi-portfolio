@@ -206,12 +206,25 @@ try{
 
  for(const [width,height] of [[320,720],[360,780],[375,812],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[1280,800],[1366,768],[1920,1080]]){
    await page.setViewportSize({width,height});
+   // Inactive carousel slides are deliberately off-screen after a swipe.
+   // Validate whichever slide is fully visible following each viewport change.
+   await page.waitForFunction(()=>{
+     const track=document.querySelector('[data-carousel-track]')?.getBoundingClientRect();
+     return !!track&&[...document.querySelectorAll('[data-carousel-slide]')].some(slide=>{
+       const r=slide.getBoundingClientRect();return r.left>=track.left-2&&r.right<=track.right+2;
+     });
+   },null,{timeout:4000});
    const layout=await page.evaluate(()=>{
-     const rect=selector=>{const box=document.querySelector(selector)?.getBoundingClientRect();return box?{left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width}:null};
+     const rect=element=>{const box=element?.getBoundingClientRect();return box?{left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width}:null};
+     const track=document.querySelector('[data-carousel-track]').getBoundingClientRect();
+     const slide=[...document.querySelectorAll('[data-carousel-slide]')].find(element=>{
+       const r=element.getBoundingClientRect();return r.left>=track.left-2&&r.right<=track.right+2;
+     });
      return {
        scroll:document.documentElement.scrollWidth,viewport:innerWidth,
-       photo:rect('[data-carousel-slide] .post-photo'),
-       caption:rect('[data-carousel-slide] figcaption'),heading:rect('.post-heading h1')
+       photo:rect(slide?.querySelector('.post-photo')),
+       caption:rect(slide?.querySelector('figcaption')),
+       heading:rect(document.querySelector('.post-heading h1'))
      };
    });
    assert.ok(layout.scroll<=layout.viewport+1,'No gallery document overflow '+width+' '+JSON.stringify(layout));
