@@ -56,6 +56,8 @@ try{
  await page.setViewportSize({width:390,height:844});
  const input=attachmentDialog.locator('#editor-upload input[type="file"]');
  await input.waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('#editor-upload')?.dataset.mediaReady==='true',null,{timeout:5000});
+ assert.equal(await input.evaluate(el=>typeof el.onchange),'function','Uploader change handler is attached before file selection');
  await input.setInputFiles([
   {name:'photo-one.png',mimeType:'image/png',buffer:png},
   {name:'photo-two.png',mimeType:'image/png',buffer:png},
