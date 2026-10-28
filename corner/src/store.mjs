@@ -23,6 +23,7 @@ export class Store{
     if(!columns.includes('recurrence_end_year'))this.db.exec('ALTER TABLE posts ADD COLUMN recurrence_end_year INTEGER');
     const mediaColumns=this.db.prepare('PRAGMA table_info(media)').all().map(c=>c.name);
     if(!mediaColumns.includes('sort_index'))this.db.exec('ALTER TABLE media ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 0');
+    this.db.exec("UPDATE media SET sort_index=(SELECT COUNT(*) FROM media AS m2 WHERE m2.owner_id IS media.owner_id AND (m2.created_at<media.created_at OR (m2.created_at=media.created_at AND m2.id<=media.id))) WHERE sort_index=0");
     this.statements=new Map();
   }
   close(){this.db.close()}
