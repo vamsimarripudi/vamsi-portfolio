@@ -115,7 +115,7 @@
     $('#open-media-panel').onclick=()=>{if(mediaPanel&&!mediaPanel.open)mediaPanel.showModal()};
     mediaPanel?.addEventListener('click',event=>{if(event.target===mediaPanel)mediaPanel.close()});
     window.CornerMotion?.refresh();
-    mediaForPost(p.id||null,()=>save(true)).catch(err=>toast(err.message,'error'));
+    mediaForPost(p.id||null,()=>save(true)).catch(err=>{mediaPanel.dataset.mediaInitError=err.message||String(err);toast(err.message,'error')});
     form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
   }
   const uploadLimit=8;
@@ -145,7 +145,7 @@
       '<header class="corner-media-header"><div class="corner-media-heading"><p class="eyebrow">STORY / MEDIA</p><h2 id="media-editor-title">Attach files<span>.</span></h2><p id="media-editor-help">A dedicated space for your story photos, videos and captions.</p></div><button type="button" class="corner-media-close" data-media-dismiss aria-label="Close media dialog">×</button></header>'+
       '<section class="post-media-editor" aria-label="Current attachments and new uploads">'+
       '<div class="post-media-head"><h3>Story attachments</h3><small class="corner-media-total">'+attachments.length+' '+(attachments.length===1?'file':'files')+'</small></div>'+
-      (attachments.length?'<div class="media-gallery">'+attachments.map(x=>mediaCard(x,true)).join('')+'</div>':
+      (attachments.length?'<div class="media-gallery">'+attachments.map((x,index)=>mediaCard(x,true,index,attachments.length)).join('')+'</div>':
        '<p class="corner-media-empty">No files attached yet. Select a photo or video below to add it to this story.</p>')+
       '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
       '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required></label>'+
@@ -158,6 +158,27 @@
     section.querySelectorAll('[data-media-dismiss]').forEach(button=>button.addEventListener('click',()=>section.close()));
     $$('[data-media-edit]',section).forEach(button=>{
       button.onclick=()=>mediaEdit(button.dataset.mediaEdit,attachments,postId);
+    });
+    $$('[data-media-delete]',section).forEach(button=>{
+      button.onclick=async()=>{
+        const id=button.dataset.mediaDelete;
+        const item=attachments.find(media=>media.id===id);
+        if(!item||!confirm('Remove this image or video from the story?'))return;
+        button.disabled=true;
+        try{await api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE');toast('Media removed.','success');await mediaForPost(postId,ensureDraft)}
+        catch(error){toast(error.message,'error');button.disabled=false}
+      };
+    });
+    $$('[data-media-move]',section).forEach(button=>{
+      button.onclick=async()=>{
+        const id=button.dataset.mediaMove,direction=Number(button.dataset.direction)||0;
+        const index=attachments.findIndex(item=>item.id===id),next=index+direction;
+        if(index<0||next<0||next>=attachments.length)return;
+        const ids=attachments.map(item=>item.id);[ids[index],ids[next]]=[ids[next],ids[index]];
+        button.disabled=true;
+        try{await api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids});toast('Carousel order updated.','success');await mediaForPost(postId,ensureDraft)}
+        catch(error){toast(error.message,'error');button.disabled=false}
+      };
     });
     $$('[data-media-quick-edit]',section).forEach(form=>{
       form.onsubmit=async event=>{
@@ -188,6 +209,9 @@
       const wrapper=document.createElement('div');
       wrapper.className='upload-preview-card';
       const figure=document.createElement('figure');
+      const remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
+      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Enter descriptions, then attach them to your story.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
+      figure.append(remove);
       const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
       entry.url=URL.createObjectURL(entry.file);
       picture.src=entry.url;
@@ -234,21 +258,28 @@
       wrapper.append(figure,fields);
       previewList.append(wrapper);
     };
-    fileInput.onchange=()=>{
-      cleanup();pending=[];
-      previewList.replaceChildren();
+    let selectedSignature='';
+    const selectedFiles=()=>{
       const files=[...fileInput.files];
+      const signature=files.map(file=>file.name+':'+file.size+':'+file.lastModified).join('|');
+      if(signature===selectedSignature&&previewList.children.length)return;
+      selectedSignature=signature;
+      cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
       if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
       status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
-      for(const file of files){
-        const entry={file,done:false,url:null,alt:null,caption:null};
-        pending.push(entry);previewEntry(entry);
-      }
+      for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
       if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
     };
+    fileInput.oninput=selectedFiles;
+    fileInput.onchange=selectedFiles;
+    fileInput.addEventListener('input',selectedFiles);
+    fileInput.addEventListener('change',selectedFiles);
+    form.addEventListener('input',event=>{if(event.target===fileInput)selectedFiles()});
+    form.addEventListener('change',event=>{if(event.target===fileInput)selectedFiles()});
+    form.dataset.mediaReady='true';
     form.onsubmit=async event=>{
       event.preventDefault();
       if(!pending.length)return;
@@ -283,12 +314,19 @@
       }
     };
   }
-  function mediaCard(x,quickEdit=false){
+  function mediaCard(x,quickEdit=false,index=0,total=1){
     const src='/corner/media/'+encodeURIComponent(x.storage_key);
     const isImage=x.mime_type.startsWith('image/');
     const preview=isImage?'<img loading="lazy" src="'+src+'" alt="'+esc(x.alt_text||'Image')+'">':
       '<video src="'+src+'" controls preload="none" playsinline></video>';
-    return '<article class="media-thumb '+(quickEdit?'media-thumb--attached':'media-thumb--library')+'">'+
+    const controls='<div class="media-card-controls">'+
+      '<button type="button" class="media-delete-x" data-media-delete="'+esc(x.id)+'" aria-label="Remove this media">×</button>'+
+      (quickEdit?'<div class="media-order-controls" aria-label="Carousel position">'+
+        '<button type="button" data-media-move="'+esc(x.id)+'" data-direction="-1" '+(index===0?'disabled':'')+' aria-label="Move media earlier">←</button>'+
+        '<span>'+(index+1)+' / '+total+'</span>'+
+        '<button type="button" data-media-move="'+esc(x.id)+'" data-direction="1" '+(index===total-1?'disabled':'')+' aria-label="Move media later">→</button></div>':'')+
+      '</div>';
+    return '<article class="media-thumb '+(quickEdit?'media-thumb--attached':'media-thumb--library')+'">'+controls+
       '<a class="media-view-link" href="'+src+'" target="_blank" rel="noopener" aria-label="View attached media">'+preview+'</a>'+
       (x.caption?'<p class="media-card-caption">'+esc(x.caption)+'</p>':'')+
       '<small>'+esc(x.mime_type)+' · '+Math.round(x.size_bytes/1024)+' KB</small>'+
@@ -311,7 +349,7 @@
     if(!response.ok)throw Error(result.error?.message||'Upload failed');
     return result.data;
   }
-  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map(x=>mediaCard(x,false)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));}
+  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{if(!confirm('Delete this media file? It will be removed from its story.'))return;button.disabled=true;try{await api('/corner/api/admin/media/'+encodeURIComponent(button.dataset.mediaDelete),'DELETE');toast('Media deleted.','success');await media()}catch(error){toast(error.message,'error');button.disabled=false}});}
   function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div><button type="submit">Save media details</button></form></section>`;
     $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
   }

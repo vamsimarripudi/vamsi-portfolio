@@ -29,37 +29,34 @@ export function renderMedia(media=[]){if(!media.length)return '';const m=media[0
 export function renderPostGallery(media=[]){
   if(!media.length)return '';
   const photos=media.filter(m=>m.mime_type?.startsWith('image/'));
-  let number=0;
-  const cards=media.map(m=>{
-    const src='/media/'+encodeURIComponent(m.storage_key);
-    const alt=e(m.alt_text||'Post photograph');
-    const caption=m.caption?'<figcaption>'+e(m.caption)+'</figcaption>':'';
+  let photoNumber=0;
+  const slides=media.map((m,index)=>{
+    const src='/media/'+encodeURIComponent(m.storage_key),alt=e(m.alt_text||'Post media');
+    const caption=m.caption?'<figcaption>'+e(m.caption)+'</figcaption>':'<figcaption class="post-carousel-empty-caption" aria-hidden="true"></figcaption>';
     const width=Number(m.width),height=Number(m.height);
-    const size=Number.isSafeInteger(width)&&Number.isSafeInteger(height)&&width>0&&height>0?
-      ' width="'+width+'" height="'+height+'"':'';
+    const size=Number.isSafeInteger(width)&&Number.isSafeInteger(height)&&width>0&&height>0?' width="'+width+'" height="'+height+'"':'';
     if(m.mime_type?.startsWith('video/')){
-      return '<figure class="post-gallery-item post-gallery-video">'+
-        '<video controls playsinline preload="metadata" aria-label="'+alt+'"><source src="'+src+'" type="'+e(m.mime_type)+'"></video>'+
-        caption+'</figure>';
+      return '<figure class="post-carousel-slide post-gallery-video" data-carousel-slide data-index="'+index+'">'+
+        '<video controls playsinline preload="metadata" aria-label="'+alt+'"><source src="'+src+'" type="'+e(m.mime_type)+'"></video>'+caption+'</figure>';
     }
     const positionX=Math.round(Math.min(1,Math.max(0,Number(m.focal_x)||0.5))*100);
     const positionY=Math.round(Math.min(1,Math.max(0,Number(m.focal_y)||0.5))*100);
-    const index=number++;
-    return '<figure class="post-gallery-item">'+
-      '<button type="button" class="post-photo" data-post-photo data-caption="'+e(m.caption||'')+'" '+
-      'aria-haspopup="dialog" aria-label="View photograph '+(index+1)+' of '+photos.length+': '+alt+'">'+
-      '<img src="'+src+'" alt="'+alt+'"'+size+' loading="'+(index===0?'eager':'lazy')+'" decoding="async" '+
-      'style="object-position:'+positionX+'% '+positionY+'%"></button>'+caption+'</figure>';
+    const imageIndex=photoNumber++;
+    return '<figure class="post-carousel-slide" data-carousel-slide data-index="'+index+'">'+
+      '<button type="button" class="post-photo" data-post-photo data-caption="'+e(m.caption||'')+'" aria-haspopup="dialog" aria-label="View photograph '+(imageIndex+1)+' of '+photos.length+': '+alt+'">'+
+      '<img src="'+src+'" alt="'+alt+'"'+size+' loading="'+(index===0?'eager':'lazy')+'" decoding="async" style="object-position:'+positionX+'% '+positionY+'%"></button>'+caption+'</figure>';
   }).join('');
+  const controls=media.length>1?'<button type="button" class="post-carousel-arrow post-carousel-prev" data-carousel-prev aria-label="Previous media">‹</button>'+
+    '<button type="button" class="post-carousel-arrow post-carousel-next" data-carousel-next aria-label="Next media">›</button>'+
+    '<span class="post-carousel-count" data-carousel-count aria-live="polite">1 / '+media.length+'</span>'+
+    '<div class="post-carousel-dots" role="group" aria-label="Choose media">'+media.map((_,i)=>'<button type="button" data-carousel-dot="'+i+'" aria-label="Show media '+(i+1)+'" aria-current="'+(i===0?'true':'false')+'"></button>').join('')+'</div>':'';
   const lightbox=photos.length?'<dialog class="post-lightbox" data-post-lightbox aria-label="Post photographs">'+
     '<button type="button" class="post-lightbox-close" data-post-close aria-label="Close photograph">×</button>'+
     '<figure><img alt=""><figcaption></figcaption></figure>'+
     '<nav class="post-lightbox-controls" aria-label="Photo navigation">'+
-    '<button type="button" data-post-prev aria-label="Previous photograph">←</button>'+
-    '<span data-post-counter aria-live="polite"></span>'+
-    '<button type="button" data-post-next aria-label="Next photograph">→</button></nav></dialog>':'';
-  return '<section class="post-media-gallery" aria-label="Post images and videos">'+
-    '<div class="post-gallery-grid">'+cards+'</div>'+lightbox+'</section>';
+    '<button type="button" data-post-prev aria-label="Previous photograph">←</button><span data-post-counter aria-live="polite"></span><button type="button" data-post-next aria-label="Next photograph">→</button></nav></dialog>':'';
+  return '<section class="post-media-gallery post-media-carousel" data-post-carousel aria-label="Story media carousel">'+
+    '<div class="post-carousel-frame"><div class="post-carousel-track" data-carousel-track tabindex="0" aria-label="Swipe or use arrow keys to browse media">'+slides+'</div>'+controls+'</div>'+lightbox+'</section>';
 }
 
 export function card(post,index=0,{featured=false,reactions={},comments=0,media=[],editorial=false}={}){
