@@ -273,8 +273,13 @@
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
       if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
     };
+    fileInput.oninput=selectedFiles;
+    fileInput.onchange=selectedFiles;
     fileInput.addEventListener('input',selectedFiles);
     fileInput.addEventListener('change',selectedFiles);
+    form.addEventListener('input',event=>{if(event.target===fileInput)selectedFiles()});
+    form.addEventListener('change',event=>{if(event.target===fileInput)selectedFiles()});
+    form.dataset.mediaReady='true';
     form.onsubmit=async event=>{
       event.preventDefault();
       if(!pending.length)return;
