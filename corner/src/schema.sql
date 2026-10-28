@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS media (
   width INTEGER, height INTEGER, duration REAL, size_bytes INTEGER NOT NULL,
   alt_text TEXT NOT NULL DEFAULT '', caption TEXT NOT NULL DEFAULT '',
   focal_x REAL NOT NULL DEFAULT 0.5, focal_y REAL NOT NULL DEFAULT 0.5,
+  sort_index INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_media_owner ON media(owner_type, owner_id);
