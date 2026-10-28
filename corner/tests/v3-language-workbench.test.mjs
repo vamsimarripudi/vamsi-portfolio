@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Store} from '../src/store.mjs';
 import {V3Languages} from '../src/v3-languages.mjs';
+import {V3Engagement} from '../src/v3-engagement.mjs';
 import {languageStudioPage} from '../src/v3-languages-ui.mjs';
 
 const actor={id:'owner-review',role:'owner'};
@@ -9,6 +10,7 @@ const env={NODE_ENV:'test',CORNER_V3_LANGUAGES:'1',SESSION_SECRET:'test-session-
 
 test('owner workbench exposes real published story metadata and an individual published source only',t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
+ new V3Engagement(store,{env});
  const lang=new V3Languages(store,{env});
  const first=store.createPost({title:'A current published thought',body:'The original long-form content.',excerpt:'Original preview.',type:'journal'},actor.id);
  const draft=store.createPost({title:'Never published',body:'Private body must not leak.',type:'journal'},actor.id);
@@ -30,6 +32,7 @@ test('owner workbench exposes real published story metadata and an individual pu
 
 test('published locale cannot remain counted as live after original story archive',t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
+ new V3Engagement(store,{env});
  const lang=new V3Languages(store,{env});
  const post=store.createPost({title:'One real English story',body:'Original.',type:'journal'},actor.id);
  store.publish(post.id,actor.id);
