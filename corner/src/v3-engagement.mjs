@@ -11,7 +11,7 @@ const safeEmail=(v)=>{
 };
 const hashToken=(v)=>sha('corner:v3:follow:'+v);
 const dateAfter=(hours)=>new Date(Date.now()+hours*3600000).toISOString();
-const validTopics=['all','notes','moments','wishes','builds'];
+const validTopics=['all','notes','moments','wishes','builds','journal'];
 const flag=(env,name)=>env[name]==='1';
 const content=(v,len)=>pureText(v,len).replace(/\s+/g,' ').trim();
 const emailKey=(env)=>{

@@ -70,6 +70,7 @@
     if(open)all('a,button',profilePanel).find(el=>!el.hidden&&el.getClientRects().length)?.focus();
   });
   profilePanel.addEventListener('click',event=>{if(event.target.closest('a[href]'))closeProfile();});
+  profilePanel.querySelector('[data-profile-dismiss]')?.addEventListener('click',()=>closeProfile(true));
   document.addEventListener('pointerdown',event=>{if(!profilePanel.hidden&&!profileButton.parentElement.contains(event.target))closeProfile();},{passive:true});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'){

@@ -152,9 +152,9 @@ const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-s
  '<label class="account-field"><span>Reading language</span><select name="locale"><option value="en">English</option><option value="te">Telugu</option><option value="hi">Hindi</option></select>'+
  '<small>Choose your preferred language for your account.</small></label>'+
  '<label class="quiet-switch-row"><span class="quiet-switch-copy"><strong>Optional email updates</strong>'+
- '<small>Receive occasional Corner updates. Off unless you choose otherwise.</small></span>'+
+ '<small>Controls optional account notices. Newsletter subscriptions require separate email confirmation.</small></span>'+
  '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" role="switch" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
- 'Save preferences')+'</div></section>';
+ 'Save preferences')+'</div>'+(process.env.CORNER_V3_FOLLOW==='1'?'<div class="quiet-panel"><h3>Story emails &amp; newsletters</h3><p class="quiet-data-hint">Choose categories and instant or weekly delivery. Verify your subscription email separately; registration never enrolls you automatically.</p><a href="/follow" class="account-text-button">Manage email subscription ↗</a></div>':'')+'</section>';
 const quietSecurityScreen=(user)=>{
  const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
   '<div data-account-sessions role="status" aria-live="polite"><p>Loading active sessions…</p></div></section>';
