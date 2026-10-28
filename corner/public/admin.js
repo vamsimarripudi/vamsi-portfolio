@@ -115,7 +115,7 @@
     $('#open-media-panel').onclick=()=>{if(mediaPanel&&!mediaPanel.open)mediaPanel.showModal()};
     mediaPanel?.addEventListener('click',event=>{if(event.target===mediaPanel)mediaPanel.close()});
     window.CornerMotion?.refresh();
-    mediaForPost(p.id||null,()=>save(true)).catch(err=>toast(err.message,'error'));
+    mediaForPost(p.id||null,()=>save(true)).catch(err=>{mediaPanel.dataset.mediaInitError=err.message||String(err);toast(err.message,'error')});
     form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
   }
   const uploadLimit=8;
