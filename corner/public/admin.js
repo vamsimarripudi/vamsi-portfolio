@@ -258,21 +258,23 @@
       wrapper.append(figure,fields);
       previewList.append(wrapper);
     };
-    fileInput.onchange=()=>{
-      cleanup();pending=[];
-      previewList.replaceChildren();
+    let selectedSignature='';
+    const selectedFiles=()=>{
       const files=[...fileInput.files];
+      const signature=files.map(file=>file.name+':'+file.size+':'+file.lastModified).join('|');
+      if(signature===selectedSignature&&previewList.children.length)return;
+      selectedSignature=signature;
+      cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
       if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
       status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
-      for(const file of files){
-        const entry={file,done:false,url:null,alt:null,caption:null};
-        pending.push(entry);previewEntry(entry);
-      }
+      for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
       if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
     };
+    fileInput.addEventListener('input',selectedFiles);
+    fileInput.addEventListener('change',selectedFiles);
     form.onsubmit=async event=>{
       event.preventDefault();
       if(!pending.length)return;
