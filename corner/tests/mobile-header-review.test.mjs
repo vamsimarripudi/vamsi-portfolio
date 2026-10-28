@@ -5,7 +5,7 @@ import {basePage,header} from '../src/ui.mjs';
 
 const css=fs.readFileSync(new URL('../public/refresh.css',import.meta.url),'utf8');
 const studio=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
-const locale=fs.readFileSync(new URL('../public/v3-phase4.css',import.meta.url),'utf8');
+const locale=fs.readFileSync(new URL('../public/v3-language-workbench.css',import.meta.url),'utf8');
 
 test('compact public header and account menu have usable mobile and reduced-motion contracts',()=>{
  const markup=header();
@@ -23,9 +23,11 @@ test('compact public header and account menu have usable mobile and reduced-moti
 
 test('source and translation client remain accessible without an external translation provider',()=>{
  const html=basePage({path:'/admin/v3/languages',initial:{page:'languages'}});
- assert.match(html,/v3-phase4\.js/);
+ assert.match(html,/v3-language-workbench\.js/);
  assert.match(html,/v3-phase4\.css/);
- const js=fs.readFileSync(new URL('../public/v3-phase4.js',import.meta.url),'utf8');
+ assert.match(html,/v3-language-workbench\.css/);
+ const js=fs.readFileSync(new URL('../public/v3-language-workbench.js',import.meta.url),'utf8');
+ assert.doesNotMatch(html,/src="\/v3-phase4\.js"/,'Legacy Phase 4 script is not duplicated on the Languages page');
  assert.match(js,/\/workbench/);
  assert.match(js,/\/sources\//);
  assert.match(js,/\/preview/);
