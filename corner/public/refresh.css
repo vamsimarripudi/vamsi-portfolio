@@ -593,3 +593,72 @@ body.corner-comfort #search-dialog .search-footer {gap:8px;font-size:.68rem}
   .corner-comfort .brand .brand-mark.brand-mark--vm {transition:none!important;transform:none!important}
   .corner-comfort .brand:is(:hover,:focus-within) .brand-mark.brand-mark--vm {transform:none!important}
 }
+
+/* 2026-10-28 LOCAL REVIEW: resilient, compact mobile header + profile controls. */
+body.corner-comfort .corner-public-header .header-row{width:100%;display:flex;align-items:center;flex-wrap:nowrap;min-width:0}
+body.corner-comfort .corner-public-header .corner-brand-group{flex:1 1 auto;min-width:0;max-width:100%}
+body.corner-comfort .corner-public-header .brand{flex:1 1 auto;min-width:0;max-width:100%}
+body.corner-comfort .corner-public-header .brand-type{flex:1 1 auto;min-width:0;overflow:hidden}
+body.corner-comfort .corner-public-header .brand strong{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.corner-comfort .corner-public-header .header-right{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;min-width:0}
+body.corner-comfort .corner-public-header .corner-brand-image{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:cover}
+body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle){display:grid!important;place-items:center;flex:none;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px;max-height:44px;padding:0!important;overflow:hidden}
+body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle) svg{display:block;width:21px!important;height:21px!important;flex:none}
+body.corner-comfort .corner-public-header .corner-profile-toggle svg[hidden]{display:none!important}
+body.corner-comfort .corner-public-header .corner-profile-trigger-avatar{display:grid;place-items:center;overflow:hidden;width:31px;height:31px;min-width:31px;min-height:31px;max-width:31px;max-height:31px;border-radius:50%;background:#242226;color:white;font-size:.83rem;line-height:1}
+body.corner-comfort .corner-public-header .corner-profile-trigger-avatar[hidden]{display:none!important}
+body.corner-comfort .corner-public-header .corner-profile-trigger-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+body.corner-comfort .corner-public-header .brand-mark.brand-mark--vm{flex:0 0 auto;width:44px;height:44px;min-width:44px;min-height:44px;max-width:44px;max-height:44px;border-radius:13px}
+body.corner-comfort .corner-public-header .brand-mark--vm img{width:100%;height:100%}
+body.corner-comfort .corner-profile-card .corner-profile-dismiss{position:sticky;top:0;z-index:4;display:grid;place-items:center;justify-self:end;margin:0 0 -27px auto;width:36px;height:36px;min-width:36px;min-height:36px;border:1px solid #d8d0c9;background:#fff;border-radius:11px;color:#29211d;font-size:1.35rem;line-height:1;cursor:pointer}
+body.corner-comfort .corner-profile-card :is(.corner-menu-member,.corner-menu-guest){min-width:0}
+body.corner-comfort .corner-profile-card .corner-menu-identity{display:flex;align-items:center;gap:11px;min-width:0;padding-right:37px;margin:2px 0 8px}
+body.corner-comfort .corner-profile-card .corner-menu-identity>div{min-width:0;flex:1 1 auto}
+body.corner-comfort .corner-profile-card [data-profile-menu-name]{display:block;font-size:.98rem;line-height:1.3;overflow-wrap:anywhere}
+body.corner-comfort .corner-profile-card .corner-menu-identity small{display:block;font-size:.73rem;line-height:1.4;color:#70645c}
+body.corner-comfort .corner-profile-card .corner-menu-avatar{display:grid;place-items:center;width:37px;height:37px;min-width:37px;min-height:37px;max-width:37px;max-height:37px;border-radius:50%;background:#eae2dc;color:#222;font-weight:700;overflow:hidden}
+body.corner-comfort .corner-profile-card .corner-menu-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+body.corner-comfort .corner-profile-card [data-profile-notice]:empty{display:none}
+body.corner-comfort .corner-profile-card .corner-menu-signout{min-height:44px;border:1px solid #d7d0c8;border-radius:11px;padding:9px 13px;background:#f6f3ef;color:#241d19;font-size:.86rem;font-weight:700}
+@media(max-width:900px){
+ body.corner-comfort .corner-public-header .header-row{min-height:68px;gap:7px}
+ body.corner-comfort .corner-public-header .header-right{gap:7px}
+ body.corner-comfort .corner-public-header .brand strong{font-size:clamp(.9rem,4.5vw,1.12rem);letter-spacing:-.045em}
+ body.corner-comfort .corner-public-header .brand small{font-size:.52rem;line-height:1.4;letter-spacing:.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ body.corner-comfort .corner-profile-card{
+  position:fixed!important;top:75px!important;right:max(11px,env(safe-area-inset-right,0px))!important;left:auto!important;bottom:auto!important;
+  width:min(340px,calc(100vw - 22px))!important;min-width:0!important;max-width:calc(100vw - 22px)!important;
+  max-height:calc(100dvh - 191px - env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;overscroll-behavior:contain;
+  gap:3px!important;padding:13px!important;border-radius:18px!important;scrollbar-width:thin!important;
+  box-shadow:0 26px 66px #0003!important;
+ }
+ body.corner-comfort .corner-profile-card a{min-height:44px!important;padding:9px 10px!important;font-size:.87rem!important}
+ body.corner-comfort .corner-profile-card .corner-profile-kicker{font-size:.64rem}
+}
+@media(max-width:385px){
+ body.corner-comfort .corner-public-header .brand-mark.brand-mark--vm{width:36px;height:36px;min-width:36px;min-height:36px;max-width:36px;max-height:36px}
+ body.corner-comfort .corner-public-header .corner-brand-group .brand{gap:6px}
+ body.corner-comfort .corner-public-header .header-right{gap:5px}
+ body.corner-comfort .corner-public-header .header-right :is(.icon-button,.corner-profile-toggle){width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}
+}
+/* Keep iOS controls >=16px so focusing an input never scales the entire page. */
+@supports(-webkit-touch-callout:none){
+ body.corner-comfort :is(#search-input,.corner-auth-dialog input,.corner-profile-card input){font-size:16px!important}
+}
+@media(prefers-reduced-motion:no-preference){
+ body.corner-comfort .corner-public-header .brand-mark--vm img{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+ body.corner-comfort .corner-public-header .brand:is(:hover,:focus-visible) .brand-mark--vm img{transform:scale(1.08) rotate(-4deg)}
+ body.corner-comfort .corner-public-header :is([data-search-open],[data-corner-profile-toggle]) svg{transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+ body.corner-comfort .corner-public-header [data-search-open]:is(:hover,:focus-visible) svg{transform:rotate(-9deg) scale(1.1)}
+ body.corner-comfort .corner-public-header [data-corner-profile-toggle][aria-expanded=true] svg{transform:translateY(-2px) scale(1.07)}
+ body.corner-comfort .corner-profile-card:not([hidden]){animation:corner-profile-in .22s cubic-bezier(.2,.8,.2,1) both}
+ @keyframes corner-profile-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+}
+@media(prefers-reduced-motion:reduce){
+ body.corner-comfort .corner-profile-card,body.corner-comfort .corner-public-header :is(svg,img){animation:none!important;transition:none!important;transform:none!important}
+}
+@media(prefers-reduced-motion:no-preference){
+ body.corner-comfort .corner-public-header .corner-profile-trigger-avatar{transition:transform .28s cubic-bezier(.2,.85,.22,1),box-shadow .28s}
+ body.corner-comfort .corner-public-header [data-corner-profile-toggle][aria-expanded=true] .corner-profile-trigger-avatar{transform:scale(1.07) rotate(3deg);box-shadow:0 0 0 3px rgba(193,122,91,.36)}
+}
+@media(forced-colors:active){body.corner-comfort .corner-profile-card{background:Canvas!important;color:CanvasText!important;border:2px solid CanvasText!important}}

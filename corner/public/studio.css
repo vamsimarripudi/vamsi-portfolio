@@ -87,3 +87,17 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   .corner-comfort .studio-brand-row .admin-brand small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .corner-comfort .admin-shell .admin-nav{max-width:100%;min-width:0}
 }
+
+/* Mobile Studio section discovery: keep current page visible inside the rail. */
+@media(max-width:767px){
+ .corner-comfort .admin-shell .admin-sidebar{max-width:100vw;min-width:0}
+ .corner-comfort .admin-shell .admin-nav{display:flex!important;overflow-x:auto!important;overflow-y:hidden!important;max-width:100%;min-width:0;scroll-snap-type:x proximity;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scrollbar-width:thin!important;scrollbar-color:#c9c1b8 transparent}
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){flex:0 0 auto;min-height:44px;scroll-snap-align:center;font-size:.8125rem;line-height:1.3}
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page]{background:#24201e;color:#fff!important;border-radius:12px;box-shadow:none}
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page] .studio-icon{stroke:#fff}
+}
+@media(prefers-reduced-motion:no-preference){
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link) .studio-icon{transition:transform .2s cubic-bezier(.2,.85,.22,1)}
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link):is(:hover,:focus-visible) .studio-icon{transform:translateY(-2px) rotate(-3deg)}
+}
+@media(prefers-reduced-motion:reduce){.corner-comfort .admin-shell .admin-nav .studio-icon{animation:none!important;transition:none!important;transform:none!important}}

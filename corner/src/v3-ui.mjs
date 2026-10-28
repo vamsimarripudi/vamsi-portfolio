@@ -46,7 +46,7 @@ export function guestbookModerationPage(v3,user){
   return basePage({title:'Guestbook review',path:'/admin/v3/guestbook',content:markup,noindex:true});
 }
 export function followPage(){
-  const topics='<fieldset class="v3-topics"><legend>Topics</legend>'+[['notes','Notes'],['moments','Moments'],['wishes','Wishes'],['builds','Builds']].map(([id,label])=>
+  const topics='<fieldset class="v3-topics"><legend>Topics</legend>'+[['notes','Notes'],['moments','Moments'],['wishes','Wishes'],['builds','Builds'],['journal','Journal']].map(([id,label])=>
     '<label><input type="checkbox" name="topics" value="'+id+'">'+label+'</label>').join('')+
     '<small>Leave all unchecked for every topic.</small></fieldset>';
   const body='<section class="v3-follow"><h2>Follow this corner</h2><p>Only the topics you select, after email confirmation.</p>'+

@@ -18,6 +18,10 @@ import {V3Languages} from './v3-languages.mjs';
 import {languageRoutes} from './v3-languages-routes.mjs';
 import {languageStudioPage} from './v3-languages-ui.mjs';
 import {WishDelivery} from './v3-wish-delivery.mjs';
+import {CommunicationCenter} from './communication-center.mjs';
+import {communicationRoutes} from './communication-routes.mjs';
+import {communicationsPage} from './communication-ui.mjs';
+import {verifyResendWebhook} from './v3-resend-webhook.mjs';
 import {wishesRoutes} from './v3-wishes-routes.mjs';
 import {wishesStudioPage} from './v3-wishes-ui.mjs';
 import {sanitizeImage} from './media-privacy.mjs';
@@ -45,6 +49,7 @@ const wishes=new WishesStudio(store);
 const insights=new V3Insights(store);
 const languages=new V3Languages(store);
 const wishDelivery=new WishDelivery(store,{sendMail:mail=>identity.sender(mail)});
+const communications=new CommunicationCenter(store,{sendMail:mail=>identity.sender(mail)});
 const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
@@ -162,6 +167,7 @@ const handleWishes=wishesRoutes({wishes,delivery:wishDelivery,readJSON,ok,requir
 const handleInsights=insightRoutes({insights,requireOwner,ok,limit});
 const handleLanguages=languageRoutes({languages,requireOwner,readJSON,ok,limit});
 const handleReading=readingRoutes({reading,store,readJSON,ok,limit,requireOwner,cookieHeader});
+const handleCommunications=communicationRoutes({center:communications,requireOwner,readJSON,ok,limit});
 async function api(req,res,pathName,url){
   const method=req.method||'GET';
   if(pathName==='/api/webhooks/resend'){
@@ -169,7 +175,11 @@ async function api(req,res,pathName,url){
    // A signed callback can be tested while live subscriber delivery remains paused.
    if(!process.env.CORNER_V3_RESEND_WEBHOOK_SECRET)throw httpError(404,'Webhook unavailable.','FEATURE_DISABLED');
    limit(req,'v3-resend-webhook',180,60);
-   return ok(res,wishDelivery.reconcileWebhook(await readBody(req,65536),req.headers));
+   const raw=await readBody(req,65536);
+   const wishResult=wishDelivery.reconcileWebhook(raw,req.headers);
+   // Both consumers receive only a signed, verified provider event.
+   const verifiedEvent=verifyResendWebhook(raw,req.headers,String(process.env.CORNER_V3_RESEND_WEBHOOK_SECRET||''));
+   return ok(res,{...wishResult,communications:communications.reconcileVerifiedProviderEvent(verifiedEvent)});
   }
   if(await handleReading(req,res,pathName,url))return;
   if(await handleV3(req,res,pathName,url))return;
@@ -177,6 +187,7 @@ async function api(req,res,pathName,url){
   if(await handleWishes(req,res,pathName,url))return;
   if(await handleInsights(req,res,pathName,url))return;
   if(await handleLanguages(req,res,pathName,url))return;
+  if(await handleCommunications(req,res,pathName,url))return;
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -357,7 +368,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/email-vm-mark.png','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -407,6 +418,13 @@ async function route(req,res){
       catch(error){if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error}
       return page(res,languageStudioPage(languages,actor),200,true);
     }
+    if(pathname==='/admin/communications'){
+      let actor;
+      try{actor=requireOwner(req,'/api/admin/settings','GET')}
+      catch(error){if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error}
+      if(actor.role!=='owner')throw httpError(403,'Owner permissions required','OWNER_REQUIRED');
+      return page(res,communicationsPage(actor),200,true);
+    }
     if(pathname==='/admin/v3/wishes'&&wishes.enabled()){
       let actor;
       try{actor=requireOwner(req,'/api/admin/posts','GET')}
@@ -443,7 +461,8 @@ async function route(req,res){
 export function createServer(){return http.createServer((req,res)=>{route(req,res).catch(err=>{log('error',{where:'unhandled',message:err?.message});if(!res.headersSent)json(res,{error:{code:'INTERNAL_ERROR',message:'Unexpected error'}},500);else res.end()})})}
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
-  const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
+  const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));
+   void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.

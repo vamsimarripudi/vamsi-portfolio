@@ -33,6 +33,19 @@ export class V3Languages{
  enabled(){return this.env.CORNER_V3_LANGUAGES==='1'}
  check(){if(!this.enabled())throw httpError(404,'Languages unavailable.','FEATURE_DISABLED')}
  owner(actor){this.check();if(actor?.role!=='owner')throw httpError(403,'Owner permissions required.','OWNER_REQUIRED')}
+ // Owner-only published originals; draft content stays private.
+ sources(actor){
+  this.owner(actor);
+  return this.store.all("SELECT id,slug,title,excerpt,version,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 150").map(source=>({
+   id:source.id,slug:source.slug,title:source.title,excerpt:source.excerpt||'',version:source.version,publishedAt:source.published_at
+  }));
+ }
+ sourceForStudio(actor,postId){
+  this.owner(actor);
+  const source=this.store.one("SELECT id,slug,title,excerpt,body,version,published_at FROM posts WHERE id=? AND state='published'",String(postId||''));
+  if(!source)throw httpError(404,'Published source story not found.','SOURCE_NOT_FOUND');
+  return {id:source.id,slug:source.slug,title:source.title,excerpt:source.excerpt||'',body:source.body||'',version:source.version,publishedAt:source.published_at};
+ }
  getSource(postId){
   const source=this.store.one('SELECT id,slug,title,state,version FROM posts WHERE id=?',String(postId||''));
   if(!source)throw httpError(404,'Source story not found.','SOURCE_NOT_FOUND');
@@ -57,7 +70,7 @@ export class V3Languages{
     id:r.id,postId:r.post_id,postSlug:r.post_slug,sourceTitle:r.source_title,
     language:r.language,title:r.title,excerpt:r.excerpt,body:r.body,
     state:r.state,revision:r.revision,sourceVersion:r.source_version,
-    needsReview:r.source_version!==r.latest_source_version,updatedAt:r.updated_at
+    sourceState:r.source_state,needsReview:r.source_state!=='published'||r.source_version!==r.latest_source_version,updatedAt:r.updated_at
   }));
  }
  save(actor,{postId,language:requested,revision,...data}={}){

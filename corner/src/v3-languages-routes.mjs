@@ -6,6 +6,15 @@ export function languageRoutes({languages,requireOwner,readJSON,ok,limit}){
   languages.owner(actor);
   const method=req.method||'GET';
   if(method!=='GET')limit(req,'v3-language-write',35,3600);
+  if(path==='/api/admin/v3/languages/workbench'&&method==='GET'){
+   res.setHeader('cache-control','private, no-store');
+   ok(res,{sources:languages.sources(actor),variants:languages.list(actor)});return true;
+  }
+  const source=path.match(/^\/api\/admin\/v3\/languages\/sources\/(post_[0-9a-f-]{36})$/i);
+  if(source&&method==='GET'){
+   res.setHeader('cache-control','private, no-store');
+   ok(res,languages.sourceForStudio(actor,source[1]));return true;
+  }
   if(path==='/api/admin/v3/languages'){
    if(method==='GET'){ok(res,languages.list(actor));return true}
    if(method==='POST'){ok(res,languages.save(actor,await readJSON(req,16000)));return true}
