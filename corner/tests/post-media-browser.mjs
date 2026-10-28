@@ -62,6 +62,8 @@ try{
   {name:'photo-three.png',mimeType:'image/png',buffer:png},
   {name:'photo-remove.png',mimeType:'image/png',buffer:png}
  ]);
+ // Chromium CI occasionally retains the FileList without propagating the synthetic chooser event; dispatch change explicitly so the real handler is exercised.
+ await input.dispatchEvent('change');
  const cards=page.locator('#editor-upload .upload-preview-card');
  await page.waitForFunction(()=>document.querySelectorAll('#editor-upload .upload-preview-card').length===4,null,{timeout:5000}).catch(async error=>{
    const status=await page.locator('[data-upload-status]').textContent().catch(()=>'');
