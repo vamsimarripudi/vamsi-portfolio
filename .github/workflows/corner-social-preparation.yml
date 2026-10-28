@@ -1,0 +1,25 @@
+name: Prepare isolated Corner social publishing source
+on:
+  push:
+    branches: ['feat/corner-social-publishing-20261028']
+    paths: ['.github/workflows/corner-social-preparation.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.ref == 'refs/heads/feat/corner-social-publishing-20261028'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Export tracked source only, never runtime data or credentials
+        run: |
+          git ls-files -z | python3 -c 'import sys; p=sys.stdin.buffer.read().split(b"\0"); sys.stdout.buffer.write(b"\0".join(x for x in p if x and not any(y in x.split(b"/") for y in [b".env",b"data",b"uploads",b"node_modules",b".git"]) and not x.rsplit(b"/",1)[-1].startswith(b".env."))+b"\0")' > /tmp/source-paths
+          tar --null -T /tmp/source-paths -czf /tmp/corner-social-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corner-social-source
+          path: /tmp/corner-social-source.tar.gz
+          retention-days: 1
