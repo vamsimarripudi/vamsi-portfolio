@@ -59,7 +59,8 @@ try{
  await page.waitForFunction(()=>document.querySelector('#editor-upload')?.dataset.mediaReady==='true',null,{timeout:5000}).catch(async error=>{
    const toastText=await page.locator('#toast-stack').innerText().catch(()=>'');
    const html=await page.locator('#editor-media').innerHTML().catch(()=>'');
-   throw new Error('Uploader initialization did not complete. toasts='+toastText+' html='+html.slice(0,500),{cause:error});
+   const initError=await page.locator('#editor-media').getAttribute('data-media-init-error').catch(()=>null);
+   throw new Error('Uploader initialization did not complete. initError='+initError+' toasts='+toastText+' html='+html.slice(0,500),{cause:error});
  });
  assert.equal(await input.evaluate(el=>typeof el.onchange),'function','Uploader change handler is attached before file selection');
  await input.setInputFiles([
