@@ -56,7 +56,11 @@ try{
  await page.setViewportSize({width:390,height:844});
  const input=attachmentDialog.locator('#editor-upload input[type="file"]');
  await input.waitFor({state:'visible'});
- await page.waitForFunction(()=>document.querySelector('#editor-upload')?.dataset.mediaReady==='true',null,{timeout:5000});
+ await page.waitForFunction(()=>document.querySelector('#editor-upload')?.dataset.mediaReady==='true',null,{timeout:5000}).catch(async error=>{
+   const toastText=await page.locator('#toast-stack').innerText().catch(()=>'');
+   const html=await page.locator('#editor-media').innerHTML().catch(()=>'');
+   throw new Error('Uploader initialization did not complete. toasts='+toastText+' html='+html.slice(0,500),{cause:error});
+ });
  assert.equal(await input.evaluate(el=>typeof el.onchange),'function','Uploader change handler is attached before file selection');
  await input.setInputFiles([
   {name:'photo-one.png',mimeType:'image/png',buffer:png},
