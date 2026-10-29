@@ -3,7 +3,6 @@
  'use strict';
  const active=new WeakMap(),targets=new Map();
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
- const wait=ms=>new Promise(resolve=>setTimeout(resolve,Math.max(0,ms)));
  const definitions={
   'draft.save':['paper','Saving…','Saved',320],
   'post.schedule':['clock','Scheduling…','Scheduled',480],
