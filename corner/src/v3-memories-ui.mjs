@@ -58,7 +58,7 @@ export function nowHistoryPage(memories,current){
   '<div class="corner-pulse-timeline" aria-hidden="true"><span data-pulse-progress></span></div>'+
   '<p class="corner-pulse-expiry" data-pulse-meta>'+(live?'This thought leaves the public Corner automatically after 24 hours.':'A temporary update will appear here when it is shared.')+'</p>'+
   '</section>';
- return simplePage({title:'Corner Pulse',path:'/now',lead:'A little thought, here for a day. Not a permanent story.',body:pulse});
+ return simplePage({title:'Corner Pulse',path:'/now',lead:'A little thought, here for a day. Not a permanent story.',body:'<div class="v3m-content">'+pulse+'</div>'});
 }
 const option=(value,name,selected='')=>'<option value="'+e(value)+'"'+(value===selected?' selected':'')+'>'+e(name)+'</option>';
 const kindOptions=['personal','build','work','learning','celebration'].map(x=>option(x,x)).join('');
