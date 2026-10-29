@@ -11,7 +11,7 @@
  const controls=document.createElement('div');controls.className='v6-reader-controls';
  const toggle=document.createElement('button');toggle.type='button';toggle.className='v6-reader-toggle';
  toggle.setAttribute('aria-pressed','false');toggle.setAttribute('aria-label','Enter distraction-free reading mode');
- toggle.textContent='Focus reading';
+ toggle.textContent='Focus reading';toggle.title='Focus reading';
  controls.append(toggle);heading.append(controls);
  const restore=document.createElement('button');restore.type='button';restore.className='v6-reader-show';
  restore.textContent='Show controls';restore.setAttribute('aria-label','Exit distraction-free reading');
@@ -32,7 +32,7 @@
   if(dock&&mobile.matches)dock.inert=next?true:dock.classList.contains('v51-dock-hidden');
   toggle.setAttribute('aria-pressed',String(next));
   toggle.setAttribute('aria-label',next?'Exit distraction-free reading mode':'Enter distraction-free reading mode');
-  toggle.textContent=next?'Exit focus':'Focus reading';
+  toggle.textContent=next?'Exit focus':'Focus reading';toggle.title=next?'Exit focus':'Focus reading';
   restore.hidden=!next;
   document.dispatchEvent(new CustomEvent('corner:v6-reading',{detail:{active:next}}));
  }
