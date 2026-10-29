@@ -81,6 +81,27 @@ try{
  await page.locator('#post-editor textarea[name=body]').fill('A live story\nFirst line\nSecond line');await page.locator('[data-v5-settings-toggle]').click();await page.locator('#post-editor input[name=emoji]').fill('✨');await page.locator('[data-v5-settings-toggle]').click();
  assert.equal(await page.locator('.preview-story-body').textContent(),'A live story\nFirst line\nSecond line');assert.equal(await page.locator('.preview-title').textContent(),'A live story');assert.equal(await page.locator('.preview-symbol').textContent(),'✨');
  await page.locator('#save-post').click();await page.waitForFunction(()=>document.querySelector('#save-indicator').textContent.startsWith('Saved'));
+ // Motion lab acceptance in an isolated authenticated test fixture. The sample
+ // action does not write any data; other Studio tests exercise actual persistence.
+ await page.evaluate(()=>{
+   const button=document.createElement('button');button.type='button';
+   button.id='action-motion-fixture';button.textContent='Motion test';
+   document.querySelector('#admin-view').append(button);
+   window.__cornerMotionProof=window.CornerActionMotion.run({
+     action:'draft.save',trigger:button,targetId:'fixture',
+     execute:()=>new Promise(resolve=>setTimeout(()=>resolve({confirmed:true}),550)),
+     confirm:value=>value.confirmed===true
+   });
+ });
+ const motionFixture=page.locator('#action-motion-fixture');
+ await motionFixture.locator('.cm-fold').waitFor();
+ assert.equal(await motionFixture.getAttribute('data-corner-motion-state'),'pending');
+ assert.equal(await motionFixture.isEnabled(),false,'Motion prevents duplicate confirmation');
+ await page.screenshot({path:path.join(screenshots,'action-motion-paper-pending.png'),animations:'disabled'});
+ await page.waitForFunction(()=>document.querySelector('#action-motion-fixture')?.dataset.cornerMotionState==='success');
+ await page.screenshot({path:path.join(screenshots,'action-motion-paper-confirmed.png'),animations:'disabled'});
+ await page.evaluate(async()=>{await window.__cornerMotionProof;document.querySelector('#action-motion-fixture')?.remove()});
+
  await page.locator('#post-editor textarea[name=body]').fill('Draft autosave still works.');await page.waitForFunction(()=>document.querySelector('#save-indicator').textContent.startsWith('Saved'));
  const sidebarBefore=await page.locator('.admin-sidebar').boundingBox();await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));assert.ok(await page.evaluate(()=>scrollY)>0);const sidebarAfter=await page.locator('.admin-sidebar').boundingBox();assert.equal(sidebarBefore.y,sidebarAfter.y,'Sidebar anchored while document scrolls');
  await page.locator('[data-studio-collapse]').click();assert.equal(await page.locator('html').getAttribute('data-studio-collapsed'),'true');assert.ok((await page.locator('.admin-sidebar').boundingBox()).width<90);await page.locator('[data-studio-collapse]').click();
