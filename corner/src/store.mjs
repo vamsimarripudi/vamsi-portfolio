@@ -157,6 +157,8 @@ export class Store{
     this.audit(actor,'post.scheduled','post',id,{recurrence});return this.adminPost(id);
   }
   getFeed({category,limit=15,cursor,tag}={}){
+    // Latest is singular by contract; collection/archive reads remain paginated.
+    if(category==='Latest')return {items:this.all("SELECT * FROM posts WHERE state='published' ORDER BY published_at DESC,id DESC LIMIT 1").map(publicPost),nextCursor:null};
     let clauses=["state='published'"],args=[],size=clamp(Number(limit)||15,1,30);
     if(category&&category!=='Latest'){const cat={Wishes:'Wishes',Builds:'Builds',Notes:'Notes',Journal:'Journal',Moments:'Moments'}[category];if(!cat)return {items:[],nextCursor:null};clauses.push('category=?');args.push(cat)}
     if(tag){clauses.push('EXISTS (SELECT 1 FROM json_each(posts.tags) WHERE value=?)');args.push(tag)}

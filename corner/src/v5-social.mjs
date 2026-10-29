@@ -82,11 +82,11 @@ export class CornerSocial{
       (SELECT COUNT(*) FROM corner_v5_comment_reactions r WHERE r.comment_id=c.id AND r.actor_user_id=?) AS liked
       FROM comments c LEFT JOIN corner_v5_comment_meta m ON m.comment_id=c.id
       LEFT JOIN users u ON u.id=m.author_user_id
-      WHERE c.post_id=? AND (c.state='approved' OR (c.state='deleted' AND EXISTS (SELECT 1 FROM corner_v5_comment_meta replies JOIN comments rc ON rc.id=replies.comment_id WHERE replies.parent_id=c.id AND rc.state='approved'))) ORDER BY c.created_at ASC,c.id ASC LIMIT ?`,String(actorId||''),postId,Math.min(300,Math.max(1,Number(limit)||250)));
+      WHERE c.post_id=? AND (c.state='approved' OR (c.state='pending' AND m.author_user_id=? AND ?!='') OR (c.state='deleted' AND EXISTS (SELECT 1 FROM corner_v5_comment_meta replies JOIN comments rc ON rc.id=replies.comment_id WHERE replies.parent_id=c.id AND rc.state='approved'))) ORDER BY c.created_at ASC,c.id ASC LIMIT ?`,String(actorId||''),postId,String(actorId||''),String(actorId||''),Math.min(300,Math.max(1,Number(limit)||250)));
     const ids=new Set(rows.map(r=>r.id));
     return rows.map(r=>({id:r.id,postId:r.post_id,parentId:ids.has(r.parent_id)?r.parent_id:null,
       authorName:r.state==='deleted'?'Deleted comment':r.author_name,authorBadge:r.state==='deleted'?null:ownerRole(r.user_role)?'Author':staffRoles.has(r.user_role)?'Team':null,
-      deleted:r.state==='deleted',body:r.state==='deleted'?'This comment was removed.':r.body,createdAt:r.created_at,updatedAt:r.updated_at,stickerId:r.state==='deleted'?null:r.sticker_id,gifId:r.state==='deleted'?null:r.gif_id,
+      deleted:r.state==='deleted',pending:r.state==='pending',body:r.state==='deleted'?'This comment was removed.':r.body,createdAt:r.created_at,updatedAt:r.updated_at,stickerId:r.state==='deleted'?null:r.sticker_id,gifId:r.state==='deleted'?null:r.gif_id,
       reactions:Number(r.reactions||0),liked:!!r.liked,own:!!actorId&&r.author_user_id===actorId,edited:r.updated_at!==r.created_at}));
   }
   toggleLike(commentId,actor){
