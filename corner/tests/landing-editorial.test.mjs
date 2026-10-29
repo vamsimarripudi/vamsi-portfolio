@@ -22,7 +22,7 @@ test('home uses approved editorial hero and six working category links',()=>{
  for(const href of ['/','/category/wishes','/category/builds','/category/notes','/category/journal','/category/moments'])
    assert.ok(html.includes('href="'+href+'"'),'Working category destination: '+href);
  assert.match(html,/corner-journal-layout/);
- assert.match(html,/corner-home-spotlight/);
+ assert.doesNotMatch(html,/corner-home-spotlight/,'Latest story must not be duplicated by an empty or identical Spotlight');
  assert.match(html,/Working on something interesting\./);
  assert.match(html,/A lovely little day/);
  assert.doesNotMatch(html,/Working on a tool/,'The Latest panel shows exactly one newest story');
@@ -33,7 +33,7 @@ test('home uses approved editorial hero and six working category links',()=>{
 test('empty public feed stays honest instead of injecting mockup stories',()=>{
  const html=feedPage({posts:[]});
  assert.match(html,/Nothing here yet\./);
- assert.match(html,/Your next story starts here\./);
+ assert.doesNotMatch(html,/Your next story starts here\./,'No fabricated spotlight placeholder');
  assert.doesNotMatch(html,/Morning thoughts/);
  assert.doesNotMatch(html,/Working on something new/);
  assert.match(html,/href="\/about">About Corner/);
@@ -74,4 +74,12 @@ test('approved paper and six-item bottom dock are route-scoped and accessible',(
  assert.match(css,/forced-colors:active/);
  assert.match(css,/corner-orbit-dock/);
  assert.match(server,/\/landing\.css/);
+});
+
+
+test('Spotlight is rendered only for a distinct existing featured story',()=>{
+ const html=feedPage({posts:[posts[0]],featured:posts[1]});
+ assert.match(html,/corner-home-spotlight/);
+ assert.match(html,/Working on a tool/);
+ assert.equal((html.match(/class="story /g)||[]).length,1,'Latest feed still has exactly one story card');
 });
