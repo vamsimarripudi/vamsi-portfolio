@@ -81,6 +81,23 @@ export class CornerMediaJobs {
   setImmediate(()=>this.drain().catch(()=>{}));
   return {jobId:id,state:'queued',message:'Converting to widely supported H.264 video.'};
  }
+ retrim(mediaId,{start=0,end=0}={}){
+  if(!idRule.test(String(mediaId||'')))throw httpError(404,'Video not found.','NOT_FOUND');
+  const media=this.store.one("SELECT * FROM media WHERE id=? AND owner_type='post'",mediaId);
+  if(!media||!media.mime_type.startsWith('video/'))throw httpError(404,'Video not found.','NOT_FOUND');
+  const original=this.store.one("SELECT source_key,source_mime FROM corner_v5_video_jobs WHERE media_id=? AND state='ready' ORDER BY created_at ASC LIMIT 1",mediaId);
+  if(!original||!fs.existsSync(path.join(this.queue,original.source_key)))throw httpError(409,'Original video unavailable for editing.','ORIGINAL_UNAVAILABLE');
+  start=clamp(safeN(start,0),0,179);end=clamp(safeN(end,0),0,180);
+  if(end&&end<=start)throw httpError(400,'Trim end must follow start.','INVALID_TRIM');
+  const id=uid('vjob'),time=now();
+  this.store.exec("INSERT INTO corner_v5_video_jobs(id,post_id,source_key,source_mime,state,alt_text,caption,trim_start,trim_end,media_id,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+   id,media.owner_id,original.source_key,original.source_mime,'queued',media.alt_text,media.caption,start,end,mediaId,time,time);
+  setImmediate(()=>this.drain().catch(()=>{}));return {jobId:id,state:'queued',postId:media.owner_id};
+ }
+ photoRecipe(mediaId){
+  const row=this.store.one('SELECT recipe FROM corner_v5_photo_edits WHERE media_id=?',mediaId);
+  try{return row?JSON.parse(row.recipe):null}catch{return null}
+ }
  status(jobId,postId){
   if(!/^vjob_[0-9a-f-]{36}$/i.test(String(jobId||'')))throw httpError(404,'Job not found.','NOT_FOUND');
   const row=this.store.one('SELECT id,post_id,state,error_code,media_id,updated_at FROM corner_v5_video_jobs WHERE id=?',jobId);
@@ -143,12 +160,17 @@ export class CornerMediaJobs {
     catch(e){if(!hdr)throw e;args[args.indexOf('-vf')+1]=scale;await run('ffmpeg',args,{timeout:140000,maxBuffer:100000})}
     const bytes=fs.statSync(destination).size;
     if(bytes<100||bytes>75*1024*1024)throw Error('Converted video size is unsupported');
-    let mediaId;
+    let mediaId=job.media_id||uid('media'),oldKey=null;
     this.store.transaction(()=>{
-     mediaId=uid('media');
-     this.store.addMedia({id:mediaId,ownerId:job.post_id,storageKey:newKey,mimeType:'video/mp4',size:bytes,width:stream.width,height:stream.height,alt:job.alt_text,caption:job.caption});
+     if(job.media_id){
+      const previous=this.store.one('SELECT storage_key FROM media WHERE id=? AND owner_id=?',mediaId,job.post_id);
+      if(!previous)throw Error('Video target changed during processing');
+      oldKey=previous.storage_key;
+      this.store.exec("UPDATE media SET storage_key=?,mime_type='video/mp4',size_bytes=?,width=?,height=? WHERE id=?",newKey,bytes,stream.width,stream.height,mediaId);
+     }else this.store.addMedia({id:mediaId,ownerId:job.post_id,storageKey:newKey,mimeType:'video/mp4',size:bytes,width:stream.width,height:stream.height,alt:job.alt_text,caption:job.caption});
      this.store.exec("UPDATE corner_v5_video_jobs SET state='ready',media_id=?,error_code=NULL,updated_at=? WHERE id=?",mediaId,now(),job.id);
     });
+    if(oldKey&&keyRule.test(oldKey))fs.rmSync(path.join(this.uploads,oldKey),{force:true});
     const p=this.store.one('SELECT state,slug,version FROM posts WHERE id=?',job.post_id);
     if(p?.state==='published')this.store.emit('post.updated',job.post_id,p.version,{slug:p.slug});
    }catch(e){
