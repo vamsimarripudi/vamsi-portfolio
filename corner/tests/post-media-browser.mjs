@@ -196,7 +196,8 @@ try{
  const dialog=page.locator('dialog[data-post-lightbox]');
  await dialog.waitFor({state:'visible'});
  assert.equal(await dialog.locator('[data-post-counter],[data-post-prev],[data-post-next]').count(),0,'No viewer arrows or counter');
- assert.equal(await dialog.locator('[data-post-close]').isVisible(),false,'No visible close X');
+ const closeStyle=await dialog.locator('[data-post-close]').evaluate(el=>({width:el.getBoundingClientRect().width,clip:getComputedStyle(el).clipPath}));
+ assert.ok(closeStyle.width<=1&&closeStyle.clip.includes('inset(50%)'),'Close action stays visually hidden until keyboard-focused '+JSON.stringify(closeStyle));
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.');
  await page.keyboard.press('ArrowRight');
  assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
