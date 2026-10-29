@@ -10,7 +10,7 @@
  const center=item=>{
   if(!narrow.matches||!item||!nav.contains(item))return;
   const navBox=nav.getBoundingClientRect(),itemBox=item.getBoundingClientRect();
-  // Scroll the horizontal nav ONLY; scrollIntoView could jump the whole page.
+  // Scroll the horizontal navigation only, never move the page.
   const target=nav.scrollLeft+(itemBox.left-navBox.left)-(navBox.width-itemBox.width)/2;
   nav.scrollTo({left:Math.max(0,target),behavior:reduce.matches?'instant':'smooth'});
  };
