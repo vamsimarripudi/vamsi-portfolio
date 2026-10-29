@@ -57,7 +57,8 @@
  };
  window.CornerPulse=Object.freeze({apply});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)paint()});
- window.addEventListener('pageshow',paint);
- window.addEventListener('pagehide',()=>{disposed=true;if(timer)clearTimeout(timer)},{once:true});
+ // A back-forward-cache restoration reuses this page and must re-arm expiry.
+ window.addEventListener('pageshow',()=>{disposed=false;paint()});
+ window.addEventListener('pagehide',()=>{disposed=true;if(timer){clearTimeout(timer);timer=0}});
  paint();
 })();

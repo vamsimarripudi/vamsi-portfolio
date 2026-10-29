@@ -36,6 +36,8 @@ test('Pulse has a unique ephemeral time trace, no fake live dot when idle',()=>{
 test('Owner UI describes 24-hour expiry and supports immediate hiding',()=>{
  const admin=read('admin.js'),css=read('v6-pulse.css'),js=read('v6-pulse.js');
  assert.match(admin,/Share Pulse for 24 hours/);
+ assert.match(admin,/action:'status.save'/);
+ assert.match(admin,/data\.durationHours!==24/);
  assert.match(admin,/uncheck to end it/);
  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/footer-links a\[hidden\]/);

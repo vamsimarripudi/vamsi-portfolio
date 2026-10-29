@@ -52,6 +52,17 @@ try{
   await page.waitForFunction(()=>document.querySelector('.corner-pulse-card')?.classList.contains('is-idle'),null,{timeout:5000});
   test.equal(await pulse.locator('[data-pulse-label]').textContent(),'No Pulse right now','Expired public text is removed in an open browser');
   test.equal(await pulse.locator('[data-pulse-detail]').textContent().then(x=>x.includes('short-lived test')),false);
+  // Simulate a bfcache pagehide/pageshow cycle; future Pulse updates must still
+  // render and expire rather than leaving a stale status frozen in a restored tab.
+  await page.evaluate(()=>{
+   window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+   window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+   window.CornerPulse.apply({label:'Another ephemeral note',detail:'Back-forward cache check',
+     expiresAt:new Date(Date.now()+600).toISOString()});
+  });
+  test.equal(await pulse.locator('[data-pulse-label]').textContent(),'Another ephemeral note');
+  await page.waitForFunction(()=>document.querySelector('.corner-pulse-card')?.classList.contains('is-idle'),null,{timeout:5000});
+  test.equal(await pulse.locator('[data-pulse-label]').textContent(),'No Pulse right now','bfcache restoration re-arms expiry');
   await page.goto(origin+'/corner/now',{waitUntil:'domcontentloaded'});
   test.match(await page.locator('h1').first().textContent(),/Corner Pulse/);
   test.deepEqual(errors,[],'No browser exception '+width);

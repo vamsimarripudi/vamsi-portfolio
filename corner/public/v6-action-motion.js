@@ -115,6 +115,9 @@
     if(!aborted){
       motion?.failure(error);
       try{onFailure?.(error)}catch{/* Never change the real operation outcome from a toast/feedback error. */}
+      // Keep retry/error visible long enough to read; no success is manufactured.
+      if(!reduce.matches&&motion&&trigger.isConnected)
+        await new Promise(resolve=>setTimeout(resolve,420));
     }
     return {ok:false,error,stale:aborted};
    }finally{

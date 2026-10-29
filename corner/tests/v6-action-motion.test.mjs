@@ -51,6 +51,8 @@ test('All action metaphors and Reduced Motion are present without false percenta
  assert.match(css,/cm-card-out/);assert.match(css,/cm-ink/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(js,/Math\.random|fakeProgress|fakePercentage/);
+ assert.match(js,/Keep retry\/error visible long enough/);
+ assert.match(js,/setTimeout\(resolve,420\)/);
 });
 
 test('Studio mutating operations use scoped motion, preserve draft versions and worker status',()=>{
