@@ -28,6 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 22
     steps:
+      - name: Install FFmpeg for real media integration tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
