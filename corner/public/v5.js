@@ -68,6 +68,20 @@ if('EventSource' in window&&!initial.demo&&['feed','detail'].includes(initial.pa
  const disconnect=()=>{stream?.close();stream=null};
  addEventListener('pagehide',disconnect);document.addEventListener('visibilitychange',()=>document.hidden?disconnect():connect());connect();
 }
+// Keep public profile and navigation functional even when the companion is disabled.
+if(!document.querySelector('script[src*="/companion.js"]')){
+ const button=$('[data-corner-profile-toggle]'),panel=$('[data-corner-profile-card]');
+ const nav=$('[data-corner-rail-toggle]'),rail=$('#corner-rail-nav'),backdrop=$('[data-corner-rail-backdrop]');
+ const closeProfile=focus=>{if(!panel)return;panel.hidden=true;button?.setAttribute('aria-expanded','false');if(focus)button?.focus()};
+ const closeRail=()=>{rail?.classList.remove('is-open');if(backdrop)backdrop.hidden=true;nav?.setAttribute('aria-expanded','false');document.documentElement.classList.remove('corner-drawer-open')};
+ button?.addEventListener('click',()=>{const open=panel.hidden;closeRail();panel.hidden=!open;button.setAttribute('aria-expanded',String(open))});
+ document.addEventListener('pointerdown',event=>{if(!panel?.hidden&&!button?.parentElement?.contains(event.target))closeProfile(false)},{passive:true});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!panel?.hidden)closeProfile(true);else if(rail?.classList.contains('is-open'))closeRail()}});
+ panel?.addEventListener('click',event=>{if(event.target.closest('a[href]'))closeProfile(false)});
+ nav?.addEventListener('click',()=>{const open=!rail?.classList.contains('is-open');closeProfile(false);if(open){rail?.classList.add('is-open');if(backdrop)backdrop.hidden=false;nav.setAttribute('aria-expanded','true');document.documentElement.classList.add('corner-drawer-open')}else closeRail()});
+ backdrop?.addEventListener('click',closeRail);
+ rail?.addEventListener('click',event=>{if(event.target.closest('a[href]'))closeRail()});
+}
 const root=$('[data-v5-threads]');if(!root)return;
 const postId=root.dataset.postId,note=$('[data-v5-comment-status]');
 const state={items:[],member:false,replyTo:null,replyText:'',asset:null};
