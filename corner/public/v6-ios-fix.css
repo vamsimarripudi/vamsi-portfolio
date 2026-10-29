@@ -1,0 +1,28 @@
+/* V6.1 iOS polish — loaded last to resolve legacy cascade. */
+@media(max-width:767px){
+ body.corner-comfort .admin-shell .admin-sidebar{position:sticky;top:0;z-index:80;background:#fcfaf7}
+ body.corner-comfort .admin-shell .admin-nav{display:flex!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-padding-inline:12px;padding:6px 10px!important;max-width:100vw;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+ body.corner-comfort .admin-shell .admin-nav :is(button,a){flex:0 0 auto!important;min-width:44px;max-width:none;white-space:nowrap!important;min-height:44px!important;scroll-snap-align:start}
+ body.corner-comfort .admin-shell .admin-main{min-width:0;overflow-wrap:anywhere}
+ body.corner-comfort .admin-shell .admin-main :is(h1,h2,h3,p){overflow-wrap:break-word}
+ body.corner-comfort .admin-shell .admin-main :is(.v3a-header,.v3a-heading,.v3a-hero,.v3m-hero,.v3w-heading){min-width:0;max-width:100%;flex-wrap:wrap;gap:12px}
+ body.corner-comfort .admin-shell .admin-main :is(.filter-row,.status-filters,.v3a-filters,.comment-filters){display:flex;flex-wrap:wrap;gap:7px;max-width:100%}
+ body.corner-comfort .admin-shell .admin-main :is(.filter-row,.status-filters,.v3a-filters,.comment-filters) button{min-height:40px;padding:8px 12px}
+ body.corner-comfort .post-article .post-heading{scroll-margin-top:16px}
+ body.corner-comfort .post-article .v6-reader-controls{min-height:0;margin:8px 0 12px;padding:0}
+ body.corner-comfort .post-article .v6-reader-toggle{min-height:44px}
+}
+/* A hidden dock must not visually block content; keep the restore control reachable. */
+html[data-v6-reading=focus] body.corner-comfort .corner-public-header{
+ transform:translate3d(0,-110%,0)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important
+}
+html[data-v6-reading=focus] body.corner-comfort .v6-reader-show{
+ position:fixed!important;display:flex!important;top:max(12px,env(safe-area-inset-top,0px));right:12px;z-index:400;opacity:.88!important
+}
+html[data-v6-reading=focus] body.corner-comfort .v6-reader-show[hidden]{display:none!important}
+body.corner-comfort .corner-public-header,body.corner-comfort .v6-reader-show{
+ transition:transform 240ms cubic-bezier(.22,1,.36,1),opacity 180ms ease,visibility 240ms!important
+}
+@media(prefers-reduced-motion:reduce){
+ body.corner-comfort .corner-public-header,body.corner-comfort .v6-reader-show{transition:none!important}
+}
