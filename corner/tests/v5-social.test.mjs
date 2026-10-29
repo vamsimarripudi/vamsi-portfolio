@@ -25,8 +25,11 @@ test('new V5 tables retain existing legacy comments',t=>{
  assert.equal(social.approved(post.id).length,1,'Pending comments remain hidden');
  store.moderate(draft.id,'approved','owner');social.afterModeration(draft.id);
  const items=social.approved(post.id,{actorId:'member'});
- assert.equal(items.length,2);assert.equal(items[1].parentId,legacy.id);
- assert.equal(items[1].authorName,'Reader');
+ assert.equal(items.length,2);
+ const actualReply=items.find(item=>item.id===draft.id);
+ assert.ok(actualReply,'Approved reply is present regardless of tied creation timestamps');
+ assert.equal(actualReply.parentId,legacy.id);
+ assert.equal(actualReply.authorName,'Reader');
 });
 test('threaded reply notifications wait for moderation and only target original author',t=>{
  const {store,social,post,owner,reader}=fixture(t);
