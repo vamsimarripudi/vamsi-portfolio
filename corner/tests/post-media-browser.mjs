@@ -115,7 +115,58 @@ try{
  await page.keyboard.press('Escape');
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Escape dismisses the native dialog');
  assert.equal(await page.locator('#open-media-panel').evaluate(element=>element===document.activeElement),true,'Focus returns to the media trigger');
- await page.locator('#publish-post').click();
+ // Reference-inspired Publish animation is tied to the actual backend response.
+ // First simulate a genuine HTTP failure: it must NOT ever show green.
+ const publishButton=page.locator('#publish-post');
+ await publishButton.waitFor({state:'visible'});
+ assert.equal(await publishButton.getAttribute('data-v6-publish-state'),'idle');
+ const publishRoute='**/corner/api/admin/posts/*/publish';
+ let attempts=0;
+ await page.route(publishRoute,async route=>{
+   if(route.request().method()!=='POST')return route.continue();
+   attempts++;
+   return route.fulfill({status:503,contentType:'application/json',
+     body:JSON.stringify({error:{message:'Temporary publish error. Please retry.'}})});
+ });
+ await publishButton.click();
+ await page.locator('#publish-post[data-v6-publish-state="error"]').waitFor({state:'visible',timeout:8000});
+ assert.equal(attempts,1,'Exactly one failed publish request was attempted');
+ assert.equal(await publishButton.isEnabled(),true,'Publish is retryable after server failure');
+ assert.equal(await publishButton.getAttribute('aria-label'),'Retry publishing story');
+ assert.equal(await publishButton.locator('.v6-publish-label').textContent(),'Try again');
+ assert.equal(await page.locator('.v6-publish-button[data-v6-publish-state="success"]').count(),0,
+   'Never celebrate failed publishing');
+ await page.unroute(publishRoute);
+
+ // Hold the real successful POST response so the blue circular progress remains
+ // visible until the server confirms success, even if saving was fast.
+ let releaseResponse;
+ const heldResponse=new Promise(resolve=>{releaseResponse=resolve});
+ let confirmResponse;
+ const confirmed=new Promise(resolve=>{confirmResponse=resolve});
+ await page.route(publishRoute,async route=>{
+   if(route.request().method()!=='POST')return route.continue();
+   const response=await route.fetch();
+   confirmResponse(response.status());
+   await heldResponse;
+   await route.fulfill({response});
+ });
+ await publishButton.click();
+ assert.equal(await confirmed,200,'A real publish transaction commits successfully');
+ await page.locator('#publish-post[data-v6-publish-state="pending"]').waitFor({state:'visible'});
+ assert.equal(await publishButton.isEnabled(),false,'Duplicate taps are blocked while publishing');
+ assert.equal(await publishButton.locator('.v6-publish-ring-active').count(),1,'Blue progress ring is present');
+ await page.waitForTimeout(430);
+ const circleWidth=await publishButton.evaluate(el=>el.getBoundingClientRect().width);
+ assert.ok(circleWidth>=50&&circleWidth<=65,'Publish pill morphs into a circle '+circleWidth);
+ fs.mkdirSync('screenshots',{recursive:true});
+ await page.screenshot({path:'screenshots/corner-publish-progress.png',animations:'disabled'});
+ releaseResponse();
+ await page.locator('#publish-post[data-v6-publish-state="success"]').waitFor({state:'visible',timeout:6500});
+ assert.equal(await publishButton.getAttribute('aria-label'),'Story published successfully');
+ assert.match(await publishButton.locator('.v6-publish-done').textContent(),/Published/);
+ await page.screenshot({path:'screenshots/corner-publish-confirmed.png',animations:'disabled'});
+ await page.unroute(publishRoute);
  await page.waitForFunction(async()=>{
   try{
    const response=await fetch('/corner/api/admin/posts?state=published',{credentials:'same-origin'});
