@@ -39,32 +39,75 @@
     $('#create-from-overview').onclick=()=>editor();$('#see-schedules').onclick=()=>{active.filter='scheduled';showView('posts')};$('#edit-now').onclick=statusEditor;
   }
   async function posts(){const list=await api('/corner/api/admin/posts?state='+encodeURIComponent(active.filter));
-    root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">Edit ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
-    $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
+    root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">${p.state==='archived'?'View':'Edit'} ↗</button>${p.state==='draft'?`<button data-delete-draft="${p.id}" type="button">Delete</button>`:''}${p.state==='archived'?`<button data-restore-draft="${p.id}" type="button">Restore</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
+    $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));$$('[data-delete-draft]').forEach(b=>b.onclick=async()=>{if(!confirm('Move draft to Archived?'))return;try{await api('/corner/api/admin/posts/'+b.dataset.deleteDraft,'DELETE');await posts()}catch(err){toast(err.message,'error')}});$$('[data-restore-draft]').forEach(b=>b.onclick=async()=>{try{await api('/corner/api/admin/posts/'+b.dataset.restoreDraft+'/restore','POST');await posts()}catch(err){toast(err.message,'error')}});
   }
-  function postFields(p={}){const lead=String(p.body||'').match(/^> ([^\n]{1,280})(?:\n\n|$)/);const main=lead?String(p.body).slice(lead[0].length):p.body||'';return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span></div>
-    <div class="editor-inline"><label>Type<select name="type">${variantTypes.map(t=>`<option value="${t}" ${p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label><label>Symbol / emoji<input name="emoji" maxlength="8" placeholder="✳" value="${esc(p.emoji||'')}"></label></div>
-    <label>Title<input name="title" maxlength="150" required placeholder="A small idea worth keeping." value="${esc(p.title||'')}"></label>
-    <label>Short preview<input name="excerpt" maxlength="380" placeholder="One line to draw someone in." value="${esc(p.excerpt||'')}"></label>
-    <label>Opening quote (optional)<textarea name="quote" rows="2" maxlength="280" placeholder="A sentence worth remembering.">${esc(lead?.[1]||'')}</textarea></label>
-    <label>Full story<textarea name="body" minlength="2" maxlength="25000" rows="9" placeholder="Tell the story here, in your own words…">${esc(main)}</textarea></label>
-    <label>Tags <input name="tags" maxlength="200" placeholder="Builds, ideas, things worth sharing" value="${esc((p.tags||[]).join(', '))}"></label>
-    <div class="editor-checks"><label><input type="checkbox" name="featured" ${p.featured?'checked':''}> Feature</label><label><input type="checkbox" name="pinned" ${p.pinned?'checked':''}> Pin</label><label><input type="checkbox" name="milestone" ${p.milestone?'checked':''}> Milestone</label><label><input type="checkbox" name="allowComments" ${p.allow_comments?'checked':''}> Comments</label><label><input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}> Reactions</label><label><input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}> Public Coming Up teaser</label></div>
-    <div class="editor-actions"><button type="button" class="secondary" id="save-post">Save changes</button><button type="button" id="publish-post">Publish</button><button type="button" class="secondary" id="schedule-post">Schedule</button><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media"><span class="corner-media-trigger-mark" aria-hidden="true">＋</span> Attach files<span class="corner-media-count" id="media-count" hidden></span></button>${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div>`}
-  function formValues(form){return {type:form.elements.type.value,title:form.elements.title.value,emoji:form.elements.emoji.value,excerpt:form.elements.excerpt.value,body:(form.elements.quote.value.trim()?'> '+form.elements.quote.value.trim()+'\n\n':'')+form.elements.body.value,tags:form.elements.tags.value,featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};}
-  function updatePreview(form){let p=formValues(form);let card=$('.preview-card');if(!card)return;card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
-    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title||'Your next story.';$('.preview-excerpt',card).textContent=p.excerpt||'Just enough to invite someone in.';
-    const quote=$('.preview-story-quote',card);if(quote){quote.textContent=form.elements.quote.value.trim();quote.hidden=!quote.textContent}
-    $('.preview-story-body',card).textContent=form.elements.body.value||'';$('.preview-symbol',card).textContent=p.emoji||'✳';
+  const v5Title=body=>{
+    const first=String(body||'').trim().replace(/^>\s*/,'').split(/[\n.!?]+/).map(x=>x.trim()).find(Boolean)||'A moment in pictures';
+    return first.length<=95?first:first.slice(0,90).replace(/\s+\S*$/,'')+'…';
+  };
+  const v5Type=body=>{
+    const text=String(body||'').toLowerCase();
+    if(/\b(birthday|congratulations|festival|celebrate|anniversary|best wishes)\b/.test(text))return 'wish';
+    if(/\b(shipped|launched|building|release|programming|developer|project|api|code|product)\b/.test(text))return 'build';
+    if(/\b(photo|picture|rain|sunset|moment|sky|video|photograph)\b/.test(text))return 'moment';
+    return text.length>650?'journal':'tech_note';
+  };
+  function postFields(p={}){
+    const exists=!!p.id,mark=p.emoji||'✳';
+    return '<div class="v5-composer"><div class="v5-editor-surface">'+
+      '<div class="v5-editor-top"><strong>'+(exists?'EDIT YOUR STORY':'YOUR CORNER / NEW STORY')+' '+tag(p.state||'draft')+'</strong><button type="button" class="v5-editor-menu-button" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings">···</button></div>'+
+      '<label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, something you built…">'+esc(p.body||'')+'</textarea>'+
+      '<div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>'+
+      '<label>Presentation<select name="type"><option value="auto" '+(!exists?'selected':'')+'>Choose automatically</option>'+variantTypes.map(t=>'<option value="'+t+'" '+(exists&&p.type===t?'selected':'')+'>'+typeNames[t]+'</option>').join('')+'</select></label>'+
+      '<label>Symbol<input name="emoji" maxlength="8" value="'+esc(mark)+'"></label>'+
+      [['allowComments','Allow comments',p.allow_comments!==false&&p.allow_comments!==0],['allowReactions','Allow reactions',p.allow_reactions!==false&&p.allow_reactions!==0],['featured','Feature',!!p.featured],['pinned','Pin',!!p.pinned],['milestone','Milestone',!!p.milestone],['upcomingPublic','Public upcoming teaser',!!p.upcoming_public]].map(([name,label,checked])=>'<label>'+label+'<input type="checkbox" name="'+name+'" '+(checked?'checked':'')+'></label>').join('')+
+      '<p class="v5-edit-hint">The title and summary are generated from your writing. Nothing is rewritten.</p></div>'+
+      '<div class="v5-editor-media-actions"><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media">＋ Add photo or video <span class="corner-media-count" id="media-count" hidden></span></button><span id="save-indicator" class="v5-editor-status">'+(exists?'Saved · '+esc(p.updated_at||''):'Start writing to autosave')+'</span></div></div>'+
+      '<div class="editor-actions v5-editor-actions"><button type="button" class="secondary" id="save-post">Save draft</button><button type="button" id="publish-post">Publish ↗</button><button type="button" class="secondary" id="schedule-post">Schedule</button>'+
+      (p.state==='draft'&&exists?'<button type="button" id="delete-draft" class="v5-editor-danger">Delete draft</button>':'')+(p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':'')+(p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':'')+'</div></div>';
+  }
+  function formValues(form){
+    const body=form.elements.body.value,choice=form.elements.type.value,type=choice==='auto'?v5Type(body):choice;
+    return {type,title:v5Title(body),emoji:form.elements.emoji.value||'✳',excerpt:body.replace(/\s+/g,' ').trim().slice(0,280),body,
+      tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,
+      milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,
+      allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
+  }
+  function updatePreview(form){
+    const p=formValues(form),card=$('.preview-card');if(!card)return;card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
+    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title;
+    $('.preview-excerpt',card).textContent=p.excerpt||'A moment taking shape.';
+    const quote=$('.preview-story-quote',card);if(quote){quote.textContent='';quote.hidden=true}
+    $('.preview-story-body',card).textContent=p.body;$('.preview-symbol',card).textContent=p.emoji;
     $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
   }
   function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
-  async function editor(id=null){clearTimeout(active.saveTimer);active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:false,tags:[]};active.post=p;
+  async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};active.post=p;
     root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
     const form=$('#post-editor');
-    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.id&&p.state==='draft'){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1250)}});
+    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
+    const closeSettings=()=>{menu.hidden=true;toggle.setAttribute('aria-expanded','false')};
+    toggle.addEventListener('click',()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden))});
+    document.addEventListener('pointerdown',event=>{if(!menu.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))closeSettings()},{signal:active.editorAbort.signal});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){closeSettings();toggle.focus()}},{signal:active.editorAbort.signal});
+    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.state==='draft'&&form.elements.body.value.trim()){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)}});
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
-    async function save(quiet=false){if(!form.elements.title.value.trim()){if(!quiet)toast('Add a title first.','error');return null}clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';try{let value=formValues(form);if(p.id){p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...value,version:p.version});}else{p=await api('/corner/api/admin/posts','POST',value);active.post=p;}$('#save-indicator').textContent='Saved · v'+p.version;active.dirty=false;if(!quiet)toast('Draft saved.','success');return p;}catch(err){$('#save-indicator').textContent=err.status===409?'Edit conflict — reload':'Could not save';if(!quiet)toast(err.message,'error');return null}}
+    let pendingSave=null;
+    async function save(quiet=false){
+      if(pendingSave)return pendingSave;
+      if(!form.elements.body.value.trim()&&!p.id){if(!quiet)toast('Write a thought first.','error');return null}
+      clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
+      pendingSave=(async()=>{try{
+        const values=formValues(form);
+        if(p.id)p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version});
+        else p=await api('/corner/api/admin/posts','POST',values);
+        active.post=p;active.dirty=false;
+        $('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        if(!quiet)toast('Draft saved.','success');return p;
+      }catch(error){$('#save-indicator').textContent=error.status===409?'Edit conflict — reload':'Save failed';if(!quiet)toast(error.message,'error');return null}
+      finally{pendingSave=null}})();return pendingSave;
+    }
     $('#save-post').onclick=()=>save();$('#publish-post').onclick=async()=>{let saved=await save(true);if(!saved)return;try{p=await api('/corner/api/admin/posts/'+p.id+'/publish','POST');toast('Published. Your story is live.','success');editor(p.id)}catch(err){toast(err.message,'error')}};
     $('#schedule-post').onclick=()=>{
       const panel=$('#schedule-panel');
@@ -108,6 +151,7 @@
       panel.showModal();
       panel.querySelector('[name=localTime]').focus();
     };
+    $('#delete-draft')?.addEventListener('click',async()=>{if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? It can be restored.'))return;try{await api('/corner/api/admin/posts/'+p.id,'DELETE');toast('Draft archived.','success');showView('posts')}catch(error){toast(error.message,'error')}});
     $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
     $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
     $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
