@@ -92,12 +92,23 @@
     const result=await execute({progress:message=>motion.progress(message),signal});
     if(confirm&&confirm(result)!==true)throw Error('Server confirmation was not received.');
     if(!aborted&&trigger.isConnected){
+      // The operation has already committed. A failed follow-up refresh must
+      // never turn a successful API write into a false failure/retry invitation.
       await motion.success(successLabel);
-      if(onSuccess&&trigger.isConnected&&!aborted)await onSuccess(result);
+      if(onSuccess&&trigger.isConnected&&!aborted){
+        try{await onSuccess(result)}
+        catch(refreshError){
+          console.warn('Corner action saved, but presentation refresh failed:',refreshError);
+          return {ok:true,result,refreshError};
+        }
+      }
     }
     return {ok:true,result,stale:aborted};
    }catch(error){
-    if(!aborted){motion?.failure(error);onFailure?.(error)}
+    if(!aborted){
+      motion?.failure(error);
+      try{onFailure?.(error)}catch{/* Never change the real operation outcome from a toast/feedback error. */}
+    }
     return {ok:false,error,stale:aborted};
    }finally{
     signal?.removeEventListener('abort',onAbort);
