@@ -26,6 +26,7 @@
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
  function feedback(message,kind='success'){
+  if(window.CornerToast?.show)return window.CornerToast.show(message,{type:kind});
   let host=document.querySelector('#toast-stack');
   if(!host){host=document.createElement('div');host.id='toast-stack';host.className='toast-stack';document.body.append(host)}
   const node=document.createElement('div');node.className='toast '+kind;

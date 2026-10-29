@@ -20,6 +20,7 @@ test('upload, caption and image-preview interfaces keep usable touch controls an
  assert.match(css,/max-height:min\(65dvh,480px\)/);
  assert.match(css,/\.post-media-editor \.upload-preview-card\{grid-template-columns:minmax\(88px,33%\) minmax\(0,1fr\)\}/);
  assert.match(css,/\.post-media-editor \.media-quick-edit input\{[^}]*height:40px/);
- assert.match(css,/\.post-lightbox-controls button\{width:44px;height:44px/);
+ assert.match(css,/post-lightbox-sr-close:focus-visible/);
+ assert.match(css,/post-lightbox>figure img/);
  assert.match(css,/\.post-gallery-item figcaption\{/);
 });

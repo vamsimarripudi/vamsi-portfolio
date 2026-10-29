@@ -55,7 +55,8 @@ try{
    await link.click();
    const dialog=page.locator('dialog.v6-conversation-sheet');
    await dialog.waitFor({state:'visible'});
-   assert.equal(await dialog.locator('.v6-sheet-comment').count(),1,'Approved thread visible');
+   await dialog.locator('.v6-sheet-comment').first().waitFor({state:'visible',timeout:8000});
+   assert.equal(await dialog.locator('.v6-sheet-comment').count(),1,'Approved thread visible after API response');
    assert.match(await dialog.getByText('A thoughtful local test reply.').textContent(),/thoughtful/);
    await dialog.locator('textarea').fill('My own pending synthetic reply.');
    await dialog.locator('button[type="submit"]').click();

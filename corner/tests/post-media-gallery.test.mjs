@@ -13,8 +13,11 @@ test('published article displays every attached image and video with escaped cap
  const markup=renderPostGallery([one,two,video]);
  assert.equal((markup.match(/data-post-photo /g)||[]).length,2);
  assert.match(markup,/data-post-lightbox/);
- assert.match(markup,/Previous photograph/);
- assert.match(markup,/Next photograph/);
+ assert.match(markup,/Swipe left or right to change photos/);
+ assert.match(markup,/Tap anywhere to close/);
+ assert.match(markup,/Close photographs/,'Screen readers retain a named dismiss action');
+ assert.doesNotMatch(markup,/data-post-prev|data-post-next|data-post-counter|post-lightbox-controls/,'No visible modal navigation chrome');
+ assert.match(markup,/aria-label="Previous media"/,'In-article carousel controls remain independent');
  assert.match(markup,/width="800" height="600"/);
  assert.match(markup,/First quiet evening/);
  assert.match(markup,/&lt;script&gt;alert/);

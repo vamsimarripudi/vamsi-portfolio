@@ -6,7 +6,8 @@
  if(!dock||document.querySelector('script[src*="/companion.js"]'))return;
  const mobile=matchMedia('(max-width:900px)');
  const inputSelector='input:not([type=hidden]),textarea,select,[contenteditable="true"]';
- let hidden=false,lastY=Math.max(0,window.scrollY),accumulated=0,frame=0;
+ let hidden=false,lastY=Math.max(0,window.scrollY),accumulated=0,frame=0,footerVisible=false;
+ const footer=document.querySelector('.site-footer');
  const hasFocus=()=>!!document.activeElement?.matches?.(inputSelector);
  const show=shouldHide=>{
    const value=mobile.matches&&shouldHide;
@@ -18,7 +19,9 @@
    frame=0;
    const y=Math.max(0,window.scrollY),delta=y-lastY;
    lastY=y;
-   if(!mobile.matches||y<72){accumulated=0;show(false);return}
+   if(!mobile.matches){accumulated=0;show(false);return}
+   if(footerVisible){accumulated=0;show(true);return}
+   if(y<72){accumulated=0;show(false);return}
    if(hasFocus()){show(true);return}
    if(Math.abs(delta)<2)return;
    accumulated=delta>0?Math.max(0,accumulated)+delta:Math.min(0,accumulated)+delta;
@@ -26,6 +29,15 @@
    if(accumulated< -12){show(false);accumulated=0}
  }
  const onScroll=()=>{if(!frame)frame=requestAnimationFrame(update)};
+ // Hide the floating dock before it can cover footer links, then restore it
+ // when readers scroll back to article/category content.
+ const footerObserver=footer&&'IntersectionObserver' in window
+  ?new IntersectionObserver(entries=>{
+    footerVisible=!!entries[0]?.isIntersecting;
+    if(footerVisible)show(true);
+    else if(window.scrollY<72)show(false);
+  },{threshold:0}):null;
+ footerObserver?.observe(footer);
  window.addEventListener('scroll',onScroll,{passive:true});
  window.addEventListener('resize',()=>{lastY=Math.max(0,window.scrollY);accumulated=0;show(false)},{passive:true});
  document.addEventListener('focusin',event=>{
@@ -37,5 +49,5 @@
  window.visualViewport?.addEventListener('resize',()=>{
    if(mobile.matches&&hasFocus())show(true);
  },{passive:true});
- window.addEventListener('pagehide',()=>{if(frame)cancelAnimationFrame(frame)},{once:true});
+ window.addEventListener('pagehide',()=>{if(frame)cancelAnimationFrame(frame);footerObserver?.disconnect()},{once:true});
 })();

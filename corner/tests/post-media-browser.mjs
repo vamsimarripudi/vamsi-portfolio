@@ -115,7 +115,59 @@ try{
  await page.keyboard.press('Escape');
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Escape dismisses the native dialog');
  assert.equal(await page.locator('#open-media-panel').evaluate(element=>element===document.activeElement),true,'Focus returns to the media trigger');
- await page.locator('#publish-post').click();
+ // Reference-inspired Publish animation is tied to the actual backend response.
+ // First simulate a genuine HTTP failure: it must NOT ever show green.
+ const publishButton=page.locator('#publish-post');
+ await publishButton.waitFor({state:'visible'});
+ assert.equal(await publishButton.getAttribute('data-v6-publish-state'),'idle');
+ const publishRoute='**/corner/api/admin/posts/*/publish';
+ let attempts=0;
+ await page.route(publishRoute,async route=>{
+   if(route.request().method()!=='POST')return route.continue();
+   attempts++;
+   return route.fulfill({status:503,contentType:'application/json',
+     body:JSON.stringify({error:{message:'Temporary publish error. Please retry.'}})});
+ });
+ await publishButton.click();
+ await page.locator('#publish-post[data-v6-publish-state="error"]').waitFor({state:'visible',timeout:8000});
+ assert.equal(attempts,1,'Exactly one failed publish request was attempted');
+ assert.equal(await publishButton.isEnabled(),true,'Publish is retryable after server failure');
+ assert.equal(await publishButton.getAttribute('aria-label'),'Retry publishing story');
+ assert.equal(await publishButton.locator('.v6-publish-label').textContent(),'Try again');
+ assert.equal(await page.locator('.v6-publish-button[data-v6-publish-state="success"]').count(),0,
+   'Never celebrate failed publishing');
+ await page.unroute(publishRoute);
+
+ // Hold the real successful POST response so the blue circular progress remains
+ // visible until the server confirms success, even if saving was fast.
+ let releaseResponse;
+ const heldResponse=new Promise(resolve=>{releaseResponse=resolve});
+ let confirmResponse;
+ const confirmed=new Promise(resolve=>{confirmResponse=resolve});
+ await page.route(publishRoute,async route=>{
+   if(route.request().method()!=='POST')return route.continue();
+   const response=await route.fetch();
+   confirmResponse(response.status());
+   await heldResponse;
+   await route.fulfill({response});
+ });
+ await publishButton.click();
+ await page.locator('.v6-toast[data-type="error"]').waitFor({state:'detached',timeout:5000});
+ assert.equal(await confirmed,200,'A real publish transaction commits successfully');
+ await page.locator('#publish-post[data-v6-publish-state="pending"]').waitFor({state:'visible'});
+ assert.equal(await publishButton.isEnabled(),false,'Duplicate taps are blocked while publishing');
+ assert.equal(await publishButton.locator('.v6-publish-ring-active').count(),1,'Blue progress ring is present');
+ await page.waitForTimeout(430);
+ const circleWidth=await publishButton.evaluate(el=>el.getBoundingClientRect().width);
+ assert.ok(circleWidth>=50&&circleWidth<=65,'Publish pill morphs into a circle '+circleWidth);
+ fs.mkdirSync('screenshots',{recursive:true});
+ await page.screenshot({path:'screenshots/corner-publish-progress.png',animations:'disabled'});
+ releaseResponse();
+ await page.locator('#publish-post[data-v6-publish-state="success"]').waitFor({state:'visible',timeout:6500});
+ assert.equal(await publishButton.getAttribute('aria-label'),'Story published successfully');
+ assert.match(await publishButton.locator('.v6-publish-done').textContent(),/Published/);
+ await page.screenshot({path:'screenshots/corner-publish-confirmed.png',animations:'disabled'});
+ await page.unroute(publishRoute);
  await page.waitForFunction(async()=>{
   try{
    const response=await fetch('/corner/api/admin/posts?state=published',{credentials:'same-origin'});
@@ -195,14 +247,35 @@ try{
  await images.first().click();
  const dialog=page.locator('dialog[data-post-lightbox]');
  await dialog.waitFor({state:'visible'});
- assert.equal(await dialog.locator('[data-post-counter]').textContent(),'1 / 2');
+ assert.equal(await dialog.locator('[data-post-counter],[data-post-prev],[data-post-next]').count(),0,'No viewer arrows or counter');
+ const closeStyle=await dialog.locator('[data-post-close]').evaluate(el=>({width:el.getBoundingClientRect().width,clip:getComputedStyle(el).clipPath}));
+ assert.ok(closeStyle.width<=1&&closeStyle.clip.includes('inset(50%)'),'Close action stays visually hidden until keyboard-focused '+JSON.stringify(closeStyle));
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.');
  await page.keyboard.press('ArrowRight');
- assert.equal(await dialog.locator('[data-post-counter]').textContent(),'2 / 2');
- assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.');
+ assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
+ await dialog.locator('figure img').evaluate(el=>{
+   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:17,pointerType:'touch',clientX:240,clientY:250}));
+   el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
+ });
+ assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
+ // Browser-generated click following a swipe must NOT immediately dismiss the viewer.
+ await dialog.locator('figure img').dispatchEvent('click');
+ assert.equal(await dialog.evaluate(el=>el.open),true,'The swipe completion click cannot close the viewer');
+ await page.waitForTimeout(500);
+ await dialog.locator('figure img').click();
+ await dialog.waitFor({state:'hidden'});
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Tap closes viewer and restores source photo focus');
+ await images.first().click();
+ await dialog.waitFor({state:'visible'});
+ // A tap on the gallery backdrop also dismisses; nothing requires a visible X.
+ await dialog.evaluate(el=>el.click());
+ await dialog.waitFor({state:'hidden'});
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Backdrop tap restores photo focus');
+ await images.first().click();
+ await dialog.waitFor({state:'visible'});
  await page.keyboard.press('Escape');
  await dialog.waitFor({state:'hidden'});
- assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Keyboard focus returns to selected photo');
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Escape still closes the accessible viewer');
 
  for(const [width,height] of [[320,720],[360,780],[375,812],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[1280,800],[1366,768],[1920,1080]]){
    await page.setViewportSize({width,height});
