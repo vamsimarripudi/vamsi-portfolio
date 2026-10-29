@@ -166,3 +166,12 @@ body.corner-comfort .v6-toast .v6-toast-close:focus-visible{outline:3px solid #3
 @media(prefers-reduced-motion:reduce){
  .corner-comfort .corner-public-header,.corner-comfort .v6-reader-show{transition:none!important}
 }
+
+/* Stable iPhone icon rail owned here, instead of inheriting viewport-wide scroll rules. */
+@media(max-width:767px){
+ body.corner-comfort .admin-shell .admin-nav{
+  scroll-snap-type:x proximity!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch;
+ }
+}
