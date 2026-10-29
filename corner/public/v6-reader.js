@@ -18,7 +18,7 @@
  restore.hidden=true;document.body.append(restore);
  const inputSelector='input:not([type=hidden]),textarea,select,[contenteditable="true"]';
  let active=false,manuallyFocused=false,lastY=Math.max(0,window.scrollY);
- let streak=0,frame=0,wasInert=dock?.inert??false;
+ let streak=0,frame=0;
  const focusedControl=()=>document.activeElement?.matches?.(inputSelector);
  const dialogOpen=()=>!!document.querySelector('dialog[open]');
  const insideReading=()=>{
@@ -29,7 +29,7 @@
   if(active===next)return;
   active=next;
   if(next)root.dataset.v6Reading='focus';else delete root.dataset.v6Reading;
-  if(dock&&mobile.matches)dock.inert=next?true:wasInert;
+  if(dock&&mobile.matches)dock.inert=next?true:dock.classList.contains('v51-dock-hidden');
   toggle.setAttribute('aria-pressed',String(next));
   toggle.setAttribute('aria-label',next?'Exit distraction-free reading mode':'Enter distraction-free reading mode');
   toggle.textContent=next?'Exit focus':'Focus reading';
@@ -39,10 +39,11 @@
  function update(){
   frame=0;
   const now=Math.max(0,window.scrollY),dy=now-lastY;lastY=now;
-  if(!mobile.matches||dialogOpen()||focusedControl()||now<85||!insideReading()){
+  if(!mobile.matches||dialogOpen()||focusedControl()||now<85){
    streak=0;if(!manuallyFocused||!mobile.matches||dialogOpen()||focusedControl())change(false);
    return;
   }
+  if(!insideReading()){manuallyFocused=false;change(false);streak=0;return}
   if(manuallyFocused){change(true);return;}
   if(Math.abs(dy)<3)return;
   streak=dy>0?Math.max(0,streak)+dy:Math.min(0,streak)+dy;

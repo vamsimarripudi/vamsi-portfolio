@@ -1,7 +1,7 @@
 /* Native multi-page continuity: full URLs, real history and no click interception. */
 (()=>{
  'use strict';
- if(!document.querySelector('link[href="/v6-motion.css"]'))return;
+ if(!document.querySelector('link[href$="/v6-motion.css"]'))return;
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
  let named=null;
  const clear=()=>{if(named){named.style.viewTransitionName='';named=null}};

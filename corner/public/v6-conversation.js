@@ -1,7 +1,7 @@
 /* Corner V6 Quick Conversations. Canonical links remain functional without JavaScript. */
 (()=>{
  'use strict';
- if(!('showModal' in HTMLDialogElement.prototype))return;
+ if(typeof HTMLDialogElement==='undefined'||!('showModal' in HTMLDialogElement.prototype))return;
  const prefix=location.pathname.startsWith('/corner')?'/corner':'';
  const idPattern=/^post_[0-9a-f-]{36}$/i;
  let dialog=null,trigger=null,postId=null,replyTo=null,signedIn=false,busy=false,serial=0;
@@ -124,7 +124,7 @@
   get('textarea').value='';get('textarea').disabled=true;
   get('.v6-sheet-send').disabled=true;announce('');
   const requestId=++serial;
-  dialog.showModal();
+  if(!dialog.open)dialog.showModal();
   document.dispatchEvent(new CustomEvent('corner:v6-modal',{detail:{open:true}}));
   get('.v6-sheet-close').focus({preventScroll:true});
   await refresh(requestId);
