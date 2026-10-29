@@ -18,6 +18,8 @@ import {V3Languages} from './v3-languages.mjs';
 import {languageRoutes} from './v3-languages-routes.mjs';
 import {languageStudioPage} from './v3-languages-ui.mjs';
 import {WishDelivery} from './v3-wish-delivery.mjs';
+import {CornerSocial} from './v5-social.mjs';
+import {CornerMediaJobs,inspectAppleMedia,normalizeHeicImage} from './v5-media.mjs';
 import {CommunicationCenter} from './communication-center.mjs';
 import {communicationRoutes} from './communication-routes.mjs';
 import {communicationsPage} from './communication-ui.mjs';
@@ -49,6 +51,8 @@ const wishes=new WishesStudio(store);
 const insights=new V3Insights(store);
 const languages=new V3Languages(store);
 const wishDelivery=new WishDelivery(store,{sendMail:mail=>identity.sender(mail)});
+const social=new CornerSocial(store);
+const mediaJobs=new CornerMediaJobs(store,{uploads:config.uploads});
 const communications=new CommunicationCenter(store,{sendMail:mail=>identity.sender(mail)});
 const imageDerivatives=new ImageDerivatives();
 if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in production');
@@ -67,6 +71,16 @@ function json(res,data,status=200,headers={}){end(res,status,JSON.stringify(data
 function ok(res,data,meta={}){json(res,{data,meta})}
 function created(res,data,location){json(res,{data,meta:{}},201,{location})}
 function cookieHeader(req){return Object.fromEntries((req.headers.cookie||'').split(';').map(s=>{let i=s.indexOf('=');return i<0?[]:[s.slice(0,i).trim(),s.slice(i+1).trim()] }).filter(x=>x.length===2))}
+function currentActor(req){
+ const cookies=cookieHeader(req);
+ try{const token=decodeURIComponent(cookies.corner_member_session||cookies.corner_session||'');return token?store.session(token):null}catch{return null}
+}
+function commentActor(req){
+ const user=currentActor(req);
+ if(!user)throw httpError(401,'Sign in to participate.','AUTH_REQUIRED');
+ if(user.role==='member'&&!identity.getProfile(user.id)?.verified_at)throw httpError(403,'Verify your email before commenting.','EMAIL_VERIFICATION_REQUIRED');
+ return user;
+}
 const adminCookie=(token,age=8*3600)=>`corner_session=${encodeURIComponent(token)}; Path=${config.basePath||'/'}; HttpOnly; SameSite=Strict; Max-Age=${age}${config.prod?'; Secure':''}`;
 const anonCookie=(id)=>`corner_visitor=${id}; Path=${config.basePath||'/'}; HttpOnly; SameSite=Lax; Max-Age=31536000${config.prod?'; Secure':''}`;
 function visitor(req,res){let cookies=cookieHeader(req),cookie=cookies.corner_visitor;let actor;
@@ -96,7 +110,7 @@ function safetyHeaders(res){
   if(config.prod)res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains');
 }
 function demoFeed(category){let all=samples();if(category==='Latest')return all;return all.filter(p=>({wish:'Wishes',announcement:'Latest',tech_note:'Notes',journal:'Journal',build:'Builds',moment:'Moments'})[p.type]===category)}
-function publicSnapshot(category='Latest',cursor){let feed=store.getFeed({category,cursor});if(config.demo&&!feed.items.length&&!cursor){feed={items:demoFeed(category),nextCursor:null}}return feed}
+function publicSnapshot(category='Latest',cursor){let feed=store.getFeed({category,cursor,limit:category==='Latest'?1:15});if(category==='Latest')feed={items:feed.items.slice(0,1),nextCursor:null};if(config.demo&&!feed.items.length&&!cursor){feed={items:demoFeed(category),nextCursor:null}}return feed}
 function postMedia(post){return post?.demo?[]:store.listMedia(post.id)}
 function staticFile(res,filepath){
   const rel=decodeURIComponent(filepath).replace(/^\//,'');if(!/^[A-Za-z0-9_./-]+$/.test(rel)||rel.includes('..'))throw httpError(404,'Not found');
@@ -136,8 +150,11 @@ async function mediaFile(req,res,key,variant=''){
   const media=store.one('SELECT * FROM media WHERE storage_key=?',key);if(!media)throw httpError(404,'Not found');
   const visible=store.one("SELECT id FROM posts WHERE (id=? OR parent_post_id=?) AND state='published' LIMIT 1",media.owner_id,media.owner_id);
   if(!visible){let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}const viewer=store.session(token);if(!viewer||!privilegedRole(viewer.role)||!staffPermission(viewer.role,'/api/admin/media','GET'))throw httpError(404,'Not found')}
-  const filename=path.resolve(config.uploads,key);
-  if(!filename.startsWith(config.uploads+path.sep)||!fs.existsSync(filename))throw httpError(404,'Not found');
+  const original=path.resolve(config.uploads,key);
+  if(!original.startsWith(config.uploads+path.sep)||!fs.existsSync(original))throw httpError(404,'Not found');
+  const showOriginal=new URL(req.url,config.siteUrl).searchParams.get('original')==='1';
+  const derivative=!variant&&!showOriginal?mediaJobs.displayed(media):null;
+  const filename=derivative?.filename||original;
   const stat=fs.statSync(filename);
   if(variant){
     if(!memories.enabled()||!visible||!memories.allowedMedia(media.id))throw httpError(404,'Photograph unavailable.','NOT_FOUND');
@@ -147,7 +164,7 @@ async function mediaFile(req,res,key,variant=''){
     if(req.headers['if-none-match']===image.etag)return end(res,304,'',headers);
     return end(res,200,req.method==='HEAD'?'':image.bytes,{...headers,'content-length':image.bytes.length});
   }
-  const headers={'content-type':media.mime_type,'cache-control':visible?'public,max-age=0,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
+  const headers={'content-type':derivative?.mime||media.mime_type,'cache-control':visible?'public,max-age=0,must-revalidate':'private,no-store','x-content-type-options':'nosniff','accept-ranges':'bytes'};
   const range=req.headers.range?.match(/^bytes=(\d*)-(\d*)$/);
   if(req.headers.range&&!range)throw httpError(416,'Unsupported media range');
   if(range){const start=range[1]?Number(range[1]):Math.max(0,stat.size-Number(range[2]||0));const endByte=range[1]?(range[2]?Number(range[2]):stat.size-1):stat.size-1;
@@ -190,6 +207,29 @@ async function api(req,res,pathName,url){
   if(await handleInsights(req,res,pathName,url))return;
   if(await handleLanguages(req,res,pathName,url))return;
   if(await handleCommunications(req,res,pathName,url))return;
+  if(pathName==='/api/v5/notifications'&&method==='GET')return ok(res,social.notifications(commentActor(req)));
+  if(pathName==='/api/v5/notifications/read'&&method==='POST'){limit(req,'v5-notice',15,3600);return ok(res,social.notifications(commentActor(req),{markRead:true}));}
+  const thread=pathName.match(/^\/api\/v5\/posts\/(post_[0-9a-f-]{36})\/threads$/i);
+  if(thread){
+   if(method==='GET')return ok(res,social.approved(thread[1],{actorId:currentActor(req)?.id||null}));
+   if(method==='POST'){limit(req,'v5-comment',15,3600);return ok(res,social.create(thread[1],commentActor(req),await readJSON(req,6000)));}
+   throw httpError(405,'Thread method not supported.','METHOD_NOT_ALLOWED');
+  }
+  const postHeart=pathName.match(/^\/api\/v5\/posts\/(post_[0-9a-f-]{36})\/like-state$/i);
+  if(postHeart&&method==='GET'){
+   const post=store.getPostById(postHeart[1]);if(!post)return ok(res,null);
+   const key=visitor(req,res),row=store.one('SELECT reaction_type FROM reactions WHERE post_id=? AND actor_key=?',post.id,key);
+   return ok(res,{liked:row?.reaction_type==='❤️',count:Number(store.getReactions(post.id)['❤️']||0)});
+  }
+  const commentV5=pathName.match(/^\/api\/v5\/comments\/(comment_[0-9a-f-]{36})(?:\/(like|report))?$/i);
+  if(commentV5){
+   const actor=commentActor(req),[,id,action]=commentV5;
+   if(action==='like'&&method==='POST'){limit(req,'v5-like',75,60);return ok(res,social.like(id,actor));}
+   if(action==='report'&&method==='POST'){limit(req,'v5-report',8,3600);return ok(res,social.report(id,actor,await readJSON(req,1000)));}
+   if(!action&&method==='PATCH'){limit(req,'v5-edit',12,3600);return ok(res,social.update(id,actor,await readJSON(req,2500)));}
+   if(!action&&method==='DELETE'){limit(req,'v5-delete',10,3600);return ok(res,social.remove(id,actor));}
+   throw httpError(405,'Comment operation not supported.','METHOD_NOT_ALLOWED');
+  }
   if(isIdentityPath(pathName))return handleIdentity(req,res,pathName);
   if(pathName==='/api/health'&&method==='GET')return ok(res,{ok:true,service:'corner-api',database:'connected',time:date()});
   if(pathName==='/api/live'&&method==='GET')return ok(res,{ok:true,service:'corner-api',uptimeSeconds:Math.round(process.uptime())});
@@ -285,11 +325,11 @@ async function api(req,res,pathName,url){
       const comment=store.one('SELECT comments.*,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id WHERE comments.id=?',commentResource[1]);
       if(!comment)throw httpError(404,'Comment not found');return ok(res,comment);
     }
-    if(method==='PATCH'){const data=await readJSON(req,4000);return ok(res,store.moderate(commentResource[1],data.state,owner.id))}
+    if(method==='PATCH'){const data=await readJSON(req,4000);const result=store.moderate(commentResource[1],data.state,owner.id);if(data.state==='approved')social.afterModeration(commentResource[1]);return ok(res,result)}
     if(method==='DELETE')return ok(res,store.moderate(commentResource[1],'deleted',owner.id));
   }
   const mod=pathName.match(/^\/api\/admin\/comments\/([A-Za-z0-9_-]+)\/(approve|hide|delete)$/);
-  if(mod&&method==='POST')return ok(res,store.moderate(mod[1],{approve:'approved',hide:'hidden',delete:'deleted'}[mod[2]],owner.id));
+  if(mod&&method==='POST'){const result=store.moderate(mod[1],{approve:'approved',hide:'hidden',delete:'deleted'}[mod[2]],owner.id);if(mod[2]==='approve')social.afterModeration(mod[1]);return ok(res,result)}
   if(pathName==='/api/admin/analytics/summary'&&method==='GET'){
     const metrics=store.metrics();
     const top=store.all("SELECT post_id,count(*) AS visits FROM analytics_events WHERE type='post_open' AND post_id IS NOT NULL GROUP BY post_id ORDER BY visits DESC LIMIT 5");
@@ -313,15 +353,29 @@ async function api(req,res,pathName,url){
     for(let k of ['title','descriptor','timezone','commentsDefault','reactionsDefault'])if(Object.hasOwn(b,k))store.saveSetting(k,['title','descriptor'].includes(k)?pureText(b[k],130):b[k]);
     store.audit(owner.id,'settings.updated','settings',null);return ok(res,{saved:true})}
   if(pathName==='/api/admin/media'&&method==='GET')return ok(res,store.all('SELECT * FROM media ORDER BY created_at DESC LIMIT 80'));
+  const mediaJob=pathName.match(/^\/api\/admin\/media\/jobs\/(vjob_[0-9a-f-]{36})$/i);
+  if(mediaJob&&method==='GET')return ok(res,mediaJobs.status(mediaJob[1],url.searchParams.get('postId')));
+  const photoEdit=pathName.match(/^\/api\/admin\/media\/(media_[0-9a-f-]{36})\/edits$/i);
+  if(photoEdit){
+   if(method==='POST'){limit(req,'v5-photo-edit',20,3600);return ok(res,await mediaJobs.editPhoto(photoEdit[1],await readJSON(req,3000),owner.id));}
+   if(method==='DELETE')return ok(res,mediaJobs.resetPhoto(photoEdit[1],owner.id));
+   throw httpError(405,'Unsupported photo edit method.');
+  }
   if(pathName==='/api/admin/media/upload'&&method==='POST'){
-    let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?8*1024*1024:25*1024*1024);
-    const ext=fileMagic(buf,mime);if(!ext)throw httpError(415,'Unsupported media type or invalid file contents');
-    if(image)buf=sanitizeImage(buf,mime);
+    let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?12*1024*1024:75*1024*1024);
+    let converted=null;const inspected=inspectAppleMedia(buf,mime);
+    if(inspected?.kind==='image'){converted=await normalizeHeicImage(buf);buf=converted.bytes;mime=converted.mime;image=true;}
+    if(inspected?.kind==='video'){
+      const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Save a draft before uploading video.');
+      return ok(res,mediaJobs.start({postId,buffer:buf,mime,alt:pureText(url.searchParams.get('alt'),240),caption:pureText(url.searchParams.get('caption'),300),start:url.searchParams.get('start')||0,end:url.searchParams.get('end')||0}));
+    }
+    const ext=converted?.ext||fileMagic(buf,mime);if(!ext)throw httpError(415,'Unsupported media type or invalid file contents');
+    if(image&&!converted)buf=sanitizeImage(buf,mime);
     const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
     if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
     const altText=pureText(url.searchParams.get('alt'),240);
     const caption=pureText(url.searchParams.get('caption'),300);
-    const dimensions=image?imageDimensions(buf,mime):null;
+    const dimensions=converted?{width:converted.width,height:converted.height}:image?imageDimensions(buf,mime):null;
     if(image&&(!dimensions||!dimensions.width||!dimensions.height||dimensions.width*dimensions.height>50_000_000))throw httpError(422,'Unsupported or oversized image dimensions');
     const file=crypto.randomBytes(18).toString('base64url')+ext;fs.mkdirSync(config.uploads,{recursive:true});fs.writeFileSync(path.join(config.uploads,file),buf,{flag:'wx'});
     let item;try{item=store.addMedia({id:'media_'+crypto.randomUUID(),ownerId:postId,storageKey:file,mimeType:mime,size:buf.length,alt:altText,caption,width:dimensions?.width,height:dimensions?.height});}
@@ -335,7 +389,7 @@ async function api(req,res,pathName,url){
   }
   if(mediaEdit&&method==='PATCH')return ok(res,store.updateMedia(mediaEdit[1],await readJSON(req),owner.id));
   if(mediaEdit&&method==='DELETE'){
-    const removed=store.deleteMedia(mediaEdit[1],owner.id);
+    mediaJobs.discard(mediaEdit[1]);const removed=store.deleteMedia(mediaEdit[1],owner.id);
     fs.rmSync(path.join(config.uploads,removed.storage_key),{force:true});return ok(res,{deleted:true,id:removed.id});
   }
   if(pathName==='/api/admin/ops'&&method==='GET')return ok(res,{api:true,database:true,scheduler:{next:store.upcoming()[0]||null,overdue:store.one("SELECT count(*) AS n FROM posts WHERE state='scheduled' AND scheduled_at<=?",date()).n,lastSuccess:store.setting('scheduler.lastSuccess',null),lastError:store.setting('scheduler.lastError',null)},backup:{enabled:process.env.CORNER_BACKUP_ENABLED==='1',lastSuccess:store.setting('backup.lastSuccess',null),lastAttempt:store.setting('backup.lastAttempt',null),lastError:store.setting('backup.lastError',null)},events:store.one('SELECT count(*) AS n FROM realtime_events').n,media:store.one('SELECT count(*) AS n FROM media').n});
@@ -370,7 +424,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/email-vm-mark.png','/studio.css','/media-library.css','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/email-vm-mark.png','/studio.css','/media-library.css','/v5.js','/v5.css','/v5-heart.svg','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
@@ -447,7 +501,7 @@ async function route(req,res){
     if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
-    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);const localized=languages.localize(post,url.searchParams.get('lang')||'en');return page(res,detailPage({post:localized.post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next,languages:localized.available,activeLanguage:localized.language}));}
+    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);const related=posts.filter(x=>x.id!==post.id).map(x=>({post:x,score:(x.category===post.category?5:0)+(x.type===post.type?3:0)+(x.tags||[]).filter(tag=>(post.tags||[]).includes(tag)).length*2})).sort((a,b)=>b.score-a.score||String(b.post.published_at).localeCompare(String(a.post.published_at))).slice(0,3).map(x=>x.post);const localized=languages.localize(post,url.searchParams.get('lang')||'en');return page(res,detailPage({post:localized.post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:store.getComments(post.id),media:postMedia(post),next,related,languages:localized.available,activeLanguage:localized.language}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
     if(isLegalPath(pathname))return page(res,legalPage(pathname));
     if(pathname==='/now'&&memories.enabled())return page(res,nowHistoryPage(memories,store.currentStatus()));
