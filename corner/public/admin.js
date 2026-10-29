@@ -93,7 +93,11 @@
   function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
   async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();const controller=active.editorAbort,expectedView=active.view;active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};if(controller.signal.aborted||active.view!==expectedView)return;active.post=p;
     root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
-    const form=$('#post-editor');    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
+    const form=$('#post-editor');
+    const publishButton=$('#publish-post');
+    const publishMotion=window.CornerPublishMotion?.mount(publishButton);
+    controller.signal.addEventListener('abort',()=>publishMotion?.cancel(),{once:true});
+    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
     const hideSettings=()=>{if(menu){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}};
     toggle?.addEventListener('click',()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden))});
     document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
@@ -121,15 +125,49 @@
       finally{pendingSave=null}})();return pendingSave;
     }
     $('#save-post').onclick=()=>save();
-    $('#publish-post').onclick=async()=>{
-      const saved=await save(true);
-      if(!saved||controller.signal.aborted)return;
+    let publishing=false;
+    const lockedControls=new Map();
+    const lockWhilePublishing=()=>{
+      for(const control of form.querySelectorAll('button,input,textarea,select')){
+        if(control===publishButton)continue;
+        lockedControls.set(control,control.disabled);control.disabled=true;
+      }
+    };
+    const unlockAfterPublishing=()=>{
+      for(const [control,wasDisabled] of lockedControls){
+        if(control.isConnected)control.disabled=wasDisabled;
+      }
+      lockedControls.clear();
+    };
+    publishButton.onclick=async()=>{
+      if(publishing||publishMotion?.start()===false)return;
+      publishing=true;lockWhilePublishing();
       try{
+        // Save the real draft before the actual publish request; never fake success.
+        const saved=await save(true);
+        if(controller.signal.aborted)return;
+        if(!saved){
+          publishMotion?.failure('Could not save your story. Review your changes and retry.');
+          toast('Could not save your story. Review your changes and retry.','error');
+          return;
+        }
         const published=await api('/corner/api/admin/posts/'+saved.id+'/publish','POST');
         if(controller.signal.aborted)return;
-        p=published;toast('Published. Your story is live.','success');
+        p=published;active.post=p;active.dirty=false;
+        await publishMotion?.success();
+        if(controller.signal.aborted)return;
+        toast('Published. Your story is live.','success');
         void editor(p.id);
-      }catch(err){if(!controller.signal.aborted)toast(err.message,'error')}
+        // Old editor must not issue another publish while the new editor loads.
+        publishButton.disabled=true;
+      }catch(err){
+        if(!controller.signal.aborted){
+          publishMotion?.failure(err.message||'Publishing failed. Please retry.');
+          toast(err.message||'Publishing failed. Please retry.','error');
+        }
+      }finally{
+        publishing=false;unlockAfterPublishing();
+      }
     };
     $('#schedule-post').onclick=()=>{
       const panel=$('#schedule-panel');
