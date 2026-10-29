@@ -23,5 +23,5 @@ test('Unicode query and malicious FTS syntax never escape the published-only bou
  const indic=store.search('తెలుగు');
  assert.ok(indic.some(x=>x.id===post.id),'Indic exact term is discoverable');
  assert.doesNotThrow(()=>store.search('" ) OR * ^ !'));
- assert.equal(store.search(''),[]);
+ assert.deepEqual(store.search(''),[]);
 });

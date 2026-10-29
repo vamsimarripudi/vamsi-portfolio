@@ -15,6 +15,9 @@ test('Latest is zero-or-one; unrelated collection reads remain paginated',t=>{
  const first=store.createPost({title:'First public note',body:'First public body'},'owner');
  const later=store.createPost({title:'Second public note',body:'Second public body'},'owner');
  store.publish(first.id,'owner');store.publish(later.id,'owner');
+ // Stable chronological ordering independent of millisecond-level fixture ties.
+ store.exec('UPDATE posts SET published_at=? WHERE id=?','2026-10-29T11:00:00.000Z',first.id);
+ store.exec('UPDATE posts SET published_at=? WHERE id=?','2026-10-29T11:00:01.000Z',later.id);
  const latest=store.getFeed({category:'Latest',limit:30,cursor:'ignored',tag:'any'});
  assert.equal(latest.items.length,1);assert.equal(latest.nextCursor,null);
  assert.equal(latest.items[0].id,later.id);
