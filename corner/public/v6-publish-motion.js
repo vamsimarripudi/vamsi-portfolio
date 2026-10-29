@@ -70,10 +70,14 @@
    cancel(){
     token++;destroyed=true;
     // If a route change unmounts the editor, cancel animation without leaving a disabled source button.
-    button.disabled=false;button.removeAttribute('aria-busy');
+    const keepSuccess=phase==='success';
+    if(!keepSuccess)button.disabled=false;
+    button.removeAttribute('aria-busy');
     delete button.__cornerPublishMotion;
-    if(button.isConnected){button.classList.remove('v6-publish-button');button.removeAttribute('data-v6-publish-state');
-      button.textContent=original;slot.before(button);slot.remove();}
+    if(!keepSuccess&&button.isConnected){
+      button.classList.remove('v6-publish-button');button.removeAttribute('data-v6-publish-state');
+      button.textContent=original;slot.before(button);slot.remove();
+    }
    },
    get state(){return phase}
   };
