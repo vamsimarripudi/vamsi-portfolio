@@ -336,9 +336,11 @@
         const id=button.dataset.mediaDelete;
         const item=attachments.find(media=>media.id===id);
         if(!item||!confirm('Remove this image or video from the story?'))return;
-        button.disabled=true;
-        try{await api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE');toast('Media removed.','success');await mediaForPost(postId,ensureDraft)}
-        catch(error){toast(error.message,'error');button.disabled=false}
+        await actionMotion({action:'media.delete',trigger:button,targetId:id,
+          visualTarget:button.closest('.media-thumb'),
+          execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE'),
+          onSuccess:()=>{toast('Media removed.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     $$('[data-media-move]',section).forEach(button=>{
@@ -347,26 +349,27 @@
         const index=attachments.findIndex(item=>item.id===id),next=index+direction;
         if(index<0||next<0||next>=attachments.length)return;
         const ids=attachments.map(item=>item.id);[ids[index],ids[next]]=[ids[next],ids[index]];
-        button.disabled=true;
-        try{await api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids});toast('Carousel order updated.','success');await mediaForPost(postId,ensureDraft)}
-        catch(error){toast(error.message,'error');button.disabled=false}
+        await actionMotion({action:'media.order',trigger:button,targetId:postId,
+          visualTarget:button.closest('.media-thumb'),
+          execute:()=>api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids}),
+          onSuccess:()=>{toast('Carousel order updated.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     $$('[data-media-quick-edit]',section).forEach(form=>{
       form.onsubmit=async event=>{
         event.preventDefault();
         const button=form.querySelector('button[type=submit]');
-        button.disabled=true;
-        try{
-          const id=form.dataset.mediaQuickEdit;
-          const altText=form.elements.alt.value.trim();
-          const caption=form.elements.caption.value.trim();
-          const original=attachments.find(item=>item.id===id);
-          if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
-          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
-          toast('Caption and description saved.','success');
-          await mediaForPost(postId,ensureDraft);
-        }catch(error){toast(error.message,'error');button.disabled=false}
+        const id=form.dataset.mediaQuickEdit;
+        await actionMotion({action:'media.edit',trigger:button,targetId:id,
+          visualTarget:form.closest('.media-thumb'),execute:()=>{
+            const altText=form.elements.alt.value.trim(),caption=form.elements.caption.value.trim();
+            const original=attachments.find(item=>item.id===id);
+            if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
+            return api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
+          },
+          onSuccess:()=>{toast('Caption and description saved.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     const form=$('#editor-upload',section);
@@ -461,45 +464,58 @@
     form.onsubmit=async event=>{
       event.preventDefault();
       if(!pending.length)return;
-      submit.disabled=true;
-      let sent=0;
-      try{
-        for(const entry of pending.filter(item=>!item.done)){
-          const isImage=entry.file.type.startsWith('image/');
-          const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
-          if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
-          if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
-          if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
-          if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
-        }
-        if(!postId){
-          const saved=await ensureDraft?.();
-          if(!saved?.id)throw Error('Enter a story title and save the draft before adding photos.');
-          postId=saved.id;
-        }
-        for(const entry of pending.filter(item=>!item.done)){
-          status.textContent='Uploading '+(sent+1)+' of '+pending.filter(item=>!item.done).length+'…';
-          const sentMedia=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
-          if(sentMedia?.jobId){let complete=false;
-            for(let poll=0;poll<110;poll++){
-              await new Promise(resolve=>setTimeout(resolve,1600));
-              const result=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(sentMedia.jobId)+'?postId='+encodeURIComponent(postId));
-              status.textContent='Optimizing video · '+result.state;
-              if(result.state==='ready'){complete=true;break}
-              if(result.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264 from iPhone.');
-            }
-            if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+      const total=pending.filter(item=>!item.done).length;
+      const result=await actionMotion({action:'media.upload',trigger:submit,targetId:postId||'new-upload-batch',
+        visualTarget:previewList,execute:async({progress})=>{
+          // The native file transfer has no byte percentage; use truthful stage text,
+          // and distinguish upload from video processing until worker reports Ready.
+          let sent=0;
+          for(const entry of pending.filter(item=>!item.done)){
+            const isImage=entry.file.type.startsWith('image/');
+            const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
+            if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
+            if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
+            if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
+            if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
           }
-          entry.done=true;sent++;
+          if(!postId){
+            const saved=await ensureDraft?.();
+            if(!saved?.id)throw Error('Enter story content and save the draft before attaching media.');
+            postId=saved.id;
+          }
+          for(const entry of pending.filter(item=>!item.done)){
+            const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;
+            status.textContent=message;progress(message);
+            const stored=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+            if(stored?.jobId){
+              let complete=false;
+              for(let poll=0;poll<110;poll++){
+                await new Promise(resolve=>setTimeout(resolve,1600));
+                const job=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(stored.jobId)+'?postId='+encodeURIComponent(postId));
+                const step='Optimizing video · '+job.state;
+                status.textContent=step;progress(step);
+                if(job.state==='ready'){complete=true;break}
+                if(job.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264.');
+              }
+              if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+            }
+            entry.done=true;sent++;
+          }
+          return {sent};
+        },
+        confirm:value=>value.sent>0,
+        successLabel:total===1?'Attached':'Files attached',
+        onSuccess:async value=>{
+          toast(value.sent===1?'Photo or video attached.':value.sent+' files attached.','success');
+          cleanup();pending=[];
+          await mediaForPost(postId,ensureDraft);
+        },
+        onFailure:error=>{
+          status.textContent=error.message+' Already attached items are preserved. Retry remaining files.';
+          toast(error.message,'error');
         }
-        toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
-        cleanup();pending=[];
-        await mediaForPost(postId,ensureDraft);
-      }catch(error){
-        status.textContent=error.message+' Already uploaded files are preserved. Retry the remaining ones.';
-        toast(error.message,'error');
-        submit.disabled=false;
-      }
+      });
+      if(result.ok)status.textContent='';
     };
   }
   function mediaCard(x,quickEdit=false,index=0,total=1){
