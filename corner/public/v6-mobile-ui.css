@@ -76,3 +76,20 @@ body.corner-comfort .v6-toast .v6-toast-close:focus-visible{outline:3px solid #3
  body.corner-comfort #toast-stack.v6-toast-stack{top:max(12px,env(safe-area-inset-top,0px))!important;
  left:12px!important;right:12px!important;width:auto!important;max-width:none!important}
 }
+
+@media(max-width:767px){
+ .corner-comfort .admin-top .studio-owner-link{display:inline-grid!important;place-items:center!important;
+  width:44px!important;height:44px!important;min-width:44px!important;
+  padding:0!important;font-size:0!important;text-decoration:none!important;
+  border:1px solid #d9d3cb;border-radius:12px;background:#fff}
+ .corner-comfort .admin-top .studio-owner-link:before{
+  content:"✉";font-size:22px!important;line-height:1;color:#292421}
+ .corner-comfort .admin-top>div:last-child{display:flex;align-items:center;justify-content:flex-end}
+ .corner-comfort .admin-top .admin-owner-dot{display:none}
+}
+@media(max-width:360px){
+ .corner-comfort .admin-shell .admin-nav{display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:row!important;
+  overflow:visible!important;gap:4px!important}
+ .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){min-width:0!important;width:100%!important}
+}
