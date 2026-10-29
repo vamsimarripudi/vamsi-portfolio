@@ -1,0 +1,87 @@
+/* Corner Pulse: ephemeral by design, quiet editorial UI, not a story ring. */
+.corner-comfort .corner-pulse-card{min-height:0;position:relative;overflow:hidden}
+.corner-comfort .corner-pulse-card .aside-cap{display:block;letter-spacing:.075em}
+.corner-comfort .corner-pulse-card .now-status{display:flex;align-items:center;gap:10px}
+.corner-comfort .corner-pulse-card .now-status strong{overflow-wrap:anywhere;min-width:0}
+.corner-comfort .corner-pulse-card .live-dot[hidden]{display:none!important}
+.corner-comfort .corner-pulse-card.is-idle .live-dot{display:none!important}
+.corner-comfort .corner-pulse-timeline{
+ display:block;width:100%;max-width:100%;height:3px;margin:16px 0 12px;
+ border-radius:999px;background:rgba(128,92,70,.14);overflow:hidden;isolation:isolate
+}
+.corner-comfort .corner-pulse-timeline [data-pulse-progress]{
+ display:block;height:100%;width:100%;background:linear-gradient(90deg,#c48b68,#9b624b);
+ border-radius:inherit;transform-origin:left center;transform:scaleX(0);
+ transition:transform .4s linear;will-change:auto
+}
+.corner-comfort .corner-pulse-card.is-idle .corner-pulse-timeline{background:rgba(85,77,70,.08)}
+.corner-comfort .corner-pulse-card.is-idle .corner-pulse-timeline [data-pulse-progress]{transform:scaleX(0)!important}
+.corner-comfort .corner-pulse-card [data-pulse-meta]{display:block;line-height:1.5}
+.corner-comfort .corner-pulse-link{display:inline-flex;align-items:center;gap:7px;max-width:clamp(120px,25vw,270px)}
+.corner-comfort .corner-pulse-link [data-pulse-header-label]{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.corner-comfort .corner-pulse-link:not(.is-live) .live-dot{display:none!important}
+.corner-comfort .corner-pulse-page{display:grid;gap:12px;justify-items:start;
+ padding:clamp(22px,5vw,48px);margin:0 auto 18px;
+ width:100%;max-width:760px;box-sizing:border-box;
+ border:1px solid #e4d7ca;border-radius:22px;
+ background:linear-gradient(130deg,#fffdf9,#faf4ee);box-shadow:0 16px 35px -28px #46372c30}
+.corner-comfort .corner-pulse-page .eyebrow{color:#806c5f;margin:0;letter-spacing:.09em}
+.corner-comfort .corner-pulse-emblem{display:grid;place-items:center;color:#a66f55;
+ width:54px;height:54px;border:1px solid #e3cbb9;border-radius:15px}
+.corner-comfort .corner-pulse-page h2{margin:0;font-size:clamp(1.4rem,3.5vw,2rem)!important;line-height:1.3}
+.corner-comfort .corner-pulse-page [data-pulse-detail]{font-size:clamp(.95rem,2vw,1.11rem);margin:0;line-height:1.65;max-width:60ch}
+.corner-comfort .corner-pulse-page .corner-pulse-timeline{margin:8px 0 3px}
+.corner-comfort .corner-pulse-expiry{margin:0!important;color:#77685d;font-size:.83rem;line-height:1.5}
+
+/* Empty categories have one hero title and a small, truthful empty state. */
+.corner-comfort .category-hero{padding-bottom:clamp(15px,3vw,30px);margin-bottom:0}
+.corner-comfort #content .feed-section:has(.corner-empty-collection){padding-top:clamp(14px,3vw,24px);padding-bottom:clamp(20px,5vw,45px)}
+.corner-comfort .corner-empty-collection{
+ display:grid;justify-items:start;align-content:start;gap:10px;max-width:720px;
+ border:1px solid #e7ddd5;border-radius:20px;padding:clamp(20px,5vw,36px);
+ background:linear-gradient(140deg,#fffcf9,#f8f4ef);box-shadow:0 12px 30px -30px #2b252252;
+ min-height:0!important;text-align:left
+}
+.corner-comfort .corner-empty-collection .corner-empty-mark{width:54px;height:54px;display:grid;place-items:center;
+ color:#976e5d;background:#f2e9e2;border-radius:15px}
+.corner-comfort .corner-empty-collection .corner-empty-kicker{font:700 .68rem/1.4 var(--mono,monospace);
+ letter-spacing:.085em;color:#8d7567}
+.corner-comfort .corner-empty-collection h2{font-size:clamp(1.2rem,2.4vw,1.55rem)!important;
+ line-height:1.3!important;margin:2px 0 0!important;letter-spacing:-.025em}
+.corner-comfort .corner-empty-collection p{margin:0;color:#6d6661;line-height:1.65;font-size:.92rem;max-width:44ch}
+.corner-comfort .corner-empty-return{display:inline-flex;align-items:center;gap:8px;min-height:44px;
+ margin-top:4px;font-weight:700;color:#77523f;text-decoration:underline;text-underline-offset:4px}
+.corner-comfort .corner-empty-return:focus-visible{outline:3px solid #365ca7;outline-offset:3px;border-radius:4px}
+
+/* Footer profile can contain an avatar + long display name; never collide with About. */
+.corner-comfort .site-footer .footer-links{min-width:0;align-items:start;gap:clamp(8px,1.6vw,18px)}
+.corner-comfort .site-footer .footer-links a{
+ box-sizing:border-box;min-width:0;max-width:100%;min-height:38px;display:inline-flex;align-items:center;
+ gap:7px;line-height:1.4;overflow-wrap:anywhere;white-space:normal;padding:6px 0
+}
+.corner-comfort .site-footer .footer-links a[hidden]{display:none!important}
+.corner-comfort .site-footer .corner-footer-profile img{display:block;flex:0 0 26px;width:26px;height:26px;
+ border-radius:50%;object-fit:cover}
+.corner-comfort .site-footer .corner-footer-profile span{display:block;min-width:0;max-width:100%;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:767px){
+ .corner-comfort .site-footer{grid-template-columns:minmax(0,1fr)!important;gap:16px!important;
+ padding-bottom:calc(34px + env(safe-area-inset-bottom,0px))!important}
+ .corner-comfort .site-footer .footer-links{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  column-gap:clamp(12px,4vw,24px)!important;row-gap:6px!important;
+  justify-content:stretch!important;align-items:start!important;width:100%;padding-top:0
+ }
+ .corner-comfort .site-footer .footer-links a{min-height:44px;font-size:.82rem;gap:6px;padding:8px 0}
+ .corner-comfort .site-footer .corner-footer-profile img{flex-basis:24px;width:24px;height:24px}
+ .corner-comfort .site-footer .corner-footer-profile span{font-size:.81rem}
+ .corner-comfort .site-footer .footer-meta{display:flex!important;flex-wrap:wrap;gap:10px 18px;
+  justify-content:space-between;padding-top:16px!important}
+ .corner-comfort .corner-empty-collection{padding:22px 20px;border-radius:18px}
+ .corner-comfort .category-hero{padding-top:24px!important}
+ .corner-comfort .corner-pulse-page{padding:24px 20px}
+}
+@media(prefers-reduced-motion:reduce){
+ .corner-comfort .corner-pulse-timeline [data-pulse-progress]{transition:none!important}
+ .corner-comfort .corner-empty-collection{animation:none!important;transition:none!important}
+}
