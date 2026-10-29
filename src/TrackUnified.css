@@ -146,3 +146,6 @@
 #root .track-unified-shell .track-reply-feedback {margin:.2rem 0;padding:.7rem .85rem;border-radius:9px;border:1px solid #bdcde2;background:#f1f6ff;color:#233d60;font-size:.8rem;line-height:1.5}
 #root .track-unified-shell .track-reply-feedback.success {border-color:#badcc9;background:#eefaf2;color:#214f37}
 #root .track-unified-shell .track-reply-feedback.error {border-color:#e7bec0;background:#fff1f1;color:#842629}
+
+/* PakkaFollow email correspondence timeline */
+#root .track-unified-shell .pf-conversation{margin:1rem 0}#root .track-unified-shell .pf-conversation ol{display:grid;gap:12px;list-style:none;margin:14px 0;padding:0}#root .track-unified-shell .pf-conversation li{display:grid;gap:7px;max-width:92%;padding:14px 15px;border:1px solid #d8e2ed;border-radius:12px;background:#f5f8fc}#root .track-unified-shell .pf-conversation li.pf-outgoing{justify-self:end;background:#ecf4ff;border-color:#bfd3ee}#root .track-unified-shell .pf-conversation li small{color:#60758a;font-size:.72rem}#root .track-unified-shell .pf-conversation li p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:#28384e;font-size:.83rem;line-height:1.6}@media(max-width:640px){#root .track-unified-shell .pf-conversation li{max-width:100%}}

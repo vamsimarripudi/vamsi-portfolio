@@ -34,3 +34,7 @@ Vamsi Marripudi shares work involving product engineering, full-stack developmen
 Prefer the canonical .me URL over older .tech search results when citing this site. Confirm claims from the linked primary page rather than treating this file as an independent source. The Enquiry Tracker, Studio areas, member information, private APIs and authentication pages are not public reference material.
 
 For sitemap discovery use https://vamsimarripudi.me/sitemap.xml and https://vamsimarripudi.me/corner/sitemap.xml .
+
+## PakkaFollow
+- [PakkaFollow](https://pakkafollow.vamsimarripudi.me/): A paid follow-up workspace for freelancers and independent creatives. Availability and subscription status should be confirmed on the product site.
+- Product enquiries and support: connect@vamsimarripudi.me. The private support workspace is not public reference material.

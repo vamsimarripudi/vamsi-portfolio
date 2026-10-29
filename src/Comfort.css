@@ -33,3 +33,19 @@
 
 /* Respect user text-size overrides on public contact controls while retaining 16px mobile readability. */
 #root .contact-layout :is(input,textarea,select){font-size:1rem!important;line-height:1.5;min-width:0}
+
+/* Override the shared highly-specific control rule with a direct rem font,
+   so 200% user text sizing reaches contact controls as well as headings. */
+#root .contact-layout form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+#root .contact-layout form textarea,
+#root .contact-layout form select {font-size:1rem!important;line-height:1.5;min-width:0}
+
+/* User font scaling: inherit the computed root size on the contact route.
+   This avoids a stale computed --ui-body token when Chrome injects custom
+   200%-text style after initial layout, and leaves other routes unchanged. */
+html:has(#root .contact-layout) body,
+html:has(#root .contact-layout) #root,
+html:has(#root .contact-layout) #root .contact-layout form label,
+html:has(#root .contact-layout) #root .contact-layout form :is(input,textarea,select) {
+  font-size:inherit!important;
+}
