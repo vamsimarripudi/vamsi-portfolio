@@ -6,6 +6,11 @@
  const editorStatus=editor.querySelector('[role=status]'),scheduleStatus=schedule.querySelector('[role=status]');
  let dirty=false,revision=0,saving=false;
  const notes=(node,message)=>{node.textContent=String(message)};
+ const animate=async options=>{
+  if(window.CornerActionMotion?.run)return window.CornerActionMotion.run(options);
+  try{const result=await options.execute({progress:()=>{}});await options.onSuccess?.(result);return {ok:true,result}}
+  catch(error){options.onFailure?.(error);return {ok:false,error}}
+ };
  const call=async(path='',method='GET',payload)=>{
   const res=await fetch(endpoint+path,{method,credentials:'same-origin',cache:'no-store',headers:payload===undefined?{}:{'content-type':'application/json'},body:payload===undefined?undefined:JSON.stringify(payload)});
   const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.error?.message||'Request could not be completed.');return data.data;
@@ -54,16 +59,30 @@
  async function saveWish(){
   if(saving||!editor.reportValidity())return null;
   saving=true;const button=editor.querySelector('[type=submit]'),started=revision,id=editor.elements.id.value;
-  button.disabled=true;editor.setAttribute('aria-busy','true');notes(editorStatus,'Saving…');
+  editor.setAttribute('aria-busy','true');notes(editorStatus,'Saving…');
   try{
-   const saved=await call(id?'/'+encodeURIComponent(id):'',id?'PATCH':'POST',id?{...model(),version:Number(editor.elements.version.value)}:model());
-   editor.elements.id.value=saved.id;editor.elements.version.value=saved.version;
-   editor.querySelector('[data-save-label]').textContent='Save edits';dirty=revision!==started;
-   notes(editorStatus,dirty?'Saved earlier edits. Newer edits are not saved yet.':'Saved privately.');syncPreview();
-   try{await refreshLibrary()}catch{notes(editorStatus,'Saved. Library refresh failed; reload after saving any newer edits.')}
-   return dirty?null:saved;
-  }catch(e){notes(editorStatus,e.message);return null}
-  finally{saving=false;button.disabled=false;editor.removeAttribute('aria-busy')}
+   let persisted=null;
+   const result=await animate({action:'wish.save',trigger:button,targetId:id||'new-wish',
+    execute:async()=>{
+      persisted=await call(id?'/'+encodeURIComponent(id):'',id?'PATCH':'POST',
+        id?{...model(),version:Number(editor.elements.version.value)}:model());
+      return persisted;
+    },
+    confirm:record=>!!record?.id&&revision===started,
+    successLabel:'Wish saved',
+    onFailure:error=>notes(editorStatus,persisted&&revision!==started
+      ?'Saved earlier edits. Newer edits are not saved yet.':error.message)});
+   const saved=result.ok?result.result:persisted;
+   if(saved?.id){
+     editor.elements.id.value=saved.id;editor.elements.version.value=saved.version;
+     editor.querySelector('[data-save-label]').textContent='Save edits';
+     dirty=revision!==started;
+     notes(editorStatus,dirty?'Saved earlier edits. Newer edits are not saved yet.':'Saved privately.');
+     syncPreview();
+     try{await refreshLibrary()}catch{notes(editorStatus,'Saved. Library refresh failed; reload after saving newer edits.')}
+   }
+   return result.ok&&!dirty?saved:null;
+  }finally{saving=false;button.disabled=false;editor.removeAttribute('aria-busy')}
  }
  editor.addEventListener('submit',async event=>{event.preventDefault();await saveWish()});
  root.querySelector('[data-v3w-new]')?.addEventListener('click',()=>{if(saving||!confirmDiscard())return;fill();editor.elements.title.focus()});
@@ -80,11 +99,24 @@
   if(action==='archive'&&!confirm('Archive this wish?'))return;
   if(action==='publish'&&!confirm('Publish this wish publicly now? This does not send email.'))return;
   if(action==='notify'&&!confirm('Queue this published wish for verified opt-in subscribers only?'))return;
-  button.disabled=true;
-  try{const data=await call('/'+encodeURIComponent(id)+'/'+action,'POST',action==='notify'?{confirm:true}:undefined);
-   if(action==='notify')notes(editorStatus,data.queued+' opted-in deliveries queued.');
-   else{if(id===editor.elements.id.value&&!dirty&&data?.id)fill(data);await refreshLibrary();notes(editorStatus,action==='publish'?'Published. No email sent.':action==='archive'?'Archived.':'Private copy created.')}
-  }catch(e){notes(editorStatus,e.message)}finally{button.disabled=false}
+  const actionKind=action==='notify'?'wish.notify':action==='publish'?'wish.publish':
+    action==='archive'?'post.archive':'post.restore';
+  await animate({action:actionKind,trigger:button,targetId:id,
+    visualTarget:button.closest('.v3w-item'),
+    execute:()=>call('/'+encodeURIComponent(id)+'/'+action,'POST',
+      action==='notify'?{confirm:true}:undefined),
+    confirm:record=>action==='notify'?Number.isFinite(Number(record?.queued)):!!record?.id,
+    successLabel:action==='notify'?'Queued':action==='duplicate'?'Copied':action==='archive'?'Archived':'Published',
+    onSuccess:async data=>{
+      if(action==='notify')notes(editorStatus,data.queued+' opted-in deliveries queued.');
+      else{
+        if(id===editor.elements.id.value&&!dirty&&data?.id)fill(data);
+        await refreshLibrary();
+        notes(editorStatus,action==='publish'?'Published. No email sent.':action==='archive'?'Archived.':'Private copy created.');
+      }
+    },
+    onFailure:error=>notes(editorStatus,error.message)});
+
  });
  schedule.addEventListener('submit',async event=>{
   event.preventDefault();if(!schedule.reportValidity())return;
@@ -95,9 +127,15 @@
   }
   const id=editor.elements.id.value,version=Number(editor.elements.version.value);
   if(!id||!version||saving){notes(scheduleStatus,'A saved wish is required.');return}
-  const action=schedule.querySelector('[type=submit]');if(action.disabled)return;action.disabled=true;
-  try{const data=await call('/'+encodeURIComponent(id)+'/schedule','POST',{localTime:schedule.elements.localTime.value,timezone:editor.elements.timezone.value,recurrence:schedule.elements.recurrence.value,recurrenceEndYear:schedule.elements.recurrenceEndYear.value||null,version});if(data?.version)editor.elements.version.value=data.version;notes(scheduleStatus,'Scheduled.');await refreshLibrary()}
-  catch(e){notes(scheduleStatus,e.message)}finally{action.disabled=false}
+  const button=schedule.querySelector('[type=submit]');if(button.disabled)return;
+  await animate({action:'wish.schedule',trigger:button,targetId:id,
+    execute:()=>call('/'+encodeURIComponent(id)+'/schedule','POST',{
+      localTime:schedule.elements.localTime.value,timezone:editor.elements.timezone.value,
+      recurrence:schedule.elements.recurrence.value,recurrenceEndYear:schedule.elements.recurrenceEndYear.value||null,version}),
+    confirm:record=>!!record?.version,
+    onSuccess:async data=>{editor.elements.version.value=data.version;notes(scheduleStatus,'Scheduled.');await refreshLibrary()},
+    onFailure:error=>notes(scheduleStatus,error.message)});
+
  });
  addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue=''}});
  fill();

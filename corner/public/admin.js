@@ -21,6 +21,17 @@
     const response=await fetch(path,options);const parsed=await response.json().catch(()=>({}));
     if(!response.ok||parsed.error){const err=new Error(parsed.error?.message||'Could not complete that action');err.status=response.status;err.code=parsed.error?.code;throw err}return parsed.data;
   }
+  // Every motion belongs to the exact button, operation and entity; the API
+  // remains the only source of truth. When animation is unavailable, actions still work.
+  async function actionMotion(options){
+    if(window.CornerActionMotion?.run)return window.CornerActionMotion.run(options);
+    try{
+      const result=await options.execute({progress:()=>{},signal:options.signal});
+      if(options.confirm&&options.confirm(result)!==true)throw Error('The operation was not confirmed.');
+      await options.onSuccess?.(result);
+      return {ok:true,result};
+    }catch(error){options.onFailure?.(error);return {ok:false,error}}
+  }
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span class="v6-empty-icon" aria-hidden="true">${studioIcon('approved')}</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
@@ -43,8 +54,19 @@
   async function posts(){const list=await api('/corner/api/admin/posts?state='+encodeURIComponent(active.filter));
     root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">${p.state==='archived'?'View':'Edit'} ↗</button>${p.state==='draft'?`<button data-delete-draft="${p.id}" type="button">Delete</button>`:''}${p.state==='archived'?`<button data-restore-draft="${p.id}" type="button">Restore</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
     $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
-    $$('[data-delete-draft]').forEach(button=>button.onclick=async()=>{if(!confirm('Move draft to Archived?'))return;try{await api('/corner/api/admin/posts/'+button.dataset.deleteDraft,'DELETE');await posts()}catch(error){toast(error.message,'error')}});
-    $$('[data-restore-draft]').forEach(button=>button.onclick=async()=>{try{await api('/corner/api/admin/posts/'+button.dataset.restoreDraft+'/restore','POST');await posts()}catch(error){toast(error.message,'error')}});
+    $$('[data-delete-draft]').forEach(button=>button.onclick=async()=>{
+      if(!confirm('Move draft to Archived?'))return;
+      const id=button.dataset.deleteDraft;
+      await actionMotion({action:'post.delete',trigger:button,targetId:id,visualTarget:button.closest('tr'),
+        execute:()=>api('/corner/api/admin/posts/'+id,'DELETE'),
+        onSuccess:()=>posts(),onFailure:error=>toast(error.message,'error')});
+    });
+    $$('[data-restore-draft]').forEach(button=>button.onclick=async()=>{
+      const id=button.dataset.restoreDraft;
+      await actionMotion({action:'post.restore',trigger:button,targetId:id,visualTarget:button.closest('tr'),
+        execute:()=>api('/corner/api/admin/posts/'+id+'/restore','POST'),
+        onSuccess:()=>posts(),onFailure:error=>toast(error.message,'error')});
+    });
   }
   const autoTitle=body=>{
     const lines=String(body||'').trim().split(/[\n.!?]+/).map(s=>s.trim()).filter(Boolean);
@@ -103,7 +125,14 @@
     document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu?.hidden){hideSettings();toggle.focus()}},{signal:active.editorAbort.signal});
 
-    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.state==='draft'&&form.elements.body.value.trim()){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)}});
+    let editorRevision=0;
+    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{
+      editorRevision++;active.dirty=true;$('#save-indicator').textContent='Unsaved edits';
+      updatePreview(form);
+      if(p.state==='draft'&&form.elements.body.value.trim()){
+        clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)
+      }
+    });
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
     let pendingSave=null;
     async function save(quiet=false){
@@ -111,12 +140,17 @@
       if(!form.elements.body.value.trim()&&!p.id){if(!quiet)toast('Write something or attach media first.','error');return null;}
       clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
       pendingSave=(async()=>{try{
-        const values=formValues(form);
+        const values=formValues(form),savedRevision=editorRevision;
         const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
         // Persisted draft is safe, but never apply a stale response to a different Studio view.
         if(controller.signal.aborted)return null;
-        p=stored;active.post=p;active.dirty=false;
-        form.querySelector('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
+        form.querySelector('#save-indicator').textContent=active.dirty
+          ?'Earlier edits saved · newer edits unsaved'
+          :'Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        if(active.dirty&&p.state==='draft'){
+          clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450);
+        }
         if(!quiet)toast('Draft saved.','success');return p;
       }catch(error){if(!controller.signal.aborted){
         form.querySelector('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';
@@ -124,7 +158,14 @@
       }return null}
       finally{pendingSave=null}})();return pendingSave;
     }
-    $('#save-post').onclick=()=>save();
+    $('#save-post').onclick=async()=>{
+      const button=$('#save-post');
+      await actionMotion({action:'draft.save',trigger:button,targetId:p.id||'new-draft',
+        signal:controller.signal,execute:()=>save(true),
+        confirm:stored=>!!stored&&!active.dirty,
+        onSuccess:()=>toast('Draft saved.','success'),
+        onFailure:error=>toast(active.dirty?'Earlier edits saved; newer changes remain unsaved.':error.message,'error')});
+    };
     let publishing=false,publishFailureNotice=null;
     const lockedControls=new Map();
     const lockWhilePublishing=()=>{
@@ -194,28 +235,53 @@
         event.preventDefault();
         const formSchedule=event.currentTarget,button=formSchedule.querySelector('[type=submit]');
         const feedback=formSchedule.querySelector('[role=status]');
-        button.disabled=true;feedback.textContent='Saving the schedule…';
-        try{
-          const saved=await save(true);if(!saved)throw Error('Save your story and add a title before scheduling.');
-          p=await api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
-            localTime:formSchedule.elements.localTime.value,
-            timezone:formSchedule.elements.timezone.value,
-            recurrence:formSchedule.elements.recurrence.value,
-            recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
-            featureStartLocal:formSchedule.elements.featureStartLocal.value,
-            featureEndLocal:formSchedule.elements.featureEndLocal.value,
-            pinStartLocal:formSchedule.elements.pinStartLocal.value,
-            pinEndLocal:formSchedule.elements.pinEndLocal.value
-          });
-          panel.close();if(!controller.signal.aborted){toast('Scheduled successfully.','success');void editor(p.id)}
-        }catch(error){feedback.textContent=error.message||'Scheduling failed. Please try again.';button.disabled=false;}
+        feedback.textContent='Saving the schedule…';
+        await actionMotion({action:'post.schedule',trigger:button,targetId:p.id||'new-schedule',
+          signal:controller.signal,execute:async()=>{
+            const saved=await save(true);
+            if(!saved||active.dirty)throw Error('Save the latest story edits before scheduling.');
+            return api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
+              localTime:formSchedule.elements.localTime.value,
+              timezone:formSchedule.elements.timezone.value,
+              recurrence:formSchedule.elements.recurrence.value,
+              recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
+              featureStartLocal:formSchedule.elements.featureStartLocal.value,
+              featureEndLocal:formSchedule.elements.featureEndLocal.value,
+              pinStartLocal:formSchedule.elements.pinStartLocal.value,
+              pinEndLocal:formSchedule.elements.pinEndLocal.value
+            });
+          },
+          confirm:result=>!!result?.id&&result.state==='scheduled',
+          onSuccess:scheduled=>{
+            p=scheduled;feedback.textContent='Scheduled for '+formSchedule.elements.localTime.value;
+            if(!controller.signal.aborted){panel.close();toast('Scheduled successfully.','success');void editor(p.id)}
+          },
+          onFailure:error=>{feedback.textContent=error.message||'Scheduling failed. Please try again.'}
+        });
       };
       panel.showModal();
       panel.querySelector('[name=localTime]').focus();
     };
-    $('#delete-draft')?.addEventListener('click',async()=>{if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;try{await api('/corner/api/admin/posts/'+p.id,'DELETE');toast('Draft moved to Archived.','success');showView('posts')}catch(error){toast(error.message,'error')}});
-    $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
-    $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
+    $('#delete-draft')?.addEventListener('click',async event=>{
+      if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;
+      await actionMotion({action:'post.delete',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id,'DELETE'),
+        onSuccess:()=>{toast('Draft moved to Archived.','success');showView('posts')},
+        onFailure:error=>toast(error.message,'error')});
+    });
+    $('#archive-post')?.addEventListener('click',async event=>{
+      if(!confirm('Archive this story? It will no longer be public.'))return;
+      await actionMotion({action:'post.archive',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id+'/archive','POST'),
+        onSuccess:()=>{toast('Post archived.','success');showView('posts')},
+        onFailure:error=>toast(error.message,'error')});
+    });
+    $('#restore-post')?.addEventListener('click',async event=>{
+      await actionMotion({action:'post.restore',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id+'/restore','POST'),
+        onSuccess:()=>{toast('Post restored.','success');void editor(p.id)},
+        onFailure:error=>toast(error.message,'error')});
+    });
     $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
     const mediaPanel=$('#editor-media');
     $('#open-media-panel').onclick=()=>{if(mediaPanel&&!mediaPanel.open)mediaPanel.showModal()};
@@ -270,9 +336,11 @@
         const id=button.dataset.mediaDelete;
         const item=attachments.find(media=>media.id===id);
         if(!item||!confirm('Remove this image or video from the story?'))return;
-        button.disabled=true;
-        try{await api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE');toast('Media removed.','success');await mediaForPost(postId,ensureDraft)}
-        catch(error){toast(error.message,'error');button.disabled=false}
+        await actionMotion({action:'media.delete',trigger:button,targetId:id,
+          visualTarget:button.closest('.media-thumb'),
+          execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE'),
+          onSuccess:()=>{toast('Media removed.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     $$('[data-media-move]',section).forEach(button=>{
@@ -281,26 +349,27 @@
         const index=attachments.findIndex(item=>item.id===id),next=index+direction;
         if(index<0||next<0||next>=attachments.length)return;
         const ids=attachments.map(item=>item.id);[ids[index],ids[next]]=[ids[next],ids[index]];
-        button.disabled=true;
-        try{await api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids});toast('Carousel order updated.','success');await mediaForPost(postId,ensureDraft)}
-        catch(error){toast(error.message,'error');button.disabled=false}
+        await actionMotion({action:'media.order',trigger:button,targetId:postId,
+          visualTarget:button.closest('.media-thumb'),
+          execute:()=>api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids}),
+          onSuccess:()=>{toast('Carousel order updated.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     $$('[data-media-quick-edit]',section).forEach(form=>{
       form.onsubmit=async event=>{
         event.preventDefault();
         const button=form.querySelector('button[type=submit]');
-        button.disabled=true;
-        try{
-          const id=form.dataset.mediaQuickEdit;
-          const altText=form.elements.alt.value.trim();
-          const caption=form.elements.caption.value.trim();
-          const original=attachments.find(item=>item.id===id);
-          if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
-          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
-          toast('Caption and description saved.','success');
-          await mediaForPost(postId,ensureDraft);
-        }catch(error){toast(error.message,'error');button.disabled=false}
+        const id=form.dataset.mediaQuickEdit;
+        await actionMotion({action:'media.edit',trigger:button,targetId:id,
+          visualTarget:form.closest('.media-thumb'),execute:()=>{
+            const altText=form.elements.alt.value.trim(),caption=form.elements.caption.value.trim();
+            const original=attachments.find(item=>item.id===id);
+            if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
+            return api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
+          },
+          onSuccess:()=>{toast('Caption and description saved.','success');return mediaForPost(postId,ensureDraft)},
+          onFailure:error=>toast(error.message,'error')});
       };
     });
     const form=$('#editor-upload',section);
@@ -395,45 +464,58 @@
     form.onsubmit=async event=>{
       event.preventDefault();
       if(!pending.length)return;
-      submit.disabled=true;
-      let sent=0;
-      try{
-        for(const entry of pending.filter(item=>!item.done)){
-          const isImage=entry.file.type.startsWith('image/');
-          const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
-          if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
-          if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
-          if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
-          if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
-        }
-        if(!postId){
-          const saved=await ensureDraft?.();
-          if(!saved?.id)throw Error('Enter a story title and save the draft before adding photos.');
-          postId=saved.id;
-        }
-        for(const entry of pending.filter(item=>!item.done)){
-          status.textContent='Uploading '+(sent+1)+' of '+pending.filter(item=>!item.done).length+'…';
-          const sentMedia=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
-          if(sentMedia?.jobId){let complete=false;
-            for(let poll=0;poll<110;poll++){
-              await new Promise(resolve=>setTimeout(resolve,1600));
-              const result=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(sentMedia.jobId)+'?postId='+encodeURIComponent(postId));
-              status.textContent='Optimizing video · '+result.state;
-              if(result.state==='ready'){complete=true;break}
-              if(result.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264 from iPhone.');
-            }
-            if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+      const total=pending.filter(item=>!item.done).length;
+      const result=await actionMotion({action:'media.upload',trigger:submit,targetId:postId||'new-upload-batch',
+        visualTarget:previewList,execute:async({progress})=>{
+          // The native file transfer has no byte percentage; use truthful stage text,
+          // and distinguish upload from video processing until worker reports Ready.
+          let sent=0;
+          for(const entry of pending.filter(item=>!item.done)){
+            const isImage=entry.file.type.startsWith('image/');
+            const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
+            if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
+            if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
+            if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
+            if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
           }
-          entry.done=true;sent++;
+          if(!postId){
+            const saved=await ensureDraft?.();
+            if(!saved?.id)throw Error('Enter story content and save the draft before attaching media.');
+            postId=saved.id;
+          }
+          for(const entry of pending.filter(item=>!item.done)){
+            const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;
+            status.textContent=message;progress(message);
+            const stored=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+            if(stored?.jobId){
+              let complete=false;
+              for(let poll=0;poll<110;poll++){
+                await new Promise(resolve=>setTimeout(resolve,1600));
+                const job=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(stored.jobId)+'?postId='+encodeURIComponent(postId));
+                const step='Optimizing video · '+job.state;
+                status.textContent=step;progress(step);
+                if(job.state==='ready'){complete=true;break}
+                if(job.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264.');
+              }
+              if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+            }
+            entry.done=true;sent++;
+          }
+          return {sent};
+        },
+        confirm:value=>value.sent>0,
+        successLabel:total===1?'Attached':'Files attached',
+        onSuccess:async value=>{
+          toast(value.sent===1?'Photo or video attached.':value.sent+' files attached.','success');
+          cleanup();pending=[];
+          await mediaForPost(postId,ensureDraft);
+        },
+        onFailure:error=>{
+          status.textContent=error.message+' Already attached items are preserved. Retry remaining files.';
+          toast(error.message,'error');
         }
-        toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
-        cleanup();pending=[];
-        await mediaForPost(postId,ensureDraft);
-      }catch(error){
-        status.textContent=error.message+' Already uploaded files are preserved. Retry the remaining ones.';
-        toast(error.message,'error');
-        submit.disabled=false;
-      }
+      });
+      if(result.ok)status.textContent='';
     };
   }
   function mediaCard(x,quickEdit=false,index=0,total=1){
@@ -471,7 +553,14 @@
     if(!response.ok)throw Error(result.error?.message||'Upload failed');
     return result.data;
   }
-  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{if(!confirm('Delete this media file? It will be removed from its story.'))return;button.disabled=true;try{await api('/corner/api/admin/media/'+encodeURIComponent(button.dataset.mediaDelete),'DELETE');toast('Media deleted.','success');await media()}catch(error){toast(error.message,'error');button.disabled=false}});}
+  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{
+      if(!confirm('Delete this media file? It will be removed from its story.'))return;
+      const id=button.dataset.mediaDelete;
+      await actionMotion({action:'media.delete',trigger:button,targetId:id,visualTarget:button.closest('.media-thumb'),
+        execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE'),
+        onSuccess:()=>{toast('Media deleted.','success');return media()},
+        onFailure:error=>toast(error.message,'error')});
+    });}
   function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save media details</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
     $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor [data-v5-restore-photo]')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/media/'+id+'/edits','DELETE');toast('Original restored.','success');returnPostId?editor(returnPostId):media()}catch(error){toast(error.message,'error')}});$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});if(x.mime_type.startsWith('image/'))await api('/corner/api/admin/media/'+id+'/edits','POST',{preset:f.elements.preset.value,crop:f.elements.crop.value,rotation:Number(f.elements.rotation.value),brightness:Number(f.elements.brightness.value),contrast:Number(f.elements.contrast.value),saturation:Number(f.elements.saturation.value)});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
   }
@@ -484,9 +573,34 @@
       const reply=document.createElement('form');reply.className='v5-admin-reply-form';
       reply.innerHTML='<label>Reply in this thread<textarea required minlength="3" maxlength="1000" rows="3" placeholder="Write a reply…"></textarea></label><button type="submit">Publish author reply ↗</button>';
       host.append(reply);reply.querySelector('textarea').focus();
-      reply.onsubmit=async event=>{event.preventDefault();const save=reply.querySelector('button');save.disabled=true;try{await api('/corner/api/v5/posts/'+postId+'/threads','POST',{body:reply.querySelector('textarea').value,parentId:commentId});toast('Your reply is live.','success');comments()}catch(error){toast(error.message,'error');save.disabled=false}};
+      reply.onsubmit=async event=>{
+        event.preventDefault();
+        const button=reply.querySelector('button'),textarea=reply.querySelector('textarea');
+        const body=textarea.value.trim();
+        await actionMotion({action:'comment.reply',trigger:button,targetId:commentId,
+          visualTarget:host,execute:()=>api('/corner/api/v5/posts/'+postId+'/threads','POST',{body,parentId:commentId}),
+          confirm:result=>!!result?.id||result?.state==='approved'||result?.state==='pending',
+          onSuccess:result=>{
+            if(result?.state==='pending')toast('Reply awaiting review.','success');
+            else toast('Your reply is live.','success');
+            void comments();
+          },onFailure:error=>{toast(error.message,'error');textarea.focus({preventScroll:true})}});
+      };
     });
-    $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast(b.dataset.moderate==='approve'?'Comment approved.':b.dataset.moderate==='hide'?'Comment hidden.':'Comment deleted.','success');comments()}catch(err){toast(err.message,'error')}});
+    $$('[data-moderate]').forEach(button=>button.onclick=async()=>{
+      const operation=button.dataset.moderate;
+      if(operation==='delete'&&!confirm('Delete this comment?'))return;
+      const id=button.dataset.comment,host=button.closest('.admin-comment');
+      if(host&&(operation==='hide'||operation==='delete'))host.dataset.cornerMotionVisual='exit';
+      await actionMotion({action:'comment.'+operation,trigger:button,targetId:id,
+        visualTarget:host,execute:()=>api('/corner/api/admin/comments/'+id+'/'+operation,'POST'),
+        onSuccess:()=>{
+          toast(operation==='approve'?'Comment approved.':operation==='hide'?'Comment hidden.':'Comment deleted.','success');
+          void comments();
+        },
+        onFailure:error=>toast(error.message,'error')});
+      if(host?.isConnected)host.removeAttribute('data-corner-motion-visual');
+    });
   }
   async function guestbook(){
     const response=await api('/corner/api/v1/admin/v3/guestbook');
@@ -497,11 +611,12 @@
         ['approved','hidden','deleted'].map(state=>'<button type="button" data-guestbook-id="'+esc(n.id)+'" data-guestbook-state="'+state+'">'+(state==='approved'?'Approve':state==='hidden'?'Hide':'Delete')+'</button>').join('')+
         '</footer></article>').join('')+'</div>':empty('No guestbook notes waiting.'))+'</section>';
     $$('[data-guestbook-id]').forEach(button=>button.addEventListener('click',async()=>{
-      button.disabled=true;
-      try{
-        await api('/corner/api/v1/admin/v3/guestbook/'+encodeURIComponent(button.dataset.guestbookId),'PATCH',{state:button.dataset.guestbookState});
-        toast('Guestbook note reviewed.','success');await guestbook();
-      }catch(error){toast(error.message,'error');button.disabled=false;}
+      const id=button.dataset.guestbookId,state=button.dataset.guestbookState;
+      await actionMotion({action:'guestbook.review',trigger:button,targetId:id,
+        visualTarget:button.closest('.admin-comment'),
+        execute:()=>api('/corner/api/v1/admin/v3/guestbook/'+encodeURIComponent(id),'PATCH',{state}),
+        onSuccess:()=>{toast('Guestbook note reviewed.','success');return guestbook()},
+        onFailure:error=>toast(error.message,'error')});
     }));
   }
   async function analytics(){
@@ -547,10 +662,61 @@
     if(new URLSearchParams(location.search).has('ar'))details.open=true;
   }
   async function settings(){let s=await api('/corner/api/admin/settings');root.innerHTML=`<section class="admin-section"><header><h2>The essentials.</h2></header><form class="admin-form admin-surface" id="settings-editor"><label>Site title<input name="title" value="${esc(s.title)}"></label><label>Short descriptor<input name="descriptor" value="${esc(s.descriptor)}"></label><label>Site timezone<input name="timezone" value="${esc(s.timezone)}"></label><div class="editor-checks"><label><input type="checkbox" name="commentsDefault" ${s.commentsDefault?'checked':''}> Comments by default</label><label><input type="checkbox" name="reactionsDefault" ${s.reactionsDefault?'checked':''}> Reactions by default</label></div><button type="submit">Save settings</button></form></section><section class="admin-section"><header><h2>Site status.</h2></header><button class="admin-secondary" id="settings-status">Update current status ↗</button></section>`;
-    if(initial.ownerRole==='owner'){const invite=document.createElement('a');invite.className='admin-secondary';invite.textContent='Invite a studio collaborator ↗';invite.href='/corner/admin/invite';invite.style.display='inline-flex';invite.style.marginTop='18px';root.append(invite)}$('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/settings','PUT',{title:f.elements.title.value,descriptor:f.elements.descriptor.value,timezone:f.elements.timezone.value,commentsDefault:f.elements.commentsDefault.checked,reactionsDefault:f.elements.reactionsDefault.checked});toast('Settings saved.','success')}catch(err){toast(err.message,'error')}};
+    if(initial.ownerRole==='owner'){
+      // Owner-only visual lab; isolated and explicitly non-persistent.
+      const previewActions=[
+        ['draft.save','Paper Fold'],['post.schedule','Clock Lock'],
+        ['media.upload','Lift & Dock'],['post.archive','Archive'],
+        ['post.restore','Unfold'],['comment.approve','Ink Check'],
+        ['comment.reply','Reply Bubble'],['wish.publish','Ribbon']
+      ];
+      const lab=document.createElement('section');lab.className='admin-section corner-motion-lab';
+      lab.setAttribute('aria-label','Corner Motion Lab');
+      lab.innerHTML='<header><div><p class="eyebrow">STUDIO / MOTION LAB</p>'+
+        '<h2>Feel the interactions.</h2><p>Preview only · no data will be saved, published or sent.</p></div></header>'+
+        '<div class="corner-motion-lab-grid">'+previewActions.map(([kind,title])=>
+          '<button type="button" data-motion-preview="'+kind+'" title="Preview '+title+'">'+title+'</button>').join('')+
+        '</div><p class="corner-motion-lab-status" role="status" aria-live="polite">Select any animation to preview it.</p>';
+      root.append(lab);
+      lab.addEventListener('click',async event=>{
+        const button=event.target.closest('[data-motion-preview]');
+        if(!button)return;
+        const status=lab.querySelector('.corner-motion-lab-status');
+        status.textContent='Preview only · no changes will be made.';
+        const result=await actionMotion({action:button.dataset.motionPreview,trigger:button,
+          targetId:'preview:'+button.dataset.motionPreview,
+          execute:()=>new Promise(resolve=>setTimeout(()=>resolve({preview:true}),650)),
+          confirm:value=>value.preview===true,successLabel:'Preview complete',
+          onSuccess:()=>{status.textContent='Animation complete · no data was changed.'},
+          onFailure:error=>{status.textContent=error.message}});
+        if(!result.ok&&result.error)status.textContent=result.error.message;
+      });
+    }
+    if(initial.ownerRole==='owner'){const invite=document.createElement('a');invite.className='admin-secondary';invite.textContent='Invite a studio collaborator ↗';invite.href='/corner/admin/invite';invite.style.display='inline-flex';invite.style.marginTop='18px';root.append(invite)}$('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{
+      e.preventDefault();const form=e.currentTarget,button=form.querySelector('[type=submit]');
+      await actionMotion({action:'settings.save',trigger:button,targetId:'site-settings',
+        execute:()=>api('/corner/api/admin/settings','PUT',{title:form.elements.title.value,
+          descriptor:form.elements.descriptor.value,timezone:form.elements.timezone.value,
+          commentsDefault:form.elements.commentsDefault.checked,reactionsDefault:form.elements.reactionsDefault.checked}),
+        onSuccess:()=>toast('Settings saved.','success'),
+        onFailure:error=>toast(error.message,'error')});
+    };
   }
   function statusEditor(){let s=initial.status||{};root.innerHTML=`<section class="admin-section"><header><h2>Corner Pulse.</h2><p class="corner-pulse-studio-help">A passing thought that leaves public view after 24 hours. Permanent stories stay in Posts.</p></header><form id="now-form" class="admin-form admin-surface"><div class="editor-inline"><label>Label<input name="label" maxlength="55" placeholder="Building something new" value="${esc(s.label||'')}"></label><label>Symbol<input name="icon" maxlength="8" placeholder="✳" value="${esc(s.icon||'✳')}"></label></div><label>Detail (optional)<textarea name="detail" maxlength="115" placeholder="One line, if needed.">${esc(s.detail||'')}</textarea></label><label><input type="checkbox" name="isActive" checked> Show this Pulse for 24 hours (uncheck to end it)</label><button type="submit">Share Pulse for 24 hours ↗</button></form></section>`;
-    $('#now-form').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/status','PUT',{label:f.elements.label.value,detail:f.elements.detail.value,icon:f.elements.icon.value,isActive:f.elements.isActive.checked});toast(f.elements.isActive.checked?'Corner Pulse shared for 24 hours.':'Corner Pulse ended.','success');showView('overview')}catch(err){toast(err.message,'error')}};
+    $('#now-form').onsubmit=async event=>{
+      event.preventDefault();
+      const form=event.currentTarget,button=form.querySelector('[type=submit]'),active=!!form.elements.isActive.checked;
+      await actionMotion({
+        action:'status.save',trigger:button,targetId:'corner-pulse',
+        execute:()=>api('/corner/api/admin/status','PUT',{
+          label:form.elements.label.value,detail:form.elements.detail.value,
+          icon:form.elements.icon.value,isActive:active
+        }),
+        confirm:data=>active?!(!data||data.durationHours!==24||!data.expiresAt):data===null,
+        onSuccess:()=>{toast(active?'Corner Pulse shared for 24 hours.':'Corner Pulse ended.','success');showView('overview')},
+        onFailure:error=>toast(error.message,'error')
+      });
+    };
   }
   const login=$('#admin-login');
   if(login){
