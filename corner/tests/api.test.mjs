@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { passwordHash } from '../src/auth.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -30,7 +30,9 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  const feedBefore=await parsed(await request('/api/posts'));assert.equal(feedBefore.data.length,0,'draft not public');
  // Media is private until publication, and only the owner can preview drafts.
  const imageFixture=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/V3sAAAAASUVORK5CYII=','base64');
- const videoFixture=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypisom'),Buffer.alloc(35,0x41)]);
+ const videoFile=path.join(folder,'test-video.mov');
+ execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=black:s=64x64:r=8','-t','1','-c:v','mpeg4','-q:v','5','-an','-f','mov',videoFile],{timeout:15000});
+ const videoFixture=fs.readFileSync(videoFile);
  const upload=(type,bytes,alt='A synthetic test image')=>fetch(base+'/api/admin/media/upload?postId='+encodeURIComponent(post.id)+'&alt='+encodeURIComponent(alt),{method:'POST',headers:{Origin:base,Cookie:cookie,'Content-Type':type},body:bytes});
  const deniedUpload=await fetch(base+'/api/admin/media/upload?postId='+encodeURIComponent(post.id)+'&alt=QA',{method:'POST',headers:{Origin:'https://forged.example',Cookie:cookie,'Content-Type':'image/png'},body:imageFixture});
  assert.equal(deniedUpload.status,403,'cross-origin upload denied');
@@ -42,7 +44,21 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  let imagePreview=await fetch(base+imageUrl,{headers:{Cookie:cookie}});
  assert.equal(imagePreview.status,200,'owner previews draft image');
  assert.deepEqual(Buffer.from(await imagePreview.arrayBuffer()),imageFixture);
- const videoSaved=await parsed(await upload('video/mp4',videoFixture));assert.equal(videoSaved.status,200);const videoUrl=videoSaved.data.url;
+ const videoSaved=await parsed(await upload('video/quicktime',videoFixture));assert.equal(videoSaved.status,200);
+ assert.match(videoSaved.data.jobId,/^vjob_/);
+ let videoStatus;
+ for(let attempt=0;attempt<100;attempt++){
+   const result=await parsed(await request('/api/admin/media/jobs/'+videoSaved.data.jobId+'?postId='+post.id,'GET',undefined,cookie));
+   assert.equal(result.status,200);
+   videoStatus=result.data;
+   if(['ready','failed'].includes(videoStatus.state))break;
+   await sleep(170);
+ }
+ assert.equal(videoStatus.state,'ready','Actual MOV is transcoded to playable H.264: '+JSON.stringify(videoStatus));
+ const savedPost=await parsed(await request('/api/admin/posts/'+post.id,'GET',undefined,cookie));
+ const videoRow=savedPost.data.media.find(row=>row.mime_type==='video/mp4');
+ assert.ok(videoRow,'H.264 MP4 attached to draft');
+ const videoUrl='/media/'+videoRow.storage_key;
  assert.equal((await fetch(base+videoUrl)).status,404,'unpublished video is private');
  // SSE must deliver post publication rather than only establish a connection.
  const eventStream=await fetch(base+'/api/realtime/stream');assert.equal(eventStream.status,200);
@@ -58,9 +74,11 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  const publicImage=await fetch(base+imageUrl);assert.equal(publicImage.status,200,'published image visible');
  assert.equal(publicImage.headers.get('content-type'),'image/png');
  assert.deepEqual(Buffer.from(await publicImage.arrayBuffer()),imageFixture);
+ const videoBytes=Buffer.from(await (await fetch(base+videoUrl)).arrayBuffer());
+ assert.ok(videoBytes.length>100);
  const videoRange=await fetch(base+videoUrl,{headers:{Range:'bytes=0-11'}});assert.equal(videoRange.status,206,'video byte ranges supported');
- assert.equal(videoRange.headers.get('content-range'),`bytes 0-11/${videoFixture.length}`);
- assert.deepEqual(Buffer.from(await videoRange.arrayBuffer()),videoFixture.subarray(0,12));
+ assert.equal(videoRange.headers.get('content-range'),`bytes 0-11/${videoBytes.length}`);
+ assert.deepEqual(Buffer.from(await videoRange.arrayBuffer()),videoBytes.subarray(0,12));
  assert.equal((await fetch(base+videoUrl,{headers:{Range:'bytes=99999-'}})).status,416,'invalid video range rejected');
  const postResponse=await parsed(await request('/api/posts/'+post.slug));assert.equal(postResponse.status,200);assert.equal(postResponse.data.post.title,'A tiny verified build');
  const feed=await parsed(await request('/api/posts'));assert.equal(feed.data.length,1);

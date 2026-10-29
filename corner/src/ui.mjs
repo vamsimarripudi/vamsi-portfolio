@@ -167,16 +167,17 @@ function homeSpotlight(featured,posts,mediaByPost={}){
 
 export function feedPage({posts=[],status,active='Latest',featured,upcoming=[],cursor,tag='',demo=false,mediaByPost={},eventCursor=0,onThisDay=[]}){
   const isHome=active==='Latest';
+  const visiblePosts=isHome?posts.slice(0,1):posts;
   const categoryHero=`<section class="category-hero"><p class="eyebrow">THE CORNER / COLLECTIONS</p><h1>${e(active)}<span>.</span></h1><p>${active==='Wishes'?'Good things worth celebrating.':active==='Builds'?'Small steps, real progress.':active==='Notes'?'Ideas worth remembering.':active==='Journal'?'A place to slow down and write.':'Scenes and little memories.'}</p></section>`;
   const memories=isHome&&onThisDay.length?`<section class="on-this-day"><p class="eyebrow">ON THIS DAY</p><div><h2>Worth remembering.</h2>${onThisDay.map(p=>`<a href="${safeLink(p.slug)}">${e(p.title)} <span>↗</span></a>`).join('')}</div></section>`:'';
-  const stories=posts.length?`<div class="stories" id="stories">${posts.map((p,i)=>card(p,i,{featured:!isHome&&i===0&&p.featured,editorial:isHome,media:mediaByPost[p.id]||[]})).join('')}</div>`:
+  const stories=visiblePosts.length?`<div class="stories" id="stories">${visiblePosts.map((p,i)=>card(p,i,{featured:!isHome&&i===0&&p.featured,editorial:isHome,media:mediaByPost[p.id]||[]})).join('')}</div>`:
     `<div class="empty-feed"><span aria-hidden="true">✳</span><h3>Nothing here yet.</h3><p>The next note will find its place soon.</p></div>`;
   const feed=`<section id="feed" class="feed-section" aria-labelledby="feed-heading">
     <div class="feed-heading"><div><p class="eyebrow">${isHome?'THE LATEST FROM HERE':e(active.toUpperCase())} ${demo?'<span class="demo-pill">SAMPLE CONTENT</span>':''}</p>
     <h2 id="feed-heading">${isHome?'Latest from here.':e(active)}</h2>${isHome?'<p class="corner-feed-subtitle">A little of everything.</p>':''}</div>
     ${isHome?(process.env.CORNER_V3_SEARCH==='1'?'<a class="corner-feed-view-all" href="/archive">View all <span aria-hidden="true">↗</span></a>':(posts.length?'<a class="corner-feed-view-all" href="#stories">Browse stories <span aria-hidden="true">↓</span></a>':'<a class="corner-feed-view-all" href="/about">About Corner <span aria-hidden="true">↗</span></a>')):`<span class="feed-updated">${posts.length?'FRESHLY PICKED / STORIES':'MORE TO COME'}</span>`}</div>
     <div class="new-updates" data-new-updates hidden><button type="button" data-apply-updates>↑ <span>1 new update</span></button></div>
-    ${stories}
+    ${isHome?`<div class="corner-journal-layout"><div class="corner-journal-feed">${stories}</div>${homeSpotlight(null,[],mediaByPost)}</div>`:stories}
     ${!isHome&&cursor?`<button class="load-more" data-load-more data-cursor="${e(cursor)}">More from the corner <span>↓</span></button>`:''}
     <p class="end-mark">YOU’VE CAUGHT UP <span>✳</span> MORE SOON</p>
   </section>`;
