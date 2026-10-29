@@ -25,6 +25,21 @@
  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+ function feedback(message,kind='success'){
+  let host=document.querySelector('#toast-stack');
+  if(!host){host=document.createElement('div');host.id='toast-stack';host.className='toast-stack';document.body.append(host)}
+  const node=document.createElement('div');node.className='toast '+kind;
+  node.setAttribute('role','status');node.textContent=String(message);
+  host.append(node);setTimeout(()=>node.remove(),4500);
+ }
+ async function shareLink(url){
+  if(navigator.share){
+   try{await navigator.share({url});feedback('Shared successfully.');return true}
+   catch(error){if(error?.name==='AbortError')return false}
+  }
+  try{await navigator.clipboard.writeText(url);feedback('Link copied.');return true}
+  catch{feedback('Copy was blocked. Use your browser share menu to copy the link.','error');return false}
+ }
  const timeText=stamp=>{
   const ms=Date.parse(stamp);if(!Number.isFinite(ms))return '';
   const d=Math.max(0,Math.floor((Date.now()-ms)/1000));
@@ -87,7 +102,7 @@
  document.addEventListener('click',async event=>{
   const share=event.target.closest('[data-v5-share-post]');if(!share)return;
   const path=share.dataset.v5SharePost||'';const url=new URL(path.startsWith(prefix+'/')?path:prefix+path,location.origin).href;
-  try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url);}catch{/* Browser share may be cancelled by the reader. */}
+  await shareLink(url);
  });
  // Restore persisted post reactions without exposing reader identity.
  const groups=new Map();
@@ -203,7 +218,7 @@
    else{root.querySelector('.v5-reply-form')?.remove();state.replyTo=id;state.replyText='';state.sticker=null;state.gif=null;showReply(id)}return;
   }
   if(b.hasAttribute('data-v5-share')){
-   const url=b.dataset.v5Share;try{if(navigator.share)await navigator.share({url});else{await navigator.clipboard.writeText(url);say('Comment link copied.')}}catch{say('Use your browser’s share menu to copy this link.')}return;
+   const url=b.dataset.v5Share;const shared=await shareLink(url);if(shared)say('Comment link shared or copied.');return;
   }
   if(b.hasAttribute('data-v5-cancel')){state.replyTo=null;state.replyText='';state.sticker=null;state.gif=null;b.closest('.v5-reply-form')?.remove();return;}
   if(b.hasAttribute('data-v5-picker')){
