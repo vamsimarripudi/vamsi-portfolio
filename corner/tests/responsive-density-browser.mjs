@@ -47,7 +47,7 @@ try{
   const fontPx=selector=>page.locator(selector).first().evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   const maxPublic=width<=430?53:width<=820?92:115;
   const maxInner=width<=430?52:width<=820?88:100;
-  const home=await page.goto(origin+'/corner',{waitUntil:'networkidle'});
+  const home=await page.goto(origin+'/corner',{waitUntil:'domcontentloaded'});
   assert.equal(home.status(),200,'Home '+width);
   await noOverflow('Home');
   assert.ok(await page.locator('.hero-content h1').count(),'Home hero '+width);
@@ -62,7 +62,7 @@ try{
    ['account','/corner/login','.account-intro h1'],
    ['owner-sign-in','/corner/admin','.signin-box h1']
   ]){
-   const response=await page.goto(origin+url,{waitUntil:'networkidle'});
+   const response=await page.goto(origin+url,{waitUntil:'domcontentloaded'});
    assert.equal(response.status(),200,name+' '+width);
    await noOverflow(name);
    assert.ok(await page.locator(selector).count(),name+' heading '+width);

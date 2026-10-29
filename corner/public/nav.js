@@ -3,6 +3,34 @@
 // SEO, history and existing page-specific listeners keep their native behavior.
 (() => {
   'use strict';
+  // Independent profile menu when the optional archived companion is disabled.
+  const profileToggle=document.querySelector('[data-corner-profile-toggle]');
+  const profileCard=document.querySelector('[data-corner-profile-card]');
+  const companionLoaded=!!document.querySelector('script[src*="/companion.js"]');
+  if(profileToggle&&profileCard&&!companionLoaded){
+    const close=(focus=false)=>{
+      profileCard.hidden=true;profileToggle.setAttribute('aria-expanded','false');
+      if(focus)profileToggle.focus({preventScroll:true});
+    };
+    profileToggle.addEventListener('click',()=>{
+      const opening=profileCard.hidden;
+      profileCard.hidden=!opening;
+      profileToggle.setAttribute('aria-expanded',String(opening));
+      if(opening){
+        const visible=[...profileCard.querySelectorAll('a[href],button')].find(el=>!el.hidden&&el.getClientRects().length);
+        visible?.focus({preventScroll:true});
+      }
+    });
+    profileCard.addEventListener('click',event=>{
+      if(event.target.closest('a[href]'))close();
+    });
+    document.addEventListener('pointerdown',event=>{
+      if(!profileCard.hidden&&!profileToggle.parentElement.contains(event.target))close();
+    },{passive:true});
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!profileCard.hidden){event.preventDefault();close(true)}
+    });
+  }
   const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
   if(connection?.saveData)return;
   const warmed=new Set();
