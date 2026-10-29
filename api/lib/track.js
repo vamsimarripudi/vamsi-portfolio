@@ -194,7 +194,7 @@ export const closeSession = async (req, res) => {
   res.setHeader('Set-Cookie', clearSessionCookie());
 };
 
-export const listEnquiries = async ({ query: searchText = '', status = '', intent = '', priority = '', due = '', page = 1, limit = 25 }) => {
+export const listEnquiries = async ({ query: searchText = '', status = '', intent = '', priority = '', due = '', source = '', page = 1, limit = 25 }) => {
   const currentPage = Math.max(1, Math.min(Number(page) || 1, 10000));
   const pageSize = Math.max(1, Math.min(Number(limit) || 25, 50));
   const search = `%${cleanText(searchText, 160).toLowerCase()}%`;
@@ -202,12 +202,14 @@ export const listEnquiries = async ({ query: searchText = '', status = '', inten
   const checkedIntent = cleanHeader(intent, 100);
   const checkedPriority = TRACK_PRIORITIES.includes(priority) ? priority : '';
   const onlyDue = due === '1' || due === 'true';
+  const productOnly = source === 'pakkafollow';
   const rows = await query()`
     SELECT e.reference_id, e.name, e.email, e.intent, e.subject, e.status, e.priority, e.created_at, e.updated_at, e.last_activity_at, e.follow_up_at,
       (SELECT status FROM track_email_events m WHERE m.enquiry_id = e.id ORDER BY m.created_at DESC LIMIT 1) AS email_status,
       COUNT(*) OVER()::int AS total
     FROM track_enquiries e
-    WHERE (${checkedStatus} = '' OR e.status = ${checkedStatus})
+    WHERE (${productOnly} = false OR e.intent IN ('PakkaFollow Support','PakkaFollow Billing','PakkaFollow Enquiry'))
+      AND (${checkedStatus} = '' OR e.status = ${checkedStatus})
       AND (${checkedIntent} = '' OR e.intent = ${checkedIntent})
       AND (${checkedPriority} = '' OR e.priority = ${checkedPriority})
       AND (${onlyDue} = false OR (e.follow_up_at IS NOT NULL AND e.follow_up_at <= NOW() AND e.status NOT IN ('COMPLETED', 'CLOSED', 'SPAM', 'ERASED', 'ERASURE_PENDING')))
