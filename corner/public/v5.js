@@ -2,6 +2,25 @@
 (()=>{
  'use strict';
  const prefix=location.pathname.startsWith('/corner')?'/corner':'';
+ // V5 owns the public account menu when the archived companion is disabled.
+ const profileToggle=document.querySelector('[data-corner-profile-toggle]');
+ const profileCard=document.querySelector('[data-corner-profile-card]');
+ const companionLoaded=!!document.querySelector('script[src*="/companion.js"]');
+ if(profileToggle&&profileCard&&!companionLoaded){
+  const close=(focus=false)=>{
+   profileCard.hidden=true;profileToggle.setAttribute('aria-expanded','false');
+   if(focus)profileToggle.focus({preventScroll:true});
+  };
+  profileToggle.addEventListener('click',()=>{
+   const opening=profileCard.hidden;
+   profileCard.hidden=!opening;
+   profileToggle.setAttribute('aria-expanded',String(opening));
+   if(opening){const visible=[...profileCard.querySelectorAll('a[href],button')].find(el=>!el.hidden&&el.getClientRects().length);visible?.focus({preventScroll:true});}
+  });
+  profileCard.addEventListener('click',event=>{if(event.target.closest('a[href]'))close()});
+  document.addEventListener('pointerdown',event=>{if(!profileCard.hidden&&!profileToggle.parentElement.contains(event.target))close()},{passive:true});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!profileCard.hidden){event.preventDefault();close(true)}});
+ }
  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
@@ -66,7 +85,7 @@
  // Share published story links from any feed card without tracking recipients.
  document.addEventListener('click',async event=>{
   const share=event.target.closest('[data-v5-share-post]');if(!share)return;
-  const url=new URL(share.dataset.v5SharePost,location.origin).href;
+  const path=share.dataset.v5SharePost||'';const url=new URL(path.startsWith(prefix+'/')?path:prefix+path,location.origin).href;
   try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url);}catch{/* Browser share may be cancelled by the reader. */}
  });
  // Restore persisted post reactions without exposing reader identity.
