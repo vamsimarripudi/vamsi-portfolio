@@ -235,21 +235,29 @@
         event.preventDefault();
         const formSchedule=event.currentTarget,button=formSchedule.querySelector('[type=submit]');
         const feedback=formSchedule.querySelector('[role=status]');
-        button.disabled=true;feedback.textContent='Saving the schedule…';
-        try{
-          const saved=await save(true);if(!saved)throw Error('Save your story and add a title before scheduling.');
-          p=await api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
-            localTime:formSchedule.elements.localTime.value,
-            timezone:formSchedule.elements.timezone.value,
-            recurrence:formSchedule.elements.recurrence.value,
-            recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
-            featureStartLocal:formSchedule.elements.featureStartLocal.value,
-            featureEndLocal:formSchedule.elements.featureEndLocal.value,
-            pinStartLocal:formSchedule.elements.pinStartLocal.value,
-            pinEndLocal:formSchedule.elements.pinEndLocal.value
-          });
-          panel.close();if(!controller.signal.aborted){toast('Scheduled successfully.','success');void editor(p.id)}
-        }catch(error){feedback.textContent=error.message||'Scheduling failed. Please try again.';button.disabled=false;}
+        feedback.textContent='Saving the schedule…';
+        await actionMotion({action:'post.schedule',trigger:button,targetId:p.id||'new-schedule',
+          signal:controller.signal,execute:async()=>{
+            const saved=await save(true);
+            if(!saved||active.dirty)throw Error('Save the latest story edits before scheduling.');
+            return api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
+              localTime:formSchedule.elements.localTime.value,
+              timezone:formSchedule.elements.timezone.value,
+              recurrence:formSchedule.elements.recurrence.value,
+              recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
+              featureStartLocal:formSchedule.elements.featureStartLocal.value,
+              featureEndLocal:formSchedule.elements.featureEndLocal.value,
+              pinStartLocal:formSchedule.elements.pinStartLocal.value,
+              pinEndLocal:formSchedule.elements.pinEndLocal.value
+            });
+          },
+          confirm:result=>!!result?.id&&result.state==='scheduled',
+          onSuccess:scheduled=>{
+            p=scheduled;feedback.textContent='Scheduled for '+formSchedule.elements.localTime.value;
+            if(!controller.signal.aborted){panel.close();toast('Scheduled successfully.','success');void editor(p.id)}
+          },
+          onFailure:error=>{feedback.textContent=error.message||'Scheduling failed. Please try again.'}
+        });
       };
       panel.showModal();
       panel.querySelector('[name=localTime]').focus();
@@ -542,9 +550,34 @@
       const reply=document.createElement('form');reply.className='v5-admin-reply-form';
       reply.innerHTML='<label>Reply in this thread<textarea required minlength="3" maxlength="1000" rows="3" placeholder="Write a reply…"></textarea></label><button type="submit">Publish author reply ↗</button>';
       host.append(reply);reply.querySelector('textarea').focus();
-      reply.onsubmit=async event=>{event.preventDefault();const save=reply.querySelector('button');save.disabled=true;try{await api('/corner/api/v5/posts/'+postId+'/threads','POST',{body:reply.querySelector('textarea').value,parentId:commentId});toast('Your reply is live.','success');comments()}catch(error){toast(error.message,'error');save.disabled=false}};
+      reply.onsubmit=async event=>{
+        event.preventDefault();
+        const button=reply.querySelector('button'),textarea=reply.querySelector('textarea');
+        const body=textarea.value.trim();
+        await actionMotion({action:'comment.reply',trigger:button,targetId:commentId,
+          visualTarget:host,execute:()=>api('/corner/api/v5/posts/'+postId+'/threads','POST',{body,parentId:commentId}),
+          confirm:result=>!!result?.id||result?.state==='approved'||result?.state==='pending',
+          onSuccess:result=>{
+            if(result?.state==='pending')toast('Reply awaiting review.','success');
+            else toast('Your reply is live.','success');
+            void comments();
+          },onFailure:error=>{toast(error.message,'error');textarea.focus({preventScroll:true})}});
+      };
     });
-    $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast(b.dataset.moderate==='approve'?'Comment approved.':b.dataset.moderate==='hide'?'Comment hidden.':'Comment deleted.','success');comments()}catch(err){toast(err.message,'error')}});
+    $$('[data-moderate]').forEach(button=>button.onclick=async()=>{
+      const operation=button.dataset.moderate;
+      if(operation==='delete'&&!confirm('Delete this comment?'))return;
+      const id=button.dataset.comment,host=button.closest('.admin-comment');
+      if(host&&(operation==='hide'||operation==='delete'))host.dataset.cornerMotionVisual='exit';
+      await actionMotion({action:'comment.'+operation,trigger:button,targetId:id,
+        visualTarget:host,execute:()=>api('/corner/api/admin/comments/'+id+'/'+operation,'POST'),
+        onSuccess:()=>{
+          toast(operation==='approve'?'Comment approved.':operation==='hide'?'Comment hidden.':'Comment deleted.','success');
+          void comments();
+        },
+        onFailure:error=>toast(error.message,'error')});
+      if(host?.isConnected)host.removeAttribute('data-corner-motion-visual');
+    });
   }
   async function guestbook(){
     const response=await api('/corner/api/v1/admin/v3/guestbook');
@@ -555,11 +588,12 @@
         ['approved','hidden','deleted'].map(state=>'<button type="button" data-guestbook-id="'+esc(n.id)+'" data-guestbook-state="'+state+'">'+(state==='approved'?'Approve':state==='hidden'?'Hide':'Delete')+'</button>').join('')+
         '</footer></article>').join('')+'</div>':empty('No guestbook notes waiting.'))+'</section>';
     $$('[data-guestbook-id]').forEach(button=>button.addEventListener('click',async()=>{
-      button.disabled=true;
-      try{
-        await api('/corner/api/v1/admin/v3/guestbook/'+encodeURIComponent(button.dataset.guestbookId),'PATCH',{state:button.dataset.guestbookState});
-        toast('Guestbook note reviewed.','success');await guestbook();
-      }catch(error){toast(error.message,'error');button.disabled=false;}
+      const id=button.dataset.guestbookId,state=button.dataset.guestbookState;
+      await actionMotion({action:'guestbook.review',trigger:button,targetId:id,
+        visualTarget:button.closest('.admin-comment'),
+        execute:()=>api('/corner/api/v1/admin/v3/guestbook/'+encodeURIComponent(id),'PATCH',{state}),
+        onSuccess:()=>{toast('Guestbook note reviewed.','success');return guestbook()},
+        onFailure:error=>toast(error.message,'error')});
     }));
   }
   async function analytics(){
