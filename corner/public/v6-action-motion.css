@@ -1,0 +1,14 @@
+/* V6 action vocabulary: short, contextual confirmation without a fake progress percentage. */
+.corner-comfort [data-v6-action-motion]{position:relative;transform-origin:center;transition:transform 190ms cubic-bezier(.2,.85,.25,1),filter 190ms ease,background-color 190ms ease}
+.corner-comfort [data-v6-action-motion="pending"]{filter:saturate(.83);cursor:progress}
+.corner-comfort [data-v6-action-motion="pending"]::after{content:"";position:absolute;right:6px;top:5px;width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55;animation:v6-action-pulse .75s ease-in-out infinite alternate}
+.corner-comfort [data-v6-action-motion="success"]{transform:translateY(-2px) scale(1.035);filter:saturate(1.25)}
+.corner-comfort [data-v6-action-motion="error"]{filter:drop-shadow(0 0 4px #b9384366)}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="save"]{background-color:#e4f3ea!important;color:#205e3c!important}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="schedule"]{background-color:#e9e6fc!important;color:#44347d!important}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="upload"]{background-color:#e5f3ff!important;color:#175b95!important}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="approve"]{background-color:#dff5e7!important;color:#18683d!important}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="archive"]{transform:scale(.94);opacity:.65}
+.corner-comfort [data-v6-action-motion="success"][data-v6-action-kind="restore"]{transform:scale(1.06)}
+@keyframes v6-action-pulse{to{opacity:.15;transform:scale(.72)}}
+@media(prefers-reduced-motion:reduce){.corner-comfort [data-v6-action-motion]{transition:none!important;transform:none!important;animation:none!important}.corner-comfort [data-v6-action-motion]::after{animation:none!important}}
