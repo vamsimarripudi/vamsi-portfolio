@@ -409,8 +409,52 @@
     return result.data;
   }
   async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{if(!confirm('Delete this media file? It will be removed from its story.'))return;button.disabled=true;try{await api('/corner/api/admin/media/'+encodeURIComponent(button.dataset.mediaDelete),'DELETE');toast('Media deleted.','success');await media()}catch(error){toast(error.message,'error');button.disabled=false}});}
-  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div><button type="submit">Save media details</button></form></section>`;
-    $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
+  function mediaEdit(id,list,returnPostId=null){
+    const item=list.find(media=>media.id===id);if(!item)return;
+    const photo=item.mime_type.startsWith('image/'),clip=item.mime_type.startsWith('video/');
+    root.innerHTML='<section class="admin-section"><header><h2>Media editor.</h2><button type="button" class="admin-secondary" id="back-media">← Back</button></header>'+
+      '<form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">'+esc(item.alt_text||'')+'</textarea></label>'+
+      '<label>Caption<input name="caption" maxlength="300" value="'+esc(item.caption||'')+'"></label>'+
+      '<div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="'+Number(item.focal_x||.5)+'"></label>'+
+      '<label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="'+Number(item.focal_y||.5)+'"></label></div>'+
+      (photo?'<fieldset class="v5-media-adjust"><legend>Photo filters · original preserved</legend>'+
+        '<label>Preset<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Monochrome</option><option value="dream">Dream</option></select></label>'+
+        '<label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>'+
+        '<label>Rotation<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>'+
+        '<label>Brightness<input type="range" name="brightness" min=".6" max="1.4" step=".05" value="1"></label>'+
+        '<label>Contrast<input type="range" name="contrast" min=".6" max="1.4" step=".05" value="1"></label>'+
+        '<label>Saturation<input type="range" name="saturation" min="0" max="2" step=".05" value="1"></label></fieldset>':'')+
+      (clip?'<fieldset class="v5-media-adjust"><legend>Video edit · process from original</legend>'+
+        '<label>Trim start (seconds)<input type="number" min="0" max="179" step=".5" name="start" value="0"></label>'+
+        '<label>Trim end (seconds, optional)<input type="number" min="0" max="180" step=".5" name="end" placeholder="End of clip"></label></fieldset>':'')+
+      '<button type="submit">Save media details</button>'+
+      (photo?'<button type="button" id="v5-photo-reset" class="admin-secondary">Restore original photo</button>':'')+
+      (clip?'<button type="button" id="v5-video-trim" class="admin-secondary">Apply video trim</button>':'')+
+      '<p id="v5-media-message" role="status" aria-live="polite"></p></form></section>';
+    const form=$('#media-editor'),note=$('#v5-media-message');
+    $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();
+    if(photo)api('/corner/api/admin/media/'+id+'/edits').then(recipe=>{
+      if(!recipe)return;
+      for(const field of ['preset','crop','rotation','brightness','contrast','saturation'])if(form.elements[field]&&recipe[field]!==undefined)form.elements[field].value=recipe[field];
+    }).catch(()=>{});
+    form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;note.textContent='Saving…';
+      try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:form.elements.alt.value,caption:form.elements.caption.value,focalX:form.elements.focalX.value,focalY:form.elements.focalY.value});
+        if(photo)await api('/corner/api/admin/media/'+id+'/edits','POST',{preset:form.elements.preset.value,crop:form.elements.crop.value,rotation:Number(form.elements.rotation.value),brightness:Number(form.elements.brightness.value),contrast:Number(form.elements.contrast.value),saturation:Number(form.elements.saturation.value)});
+        toast('Media changes saved.','success');returnPostId?editor(returnPostId):media()
+      }catch(error){note.textContent=error.message;button.disabled=false}
+    };
+    $('#v5-photo-reset')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/media/'+id+'/edits','DELETE');toast('Original restored.','success');returnPostId?editor(returnPostId):media()}catch(error){note.textContent=error.message}});
+    $('#v5-video-trim')?.addEventListener('click',async event=>{const button=event.currentTarget;button.disabled=true;note.textContent='Starting video edit…';
+      try{const job=await api('/corner/api/admin/media/'+id+'/video-trim','POST',{start:Number(form.elements.start.value||0),end:Number(form.elements.end.value||0)});
+        let done=false;for(let attempt=0;attempt<110;attempt++){await new Promise(resolve=>setTimeout(resolve,1600));
+          const info=await api('/corner/api/admin/media/jobs/'+job.jobId+'?postId='+encodeURIComponent(item.owner_id));
+          note.textContent='Rendering video · '+info.state;
+          if(info.state==='ready'){done=true;break}if(info.state==='failed')throw Error('Unable to reprocess this clip. Try a shorter trim.');
+        }
+        if(!done)throw Error('Video is still processing. Return to the media library to check.');
+        toast('Video trim saved.','success');returnPostId?editor(returnPostId):media()
+      }catch(error){note.textContent=error.message;button.disabled=false}
+    });
   }
   async function comments(){const list=await api('/corner/api/admin/comments?state=pending');root.innerHTML=`<section class="admin-section"><header><h2>Comments awaiting review.</h2></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}">Approve ✓</button><button data-moderate="hide" data-comment="${c.id}">Hide</button><button data-moderate="delete" data-comment="${c.id}">Delete</button></footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
     $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast('Comment updated.','success');comments()}catch(err){toast(err.message,'error')}});
