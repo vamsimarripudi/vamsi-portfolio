@@ -37,3 +37,8 @@
 .corner-comfort .corner-motion-announcer{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;white-space:nowrap!important;clip-path:inset(50%)!important;border:0!important}
 @media(max-width:767px){.corner-comfort .admin-comment [data-corner-motion-state] .corner-motion-copy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.corner-comfort .admin-comment [data-corner-motion-state] .corner-motion-visual svg{width:23px;height:23px}}
 @media(prefers-reduced-motion:reduce){.corner-comfort [data-corner-motion-state],.corner-comfort [data-corner-motion-object]{animation:none!important;transition:none!important;transform:none!important;filter:none!important}.corner-comfort [data-corner-motion-state] svg,.corner-comfort [data-corner-motion-state] .cm-fold,.corner-comfort [data-corner-motion-state] .cm-hand,.corner-comfort [data-corner-motion-state] .cm-lift{animation:none!important}.corner-comfort [data-corner-motion-state="success"] .cm-mark{stroke-dashoffset:0;animation:none!important}}
+
+/* Portrait arrival is a confirmed replacement, after avatar API returns 2xx. */
+.corner-comfort .account-avatar-visual img{animation:cm-avatar-arrive 310ms var(--cm-ease) both}
+@keyframes cm-avatar-arrive{from{opacity:.25;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.corner-comfort .account-avatar-visual img{animation:none!important}}
