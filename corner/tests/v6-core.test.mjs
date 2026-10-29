@@ -33,3 +33,14 @@ test('Pending comments only visible to original actor, not another member or pub
  assert.equal(social.approved(post.id).length,1);
  assert.equal(social.approved(post.id)[0].pending,false);
 });
+
+test('Cards honor disabled reactions/comments without hiding independent Share',async()=>{
+ const {card}=await import('../src/ui.mjs');
+ const p={id:'post_example',slug:'example',title:'Story',type:'moment',body:'Text',allow_reactions:false,allow_comments:false};
+ const hidden=card(p);
+ assert.doesNotMatch(hidden,/data-v5-like|data-v6-conversation/);
+ assert.match(hidden,/data-v5-share-post/);
+ const allowed=card({...p,allow_reactions:true,allow_comments:true});
+ assert.match(allowed,/data-v5-like/);
+ assert.match(allowed,/data-v6-conversation/);
+});
