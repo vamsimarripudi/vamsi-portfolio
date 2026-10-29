@@ -152,6 +152,7 @@ try{
    await route.fulfill({response});
  });
  await publishButton.click();
+ await page.locator('.v6-toast[data-type="error"]').waitFor({state:'detached',timeout:5000});
  assert.equal(await confirmed,200,'A real publish transaction commits successfully');
  await page.locator('#publish-post[data-v6-publish-state="pending"]').waitFor({state:'visible'});
  assert.equal(await publishButton.isEnabled(),false,'Duplicate taps are blocked while publishing');

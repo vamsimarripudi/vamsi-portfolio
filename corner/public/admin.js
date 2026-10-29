@@ -125,7 +125,7 @@
       finally{pendingSave=null}})();return pendingSave;
     }
     $('#save-post').onclick=()=>save();
-    let publishing=false;
+    let publishing=false,publishFailureNotice=null;
     const lockedControls=new Map();
     const lockWhilePublishing=()=>{
       for(const control of form.querySelectorAll('button,input,textarea,select')){
@@ -141,6 +141,8 @@
     };
     publishButton.onclick=async()=>{
       if(publishing||publishMotion?.start()===false)return;
+      // A resolved retry must never leave an old red publish error visible behind green success.
+      publishFailureNotice?.dismiss?.();publishFailureNotice=null;
       publishing=true;lockWhilePublishing();
       try{
         // Save the real draft before the actual publish request; never fake success.
@@ -148,7 +150,7 @@
         if(controller.signal.aborted)return;
         if(!saved){
           publishMotion?.failure('Could not save your story. Review your changes and retry.');
-          toast('Could not save your story. Review your changes and retry.','error');
+          publishFailureNotice=toast('Could not save your story. Review your changes and retry.','error');
           return;
         }
         const published=await api('/corner/api/admin/posts/'+saved.id+'/publish','POST');
@@ -163,7 +165,7 @@
       }catch(err){
         if(!controller.signal.aborted){
           publishMotion?.failure(err.message||'Publishing failed. Please retry.');
-          toast(err.message||'Publishing failed. Please retry.','error');
+          publishFailureNotice=toast(err.message||'Publishing failed. Please retry.','error');
         }
       }finally{
         publishing=false;unlockAfterPublishing();
