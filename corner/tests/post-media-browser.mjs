@@ -206,10 +206,19 @@ try{
    el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
  });
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
+ // Browser-generated click following a swipe must NOT immediately dismiss the viewer.
+ await dialog.locator('figure img').dispatchEvent('click');
+ assert.equal(await dialog.evaluate(el=>el.open),true,'The swipe completion click cannot close the viewer');
  await page.waitForTimeout(500);
  await dialog.locator('figure img').click();
  await dialog.waitFor({state:'hidden'});
  assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Tap closes viewer and restores source photo focus');
+ await images.first().click();
+ await dialog.waitFor({state:'visible'});
+ // A tap on the gallery backdrop also dismisses; nothing requires a visible X.
+ await dialog.evaluate(el=>el.click());
+ await dialog.waitFor({state:'hidden'});
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Backdrop tap restores photo focus');
  await images.first().click();
  await dialog.waitFor({state:'visible'});
  await page.keyboard.press('Escape');
