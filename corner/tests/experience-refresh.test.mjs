@@ -85,8 +85,9 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
  assert.match(html,/class="category-tabs corner-rail"/);
  assert.doesNotMatch(html,/class="category-account"/);
  assert.equal((html.match(/data-profile-link/g)||[]).length,1);
- assert.match(page,/href="\/companion\.css"/);
- assert.match(page,/src="\/companion\.js" defer/);
+ assert.doesNotMatch(page,/href="\/companion\.css"/, 'Character styling is archived by default');
+ assert.doesNotMatch(page,/src="\/companion\.js" defer/, 'Character script is archived by default');
+ assert.match(page,/src="\/v5\.js" defer/, 'New interaction layer must replace the character in production');
  assert.match(pulse,/corner-drawer-open/);
  assert.match(pulse,/corner-welcome-letter-v2/);
  assert.match(pulse,/Escape/);
