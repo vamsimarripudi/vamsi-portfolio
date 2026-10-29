@@ -5,7 +5,6 @@
  const hero=document.querySelector('.corner-home-hero');
  if(!star||!hero)return;
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
- const limited=n=>Math.max(0,Math.min(1,n));
  const mode=()=>{
   try{return localStorage.getItem('corner-motion-mode')||'subtle'}catch{return 'subtle'}
  };
@@ -34,7 +33,7 @@
   ghost.removeAttribute('title');ghost.classList.add('v6-gravity-ghost');
   ghost.style.cssText+=';left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px;';
   document.body.append(ghost);star.style.visibility='hidden';
-  let offset=0,angle=0,spin=(Math.random()<.5?-1:1)*70,velocity=-70,bounces=0;
+  let offset=0,angle=0,spin=70,velocity=-70,bounces=0;
   const floor=Math.max(40,Math.min(innerHeight-28,Math.max(rect.bottom+80,innerHeight-92)))-rect.bottom;
   let previous=0,started=0,current='translate3d(0,0,0) rotate(0deg)';
   const finish=()=>{
