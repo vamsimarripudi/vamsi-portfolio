@@ -66,6 +66,8 @@ try{
    const fold=lab.locator('[data-motion-preview="draft.save"]');
    await fold.click();
    await fold.locator('.cm-fold').waitFor();
+   assert.equal(await fold.locator('.corner-motion-original').evaluate(el=>getComputedStyle(el).visibility),
+     'hidden','Original button label is not painted behind the motion');
    assert.equal(await fold.getAttribute('data-corner-motion-state'),'pending');
    assert.equal(await fold.isEnabled(),false,'The same preview cannot be triggered twice');
    await page.screenshot({path:path.join(screenshots,'motion-lab-saving-390.png'),animations:'disabled'});

@@ -52,3 +52,10 @@
 .corner-comfort .corner-motion-lab-grid button:focus-visible{outline:3px solid #365ca7;outline-offset:2px}
 .corner-comfort .corner-motion-lab-status{font-size:.78rem;line-height:1.5;margin:12px 0 0;color:var(--corner-subtext,#6f645e)}
 @media(max-width:400px){.corner-comfort .corner-motion-lab-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Explicitly hide the original button's own text/SVG during choreography.
+   Visibility (not color) avoids legacy :is(button) !important color overrides. */
+.corner-comfort [data-corner-motion-state]>.corner-motion-original{
+ visibility:hidden!important;pointer-events:none!important
+}
+.corner-comfort .corner-motion-original{display:inline-flex;align-items:center;justify-content:center;gap:6px}

@@ -42,6 +42,11 @@
  function mount(trigger,action,visualTarget){
   const spec=definitions[action]||definitions['settings.save'];
   const orig={disabled:trigger.disabled,label:trigger.getAttribute('aria-label'),busy:trigger.getAttribute('aria-busy')};
+  // Preserve the exact original child nodes, but hide them while the motion layer
+  // is active so old Studio styles cannot paint overlapping labels/icons.
+  const original=document.createElement('span');original.className='corner-motion-original';
+  while(trigger.firstChild)original.append(trigger.firstChild);
+  trigger.append(original);
   const visual=document.createElement('span');visual.className='corner-motion-visual';
   visual.setAttribute('aria-hidden','true');
   visual.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(paths[spec[0]]||paths.check)+'</svg><span class="corner-motion-copy"></span>';
@@ -73,7 +78,9 @@
     if(orig.busy===null)trigger.removeAttribute('aria-busy');else trigger.setAttribute('aria-busy',orig.busy);
     delete trigger.dataset.cornerMotionState;delete trigger.dataset.cornerMotionKind;
     if(visualTarget?.isConnected)delete visualTarget.dataset.cornerMotionObject;
-    visual.remove();announce.remove();
+    visual.remove();
+    while(original.firstChild)trigger.insertBefore(original.firstChild,original);
+    original.remove();announce.remove();
    }
   };
  }
