@@ -19,6 +19,7 @@
     const options={method,credentials:'same-origin',cache:'no-store',headers:{}};
     if(payload!==undefined){options.headers['content-type']='application/json';options.body=JSON.stringify(payload)}
     const response=await fetch(path,options);const parsed=await response.json().catch(()=>({}));
+    if(method!=='GET')document.dispatchEvent(new CustomEvent('corner:action-result',{detail:{path,success:response.ok&&!parsed.error}}));
     if(!response.ok||parsed.error){const err=new Error(parsed.error?.message||'Could not complete that action');err.status=response.status;err.code=parsed.error?.code;throw err}return parsed.data;
   }
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
