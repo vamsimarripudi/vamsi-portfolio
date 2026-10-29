@@ -19,8 +19,18 @@
     const options={method,credentials:'same-origin',cache:'no-store',headers:{}};
     if(payload!==undefined){options.headers['content-type']='application/json';options.body=JSON.stringify(payload)}
     const response=await fetch(path,options);const parsed=await response.json().catch(()=>({}));
-    if(method!=='GET')document.dispatchEvent(new CustomEvent('corner:action-result',{detail:{path,success:response.ok&&!parsed.error}}));
     if(!response.ok||parsed.error){const err=new Error(parsed.error?.message||'Could not complete that action');err.status=response.status;err.code=parsed.error?.code;throw err}return parsed.data;
+  }
+  // Every motion belongs to the exact button, operation and entity; the API
+  // remains the only source of truth. When animation is unavailable, actions still work.
+  async function actionMotion(options){
+    if(window.CornerActionMotion?.run)return window.CornerActionMotion.run(options);
+    try{
+      const result=await options.execute({progress:()=>{},signal:options.signal});
+      if(options.confirm&&options.confirm(result)!==true)throw Error('The operation was not confirmed.');
+      await options.onSuccess?.(result);
+      return {ok:true,result};
+    }catch(error){options.onFailure?.(error);return {ok:false,error}}
   }
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
@@ -44,8 +54,19 @@
   async function posts(){const list=await api('/corner/api/admin/posts?state='+encodeURIComponent(active.filter));
     root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">${p.state==='archived'?'View':'Edit'} ↗</button>${p.state==='draft'?`<button data-delete-draft="${p.id}" type="button">Delete</button>`:''}${p.state==='archived'?`<button data-restore-draft="${p.id}" type="button">Restore</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
     $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
-    $$('[data-delete-draft]').forEach(button=>button.onclick=async()=>{if(!confirm('Move draft to Archived?'))return;try{await api('/corner/api/admin/posts/'+button.dataset.deleteDraft,'DELETE');await posts()}catch(error){toast(error.message,'error')}});
-    $$('[data-restore-draft]').forEach(button=>button.onclick=async()=>{try{await api('/corner/api/admin/posts/'+button.dataset.restoreDraft+'/restore','POST');await posts()}catch(error){toast(error.message,'error')}});
+    $$('[data-delete-draft]').forEach(button=>button.onclick=async()=>{
+      if(!confirm('Move draft to Archived?'))return;
+      const id=button.dataset.deleteDraft;
+      await actionMotion({action:'post.delete',trigger:button,targetId:id,visualTarget:button.closest('tr'),
+        execute:()=>api('/corner/api/admin/posts/'+id,'DELETE'),
+        onSuccess:()=>posts(),onFailure:error=>toast(error.message,'error')});
+    });
+    $$('[data-restore-draft]').forEach(button=>button.onclick=async()=>{
+      const id=button.dataset.restoreDraft;
+      await actionMotion({action:'post.restore',trigger:button,targetId:id,visualTarget:button.closest('tr'),
+        execute:()=>api('/corner/api/admin/posts/'+id+'/restore','POST'),
+        onSuccess:()=>posts(),onFailure:error=>toast(error.message,'error')});
+    });
   }
   const autoTitle=body=>{
     const lines=String(body||'').trim().split(/[\n.!?]+/).map(s=>s.trim()).filter(Boolean);
@@ -104,7 +125,14 @@
     document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu?.hidden){hideSettings();toggle.focus()}},{signal:active.editorAbort.signal});
 
-    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.state==='draft'&&form.elements.body.value.trim()){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)}});
+    let editorRevision=0;
+    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{
+      editorRevision++;active.dirty=true;$('#save-indicator').textContent='Unsaved edits';
+      updatePreview(form);
+      if(p.state==='draft'&&form.elements.body.value.trim()){
+        clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)
+      }
+    });
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
     let pendingSave=null;
     async function save(quiet=false){
@@ -112,12 +140,17 @@
       if(!form.elements.body.value.trim()&&!p.id){if(!quiet)toast('Write something or attach media first.','error');return null;}
       clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
       pendingSave=(async()=>{try{
-        const values=formValues(form);
+        const values=formValues(form),savedRevision=editorRevision;
         const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
         // Persisted draft is safe, but never apply a stale response to a different Studio view.
         if(controller.signal.aborted)return null;
-        p=stored;active.post=p;active.dirty=false;
-        form.querySelector('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
+        form.querySelector('#save-indicator').textContent=active.dirty
+          ?'Earlier edits saved · newer edits unsaved'
+          :'Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        if(active.dirty&&p.state==='draft'){
+          clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450);
+        }
         if(!quiet)toast('Draft saved.','success');return p;
       }catch(error){if(!controller.signal.aborted){
         form.querySelector('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';
@@ -125,7 +158,14 @@
       }return null}
       finally{pendingSave=null}})();return pendingSave;
     }
-    $('#save-post').onclick=()=>save();
+    $('#save-post').onclick=async()=>{
+      const button=$('#save-post');
+      await actionMotion({action:'draft.save',trigger:button,targetId:p.id||'new-draft',
+        signal:controller.signal,execute:()=>save(true),
+        confirm:stored=>!!stored&&!active.dirty,
+        onSuccess:()=>toast('Draft saved.','success'),
+        onFailure:error=>toast(active.dirty?'Earlier edits saved; newer changes remain unsaved.':error.message,'error')});
+    };
     let publishing=false,publishFailureNotice=null;
     const lockedControls=new Map();
     const lockWhilePublishing=()=>{
@@ -214,9 +254,26 @@
       panel.showModal();
       panel.querySelector('[name=localTime]').focus();
     };
-    $('#delete-draft')?.addEventListener('click',async()=>{if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;try{await api('/corner/api/admin/posts/'+p.id,'DELETE');toast('Draft moved to Archived.','success');showView('posts')}catch(error){toast(error.message,'error')}});
-    $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
-    $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
+    $('#delete-draft')?.addEventListener('click',async event=>{
+      if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;
+      await actionMotion({action:'post.delete',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id,'DELETE'),
+        onSuccess:()=>{toast('Draft moved to Archived.','success');showView('posts')},
+        onFailure:error=>toast(error.message,'error')});
+    });
+    $('#archive-post')?.addEventListener('click',async event=>{
+      if(!confirm('Archive this story? It will no longer be public.'))return;
+      await actionMotion({action:'post.archive',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id+'/archive','POST'),
+        onSuccess:()=>{toast('Post archived.','success');showView('posts')},
+        onFailure:error=>toast(error.message,'error')});
+    });
+    $('#restore-post')?.addEventListener('click',async event=>{
+      await actionMotion({action:'post.restore',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:()=>api('/corner/api/admin/posts/'+p.id+'/restore','POST'),
+        onSuccess:()=>{toast('Post restored.','success');void editor(p.id)},
+        onFailure:error=>toast(error.message,'error')});
+    });
     $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
     const mediaPanel=$('#editor-media');
     $('#open-media-panel').onclick=()=>{if(mediaPanel&&!mediaPanel.open)mediaPanel.showModal()};
