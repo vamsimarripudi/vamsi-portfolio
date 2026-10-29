@@ -357,10 +357,13 @@ async function api(req,res,pathName,url){
   if(mediaJob&&method==='GET')return ok(res,mediaJobs.status(mediaJob[1],url.searchParams.get('postId')));
   const photoEdit=pathName.match(/^\/api\/admin\/media\/(media_[0-9a-f-]{36})\/edits$/i);
   if(photoEdit){
+   if(method==='GET')return ok(res,mediaJobs.photoRecipe(photoEdit[1]));
    if(method==='POST'){limit(req,'v5-photo-edit',20,3600);return ok(res,await mediaJobs.editPhoto(photoEdit[1],await readJSON(req,3000),owner.id));}
    if(method==='DELETE')return ok(res,mediaJobs.resetPhoto(photoEdit[1],owner.id));
    throw httpError(405,'Unsupported photo edit method.');
   }
+  const videoEdit=pathName.match(/^\/api\/admin\/media\/(media_[0-9a-f-]{36})\/video-trim$/i);
+  if(videoEdit&&method==='POST'){limit(req,'v5-video-trim',6,3600);return ok(res,mediaJobs.retrim(videoEdit[1],await readJSON(req,1200)));}
   if(pathName==='/api/admin/media/upload'&&method==='POST'){
     let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?12*1024*1024:75*1024*1024);
     let converted=null;const inspected=inspectAppleMedia(buf,mime);
