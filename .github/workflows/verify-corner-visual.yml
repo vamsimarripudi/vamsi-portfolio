@@ -137,6 +137,23 @@ jobs:
       - name: Real owner post photos and captions browser acceptance
         run: |
           node corner/tests/post-media-browser.mjs
+      - name: Start V5.1 production-style Corner fixture (no companion)
+        run: |
+          mkdir -p "$RUNNER_TEMP/corner-v51-data"
+          cd corner
+          CORNER_BASE_PATH=/corner SITE_URL=http://127.0.0.1:4143/corner \
+          NODE_ENV=development CORNER_COMPANION_ENABLED=0 DEMO_CONTENT=1 \
+          DATA_DIR="$RUNNER_TEMP/corner-v51-data" \
+          HOST=127.0.0.1 PORT=4143 \
+          nohup node src/server.mjs > "$RUNNER_TEMP/corner-v51-server.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4143/corner/api/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/corner-v51-server.log"
+          exit 1
+      - name: Verify V5.1 phone action bar, media and scroll-away dock
+        run: CORNER_TEST_ORIGIN=http://127.0.0.1:4143 node corner/tests/v51-mobile-browser.mjs
       - name: Verify responsive glass rail and Corner Pulse in real browser
         run: |
           node corner/tests/navigation-companion-browser.mjs
