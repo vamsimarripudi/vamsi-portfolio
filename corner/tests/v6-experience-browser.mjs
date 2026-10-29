@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
-const origin=process.env.CORNER_TEST_ORIGIN||'http://127.0.0.1:4143';
+const origin=process.env.CORNER_TEST_ORIGIN||'http://127.0.0.1:4144';
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 fs.mkdirSync('screenshots',{recursive:true});
 try{
