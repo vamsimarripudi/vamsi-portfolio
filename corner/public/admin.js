@@ -163,7 +163,8 @@
     form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
   }
   const uploadLimit=8;
-  const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
+  const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','video/mp4','video/quicktime','video/webm']);
+  const mediaMime=file=>file.type||(/\.mov$/i.test(file.name)?'video/quicktime':/\.(heic|heif)$/i.test(file.name)?'image/heic':'');
   function showEditorCover(items){
     const host=$('[data-editor-photo-preview]');
     if(!host)return;
@@ -192,9 +193,9 @@
       (attachments.length?'<div class="media-gallery">'+attachments.map((x,index)=>mediaCard(x,true,index,attachments.length)).join('')+'</div>':
        '<p class="corner-media-empty">No files attached yet. Select a photo or video below to add it to this story.</p>')+
       '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
-      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required></label>'+
+      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/*,video/mp4,video/quicktime,video/webm,.heic,.heif,.mov" required></label>'+
       '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
-      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, WebP or GIF up to 8 MB; MP4/WebM up to 25 MB.</p>'+
+      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, HEIC, WebP and GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. iPhone videos are optimized for playback.</p>'+
       '<p data-upload-status role="status" aria-live="polite"></p>'+
       '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
       '</form></section>'+
@@ -256,7 +257,7 @@
       const remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
       remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Enter descriptions, then attach them to your story.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
       figure.append(remove);
-      const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
+      const picture=mediaMime(entry.file).startsWith('image/')?document.createElement('img'):document.createElement('video');
       entry.url=URL.createObjectURL(entry.file);
       picture.src=entry.url;
       if(picture.tagName==='IMG')picture.alt='Local upload preview: '+entry.file.name;
@@ -271,7 +272,7 @@
       entry.alt=document.createElement('input');
       entry.alt.name='alt';entry.alt.maxLength=240;
       entry.alt.placeholder='Describe what appears in the photograph';
-      entry.alt.required=entry.file.type.startsWith('image/');
+      entry.alt.required=mediaMime(entry.file).startsWith('image/');
       if(!entry.alt.required){altLabel.textContent='Video description (optional)'}
       altLabel.append(entry.alt);
       const captionLabel=document.createElement('label');
@@ -281,6 +282,11 @@
       entry.caption.placeholder='A moment worth remembering…';
       captionLabel.append(entry.caption);
       fields.append(altLabel,captionLabel);
+      if(mediaMime(entry.file).startsWith('video/')&&mediaMime(entry.file)!=='video/webm'){
+        const trim=document.createElement('div');trim.className='v5-video-trim';
+        trim.innerHTML='<label>Start at (seconds)<input name="start" type="number" min="0" max="179" step="0.5" value="0"></label><label>End at (seconds, optional)<input name="end" type="number" min="0" max="180" step="0.5" placeholder="End of clip"></label>';
+        fields.append(trim);entry.start=trim.querySelector('[name=start]');entry.end=trim.querySelector('[name=end]');
+      }
       if(entry.file.type==='image/jpeg'||entry.file.type==='image/png'||entry.file.type==='image/webp'){
         const crop=document.createElement('button');crop.type='button';crop.dataset.cropUpload='';crop.className='corner-crop-trigger';crop.textContent='Crop / reframe ↗';
         crop.onclick=async()=>{
@@ -310,7 +316,7 @@
       selectedSignature=signature;
       cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
-      if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
+      if(files.some(file=>!supportedMedia.has(mediaMime(file)))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
       status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
       for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
@@ -331,10 +337,10 @@
       let sent=0;
       try{
         for(const entry of pending.filter(item=>!item.done)){
-          const isImage=entry.file.type.startsWith('image/');
+          const isImage=mediaMime(entry.file).startsWith('image/');
           const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
-          if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
-          if(!entry.file.size||entry.file.size>(isImage?8:25)*1024*1024)throw Error('File is too large: '+entry.file.name);
+          if(!supportedMedia.has(mediaMime(entry.file)))throw Error('Unsupported file type: '+entry.file.name);
+          if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
           if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
           if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
         }
@@ -345,7 +351,16 @@
         }
         for(const entry of pending.filter(item=>!item.done)){
           status.textContent='Uploading '+(sent+1)+' of '+pending.filter(item=>!item.done).length+'…';
-          await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim());
+          const outcome=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+          if(outcome?.jobId){let ready=false;for(let poll=0;poll<100;poll++){
+              await new Promise(done=>setTimeout(done,1600));
+              const value=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(outcome.jobId)+'?postId='+encodeURIComponent(postId));
+              status.textContent='Optimizing video: '+value.state;
+              if(value.state==='ready'){ready=true;break}
+              if(value.state==='failed')throw Error('Conversion failed. Export H.264 from the iPhone or choose a shorter clip.');
+            }
+            if(!ready)throw Error('Video is still processing. Reopen Media to check its status.');
+          }
           entry.done=true;sent++;
         }
         toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
@@ -381,13 +396,13 @@
       '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?'Advanced settings ↗':'Edit details ↗')+'</button>'+
       '</article>';
   }
-  async function upload(file,postId,alt,caption=''){
+  async function upload(file,postId,alt,caption='',trim={}){
     if(!file)throw Error('Choose a file');
-    if(!supportedMedia.has(file.type))throw Error('Unsupported file type');
-    if(file.size>(file.type.startsWith('image/')?8:25)*1024*1024)throw Error('File is too large');
-    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||'')});
+    if(!supportedMedia.has(mediaMime(file)))throw Error('Unsupported file type');
+    if(file.size>(mediaMime(file).startsWith('image/')?12:75)*1024*1024)throw Error('File is too large');
+    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||''),start:String(trim.start||0),end:String(trim.end||0)});
     const response=await fetch('/corner/api/admin/media/upload?'+params.toString(),{
-      method:'POST',credentials:'same-origin',headers:{'content-type':file.type},body:file
+      method:'POST',credentials:'same-origin',headers:{'content-type':mediaMime(file)},body:file
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(result.error?.message||'Upload failed');
