@@ -2,7 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import sharp from 'sharp';
+// Image processing loads on demand so public pages run without image dependencies.
+let cachedSharp;
+const loadSharp=async()=>cachedSharp||(cachedSharp=(await import('sharp')).default);
 import {promisify} from 'node:util';
 import {execFile} from 'node:child_process';
 import {uid,now,httpError,clamp} from './domain.mjs';
@@ -27,7 +29,7 @@ export const normalizeRecipe=(x={})=>{
  return {preset,crop,rotation,brightness:clamp(safeN(x.brightness,1),.6,1.4),contrast:clamp(safeN(x.contrast,1),.6,1.4),saturation:clamp(safeN(x.saturation,1),0,2)};
 };
 export async function normalizeHeicImage(bytes){
- try{
+ try{const sharp=await loadSharp();
   const input=sharp(bytes,{limitInputPixels:50_000_000}),m=await input.metadata();
   if(!m.width||!m.height||m.width*m.height>50_000_000)throw Error('Unsupported image dimensions');
   const output=await sharp(bytes,{limitInputPixels:50_000_000}).rotate().resize({width:2800,height:2800,fit:'inside',withoutEnlargement:true}).webp({quality:86}).toBuffer();
@@ -36,6 +38,7 @@ export async function normalizeHeicImage(bytes){
  }catch{throw httpError(415,'HEIC conversion is not available for this file. Export it as JPEG.','HEIC_UNSUPPORTED')}
 }
 export async function transformImage(bytes,raw){
+ const sharp=await loadSharp();
  const r=normalizeRecipe(raw);
  const m=await sharp(bytes,{limitInputPixels:50_000_000}).metadata();
  if(!m.width||!m.height)throw httpError(415,'Unsupported photograph.','PHOTO_UNSUPPORTED');
