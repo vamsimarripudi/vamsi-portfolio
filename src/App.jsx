@@ -94,7 +94,7 @@ function Contact(){
   const [errors,setErrors]=useState({});
   const [status,setStatus]=useState({state:'',message:''});
   const toast=useToast();
-  const intentCopy={'Engineering opportunity':'Share the role, team, and a little context about the opportunity.','Product discussion':'Tell me what product problem or stage you want to discuss.','Collaboration':'Share what you are building and where collaboration could help.','Technical conversation':'A technical question or architecture context is enough to begin.','Other':'A little context is enough to start a useful conversation.'};
+  const intentCopy={'Engineering opportunity':'Share the role, team, and a little context about the opportunity.','Product discussion':'Tell me what product problem or stage you want to discuss.','Collaboration':'Share what you are building and where collaboration could help.','Technical conversation':'A technical question or architecture context is enough to begin.','PakkaFollow support':'For account, billing, product issues or questions, include the relevant details but never passwords or API keys.','Other':'A little context is enough to start a useful conversation.'};
   const copyEmail=async()=>{try{await navigator.clipboard.writeText(profile.email);toast.success({id:'contact-email-copied',title:'Email copied',description:'The enquiry address is ready to paste.'})}catch{window.location.href=`mailto:${profile.email}`}};
   const update=(field,value)=>{setForm(current=>({...current,[field]:value}));setErrors(current=>({...current,[field]:''}));setStatus({state:'',message:''})};
   const submit=async event=>{
