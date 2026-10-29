@@ -368,7 +368,7 @@ async function api(req,res,pathName,url){
     let mime=String(req.headers['content-type']||'').toLowerCase().split(';')[0];let image=mime.startsWith('image/');let buf=await readBody(req,image?12*1024*1024:75*1024*1024);
     let converted=null;const inspected=inspectAppleMedia(buf,mime);
     if(inspected?.kind==='image'){converted=await normalizeHeicImage(buf);buf=converted.bytes;mime=converted.mime;image=true;}
-    if(inspected?.kind==='video'){
+    if(inspected?.kind==='video'&&(mime==='video/quicktime'||/^(hvc1|hev1|hevc)$/i.test(buf.toString('ascii',8,12)))){
       const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Save a draft before uploading video.');
       return ok(res,mediaJobs.start({postId,buffer:buf,mime,alt:pureText(url.searchParams.get('alt'),240),caption:pureText(url.searchParams.get('caption'),300),start:url.searchParams.get('start')||0,end:url.searchParams.get('end')||0}));
     }
