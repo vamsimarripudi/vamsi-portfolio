@@ -36,7 +36,7 @@ test('comment form is locked until a verified session while API remains authorit
 
 test('Studio shell has owner contact shortcut and one Insights destination',()=>{
  const html=adminPage({owner:{role:'owner',email:'owner@example.com'}});
- assert.match(html,/class="studio-owner-link" href="mailto:connect@vamsimarripudi\\.me"[^>]*>Vamsi Marripudi/);
+ assert.match(html,/class="studio-owner-link" href="mailto:connect@vamsimarripudi\.me"[^>]*>Vamsi Marripudi/);
  const sidebar=studioSidebar({role:'owner'},{interactive:true});
  assert.match(sidebar,/data-admin-view="analytics"/);
  assert.match(sidebar,/class="studio-nav-label">Insights/);
