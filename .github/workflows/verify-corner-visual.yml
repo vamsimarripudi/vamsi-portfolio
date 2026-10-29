@@ -39,6 +39,7 @@ jobs:
           CORNER_BASE_PATH=/corner \
           SITE_URL=http://127.0.0.1:4141/corner \
           NODE_ENV=development \
+          CORNER_COMPANION_ENABLED=1 \
           DEMO_CONTENT=1 \
           DATA_DIR="$RUNNER_TEMP/corner-visual-data" \
           HOST=127.0.0.1 PORT=4141 \

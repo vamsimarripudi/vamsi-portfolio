@@ -39,7 +39,7 @@ button.setAttribute('aria-pressed','false');button.addEventListener('click',asyn
 const wrapper=button.closest('.reactions');if(!wrapper)return;
 button.disabled=true;reactionPending++;
 try{let response=await request(`/corner/api/posts/${encodeURIComponent(wrapper.dataset.postId)}/reactions`,{reaction:button.dataset.reaction});
-$$('.reactions button').forEach(b=>{b.querySelector('span').textContent=response.counts[b.dataset.reaction]||0;window.CornerMotion?.count(b.querySelector('span'));b.setAttribute('aria-pressed',String(response.yours===b.dataset.reaction))});
+$$('.reactions button',wrapper).forEach(b=>{b.querySelector('span').textContent=response.counts[b.dataset.reaction]||0;window.CornerMotion?.count(b.querySelector('span'));b.setAttribute('aria-pressed',String(response.yours===b.dataset.reaction))});
 window.CornerMotion?.react(button,response.yours===button.dataset.reaction);if(response.yours===button.dataset.reaction)readingSignal('react');
 pulseAction('reaction',button,{active:response.yours===button.dataset.reaction});
 }catch(err){readingSignal('request_failed');toast(err.message,'error');pulseAction('error',button);}finally{button.disabled=false;reactionPending--}

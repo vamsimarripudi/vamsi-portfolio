@@ -38,8 +38,8 @@ try{
  await page.locator('#admin-login button[type="submit"]').click();
  await page.locator('.admin-shell').waitFor({state:'visible',timeout:14000});
  await page.locator('#create-from-overview').click();
- await page.locator('#post-editor input[name="title"]').fill('First photo-led Corner story');
- await page.locator('#post-editor textarea[name="body"]').fill('Two photographs with captions, tested in a real mobile browser.');
+ // V5 derives the title automatically from the single story textarea.
+ await page.locator('#post-editor textarea[name="body"]').fill('First photo-led Corner story. Two photographs with captions, tested in a real mobile browser.');
  const attachmentDialog=page.locator('dialog#editor-media');
  assert.equal(await attachmentDialog.count(),1,'Uploader is rendered as a native dialog');
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'No bottom attachment card is visible before opening');

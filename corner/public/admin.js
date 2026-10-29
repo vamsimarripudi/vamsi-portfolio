@@ -39,32 +39,81 @@
     $('#create-from-overview').onclick=()=>editor();$('#see-schedules').onclick=()=>{active.filter='scheduled';showView('posts')};$('#edit-now').onclick=statusEditor;
   }
   async function posts(){const list=await api('/corner/api/admin/posts?state='+encodeURIComponent(active.filter));
-    root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">Edit ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
+    root.innerHTML=`<section class="admin-table-head"><h2>All your notes.</h2><button id="new-post" class="admin-primary">+ New post</button></section><div class="admin-filter">${states.map(s=>`<button data-filter="${s}" class="${active.filter===s?'is-active':''}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>${list.length?`<div class="admin-table-scroller"><table class="admin-table"><thead><tr><th>POST</th><th>TYPE</th><th>STATUS</th><th>UPDATED</th><th>ACTIONS</th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.title)}</strong><small>${esc(p.slug)}</small></td><td>${esc(typeNames[p.type])}</td><td>${tag(p.state)}</td><td>${readable(p.updated_at)}</td><td><button data-edit="${p.id}" type="button">${p.state==='archived'?'View':'Edit'} ↗</button>${p.state==='draft'?`<button data-delete-draft="${p.id}" type="button">Delete</button>`:''}${p.state==='archived'?`<button data-restore-draft="${p.id}" type="button">Restore</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:empty('Nothing here yet.','Create the first post or change the filter.')}`;
     $('#new-post').onclick=()=>editor();$$('[data-filter]').forEach(b=>b.onclick=()=>{active.filter=b.dataset.filter;posts()});$$('[data-edit]').forEach(b=>b.onclick=()=>editor(b.dataset.edit));
+    $$('[data-delete-draft]').forEach(button=>button.onclick=async()=>{if(!confirm('Move draft to Archived?'))return;try{await api('/corner/api/admin/posts/'+button.dataset.deleteDraft,'DELETE');await posts()}catch(error){toast(error.message,'error')}});
+    $$('[data-restore-draft]').forEach(button=>button.onclick=async()=>{try{await api('/corner/api/admin/posts/'+button.dataset.restoreDraft+'/restore','POST');await posts()}catch(error){toast(error.message,'error')}});
   }
-  function postFields(p={}){const lead=String(p.body||'').match(/^> ([^\n]{1,280})(?:\n\n|$)/);const main=lead?String(p.body).slice(lead[0].length):p.body||'';return `<div class="editor-topline"><p>${p.id?'Editing '+esc(p.slug):'NEW STORY'} ${p.state?tag(p.state):tag('draft')}</p><span class="admin-hint" id="save-indicator">${p.id?'All edits saved':'Ready to write'}</span></div>
-    <div class="editor-inline"><label>Type<select name="type">${variantTypes.map(t=>`<option value="${t}" ${p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label><label>Symbol / emoji<input name="emoji" maxlength="8" placeholder="✳" value="${esc(p.emoji||'')}"></label></div>
-    <label>Title<input name="title" maxlength="150" required placeholder="A small idea worth keeping." value="${esc(p.title||'')}"></label>
-    <label>Short preview<input name="excerpt" maxlength="380" placeholder="One line to draw someone in." value="${esc(p.excerpt||'')}"></label>
-    <label>Opening quote (optional)<textarea name="quote" rows="2" maxlength="280" placeholder="A sentence worth remembering.">${esc(lead?.[1]||'')}</textarea></label>
-    <label>Full story<textarea name="body" minlength="2" maxlength="25000" rows="9" placeholder="Tell the story here, in your own words…">${esc(main)}</textarea></label>
-    <label>Tags <input name="tags" maxlength="200" placeholder="Builds, ideas, things worth sharing" value="${esc((p.tags||[]).join(', '))}"></label>
-    <div class="editor-checks"><label><input type="checkbox" name="featured" ${p.featured?'checked':''}> Feature</label><label><input type="checkbox" name="pinned" ${p.pinned?'checked':''}> Pin</label><label><input type="checkbox" name="milestone" ${p.milestone?'checked':''}> Milestone</label><label><input type="checkbox" name="allowComments" ${p.allow_comments?'checked':''}> Comments</label><label><input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}> Reactions</label><label><input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}> Public Coming Up teaser</label></div>
-    <div class="editor-actions"><button type="button" class="secondary" id="save-post">Save changes</button><button type="button" id="publish-post">Publish</button><button type="button" class="secondary" id="schedule-post">Schedule</button><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media"><span class="corner-media-trigger-mark" aria-hidden="true">＋</span> Attach files<span class="corner-media-count" id="media-count" hidden></span></button>${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div>`}
-  function formValues(form){return {type:form.elements.type.value,title:form.elements.title.value,emoji:form.elements.emoji.value,excerpt:form.elements.excerpt.value,body:(form.elements.quote.value.trim()?'> '+form.elements.quote.value.trim()+'\n\n':'')+form.elements.body.value,tags:form.elements.tags.value,featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};}
-  function updatePreview(form){let p=formValues(form);let card=$('.preview-card');if(!card)return;card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
-    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title||'Your next story.';$('.preview-excerpt',card).textContent=p.excerpt||'Just enough to invite someone in.';
-    const quote=$('.preview-story-quote',card);if(quote){quote.textContent=form.elements.quote.value.trim();quote.hidden=!quote.textContent}
-    $('.preview-story-body',card).textContent=form.elements.body.value||'';$('.preview-symbol',card).textContent=p.emoji||'✳';
+  const autoTitle=body=>{
+    const lines=String(body||'').trim().split(/[\n.!?]+/).map(s=>s.trim()).filter(Boolean);
+    const first=(lines[0]||'A moment in pictures').replace(/^>\s*/,'');
+    return first.length<=95?first:first.slice(0,91).replace(/\s+\S*$/,'')+'…';
+  };
+  const autoType=body=>{
+    const text=String(body||'').toLowerCase();
+    if(/\b(birthday|congratulations|festival|celebrate|anniversary|best wishes)\b/.test(text))return 'wish';
+    if(/\b(shipped|launched|building|release|programming|developer|project|api|code|product)\b/.test(text))return 'build';
+    if(/\b(photo|picture|rain|sunset|moment|beautiful sky|video|photograph)\b/.test(text))return 'moment';
+    if(text.length>650)return 'journal';return 'tech_note';
+  };
+  function postFields(p={}){
+    const id=!!p.id;
+    return `<div class="v5-composer"><div class="v5-editor-surface"><div class="v5-editor-top"><strong>${id?'EDIT YOUR STORY':'YOUR CORNER / NEW STORY'} ${tag(p.state||'draft')}</strong><button type="button" class="v5-editor-menu-button" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings">···</button></div>
+    <label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, a build, something worth sharing…">${esc(p.body||'')}</textarea>
+    <div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>
+      <label>Presentation<select name="type"><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label>
+      <label>Symbol <input name="emoji" maxlength="8" value="${esc(p.emoji||'✳')}"></label>
+      <label>Allow comments <input type="checkbox" name="allowComments" ${p.allow_comments!==false&&p.allow_comments!==0?'checked':''}></label>
+      <label>Allow reactions <input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}></label>
+      <label>Featured <input type="checkbox" name="featured" ${p.featured?'checked':''}></label>
+      <label>Pinned <input type="checkbox" name="pinned" ${p.pinned?'checked':''}></label>
+      <label>Milestone <input type="checkbox" name="milestone" ${p.milestone?'checked':''}></label>
+      <label>Public upcoming teaser <input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}></label>
+      <p class="v5-edit-hint">Your title and summary are derived from your writing. Change the presentation only if needed.</p>
+    </div><div class="v5-editor-media-actions"><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media">＋ Attach photo or video <span class="corner-media-count" id="media-count" hidden></span></button><span id="save-indicator" class="v5-editor-status">${id?'Last saved '+esc(p.updated_at||''):'Start writing to autosave'}</span></div></div>
+    <div class="editor-actions v5-editor-actions"><button type="button" class="secondary" id="save-post">Save draft</button><button type="button" id="publish-post">Publish ↗</button><button type="button" class="secondary" id="schedule-post">Schedule</button>${p.state==='draft'&&id?'<button type="button" class="v5-editor-danger" id="delete-draft">Delete draft</button>':''}${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div></div>`;
+  }
+  function formValues(form){
+    const body=form.elements.body.value,chosen=form.elements.type.value;
+    const type=chosen==='auto'?autoType(body):chosen;
+    return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
+  }
+  function updatePreview(form){const p=formValues(form),card=$('.preview-card');if(!card)return;
+    card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
+    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();
+    $('.preview-title',card).textContent=p.title;
+    $('.preview-excerpt',card).textContent=p.excerpt||'A moment taking shape.';
+    const quote=$('.preview-story-quote',card);if(quote){quote.hidden=true;quote.textContent='';}
+    $('.preview-story-body',card).textContent=p.body;
+    $('.preview-symbol',card).textContent=p.emoji;
     $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
   }
   function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
-  async function editor(id=null){clearTimeout(active.saveTimer);active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:false,tags:[]};active.post=p;
+  async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};active.post=p;
     root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
-    const form=$('#post-editor');
-    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.id&&p.state==='draft'){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1250)}});
+    const form=$('#post-editor');    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
+    const hideSettings=()=>{if(menu){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}};
+    toggle?.addEventListener('click',()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden))});
+    document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu?.hidden){hideSettings();toggle.focus()}},{signal:active.editorAbort.signal});
+
+    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{active.dirty=true;$('#save-indicator').textContent='Unsaved edits';updatePreview(form);if(p.state==='draft'&&form.elements.body.value.trim()){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)}});
     $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
-    async function save(quiet=false){if(!form.elements.title.value.trim()){if(!quiet)toast('Add a title first.','error');return null}clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';try{let value=formValues(form);if(p.id){p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...value,version:p.version});}else{p=await api('/corner/api/admin/posts','POST',value);active.post=p;}$('#save-indicator').textContent='Saved · v'+p.version;active.dirty=false;if(!quiet)toast('Draft saved.','success');return p;}catch(err){$('#save-indicator').textContent=err.status===409?'Edit conflict — reload':'Could not save';if(!quiet)toast(err.message,'error');return null}}
+    let pendingSave=null;
+    async function save(quiet=false){
+      if(pendingSave)return pendingSave;
+      if(!form.elements.body.value.trim()&&!p.id){if(!quiet)toast('Write something or attach media first.','error');return null;}
+      clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
+      pendingSave=(async()=>{try{
+        const values=formValues(form);
+        if(p.id)p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version});
+        else p=await api('/corner/api/admin/posts','POST',values);
+        active.post=p;active.dirty=false;
+        $('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        if(!quiet)toast('Draft saved.','success');return p;
+      }catch(error){$('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';if(!quiet)toast(error.message,'error');return null}
+      finally{pendingSave=null}})();return pendingSave;
+    }
     $('#save-post').onclick=()=>save();$('#publish-post').onclick=async()=>{let saved=await save(true);if(!saved)return;try{p=await api('/corner/api/admin/posts/'+p.id+'/publish','POST');toast('Published. Your story is live.','success');editor(p.id)}catch(err){toast(err.message,'error')}};
     $('#schedule-post').onclick=()=>{
       const panel=$('#schedule-panel');
@@ -108,6 +157,7 @@
       panel.showModal();
       panel.querySelector('[name=localTime]').focus();
     };
+    $('#delete-draft')?.addEventListener('click',async()=>{if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;try{await api('/corner/api/admin/posts/'+p.id,'DELETE');toast('Draft moved to Archived.','success');showView('posts')}catch(error){toast(error.message,'error')}});
     $('#archive-post')?.addEventListener('click',async()=>{if(!confirm('Archive this story? It will no longer be public.'))return;try{await api('/corner/api/admin/posts/'+p.id+'/archive','POST');toast('Post archived.','success');showView('posts')}catch(err){toast(err.message,'error')}});
     $('#restore-post')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/posts/'+p.id+'/restore','POST');toast('Post restored.','success');editor(p.id)}catch(err){toast(err.message,'error')}});
     $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
@@ -119,7 +169,7 @@
     form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
   }
   const uploadLimit=8;
-  const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
+  const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','video/mp4','video/quicktime','video/webm']);
   function showEditorCover(items){
     const host=$('[data-editor-photo-preview]');
     if(!host)return;
@@ -148,9 +198,9 @@
       (attachments.length?'<div class="media-gallery">'+attachments.map((x,index)=>mediaCard(x,true,index,attachments.length)).join('')+'</div>':
        '<p class="corner-media-empty">No files attached yet. Select a photo or video below to add it to this story.</p>')+
       '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
-      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required></label>'+
+      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/*,video/mp4,video/quicktime,video/webm,.heic,.heif,.mov" required></label>'+
       '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
-      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, WebP or GIF up to 8 MB; MP4/WebM up to 25 MB.</p>'+
+      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, HEIC, WebP, GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. Clips are optimized before playback.</p>'+
       '<p data-upload-status role="status" aria-live="polite"></p>'+
       '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
       '</form></section>'+
@@ -236,7 +286,13 @@
       entry.caption.name='caption';entry.caption.maxLength=300;
       entry.caption.placeholder='A moment worth remembering…';
       captionLabel.append(entry.caption);
-      fields.append(altLabel,captionLabel);
+      fields.append(altLabel,captionLabel);      if(entry.file.type.startsWith('video/')&&entry.file.type!=='video/webm'){
+        const videoTrim=document.createElement('div');videoTrim.className='v5-video-trim';
+        videoTrim.innerHTML='<label>Trim from (seconds)<input type="number" name="start" min="0" max="179" step="0.5" value="0"></label><label>Trim until (seconds, optional)<input type="number" name="end" min="0" max="180" step="0.5" placeholder="End of clip"></label>';
+        fields.append(videoTrim);
+        entry.start=videoTrim.querySelector('[name=start]');entry.end=videoTrim.querySelector('[name=end]');
+      }
+
       if(entry.file.type==='image/jpeg'||entry.file.type==='image/png'||entry.file.type==='image/webp'){
         const crop=document.createElement('button');crop.type='button';crop.dataset.cropUpload='';crop.className='corner-crop-trigger';crop.textContent='Crop / reframe ↗';
         crop.onclick=async()=>{
@@ -266,7 +322,7 @@
       selectedSignature=signature;
       cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
-      if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use a JPG, PNG, WebP, GIF, MP4 or WebM.';submit.disabled=true;return}
+      if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use JPG, PNG, HEIC, WebP, GIF, MP4, MOV or WebM.';submit.disabled=true;return}
       status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
       for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
@@ -290,7 +346,7 @@
           const isImage=entry.file.type.startsWith('image/');
           const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
           if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
-          if(!entry.file.size||entry.file.size>(isImage?8:25)*1024*1024)throw Error('File is too large: '+entry.file.name);
+          if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
           if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
           if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
         }
@@ -301,7 +357,17 @@
         }
         for(const entry of pending.filter(item=>!item.done)){
           status.textContent='Uploading '+(sent+1)+' of '+pending.filter(item=>!item.done).length+'…';
-          await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim());
+          const sentMedia=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+          if(sentMedia?.jobId){let complete=false;
+            for(let poll=0;poll<110;poll++){
+              await new Promise(resolve=>setTimeout(resolve,1600));
+              const result=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(sentMedia.jobId)+'?postId='+encodeURIComponent(postId));
+              status.textContent='Optimizing video · '+result.state;
+              if(result.state==='ready'){complete=true;break}
+              if(result.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264 from iPhone.');
+            }
+            if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+          }
           entry.done=true;sent++;
         }
         toast(sent===1?'Photo or video attached.':sent+' files attached.','success');
@@ -337,11 +403,11 @@
       '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?'Advanced settings ↗':'Edit details ↗')+'</button>'+
       '</article>';
   }
-  async function upload(file,postId,alt,caption=''){
+  async function upload(file,postId,alt,caption='',trim={}){
     if(!file)throw Error('Choose a file');
     if(!supportedMedia.has(file.type))throw Error('Unsupported file type');
-    if(file.size>(file.type.startsWith('image/')?8:25)*1024*1024)throw Error('File is too large');
-    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||'')});
+    if(file.size>(file.type.startsWith('image/')?12:75)*1024*1024)throw Error('File is too large');
+    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||''),start:String(trim.start||0),end:String(trim.end||0)});
     const response=await fetch('/corner/api/admin/media/upload?'+params.toString(),{
       method:'POST',credentials:'same-origin',headers:{'content-type':file.type},body:file
     });
@@ -350,10 +416,20 @@
     return result.data;
   }
   async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{if(!confirm('Delete this media file? It will be removed from its story.'))return;button.disabled=true;try{await api('/corner/api/admin/media/'+encodeURIComponent(button.dataset.mediaDelete),'DELETE');toast('Media deleted.','success');await media()}catch(error){toast(error.message,'error');button.disabled=false}});}
-  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div><button type="submit">Save media details</button></form></section>`;
-    $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
+  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save media details</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
+    $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor [data-v5-restore-photo]')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/media/'+id+'/edits','DELETE');toast('Original restored.','success');returnPostId?editor(returnPostId):media()}catch(error){toast(error.message,'error')}});$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});if(x.mime_type.startsWith('image/'))await api('/corner/api/admin/media/'+id+'/edits','POST',{preset:f.elements.preset.value,crop:f.elements.crop.value,rotation:Number(f.elements.rotation.value),brightness:Number(f.elements.brightness.value),contrast:Number(f.elements.contrast.value),saturation:Number(f.elements.saturation.value)});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
   }
-  async function comments(){const list=await api('/corner/api/admin/comments?state=pending');root.innerHTML=`<section class="admin-section"><header><h2>Comments awaiting review.</h2></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}">Approve ✓</button><button data-moderate="hide" data-comment="${c.id}">Hide</button><button data-moderate="delete" data-comment="${c.id}">Delete</button></footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
+  async function comments(){const list=await api('/corner/api/admin/comments?state='+encodeURIComponent(active.commentFilter||'pending'));root.innerHTML=`<section class="admin-section"><header><h2>Conversations and moderation.</h2><div class="v5-comment-filters">${['pending','approved','hidden','deleted'].map(value=>`<button type="button" data-v5-comment-filter="${value}" class="${(active.commentFilter||'pending')===value?'is-active':''}">${value}</button>`).join('')}</div></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}">Approve ✓</button><button data-moderate="hide" data-comment="${c.id}">Hide</button><button data-moderate="delete" data-comment="${c.id}">Delete</button>${c.state==='approved'?`<button type="button" data-v5-studio-reply="${c.id}" data-v5-studio-post="${c.post_id}">Reply ↗</button>`:''}</footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
+    $$('[data-v5-comment-filter]').forEach(button=>button.onclick=()=>{active.commentFilter=button.dataset.v5CommentFilter;comments()});
+    $$('[data-v5-studio-reply]').forEach(button=>button.onclick=()=>{
+      const commentId=button.dataset.v5StudioReply,postId=button.dataset.v5StudioPost;
+      const host=button.closest('.admin-comment');if(!host)return;
+      host.querySelector('.v5-admin-reply-form')?.remove();
+      const reply=document.createElement('form');reply.className='v5-admin-reply-form';
+      reply.innerHTML='<label>Reply in this thread<textarea required minlength="3" maxlength="1000" rows="3" placeholder="Write a reply…"></textarea></label><button type="submit">Publish author reply ↗</button>';
+      host.append(reply);reply.querySelector('textarea').focus();
+      reply.onsubmit=async event=>{event.preventDefault();const save=reply.querySelector('button');save.disabled=true;try{await api('/corner/api/v5/posts/'+postId+'/threads','POST',{body:reply.querySelector('textarea').value,parentId:commentId});toast('Your reply is live.','success');comments()}catch(error){toast(error.message,'error');save.disabled=false}};
+    });
     $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast('Comment updated.','success');comments()}catch(err){toast(err.message,'error')}});
   }
   async function guestbook(){

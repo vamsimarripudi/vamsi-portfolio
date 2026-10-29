@@ -1,5 +1,5 @@
 FROM node:22.16.0-bookworm-slim
-WORKDIR /srv/corner
+WORKDIR /srv/cornerRUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY . .
 RUN npm install --omit=dev --no-audit --no-fund --package-lock=false
 RUN node --version && node --no-warnings --test tests/*.test.mjs
