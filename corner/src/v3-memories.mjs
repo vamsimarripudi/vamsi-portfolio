@@ -173,19 +173,14 @@ export class V3Memories{
  }
  nowHistory({limit=40}={}){
   this.check();
-  // Expired public updates remain in history; entries superseded before scheduled activation do not.
-  const sql="WITH snapshots AS ("+
-    " SELECT version,label,detail,icon,is_active,active_from,active_until,changed_at,"+
-    " LEAD(changed_at) OVER (ORDER BY version) AS superseded_at FROM v3_now_history)"+
-    " SELECT version,label,detail,icon,changed_at AS changedAt FROM snapshots"+
-    " WHERE is_active=1 AND label<>''"+
-    " AND (active_from IS NULL OR (active_from<=? AND (superseded_at IS NULL OR active_from<superseded_at)))"+
-    " AND (active_until IS NULL OR active_until>changed_at)"+
-    " AND (active_from IS NULL OR active_until IS NULL OR active_until>active_from)"+
-    " ORDER BY version DESC LIMIT ?";
-  return this.store.all(sql,now(),clamp(Number(limit)||40,1,100));
+  // Public history must not resurrect yesterday's Pulse after it expires or is replaced.
+  // The complete timeline remains owner-only through adminNowHistory().
+  const current=this.store.currentStatus();
+  if(!current||Number(limit)===0)return [];
+  return [{version:current.version,label:current.label,detail:current.detail,
+    icon:current.icon,changedAt:current.updatedAt,expiresAt:current.expiresAt}];
  }
- adminNowHistory(user){this.owner(user);return this.store.all('SELECT * FROM v3_now_history ORDER BY version DESC LIMIT 100')}
+  adminNowHistory(user){this.owner(user);return this.store.all('SELECT * FROM v3_now_history ORDER BY version DESC LIMIT 100')}
  recordNow(user,data){
   this.owner(user);
   return this.store.transaction(()=>{

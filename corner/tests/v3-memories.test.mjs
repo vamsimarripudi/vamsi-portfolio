@@ -86,7 +86,7 @@ test('Now history is private for inactive entries and audited for owner',t=>{
  m.recordNow(owner,{label:'The start',detail:'A new day',icon:'✳',isActive:true});
  m.recordNow(owner,{label:'Private preview',detail:'Never publish this',icon:'✳',isActive:false});
  assert.equal(m.adminNowHistory(owner).length,2);
- assert.equal(m.nowHistory().length,1);
+ assert.equal(m.nowHistory().length,0,'Old Pulse is no longer public after the owner replaces it');
  assert.doesNotMatch(nowHistoryPage(m,store.currentStatus()),/Private preview/);
  assert.throws(()=>m.recordNow({role:'member',id:'reader'},{label:'No'}),{code:'OWNER_REQUIRED'});
  assert.match(memoriesStudioPage(m,owner),/Memories Studio/);

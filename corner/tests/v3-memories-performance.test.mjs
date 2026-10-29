@@ -52,13 +52,14 @@ test('image eligibility cache invalidates on metadata edits and post archive',t=
  assert.throws(()=>m.album(album.slug),{code:'NOT_FOUND'});
  assert.equal(scans,3,'Post access restrictions remain enforced');
 });
-test('expired public Now updates remain in chronological history',t=>{
+test('expired Corner Pulse stays in private owner history but disappears publicly',t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
  const m=memories(store),base=Date.now(),days=n=>new Date(base+n*86400000).toISOString();
  m.recordNow(owner,{label:'Public yesterday',detail:'An old public update',icon:'✳',isActive:true,activeFrom:days(-4),activeUntil:days(-1)});
  store.exec('UPDATE v3_now_history SET changed_at=? WHERE label=?',days(-3),'Public yesterday');
  m.recordNow(owner,{label:'Private latest',detail:'Do not show',isActive:false});
- assert.deepEqual(m.nowHistory().map(x=>x.label),['Public yesterday']);
+ assert.deepEqual(m.nowHistory(),[],'Expired public Pulse must not be rediscovered');
+ assert.equal(m.adminNowHistory(owner).length,2,'Owner audit history remains available');
 });
 test('future scheduled Now update superseded before activation stays private',t=>{
  const store=new Store(':memory:');t.after(()=>store.close());
