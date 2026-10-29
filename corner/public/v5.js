@@ -50,7 +50,7 @@
     if(!names.includes(data.type)||data.type!==event.type||!Number.isSafeInteger(seq)||seq<=cursor)return;
     cursor=seq;window.CornerPublicLive?.apply(data);
     document.dispatchEvent(new CustomEvent('corner:realtime',{detail:{id:data.id||String(seq),type:data.type,entityId:data.entityId,approved:data.type==='comment.created'}}));
-   }catch{}};
+   }catch{/* Invalid real-time events are ignored; no private content is logged. */}};
   const connect=()=>{if(connection||document.hidden)return;connection=new EventSource(prefix+'/api/realtime/stream?since='+encodeURIComponent(cursor));names.forEach(name=>connection.addEventListener(name,handle));};
   const disconnect=()=>{connection?.close();connection=null};
   document.addEventListener('visibilitychange',()=>{if(document.hidden)disconnect();else connect()});
@@ -67,7 +67,7 @@
  document.addEventListener('click',async event=>{
   const share=event.target.closest('[data-v5-share-post]');if(!share)return;
   const url=new URL(share.dataset.v5SharePost,location.origin).href;
-  try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url);}catch{}
+  try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url);}catch{/* Browser share may be cancelled by the reader. */}
  });
  // Restore persisted post reactions without exposing reader identity.
  const groups=new Map();
@@ -83,7 +83,7 @@
     const amount=button.querySelector('span');if(amount)amount.textContent=String(data.counts?.[button.dataset.reaction]||0);
     button.setAttribute('aria-pressed',String(data.yours===button.dataset.reaction));
    });
-  }catch{}
+  }catch{/* Existing like state is optional when offline. */}
  });
  const root=$('[data-v5-threads]');
  if(!root)return;
