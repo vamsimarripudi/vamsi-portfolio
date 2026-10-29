@@ -19,18 +19,15 @@
  if(!toggle||!restore)return;
  const header=document.querySelector('.corner-public-header');
  const dock=header?.querySelector('.category-tabs.corner-rail');
- let previous=0,manual=false;
  const reconcile=()=>{
   const focus=root.dataset.v6Reading==='focus';
   if(dock)dock.inert=focus;
   if(header)header.inert=focus;
   restore.hidden=!focus;
-  if(!focus)manual=false;
  };
  const observer=new MutationObserver(reconcile);
  observer.observe(root,{attributes:true,attributeFilter:['data-v6-reading']});
- const enter=()=>{manual=true;root.dataset.v6Reading='focus';reconcile()};
- const exit=()=>{manual=false;delete root.dataset.v6Reading;reconcile()};
+ const exit=()=>{delete root.dataset.v6Reading;reconcile()};
  toggle.addEventListener('click',()=>requestAnimationFrame(reconcile));
  restore.addEventListener('click',()=>requestAnimationFrame(reconcile));
  window.addEventListener('pageshow',reconcile);
