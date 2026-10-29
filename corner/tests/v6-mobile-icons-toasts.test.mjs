@@ -29,5 +29,6 @@ test('Focus reading remains icon-based only on phones, with accessible name',()=
  const reader=read('v6-reader.js'),css=read('v6-mobile-ui.css');
  assert.match(reader,/aria-label','Enter distraction-free reading mode/);
  assert.match(css,/v6-reader-toggle:before/);
+ assert.match(reader,/post-carousel/,'Reading focus must encompass media before body text');
  assert.match(css,/v6-focus-icon\.svg/);
 });

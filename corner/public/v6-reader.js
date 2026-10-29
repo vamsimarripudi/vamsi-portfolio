@@ -22,8 +22,12 @@
  const focusedControl=()=>document.activeElement?.matches?.(inputSelector);
  const dialogOpen=()=>!!document.querySelector('dialog[open]');
  const insideReading=()=>{
-  const rect=content.getBoundingClientRect();
-  return rect.top<innerHeight*.64&&rect.bottom>innerHeight*.70;
+  // Start focus while viewing a story's cover, not only after its text begins.
+  // End before post reactions/conversation so those controls remain discoverable.
+  const start=article.querySelector('.post-carousel,.post-photo,.post-gallery')||content;
+  const mediaBox=start.getBoundingClientRect();
+  const bodyBox=content.getBoundingClientRect();
+  return mediaBox.top<innerHeight*.64&&bodyBox.bottom>innerHeight*.55;
  };
  function change(next){
   if(active===next)return;
