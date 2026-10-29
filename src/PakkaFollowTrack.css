@@ -1,0 +1,49 @@
+#root .pf-track-page{animation:pf-enter .28s ease both}
+#root .pf-track-page .pf-track-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+#root .pf-track-page .pf-track-hero h1{margin:.25rem 0 .6rem}
+#root .pf-track-page .pf-track-lead{max-width:70ch;font-size:.87rem;line-height:1.6;color:#64748b}
+#root .pf-track-page .pf-track-hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#root .pf-track-page .pf-track-hero-actions :is(a,button),#root .pf-track-page .pf-track-pagination button,#root .pf-track-page .pf-track-state button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:9px 12px;border:1px solid #cdd7e3;border-radius:10px;background:#fff;color:#253c5a;font-size:.78rem;font-weight:700;text-decoration:none;cursor:pointer}
+#root .pf-track-page :is(button,a):disabled{opacity:.48;cursor:not-allowed}
+#root .pf-track-page .pf-track-summary{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px;padding:14px 18px;border:1px solid #dfe5ed;border-radius:14px;background:#fff}
+#root .pf-track-page .pf-track-summary>div{display:flex;align-items:center;gap:14px}
+#root .pf-track-page .pf-track-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#ecf3fe;color:#345dbb}
+#root .pf-track-page .pf-track-summary small,#root .pf-track-page .pf-track-summary strong{display:block}
+#root .pf-track-page .pf-track-summary small{color:#65758a;font-size:.7rem}
+#root .pf-track-page .pf-track-summary strong{font-size:1.55rem;line-height:1.3;font-variant-numeric:tabular-nums}
+#root .pf-track-page .pf-track-summary p{max-width:45ch;margin:0;color:#64748b;font-size:.75rem;line-height:1.5}
+#root .pf-track-page .pf-track-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+#root .pf-track-page .pf-track-title h2{margin:4px 0;font-size:1.25rem}
+#root .pf-track-page .pf-track-mail{display:inline-flex;align-items:center;gap:7px;color:#587089;font-size:.74rem}
+#root .pf-track-page .pf-track-filters{display:grid;grid-template-columns:minmax(180px,1.6fr) repeat(2,minmax(150px,1fr));gap:10px;margin-bottom:15px}
+#root .pf-track-page .pf-track-filters label{display:grid;gap:6px;color:#4c5d72;font-size:.76rem;font-weight:650}
+#root .pf-track-page .pf-track-filters label>span{display:flex;align-items:center;gap:5px}
+#root .pf-track-page .pf-track-filters :is(input,select){width:100%;min-width:0;min-height:44px;margin:0;padding:10px 12px;border:1px solid #ccd7e4;border-radius:9px;background:#fff;color:#223148;font:inherit}
+#root .pf-track-page .pf-track-rows{list-style:none;margin:0;padding:0}
+#root .pf-track-page .pf-track-rows li{display:grid;grid-template-columns:minmax(0,1fr) minmax(135px,.4fr) auto;align-items:center;gap:14px;padding:17px 3px;border-top:1px solid #e1e6ee;animation:pf-enter .2s ease both}
+#root .pf-track-page .pf-track-row-main{min-width:0}
+#root .pf-track-page .pf-track-row-main small,#root .pf-track-page .pf-track-row-main p{color:#627189;font-size:.73rem;overflow-wrap:anywhere}
+#root .pf-track-page .pf-track-row-main h3{margin:5px 0;font-size:.96rem;font-weight:750}
+#root .pf-track-page .pf-track-row-main p{margin:0}
+#root .pf-track-page .pf-track-row-state{display:grid;gap:8px;justify-items:start}
+#root .pf-track-page .pf-track-row-state span{display:inline-flex;padding:4px 9px;border:1px solid #cadae6;border-radius:100px;color:#47647d;text-transform:capitalize;font-size:.7rem}
+#root .pf-track-page .pf-track-row-state span[data-status=NEW]{background:#eaf4ff;color:#21509c}
+#root .pf-track-page .pf-track-row-state span[data-status=FOLLOW_UP_DUE]{background:#fff1e1;color:#815015}
+#root .pf-track-page .pf-track-row-state span[data-status=COMPLETED]{background:#e7f8ee;color:#225f3b}
+#root .pf-track-page .pf-track-row-state small{display:flex;gap:5px;align-items:center;color:#69768a;font-size:.71rem}
+#root .pf-track-page .pf-track-open{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:#244e8a;font-size:.78rem;font-weight:750;text-decoration:none}
+#root .pf-track-page .pf-track-open:hover{text-decoration:underline}
+#root .pf-track-page .pf-track-state{display:grid;justify-items:center;gap:12px;min-height:205px;align-content:center;padding:22px;text-align:center;color:#516579}
+#root .pf-track-page .pf-track-state p{margin:0;max-width:55ch;font-size:.8rem;line-height:1.55}
+#root .pf-track-page .pf-track-error{color:#8a3030}
+#root .pf-track-page .pf-track-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding-top:14px;border-top:1px solid #e3e7ef}
+#root .pf-track-page .pf-track-pagination span{font-size:.75rem;color:#59697f}
+#root .pf-track-page .pf-track-footnote{margin:15px 0;padding:13px 16px;border:1px dashed #c9d4e4;border-radius:11px;color:#617188;font-size:.74rem;line-height:1.5}
+#root .pf-track-page .pf-track-footnote strong{display:block;margin-bottom:4px;color:#314968}
+#root .pf-track-page .pf-track-footnote p{margin:0}
+#root .pf-track-page .pf-loader{width:25px;height:25px;border:3px solid #dce6f4;border-top-color:#345dbb;border-radius:50%;animation:pf-spin .7s linear infinite}
+#root .pf-track-page .pf-spin{animation:pf-spin .75s linear infinite}
+@keyframes pf-spin{to{transform:rotate(360deg)}}@keyframes pf-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(max-width:940px){#root .pf-track-page .pf-track-filters{grid-template-columns:1fr 1fr}#root .pf-track-page .pf-track-filters label:first-child{grid-column:1/-1}#root .pf-track-page .pf-track-rows li{grid-template-columns:minmax(0,1fr) auto}#root .pf-track-page .pf-track-row-state{grid-column:1}#root .pf-track-page .pf-track-open{grid-column:2;grid-row:1/3}}
+@media(max-width:640px){#root .pf-track-page .pf-track-hero,#root .pf-track-page .pf-track-title,#root .pf-track-page .pf-track-summary{flex-direction:column;align-items:flex-start}#root .pf-track-page .pf-track-filters{grid-template-columns:1fr}#root .pf-track-page .pf-track-filters label:first-child{grid-column:auto}#root .pf-track-page .pf-track-rows li{gap:8px;padding:14px 0}}
+@media(prefers-reduced-motion:reduce){#root .pf-track-page,#root .pf-track-page .pf-track-rows li,#root .pf-track-page .pf-spin,#root .pf-track-page .pf-loader{animation:none!important;transition:none!important}}

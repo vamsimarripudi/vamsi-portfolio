@@ -141,3 +141,8 @@
 .ws-measurement-indicator {display:block;width:8px;height:8px;flex:none;border-radius:50%;background:#7c94b9;box-shadow:0 0 0 4px #dce6f3}
 #root .track-unified-shell .ws-collection-warning {margin:12px 0;padding:13px;border-left:3px solid #ad654a;border-radius:10px;background:#fff3eb;color:#584338}
 @media(max-width:767px){#root .track-unified-shell .ws-measurement-status{padding:11px 12px}}
+
+/* Reply state is visible without relying on a transient toast. */
+#root .track-unified-shell .track-reply-feedback {margin:.2rem 0;padding:.7rem .85rem;border-radius:9px;border:1px solid #bdcde2;background:#f1f6ff;color:#233d60;font-size:.8rem;line-height:1.5}
+#root .track-unified-shell .track-reply-feedback.success {border-color:#badcc9;background:#eefaf2;color:#214f37}
+#root .track-unified-shell .track-reply-feedback.error {border-color:#e7bec0;background:#fff1f1;color:#842629}

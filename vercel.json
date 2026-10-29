@@ -108,6 +108,10 @@
       "destination": "/track/index.html"
     },
     {
+      "source": "/track/pakkafollow",
+      "destination": "/track/index.html"
+    },
+    {
       "source": "/track/enquiries",
       "destination": "/track/index.html"
     },
