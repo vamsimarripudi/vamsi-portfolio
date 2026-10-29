@@ -87,9 +87,4 @@ body.corner-comfort .v6-toast .v6-toast-close:focus-visible{outline:3px solid #3
  .corner-comfort .admin-top>div:last-child{display:flex;align-items:center;justify-content:flex-end}
  .corner-comfort .admin-top .admin-owner-dot{display:none}
 }
-@media(max-width:360px){
- .corner-comfort .admin-shell .admin-nav{display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:row!important;
-  overflow:visible!important;gap:4px!important}
- .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){min-width:0!important;width:100%!important}
-}
+/* At 320px the seven 44px targets remain horizontally scrollable, not clipped. */
