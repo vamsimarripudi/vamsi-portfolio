@@ -18,6 +18,7 @@
    if(opening){const visible=[...profileCard.querySelectorAll('a[href],button')].find(el=>!el.hidden&&el.getClientRects().length);visible?.focus({preventScroll:true});}
   });
   profileCard.addEventListener('click',event=>{if(event.target.closest('a[href]'))close()});
+  profileCard.querySelector('[data-profile-dismiss]')?.addEventListener('click',()=>close(true));
   document.addEventListener('pointerdown',event=>{if(!profileCard.hidden&&!profileToggle.parentElement.contains(event.target))close()},{passive:true});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!profileCard.hidden){event.preventDefault();close(true)}});
  }
