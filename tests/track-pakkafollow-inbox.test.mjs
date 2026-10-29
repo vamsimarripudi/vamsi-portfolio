@@ -6,7 +6,7 @@ test('PakkaFollow inbox is authenticated, filtered and not indexed',()=>{
  const track=source('src/Track.jsx'),api=source('api/lib/track.js'),config=JSON.parse(source('vercel.json'));
  assert.match(track,/<Route path="pakkafollow"/);
  assert.match(track,/session === 'guest'/);
- assert.match(api,/productOnly = source === 'pakkafollow'/);
+ assert.match(api,/onlyPakkaFollow = source === 'pakkafollow'/);
  assert.match(api,/e\.intent IN \('PakkaFollow Support','PakkaFollow Billing','PakkaFollow Enquiry'\)/);
  assert.ok(config.rewrites.some(x=>x.source==='/track/pakkafollow'));
  assert.ok(config.headers.some(x=>x.source==='/track/:path*'&&x.headers.some(h=>h.key==='X-Robots-Tag'&&h.value.includes('noindex'))));

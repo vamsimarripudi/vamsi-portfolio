@@ -202,13 +202,13 @@ export const listEnquiries = async ({ query: searchText = '', status = '', inten
   const checkedIntent = cleanHeader(intent, 100);
   const checkedPriority = TRACK_PRIORITIES.includes(priority) ? priority : '';
   const onlyDue = due === '1' || due === 'true';
-  const productOnly = source === 'pakkafollow';
+  const onlyPakkaFollow = source === 'pakkafollow';
   const rows = await query()`
     SELECT e.reference_id, e.name, e.email, e.intent, e.subject, e.status, e.priority, e.created_at, e.updated_at, e.last_activity_at, e.follow_up_at,
       (SELECT status FROM track_email_events m WHERE m.enquiry_id = e.id ORDER BY m.created_at DESC LIMIT 1) AS email_status,
       COUNT(*) OVER()::int AS total
     FROM track_enquiries e
-    WHERE (${productOnly} = false OR e.intent IN ('PakkaFollow Support','PakkaFollow Billing','PakkaFollow Enquiry'))
+    WHERE (${onlyPakkaFollow} = false OR e.intent IN ('PakkaFollow Support','PakkaFollow Billing','PakkaFollow Enquiry'))
       AND (${checkedStatus} = '' OR e.status = ${checkedStatus})
       AND (${checkedIntent} = '' OR e.intent = ${checkedIntent})
       AND (${checkedPriority} = '' OR e.priority = ${checkedPriority})
