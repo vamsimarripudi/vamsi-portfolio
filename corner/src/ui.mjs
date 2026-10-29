@@ -167,9 +167,10 @@ function homeSpotlight(featured,posts,mediaByPost={}){
 
 export function feedPage({posts=[],status,active='Latest',featured,upcoming=[],cursor,tag='',demo=false,mediaByPost={},eventCursor=0,onThisDay=[]}){
   const isHome=active==='Latest';
+  const visiblePosts=isHome?posts.slice(0,1):posts;
   const categoryHero=`<section class="category-hero"><p class="eyebrow">THE CORNER / COLLECTIONS</p><h1>${e(active)}<span>.</span></h1><p>${active==='Wishes'?'Good things worth celebrating.':active==='Builds'?'Small steps, real progress.':active==='Notes'?'Ideas worth remembering.':active==='Journal'?'A place to slow down and write.':'Scenes and little memories.'}</p></section>`;
   const memories=isHome&&onThisDay.length?`<section class="on-this-day"><p class="eyebrow">ON THIS DAY</p><div><h2>Worth remembering.</h2>${onThisDay.map(p=>`<a href="${safeLink(p.slug)}">${e(p.title)} <span>↗</span></a>`).join('')}</div></section>`:'';
-  const stories=posts.length?`<div class="stories" id="stories">${posts.map((p,i)=>card(p,i,{featured:!isHome&&i===0&&p.featured,editorial:isHome,media:mediaByPost[p.id]||[]})).join('')}</div>`:
+  const stories=visiblePosts.length?`<div class="stories" id="stories">${visiblePosts.map((p,i)=>card(p,i,{featured:!isHome&&i===0&&p.featured,editorial:isHome,media:mediaByPost[p.id]||[]})).join('')}</div>`:
     `<div class="empty-feed"><span aria-hidden="true">✳</span><h3>Nothing here yet.</h3><p>The next note will find its place soon.</p></div>`;
   const feed=`<section id="feed" class="feed-section" aria-labelledby="feed-heading">
     <div class="feed-heading"><div><p class="eyebrow">${isHome?'THE LATEST FROM HERE':e(active.toUpperCase())} ${demo?'<span class="demo-pill">SAMPLE CONTENT</span>':''}</p>
