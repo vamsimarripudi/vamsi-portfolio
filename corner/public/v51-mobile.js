@@ -31,13 +31,17 @@
  const onScroll=()=>{if(!frame)frame=requestAnimationFrame(update)};
  // Hide the floating dock before it can cover footer links, then restore it
  // when readers scroll back to article/category content.
- const footerObserver=footer&&'IntersectionObserver' in window
+ const readingEnd=document.querySelector('.about-stripe');
+ const visibleEndSections=new Set();
+ const footerObserver=(footer||readingEnd)&&'IntersectionObserver' in window
   ?new IntersectionObserver(entries=>{
-    footerVisible=!!entries[0]?.isIntersecting;
+    for(const entry of entries){if(entry.isIntersecting)visibleEndSections.add(entry.target);else visibleEndSections.delete(entry.target)}
+    footerVisible=visibleEndSections.size>0;
     if(footerVisible)show(true);
     else if(window.scrollY<72)show(false);
   },{threshold:0}):null;
- footerObserver?.observe(footer);
+ if(footer)footerObserver?.observe(footer);
+ if(readingEnd)footerObserver?.observe(readingEnd);
  window.addEventListener('scroll',onScroll,{passive:true});
  window.addEventListener('resize',()=>{lastY=Math.max(0,window.scrollY);accumulated=0;show(false)},{passive:true});
  document.addEventListener('focusin',event=>{
