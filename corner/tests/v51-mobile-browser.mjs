@@ -43,7 +43,7 @@ try{
    assert.equal(await dock.evaluate(el=>el.inert),false,'Dock returns when scrolling up');
    await page.screenshot({path:'screenshots/v51-home-390.png',animations:'disabled'});
    // The former 158px main padding produced a full blank band above the footer.
-   const category=await page.goto(origin+'/corner/category/Wishes',{waitUntil:'domcontentloaded'});
+   const category=await page.goto(origin+'/corner/category/wishes',{waitUntil:'domcontentloaded'});
    assert.equal(category.status(),200,'Wishes category loads');
    const gap=await page.evaluate(()=>{
      const about=document.querySelector('#content.shell .about-stripe');
