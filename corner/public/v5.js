@@ -55,7 +55,7 @@ if(article){
  addEventListener('scroll',schedule,{passive:true});addEventListener('resize',schedule,{passive:true});update();
 }
 const initial=window.__CORNER__||{};
-if('EventSource' in window&&!initial.demo&&['feed','detail'].includes(initial.page)){
+if('EventSource' in window&&!initial.demo&&!document.querySelector('script[src*="/companion.js"]')&&['feed','detail'].includes(initial.page)){
  let stream=null,cursor=Math.max(0,Number(initial.eventCursor)||0);
  const types=['post.published','post.updated','post.archived','status.updated','reaction.updated','comment.created','comment.removed'];
  const emit=event=>{try{
