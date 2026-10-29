@@ -141,3 +141,15 @@
 .ws-measurement-indicator {display:block;width:8px;height:8px;flex:none;border-radius:50%;background:#7c94b9;box-shadow:0 0 0 4px #dce6f3}
 #root .track-unified-shell .ws-collection-warning {margin:12px 0;padding:13px;border-left:3px solid #ad654a;border-radius:10px;background:#fff3eb;color:#584338}
 @media(max-width:767px){#root .track-unified-shell .ws-measurement-status{padding:11px 12px}}
+
+/* Private PakkaFollow correspondence: persistent state and readable reply history. */
+#root .track-unified-shell .pf-reply-state{margin:8px 0;padding:11px 13px;border:1px solid #c6d5e8;border-radius:9px;background:#f2f7ff;color:#25476c;font-size:.78rem;line-height:1.5}
+#root .track-unified-shell .pf-reply-state.success{border-color:#a8d6ba;background:#f0fbf4;color:#23553b}
+#root .track-unified-shell .pf-reply-state.error{border-color:#e2b6b8;background:#fff1f1;color:#8a2c31}
+#root .track-unified-shell .pf-conversation{margin:1rem 0}
+#root .track-unified-shell .pf-conversation ol{display:grid;gap:12px;list-style:none;margin:14px 0;padding:0}
+#root .track-unified-shell .pf-conversation li{display:grid;gap:7px;max-width:92%;padding:14px 15px;border:1px solid #d8e2ed;border-radius:12px;background:#f5f8fc}
+#root .track-unified-shell .pf-conversation li.pf-outgoing{justify-self:end;background:#ecf4ff;border-color:#bfd3ee}
+#root .track-unified-shell .pf-conversation li small{color:#60758a;font-size:.72rem}
+#root .track-unified-shell .pf-conversation li p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:#28384e;font-size:.83rem;line-height:1.6}
+@media(max-width:640px){#root .track-unified-shell .pf-conversation li{max-width:100%}}
