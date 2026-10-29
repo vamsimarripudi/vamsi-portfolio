@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     }
     await createEmailEvent({ enquiryId: enquiry.id, providerMessageId, emailType: 'reply', recipient: enquiry.email, status: 'SENT' });
     await sql`UPDATE track_enquiries SET status = 'WAITING_ON_CONTACT', replied_at = NOW(), follow_up_at = NULL, updated_at = NOW(), last_activity_at = NOW() WHERE id = ${enquiry.id}`;
-    await createActivity(enquiry.id, 'email.reply.sent', owner.owner_email, { providerMessageId });
+    await createActivity(enquiry.id, 'email.reply.sent', owner.owner_email, { providerMessageId, subject, message });
     return json(res, 200, { ok: true, providerMessageId });
   } catch (error) {
     if (error instanceof TrackError) return json(res, error.status, { ok: false, code: error.code, message: error.message });
