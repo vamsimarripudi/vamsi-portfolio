@@ -154,6 +154,8 @@ jobs:
           exit 1
       - name: Verify V5.1 phone action bar, media and scroll-away dock
         run: CORNER_TEST_ORIGIN=http://127.0.0.1:4143 node corner/tests/v51-mobile-browser.mjs
+      - name: Verify Corner Pulse expiry and iPhone footer geometry
+        run: CORNER_TEST_ORIGIN=http://127.0.0.1:4143 node corner/tests/corner-pulse-browser.mjs
       - name: Launch isolated V6 companion-disabled fixture
         run: |
           mkdir -p "$RUNNER_TEMP/corner-v6-data"

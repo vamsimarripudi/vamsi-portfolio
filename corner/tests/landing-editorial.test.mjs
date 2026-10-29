@@ -32,7 +32,7 @@ test('home uses approved editorial hero and six working category links',()=>{
 
 test('empty public feed stays honest instead of injecting mockup stories',()=>{
  const html=feedPage({posts:[]});
- assert.match(html,/Nothing here yet\./);
+ assert.match(html,/Nothing published here yet\./);
  assert.doesNotMatch(html,/Your next story starts here\./,'No fabricated spotlight placeholder');
  assert.doesNotMatch(html,/Morning thoughts/);
  assert.doesNotMatch(html,/Working on something new/);
