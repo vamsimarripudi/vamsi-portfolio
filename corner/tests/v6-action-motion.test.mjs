@@ -12,7 +12,7 @@ const js=read('v6-action-motion.js'),css=read('v6-action-motion.css');
 
 test('Corner Motion is loaded before Studio and account/Wishes scripts without public bundle',()=>{
  const studio=adminPage({owner:{id:'owner',role:'owner'}});
- assert.match(studio,/v6-action-motion\.js\?v=1/);
+ assert.match(studio,/v6-action-motion\.js\?v=2/);
  assert.match(studio,/v6-action-motion\.css\?v=2/);
  assert.ok(studio.indexOf('/v6-action-motion.js')<studio.indexOf('/admin.js'));
  const account=accountPage({type:'/settings/profile',user:{id:'reader',role:'member',displayName:'Reader',email:'reader@test.local'}});
