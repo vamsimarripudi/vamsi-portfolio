@@ -106,15 +106,29 @@
       clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
       pendingSave=(async()=>{try{
         const values=formValues(form);
-        if(p.id)p=await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version});
-        else p=await api('/corner/api/admin/posts','POST',values);
-        active.post=p;active.dirty=false;
-        $('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
+        // Persisted draft is safe, but never apply a stale response to a different Studio view.
+        if(controller.signal.aborted)return null;
+        p=stored;active.post=p;active.dirty=false;
+        form.querySelector('#save-indicator').textContent='Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
         if(!quiet)toast('Draft saved.','success');return p;
-      }catch(error){$('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';if(!quiet)toast(error.message,'error');return null}
+      }catch(error){if(!controller.signal.aborted){
+        form.querySelector('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';
+        if(!quiet)toast(error.message,'error');
+      }return null}
       finally{pendingSave=null}})();return pendingSave;
     }
-    $('#save-post').onclick=()=>save();$('#publish-post').onclick=async()=>{let saved=await save(true);if(!saved)return;try{p=await api('/corner/api/admin/posts/'+p.id+'/publish','POST');toast('Published. Your story is live.','success');editor(p.id)}catch(err){toast(err.message,'error')}};
+    $('#save-post').onclick=()=>save();
+    $('#publish-post').onclick=async()=>{
+      const saved=await save(true);
+      if(!saved||controller.signal.aborted)return;
+      try{
+        const published=await api('/corner/api/admin/posts/'+saved.id+'/publish','POST');
+        if(controller.signal.aborted)return;
+        p=published;toast('Published. Your story is live.','success');
+        void editor(p.id);
+      }catch(err){if(!controller.signal.aborted)toast(err.message,'error')}
+    };
     $('#schedule-post').onclick=()=>{
       const panel=$('#schedule-panel');
       if(!panel)return;
@@ -151,7 +165,7 @@
             pinStartLocal:formSchedule.elements.pinStartLocal.value,
             pinEndLocal:formSchedule.elements.pinEndLocal.value
           });
-          panel.close();toast('Scheduled successfully.','success');editor(p.id);
+          panel.close();if(!controller.signal.aborted){toast('Scheduled successfully.','success');void editor(p.id)}
         }catch(error){feedback.textContent=error.message||'Scheduling failed. Please try again.';button.disabled=false;}
       };
       panel.showModal();
