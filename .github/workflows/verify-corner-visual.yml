@@ -30,6 +30,7 @@ jobs:
       - name: Install tests and browser
         run: |
           npm ci
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
           npm install --no-save --no-package-lock playwright@1.64.0
           npx playwright install chromium --with-deps
       - name: Start isolated Corner fixture
