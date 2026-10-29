@@ -56,6 +56,24 @@ try{
   await page.setViewportSize({width,height:width<768?844:625});await page.evaluate(()=>scrollTo(0,0));
   for(const view of ['posts','media','comments','analytics','settings']){await navigation(view);await geometry(page,view+' '+width)}
   if(width===390){
+   await navigation('settings');
+   const lab=page.locator('.corner-motion-lab');
+   await lab.waitFor();
+   assert.equal(await lab.locator('[data-motion-preview]').count(),8,'Eight owner-only motion previews');
+   const writes=[];
+   const capture=request=>{if(request.method()!=='GET'&&request.url().includes('/corner/api/'))writes.push(request.url())};
+   page.on('request',capture);
+   const fold=lab.locator('[data-motion-preview="draft.save"]');
+   await fold.click();
+   await fold.locator('.cm-fold').waitFor();
+   assert.equal(await fold.getAttribute('data-corner-motion-state'),'pending');
+   assert.equal(await fold.isEnabled(),false,'The same preview cannot be triggered twice');
+   await page.screenshot({path:path.join(screenshots,'motion-lab-saving-390.png'),animations:'disabled'});
+   await page.waitForFunction(()=>document.querySelector('[data-motion-preview="draft.save"]')?.dataset.cornerMotionState==='success',null,{timeout:5000});
+   await page.screenshot({path:path.join(screenshots,'motion-lab-saved-390.png'),animations:'disabled'});
+   await page.waitForFunction(()=>!document.querySelector('[data-motion-preview="draft.save"]')?.dataset.cornerMotionState);
+   page.off('request',capture);
+   assert.deepEqual(writes,[],'Preview motion never sends a production/API write');
    await navigation('comments');
    const filters=page.locator('[data-v5-comment-filter]');
    assert.equal(await filters.count(),4,'All four moderation filters are available');
