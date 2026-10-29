@@ -25,6 +25,21 @@
  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+ function feedback(message,kind='success'){
+  let host=document.querySelector('#toast-stack');
+  if(!host){host=document.createElement('div');host.id='toast-stack';host.className='toast-stack';document.body.append(host)}
+  const node=document.createElement('div');node.className='toast '+kind;
+  node.setAttribute('role','status');node.textContent=String(message);
+  host.append(node);setTimeout(()=>node.remove(),4500);
+ }
+ async function shareLink(url){
+  if(navigator.share){
+   try{await navigator.share({url});feedback('Shared successfully.');return true}
+   catch(error){if(error?.name==='AbortError')return false}
+  }
+  try{await navigator.clipboard.writeText(url);feedback('Link copied.');return true}
+  catch{feedback('Copy was blocked. Use your browser share menu to copy the link.','error');return false}
+ }
  const timeText=stamp=>{
   const ms=Date.parse(stamp);if(!Number.isFinite(ms))return '';
   const d=Math.max(0,Math.floor((Date.now()-ms)/1000));
@@ -87,7 +102,7 @@
  document.addEventListener('click',async event=>{
   const share=event.target.closest('[data-v5-share-post]');if(!share)return;
   const path=share.dataset.v5SharePost||'';const url=new URL(path.startsWith(prefix+'/')?path:prefix+path,location.origin).href;
-  try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url);}catch{/* Browser share may be cancelled by the reader. */}
+  await shareLink(url);
  });
  // Restore persisted post reactions without exposing reader identity.
  const groups=new Map();
@@ -120,17 +135,17 @@
   const share=location.origin+prefix+'/post/'+encodeURIComponent(window.__CORNER__?.slug||location.pathname.split('/post/').at(-1)||'')+'#comment-'+encodeURIComponent(c.id);
   const label=c.authorBadge?'<span class="v5-owner-badge">'+esc(c.authorBadge)+'</span>':'';
   const replyCount=state.comments.filter(x=>x.parentId===c.id).length;
-  const status=c.edited?'<span class="v5-edited">Edited</span>':'';
+  const status=c.pending?'<span class="v6-pending-label" aria-label="Visible only to you while awaiting review">Awaiting review</span>':c.edited?'<span class="v5-edited">Edited</span>':'';
   return '<article id="comment-'+esc(c.id)+'" class="v5-comment'+(depth?' v5-comment-reply':'')+'" data-v5-comment="'+esc(c.id)+'">'+
    '<div class="v5-comment-main">'+
    '<button type="button" class="v5-profile-button" data-v5-profile="'+esc(c.id)+'" aria-label="View '+esc(c.authorName)+' public comment profile">'+avatar(c.authorName)+'</button>'+
    '<div class="v5-comment-copy"><div class="v5-comment-line"><strong>'+esc(c.authorName)+'</strong>'+label+'<time data-relative datetime="'+esc(c.createdAt)+'"></time>'+status+'</div>'+
    (c.body?'<p>'+esc(c.body)+'</p>':'')+assetHtml(c)+
    '<div class="v5-comment-actions">'+
-   (c.deleted?'':'<button type="button" class="v5-comment-like'+(c.liked?' is-liked':'')+'" data-v5-comment-like="'+esc(c.id)+'" aria-pressed="'+!!c.liked+'" aria-label="Like comment"><img src="'+prefix+'/v5-heart.svg" width="17" height="17" alt=""><span>'+c.reactions+'</span></button>')+
-   '<button type="button" data-v5-reply="'+esc(c.id)+'">Reply'+(replyCount?' · '+replyCount:'')+'</button>'+
-   '<button type="button" data-v5-share="'+esc(share)+'">Share</button>'+
-   (c.deleted?'':'<button type="button" data-v5-report="'+esc(c.id)+'">Report</button>')+
+   (c.deleted||c.pending?'':'<button type="button" class="v5-comment-like'+(c.liked?' is-liked':'')+'" data-v5-comment-like="'+esc(c.id)+'" aria-pressed="'+!!c.liked+'" aria-label="Like comment"><img src="'+prefix+'/v5-heart.svg" width="17" height="17" alt=""><span>'+c.reactions+'</span></button>')+
+   (c.pending?'':'<button type="button" data-v5-reply="'+esc(c.id)+'">Reply'+(replyCount?' · '+replyCount:'')+'</button>')+
+   (c.pending?'':'<button type="button" data-v5-share="'+esc(share)+'">Share</button>')+
+   (c.deleted||c.pending?'':'<button type="button" data-v5-report="'+esc(c.id)+'">Report</button>')+
    (c.own?'<button type="button" data-v5-edit="'+esc(c.id)+'">Edit</button><button type="button" data-v5-delete="'+esc(c.id)+'">Delete</button>':'')+'</div>'+
    '<div class="v5-reply-slot" data-v5-reply-slot="'+esc(c.id)+'"></div></div></div></article>';
  }
@@ -203,7 +218,7 @@
    else{root.querySelector('.v5-reply-form')?.remove();state.replyTo=id;state.replyText='';state.sticker=null;state.gif=null;showReply(id)}return;
   }
   if(b.hasAttribute('data-v5-share')){
-   const url=b.dataset.v5Share;try{if(navigator.share)await navigator.share({url});else{await navigator.clipboard.writeText(url);say('Comment link copied.')}}catch{say('Use your browser’s share menu to copy this link.')}return;
+   const url=b.dataset.v5Share;const shared=await shareLink(url);if(shared)say('Comment link shared or copied.');return;
   }
   if(b.hasAttribute('data-v5-cancel')){state.replyTo=null;state.replyText='';state.sticker=null;state.gif=null;b.closest('.v5-reply-form')?.remove();return;}
   if(b.hasAttribute('data-v5-picker')){
@@ -222,7 +237,7 @@
   const form=event.target.closest('[data-v5-reply-form]');if(!form)return;
   event.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;
   try{const answer=await send('/api/v5/posts/'+encodeURIComponent(postId)+'/threads','POST',{parentId:form.dataset.v5ReplyForm,body:form.elements.body.value,stickerId:state.sticker,gifId:state.gif});
-   say(answer.message||'Reply submitted for review.');state.replyTo=null;state.replyText='';state.sticker=null;state.gif=null;form.remove();
+   say(answer.message||'Reply submitted for review.');state.replyTo=null;state.replyText='';state.sticker=null;state.gif=null;form.remove();await refresh();
   }catch(error){say(error.message);button.disabled=false}
  });
  const mainForm=$('#comment-form');
@@ -233,7 +248,7 @@
   if(!mainForm.elements.body.value.trim()&&!state.sticker&&!state.gif){say('Write a comment or add a sticker.');return;}
   button.disabled=true;
   try{const result=await send('/api/v5/posts/'+encodeURIComponent(postId)+'/threads','POST',{body:mainForm.elements.body.value,stickerId:state.sticker,gifId:state.gif});
-   say(result.message||'Comment submitted for review.');mainForm.reset();state.sticker=null;state.gif=null;
+   say(result.message||'Comment submitted for review.');mainForm.reset();state.sticker=null;state.gif=null;await refresh();
   }catch(error){say(error.message)}finally{button.disabled=false}
  },true);
  // The top-level form can use the same local sticker/GIF picker as replies.
