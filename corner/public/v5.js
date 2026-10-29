@@ -40,12 +40,12 @@ const request=async(endpoint,method='GET',data)=>{
 document.addEventListener('click',async event=>{
  const b=event.target.closest('[data-v5-share-post]');if(!b)return;
  const url=new URL(prefix+b.dataset.v5SharePost,location.origin).href;
- try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url)}catch{}
+ try{if(navigator.share)await navigator.share({url});else await navigator.clipboard.writeText(url)}catch{/* Optional interaction; no tracking or crash on missing browser capability. */}
 });
 $$('.reactions[data-post-id]').forEach(async wrapper=>{
  try{const data=await request('/api/v5/posts/'+encodeURIComponent(wrapper.dataset.postId)+'/like-state');if(!data)return;
   const b=$('button[data-reaction="❤️"]',wrapper);if(b){b.setAttribute('aria-pressed',String(data.liked));const n=$('span',b);if(n)n.textContent=data.count}
- }catch{}
+ }catch{/* Optional interaction; no tracking or crash on missing browser capability. */}
 });
 const article=$('.post-article');
 if(article){
@@ -63,7 +63,7 @@ if('EventSource' in window&&!initial.demo&&!document.querySelector('script[src*=
    if(!types.includes(data.type)||data.type!==event.type||!Number.isSafeInteger(id)||id<=cursor)return;
    cursor=id;window.CornerPublicLive?.apply(data);
    document.dispatchEvent(new CustomEvent('corner:realtime',{detail:{type:data.type,entityId:data.entityId,approved:data.type==='comment.created'}}));
-  }catch{}};
+  }catch{/* Optional interaction; no tracking or crash on missing browser capability. */}};
  const connect=()=>{if(stream||document.hidden)return;stream=new EventSource(prefix+'/api/realtime/stream?since='+encodeURIComponent(cursor));types.forEach(name=>stream.addEventListener(name,emit))};
  const disconnect=()=>{stream?.close();stream=null};
  addEventListener('pagehide',disconnect);document.addEventListener('visibilitychange',()=>document.hidden?disconnect():connect());connect();
