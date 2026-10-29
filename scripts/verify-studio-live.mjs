@@ -55,6 +55,26 @@ try{
  for(const width of widths){
   await page.setViewportSize({width,height:width<768?844:625});await page.evaluate(()=>scrollTo(0,0));
   for(const view of ['posts','media','comments','analytics','settings']){await navigation(view);await geometry(page,view+' '+width)}
+  if(width===390){
+   await navigation('comments');
+   const filters=page.locator('[data-v5-comment-filter]');
+   assert.equal(await filters.count(),4,'All four moderation filters are available');
+   for(const button of await filters.all()){
+    const rect=await button.boundingBox();
+    assert.ok(rect.width>=44&&rect.height>=44,'Moderation icon has 44px target');
+    assert.equal(await button.locator('svg').count(),1,'Filter has a real icon');
+    assert.ok(await button.getAttribute('aria-label'),'Filter remains accessible');
+   }
+   await filters.nth(1).click();
+   await page.waitForFunction(()=>document.querySelector('[data-v5-comment-filter="approved"]')?.getAttribute('aria-pressed')==='true');
+   await page.evaluate(()=>window.CornerToast.show('Saved successfully.',{type:'success'}));
+   const notice=page.locator('.v6-toast');
+   await notice.waitFor({state:'visible'});
+   assert.equal(await notice.getAttribute('role'),'status');
+   await notice.locator('button[aria-label="Dismiss notification"]').click();
+   assert.equal(await notice.count(),0,'Toast dismisses on command');
+   await page.screenshot({path:path.join(screenshots,'studio-mobile-comments-icons-390.png'),fullPage:false});
+  }
   if([390,1366].includes(width))await page.screenshot({path:path.join(screenshots,'studio-'+width+'.png'),fullPage:false});
  }
  await page.setViewportSize({width:1366,height:625});await navigation('posts');await page.locator('#new-post').click();await page.locator('#post-editor').waitFor();
