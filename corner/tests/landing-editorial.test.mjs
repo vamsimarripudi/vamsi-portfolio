@@ -21,11 +21,11 @@ test('home uses approved editorial hero and six working category links',()=>{
  assert.equal((html.match(/class="corner-explore-tile /g)||[]).length,6);
  for(const href of ['/','/category/wishes','/category/builds','/category/notes','/category/journal','/category/moments'])
    assert.ok(html.includes('href="'+href+'"'),'Working category destination: '+href);
- assert.match(html,/corner-journal-layout/);
- assert.match(html,/corner-home-spotlight/);
+ assert.doesNotMatch(html,/corner-journal-layout/,'V5 shows one latest story, not a two-column feed');
+ assert.doesNotMatch(html,/corner-home-spotlight/,'No second Latest story');
  assert.match(html,/Working on something interesting\./);
  assert.match(html,/A lovely little day/);
- assert.match(html,/Working on a tool/);
+ assert.doesNotMatch(html,/Working on a tool/,'Only the most recent story appears in Latest');
  assert.match(html,/href="\/post\/celebrating-a-little-thing"/);
  assert.doesNotMatch(html,/sample-a-small-new-beginning/);
 });
@@ -33,7 +33,7 @@ test('home uses approved editorial hero and six working category links',()=>{
 test('empty public feed stays honest instead of injecting mockup stories',()=>{
  const html=feedPage({posts:[]});
  assert.match(html,/Nothing here yet\./);
- assert.match(html,/Your next story starts here\./);
+ assert.doesNotMatch(html,/corner-home-spotlight/,'Empty Latest has no decorative second story');
  assert.doesNotMatch(html,/Morning thoughts/);
  assert.doesNotMatch(html,/Working on something new/);
  assert.match(html,/href="\/about">About Corner/);
