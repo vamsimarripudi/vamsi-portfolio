@@ -167,6 +167,9 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('contact.tracker_record.failed', { referenceId: entry.referenceId, code: error?.code || 'UNKNOWN' });
   }
+  if (entry.reason.startsWith('PakkaFollow ') && !trackerEnquiry) {
+    return res.status(503).json({ ok: false, message: 'The PakkaFollow support queue is temporarily unavailable. Please try later or email connect@vamsimarripudi.me.' });
+  }
   try {
     const ownerEmailId = await sendEmail({ apiKey, from, to: recipient, replyTo: entry.email, email: ownerEmail(entry), tags: [{ name: 'type', value: 'contact-owner' }, { name: 'intent', value: entry.reason.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50) }, { name: 'reference', value: entry.referenceId }] });
     console.info('contact.owner_email.sent', { referenceId: entry.referenceId, providerMessageId: ownerEmailId });
