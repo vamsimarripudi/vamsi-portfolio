@@ -33,3 +33,9 @@
 
 /* Respect user text-size overrides on public contact controls while retaining 16px mobile readability. */
 #root .contact-layout :is(input,textarea,select){font-size:1rem!important;line-height:1.5;min-width:0}
+
+/* Override the shared highly-specific control rule with a direct rem font,
+   so 200% user text sizing reaches contact controls as well as headings. */
+#root .contact-layout form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+#root .contact-layout form textarea,
+#root .contact-layout form select {font-size:1rem!important;line-height:1.5;min-width:0}
