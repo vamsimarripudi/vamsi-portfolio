@@ -1,0 +1,16 @@
+/* Opt in only for eligible public pages. Other routes retain ordinary navigation. */
+@view-transition{navigation:auto}
+@keyframes corner-v6-out{to{opacity:0}}
+@keyframes corner-v6-in{from{opacity:0}to{opacity:1}}
+::view-transition-old(root){animation:145ms ease-out both corner-v6-out}
+::view-transition-new(root){animation:195ms ease-out both corner-v6-in}
+::view-transition-group(corner-v6-cover){
+ animation-duration:260ms;animation-timing-function:cubic-bezier(.22,1,.36,1)
+}
+@media(prefers-reduced-motion:reduce){
+ ::view-transition-old(root),::view-transition-new(root),
+ ::view-transition-old(corner-v6-cover),::view-transition-new(corner-v6-cover),
+ ::view-transition-group(corner-v6-cover){
+  animation-duration:.01ms!important;animation-delay:0ms!important
+ }
+}
