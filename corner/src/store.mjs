@@ -25,6 +25,37 @@ export class Store{
     if(!mediaColumns.includes('sort_index'))this.db.exec('ALTER TABLE media ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 0');
     this.db.exec("UPDATE media SET sort_index=(SELECT COUNT(*) FROM media AS m2 WHERE m2.owner_id IS media.owner_id AND (m2.created_at<media.created_at OR (m2.created_at=media.created_at AND m2.id<=media.id))) WHERE sort_index=0");
     this.statements=new Map();
+    this.initV6Search();
+  }
+  initV6Search(){
+    // Additive FTS5 index. Search falls back to the legacy query if unavailable.
+    this.ftsEnabled=false;
+    try{
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS corner_v6_search USING fts5(
+          post_id UNINDEXED,title,excerpt,body,tags,tokenize='unicode61 remove_diacritics 2');
+        CREATE TRIGGER IF NOT EXISTS corner_v6_search_insert AFTER INSERT ON posts BEGIN
+          INSERT INTO corner_v6_search(post_id,title,excerpt,body,tags)
+          VALUES(new.id,new.title,new.excerpt,new.body,new.tags);
+        END;
+        CREATE TRIGGER IF NOT EXISTS corner_v6_search_update AFTER UPDATE ON posts BEGIN
+          DELETE FROM corner_v6_search WHERE post_id=old.id;
+          INSERT INTO corner_v6_search(post_id,title,excerpt,body,tags)
+          VALUES(new.id,new.title,new.excerpt,new.body,new.tags);
+        END;
+        CREATE TRIGGER IF NOT EXISTS corner_v6_search_delete AFTER DELETE ON posts BEGIN
+          DELETE FROM corner_v6_search WHERE post_id=old.id;
+        END;
+        INSERT INTO corner_v6_search(post_id,title,excerpt,body,tags)
+        SELECT p.id,p.title,p.excerpt,p.body,p.tags
+        FROM posts p WHERE NOT EXISTS(
+          SELECT 1 FROM corner_v6_search s WHERE s.post_id=p.id
+        );
+      `);
+      this.ftsEnabled=true;
+    }catch{
+      this.ftsEnabled=false;
+    }
   }
   close(){this.db.close()}
   exec(sql,...values){let stmt=this.statements.get(sql);if(!stmt){stmt=this.db.prepare(sql);this.statements.set(sql,stmt)}return stmt.run(...values)}
@@ -174,7 +205,29 @@ export class Store{
   onThisDay(){const stamp=now(),today=stamp.slice(5,10),currentYear=Number(stamp.slice(0,4));return this.all("SELECT * FROM posts WHERE state='published' AND substr(published_at,6,5)=? AND CAST(substr(published_at,1,4) AS INTEGER)<? ORDER BY published_at DESC LIMIT 2",today,currentYear).map(publicPost)}
   // Future wishes are private unless the owner explicitly enables a teaser.
   upcoming(publicOnly=false){return this.all(`SELECT title,emoji,scheduled_at,timezone FROM posts WHERE state='scheduled' AND scheduled_at>? ${publicOnly?'AND upcoming_public=1':''} ORDER BY scheduled_at ASC LIMIT 3`,now())}
-  search(q,limit=30){q=pureText(q,100);if(!q)return [];const wildcard='%'+q.replace(/[\\%_]/g,'\\$&')+'%';return this.all(`SELECT * FROM posts WHERE state='published' AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\') ORDER BY published_at DESC LIMIT ?`,wildcard,wildcard,wildcard,wildcard,clamp(Number(limit)||30,1,60)).map(publicPost)}
+  search(q,limit=30){
+    q=pureText(q,100);
+    if(!q)return [];
+    const take=clamp(Number(limit)||30,1,60);
+    // Escape FTS grammar entirely: extract Unicode words, quote each token, add bounded prefix.
+    const tokens=(q.normalize('NFKC').match(/[\p{L}\p{N}]+/gu)||[]).slice(0,7);
+    if(this.ftsEnabled&&tokens.length){
+      const query=tokens.map(t=>'"'+t.replaceAll('"','""')+'"*').join(' AND ');
+      try{
+        const rows=this.all(`SELECT p.* FROM corner_v6_search
+          JOIN posts p ON p.id=corner_v6_search.post_id
+          WHERE corner_v6_search MATCH ? AND p.state='published'
+          ORDER BY bm25(corner_v6_search,0,6,3,1,2),p.published_at DESC
+          LIMIT ?`,query,take);
+        if(rows.length)return rows.map(publicPost);
+      }catch{/* SQLite without the expected tokenizer uses the safe legacy fallback. */}
+    }
+    const wildcard='%'+q.replace(/[\\%_]/g,'\\$&')+'%';
+    return this.all(`SELECT * FROM posts WHERE state='published'
+      AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\'
+        OR body LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')
+      ORDER BY published_at DESC LIMIT ?`,wildcard,wildcard,wildcard,wildcard,take).map(publicPost);
+  }
   getReactions(postId){return Object.fromEntries(this.all('SELECT reaction_type,count(*) AS total FROM reactions WHERE post_id=? GROUP BY reaction_type',postId).map(r=>[r.reaction_type,r.total]))}
   changeReaction(postId,type,actor){const post=this.getPostById(postId);if(!post||!post.allow_reactions)throw httpError(404,'Reactions unavailable.');if(!REACTIONS.includes(type))throw httpError(400,'Invalid reaction');
     const prev=this.one('SELECT * FROM reactions WHERE post_id=? AND actor_key=?',postId,actor);
