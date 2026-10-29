@@ -68,3 +68,15 @@ test('Studio mutating operations use scoped motion, preserve draft versions and 
  assert.match(read('v3-wishes.js'),/action:'wish.save'/);
  assert.match(read('v3-wishes.js'),/action:'wish.schedule'/);
 });
+
+
+test('Owner Motion Lab is explicitly preview-only and makes no API requests',()=>{
+ const admin=read('admin.js');
+ const css=read('v6-action-motion.css');
+ assert.match(admin,/STUDIO \/ MOTION LAB/);
+ assert.match(admin,/Preview only · no data will be saved, published or sent/);
+ assert.match(admin,/data-motion-preview/);
+ assert.match(admin,/preview:true/);
+ assert.match(admin,/no data was changed/);
+ assert.match(css,/corner-motion-lab-grid/);
+});

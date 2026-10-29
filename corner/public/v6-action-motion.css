@@ -42,3 +42,13 @@
 .corner-comfort .account-avatar-visual img{animation:cm-avatar-arrive 310ms var(--cm-ease) both}
 @keyframes cm-avatar-arrive{from{opacity:.25;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.corner-comfort .account-avatar-visual img{animation:none!important}}
+
+/* Owner-only Motion Lab previews; live workflows never use synthetic success. */
+.corner-comfort .corner-motion-lab{margin-top:26px}
+.corner-comfort .corner-motion-lab>header{display:block!important}
+.corner-comfort .corner-motion-lab>header p{color:var(--corner-subtext,#6f645e);max-width:60ch}
+.corner-comfort .corner-motion-lab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;margin-top:18px}
+.corner-comfort .corner-motion-lab-grid button{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;min-height:60px;padding:13px 11px;border:1px solid #ded6cc;border-radius:14px;background:#fffefa;color:#252220;font:700 .82rem/1.2 system-ui,sans-serif;cursor:pointer}
+.corner-comfort .corner-motion-lab-grid button:focus-visible{outline:3px solid #365ca7;outline-offset:2px}
+.corner-comfort .corner-motion-lab-status{font-size:.78rem;line-height:1.5;margin:12px 0 0;color:var(--corner-subtext,#6f645e)}
+@media(max-width:400px){.corner-comfort .corner-motion-lab-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

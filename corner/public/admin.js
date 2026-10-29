@@ -662,6 +662,36 @@
     if(new URLSearchParams(location.search).has('ar'))details.open=true;
   }
   async function settings(){let s=await api('/corner/api/admin/settings');root.innerHTML=`<section class="admin-section"><header><h2>The essentials.</h2></header><form class="admin-form admin-surface" id="settings-editor"><label>Site title<input name="title" value="${esc(s.title)}"></label><label>Short descriptor<input name="descriptor" value="${esc(s.descriptor)}"></label><label>Site timezone<input name="timezone" value="${esc(s.timezone)}"></label><div class="editor-checks"><label><input type="checkbox" name="commentsDefault" ${s.commentsDefault?'checked':''}> Comments by default</label><label><input type="checkbox" name="reactionsDefault" ${s.reactionsDefault?'checked':''}> Reactions by default</label></div><button type="submit">Save settings</button></form></section><section class="admin-section"><header><h2>Site status.</h2></header><button class="admin-secondary" id="settings-status">Update current status ↗</button></section>`;
+    if(initial.ownerRole==='owner'){
+      // Owner-only visual lab; isolated and explicitly non-persistent.
+      const previewActions=[
+        ['draft.save','Paper Fold'],['post.schedule','Clock Lock'],
+        ['media.upload','Lift & Dock'],['post.archive','Archive'],
+        ['post.restore','Unfold'],['comment.approve','Ink Check'],
+        ['comment.reply','Reply Bubble'],['wish.publish','Ribbon']
+      ];
+      const lab=document.createElement('section');lab.className='admin-section corner-motion-lab';
+      lab.setAttribute('aria-label','Corner Motion Lab');
+      lab.innerHTML='<header><div><p class="eyebrow">STUDIO / MOTION LAB</p>'+
+        '<h2>Feel the interactions.</h2><p>Preview only · no data will be saved, published or sent.</p></div></header>'+
+        '<div class="corner-motion-lab-grid">'+previewActions.map(([kind,title])=>
+          '<button type="button" data-motion-preview="'+kind+'" title="Preview '+title+'">'+title+'</button>').join('')+
+        '</div><p class="corner-motion-lab-status" role="status" aria-live="polite">Select any animation to preview it.</p>';
+      root.append(lab);
+      lab.addEventListener('click',async event=>{
+        const button=event.target.closest('[data-motion-preview]');
+        if(!button)return;
+        const status=lab.querySelector('.corner-motion-lab-status');
+        status.textContent='Preview only · no changes will be made.';
+        const result=await actionMotion({action:button.dataset.motionPreview,trigger:button,
+          targetId:'preview:'+button.dataset.motionPreview,
+          execute:()=>new Promise(resolve=>setTimeout(()=>resolve({preview:true}),650)),
+          confirm:value=>value.preview===true,successLabel:'Preview complete',
+          onSuccess:()=>{status.textContent='Animation complete · no data was changed.'},
+          onFailure:error=>{status.textContent=error.message}});
+        if(!result.ok&&result.error)status.textContent=result.error.message;
+      });
+    }
     if(initial.ownerRole==='owner'){const invite=document.createElement('a');invite.className='admin-secondary';invite.textContent='Invite a studio collaborator ↗';invite.href='/corner/admin/invite';invite.style.display='inline-flex';invite.style.marginTop='18px';root.append(invite)}$('#settings-status').onclick=statusEditor;$('#settings-editor').onsubmit=async e=>{
       e.preventDefault();const form=e.currentTarget,button=form.querySelector('[type=submit]');
       await actionMotion({action:'settings.save',trigger:button,targetId:'site-settings',
