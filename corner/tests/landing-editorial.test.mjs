@@ -25,7 +25,7 @@ test('home uses approved editorial hero and six working category links',()=>{
  assert.match(html,/corner-home-spotlight/);
  assert.match(html,/Working on something interesting\./);
  assert.match(html,/A lovely little day/);
- assert.match(html,/Working on a tool/);
+ assert.doesNotMatch(html,/Working on a tool/,'The Latest panel shows exactly one newest story');
  assert.match(html,/href="\/post\/celebrating-a-little-thing"/);
  assert.doesNotMatch(html,/sample-a-small-new-beginning/);
 });
@@ -39,7 +39,7 @@ test('empty public feed stays honest instead of injecting mockup stories',()=>{
  assert.match(html,/href="\/about">About Corner/);
 });
 
-test('homepage spotlight shows existing first-party image and escaped text',()=>{
+test('homepage latest card shows first-party media and escaped text',()=>{
  const hostile={...posts[0],title:'<script>unsafe</script>'};
  const html=feedPage({posts:[hostile],featured:hostile,mediaByPost:{post_1:[{
   storage_key:'saved-photo.png',mime_type:'image/png',alt_text:'A birthday photo',focal_x:.42,focal_y:.6

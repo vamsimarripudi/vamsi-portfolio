@@ -74,7 +74,7 @@ test('media attach opens in a native dialog instead of a bottom card',()=>{
 });
 
 
-test('glass rail and live Pulse use first-party endpoints without breaking public navigation',()=>{
+test('glass rail and active V5 work while legacy companion stays disabled by default',()=>{
  const html=header();
  const page=basePage({path:'/',initial:{page:'feed'}});
  const rail=asset('nav.js'),pulse=asset('companion.js'),style=asset('refresh.css'),theme=asset('companion.css');
@@ -85,8 +85,10 @@ test('glass rail and live Pulse use first-party endpoints without breaking publi
  assert.match(html,/class="category-tabs corner-rail"/);
  assert.doesNotMatch(html,/class="category-account"/);
  assert.equal((html.match(/data-profile-link/g)||[]).length,1);
- assert.match(page,/href="\/companion\.css"/);
- assert.match(page,/src="\/companion\.js" defer/);
+ assert.doesNotMatch(page,/href="\/companion\.css"/);
+ assert.doesNotMatch(page,/src="\/companion\.js" defer/);
+ assert.match(page,/href="\/v5\.css"/);
+ assert.match(page,/src="\/v5\.js" defer/);
  assert.match(pulse,/corner-drawer-open/);
  assert.match(pulse,/corner-welcome-letter-v2/);
  assert.match(pulse,/Escape/);
