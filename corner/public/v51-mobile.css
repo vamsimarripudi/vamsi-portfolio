@@ -201,11 +201,13 @@ body.corner-comfort .corner-home-shell .corner-journal-feed .story .card-media :
 /* Allow every comment input to scroll above the floating dock and iPhone toolbar. */
 @media(max-width:900px){
  html{scroll-padding-bottom:175px}
+ /* Main content must not reserve a second dock-height after About.
+    The dock retreats at the footer, and safe-area space belongs to the footer. */
  body.corner-comfort:has(.corner-public-header) #content.shell{
-   padding-bottom:calc(158px + env(safe-area-inset-bottom,0px))!important;
+   padding-bottom:clamp(8px,2vw,16px)!important;
  }
  body.corner-comfort:has(.corner-public-header) .site-footer{
-   padding-bottom:calc(175px + env(safe-area-inset-bottom,0px))!important;
+   padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))!important;
  }
  body.corner-comfort .post-article :is(#conversation,#comment-form,.comment-gate,.v5-reply-form){
    scroll-margin-bottom:175px;

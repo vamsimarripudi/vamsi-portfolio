@@ -50,11 +50,10 @@ export function renderPostGallery(media=[]){
     '<button type="button" class="post-carousel-arrow post-carousel-next" data-carousel-next aria-label="Next media">›</button>'+
     '<span class="post-carousel-count" data-carousel-count aria-live="polite">1 / '+media.length+'</span>'+
     '<div class="post-carousel-dots" role="group" aria-label="Choose media">'+media.map((_,i)=>'<button type="button" data-carousel-dot="'+i+'" aria-label="Show media '+(i+1)+'" aria-current="'+(i===0?'true':'false')+'"></button>').join('')+'</div>':'';
-  const lightbox=photos.length?'<dialog class="post-lightbox" data-post-lightbox aria-label="Post photographs">'+
-    '<button type="button" class="post-lightbox-close" data-post-close aria-label="Close photograph">×</button>'+
-    '<figure><img alt=""><figcaption></figcaption></figure>'+
-    '<nav class="post-lightbox-controls" aria-label="Photo navigation">'+
-    '<button type="button" data-post-prev aria-label="Previous photograph">←</button><span data-post-counter aria-live="polite"></span><button type="button" data-post-next aria-label="Next photograph">→</button></nav></dialog>':'';
+  const lightbox=photos.length?'<dialog class="post-lightbox" data-post-lightbox tabindex="-1" aria-label="Story photographs" aria-describedby="post-lightbox-help">'+
+    '<p class="sr-only" id="post-lightbox-help">Swipe left or right to change photos. Tap anywhere to close. Press Escape to close, or use the left and right arrow keys.</p>'+
+    '<button type="button" class="post-lightbox-close post-lightbox-sr-close" data-post-close aria-label="Close photographs">Close photo</button>'+
+    '<figure><img alt=""><figcaption aria-live="polite"></figcaption></figure></dialog>':'';
   return '<section class="post-media-gallery post-media-carousel" data-post-carousel aria-label="Story media carousel">'+
     '<div class="post-carousel-frame"><div class="post-carousel-track" data-carousel-track tabindex="0" aria-label="Swipe or use arrow keys to browse media">'+slides+'</div>'+controls+'</div>'+lightbox+'</section>';
 }

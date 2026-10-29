@@ -46,23 +46,70 @@
   if(gallery){
     const triggers=$$('[data-post-photo]');
     const photograph=$('figure img',gallery),caption=$('figure figcaption',gallery);
-    const counter=$('[data-post-counter]',gallery);
-    const previous=$('[data-post-prev]',gallery),next=$('[data-post-next]',gallery);
-    let index=0,returnFocus=null;
-    const display=i=>{
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    let index=0,returnFocus=null,gesture=null,ignoreClickUntil=0;
+    const display=(i,swipeDirection=0)=>{
       if(!triggers.length)return;
       index=(i+triggers.length)%triggers.length;
       const trigger=triggers[index],source=$('img',trigger);
-      photograph.src=source.currentSrc||source.src;photograph.alt=source.alt;
-      caption.textContent=trigger.dataset.caption||'';counter.textContent=(index+1)+' / '+triggers.length;
-      previous.disabled=triggers.length<2;next.disabled=triggers.length<2;
+      if(!source)return;
+      photograph.src=source.currentSrc||source.src;
+      photograph.alt=source.alt;
+      caption.textContent=trigger.dataset.caption||'';
+      gallery.setAttribute('aria-label','Photograph '+(index+1)+' of '+triggers.length);
+      if(swipeDirection&&!reduced.matches&&typeof photograph.animate==='function'){
+        photograph.animate([
+          {opacity:.72,transform:'translateX('+(swipeDirection>0?12:-12)+'px)'},
+          {opacity:1,transform:'translateX(0)'}
+        ],{duration:180,easing:'ease-out'});
+      }
     };
-    triggers.forEach((trigger,i)=>trigger.addEventListener('click',()=>{returnFocus=trigger;display(i);if(typeof gallery.showModal==='function')gallery.showModal();else window.open($('img',trigger).src,'_blank','noopener')}));
-    $('[data-post-close]',gallery)?.addEventListener('click',()=>gallery.close());
-    previous?.addEventListener('click',()=>display(index-1));next?.addEventListener('click',()=>display(index+1));
-    gallery.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'){event.preventDefault();display(index-1)}if(event.key==='ArrowRight'){event.preventDefault();display(index+1)}});
-    gallery.addEventListener('click',event=>{if(event.target===gallery)gallery.close()});
-    gallery.addEventListener('close',()=>{photograph.removeAttribute('src');returnFocus?.focus()});
+    const close=()=>{if(gallery.open)gallery.close()};
+    triggers.forEach((trigger,i)=>trigger.addEventListener('click',()=>{
+      returnFocus=trigger;display(i);
+      if(typeof gallery.showModal==='function'){
+        if(!gallery.open)gallery.showModal();
+        gallery.focus({preventScroll:true});
+      }else{
+        window.open($('img',trigger).src,'_blank','noopener');
+      }
+    }));
+    // The viewer is deliberately chrome-free; direct taps dismiss it.
+    // Pointer movement distinguishes a horizontal swipe from a closing tap.
+    gallery.addEventListener('pointerdown',event=>{
+      if(!gallery.open)return;
+      gesture={id:event.pointerId,x:event.clientX,y:event.clientY};
+    });
+    gallery.addEventListener('pointerup',event=>{
+      if(!gesture||gesture.id!==event.pointerId)return;
+      const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+      gesture=null;
+      if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.2){
+        ignoreClickUntil=performance.now()+450;
+        if(triggers.length>1)display(index+(dx<0?1:-1),dx<0?1:-1);
+        event.preventDefault();
+      }else if(Math.abs(dx)>12||Math.abs(dy)>12){
+        ignoreClickUntil=performance.now()+250;
+      }
+    });
+    gallery.addEventListener('pointercancel',()=>{gesture=null});
+    gallery.addEventListener('click',event=>{
+      if(performance.now()<ignoreClickUntil){event.preventDefault();return}
+      close();
+    });
+    gallery.addEventListener('keydown',event=>{
+      if(event.key==='ArrowLeft'){
+        event.preventDefault();display(index-1,-1);
+      }else if(event.key==='ArrowRight'){
+        event.preventDefault();display(index+1,1);
+      }
+      // The native dialog also supports Escape, including for assistive technology.
+    });
+    gallery.addEventListener('close',()=>{
+      gesture=null;ignoreClickUntil=0;
+      photograph.removeAttribute('src');
+      returnFocus?.focus({preventScroll:true});
+    });
     photograph.addEventListener('error',()=>{caption.textContent='Photograph temporarily unavailable.'});
   }
 })();

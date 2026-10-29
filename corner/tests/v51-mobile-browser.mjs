@@ -42,6 +42,24 @@ try{
    await page.waitForFunction(()=>!document.querySelector('.category-tabs.corner-rail')?.classList.contains('v51-dock-hidden'),null,{timeout:4000});
    assert.equal(await dock.evaluate(el=>el.inert),false,'Dock returns when scrolling up');
    await page.screenshot({path:'screenshots/v51-home-390.png',animations:'disabled'});
+   // The former 158px main padding produced a full blank band above the footer.
+   const category=await page.goto(origin+'/corner/category/Wishes',{waitUntil:'domcontentloaded'});
+   assert.equal(category.status(),200,'Wishes category loads');
+   const gap=await page.evaluate(()=>{
+     const about=document.querySelector('#content.shell .about-stripe');
+     const footer=document.querySelector('.site-footer');
+     const main=document.querySelector('#content.shell');
+     const a=about?.getBoundingClientRect(),f=footer?.getBoundingClientRect();
+     return {gap:a&&f?f.top-a.bottom:null,padding:main?parseFloat(getComputedStyle(main).paddingBottom):null,
+       overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(gap.padding!==null&&gap.padding<=20,'No second dock-sized main padding '+JSON.stringify(gap));
+   assert.ok(gap.gap!==null&&gap.gap<=75,'About is close to footer '+JSON.stringify(gap));
+   assert.ok(gap.overflow<=1,'Category stays within mobile viewport');
+   await page.evaluate(()=>document.querySelector('.site-footer')?.scrollIntoView({block:'start',behavior:'instant'}));
+   await page.waitForFunction(()=>document.querySelector('.category-tabs.corner-rail')?.classList.contains('v51-dock-hidden'),null,{timeout:4000});
+   assert.equal(await page.locator('.category-tabs.corner-rail').evaluate(el=>el.inert),true,'Dock does not cover footer links');
+   await page.screenshot({path:'screenshots/v51-footer-no-gap-390.png',animations:'disabled'});
   }
   assert.deepEqual(errors,[],'No browser JS exceptions at '+width);
   await page.close();

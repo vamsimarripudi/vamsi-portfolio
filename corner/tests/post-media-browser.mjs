@@ -195,14 +195,25 @@ try{
  await images.first().click();
  const dialog=page.locator('dialog[data-post-lightbox]');
  await dialog.waitFor({state:'visible'});
- assert.equal(await dialog.locator('[data-post-counter]').textContent(),'1 / 2');
+ assert.equal(await dialog.locator('[data-post-counter],[data-post-prev],[data-post-next]').count(),0,'No viewer arrows or counter');
+ assert.equal(await dialog.locator('[data-post-close]').isVisible(),false,'No visible close X');
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.');
  await page.keyboard.press('ArrowRight');
- assert.equal(await dialog.locator('[data-post-counter]').textContent(),'2 / 2');
- assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.');
+ assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
+ await dialog.locator('figure img').evaluate(el=>{
+   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:17,pointerType:'touch',clientX:240,clientY:250}));
+   el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
+ });
+ assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
+ await page.waitForTimeout(500);
+ await dialog.locator('figure img').click();
+ await dialog.waitFor({state:'hidden'});
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Tap closes viewer and restores source photo focus');
+ await images.first().click();
+ await dialog.waitFor({state:'visible'});
  await page.keyboard.press('Escape');
  await dialog.waitFor({state:'hidden'});
- assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Keyboard focus returns to selected photo');
+ assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-post-photo')),true,'Escape still closes the accessible viewer');
 
  for(const [width,height] of [[320,720],[360,780],[375,812],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[1280,800],[1366,768],[1920,1080]]){
    await page.setViewportSize({width,height});
