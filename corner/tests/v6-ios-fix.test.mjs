@@ -8,7 +8,9 @@ test('mobile Safari fix is scoped before the final shared typography contract',(
  assert.match(html,/v6-ios-fix.css\?v=1/);assert.match(html,/v6-ios-fix.js\?v=1/);
  assert.ok(html.indexOf('v6-ios-fix.css')<html.indexOf('comfort.css'));
  const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(m=>m[1]);
- assert.equal(styles.at(-1),'/comfort.css');
+ assert.equal(styles.filter(x=>x==='/comfort.css').length,1);
+ assert.ok(styles.indexOf('/v6-ios-fix.css?v=1')<styles.indexOf('/comfort.css'));
+ // Article-specific styles may follow comfort; shared typography is final on normal pages.
 });
 test('Studio nav is horizontal, snap-aware, and focus mode keeps restore accessible',()=>{
  assert.match(css,/scroll-snap-type:x proximity/);assert.match(css,/v6-reader-show\[hidden\]/);
