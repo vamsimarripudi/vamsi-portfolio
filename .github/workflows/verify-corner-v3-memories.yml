@@ -37,6 +37,11 @@ jobs:
           cache: npm
       - name: Install Corner image processor
         run: npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+      - name: Install FFmpeg for existing real video API fixtures
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
       - name: Verify current Corner unit and API regressions
         working-directory: corner
         run: npm run check
