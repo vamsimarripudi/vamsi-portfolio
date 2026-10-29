@@ -456,8 +456,33 @@
       }catch(error){note.textContent=error.message;button.disabled=false}
     });
   }
-  async function comments(){const list=await api('/corner/api/admin/comments?state=pending');root.innerHTML=`<section class="admin-section"><header><h2>Comments awaiting review.</h2></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}">Approve ✓</button><button data-moderate="hide" data-comment="${c.id}">Hide</button><button data-moderate="delete" data-comment="${c.id}">Delete</button></footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
-    $$('[data-moderate]').forEach(b=>b.onclick=async()=>{if(b.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;try{await api('/corner/api/admin/comments/'+b.dataset.comment+'/'+b.dataset.moderate,'POST');toast('Comment updated.','success');comments()}catch(err){toast(err.message,'error')}});
+  async function comments(){
+    const mode=active.commentFilter||'pending',list=await api('/corner/api/admin/comments?state='+encodeURIComponent(mode));
+    const tabs=['pending','approved','hidden','deleted'].map(value=>'<button type="button" data-v5-comment-filter="'+value+'" class="'+(mode===value?'is-active':'')+'">'+value+'</button>').join('');
+    root.innerHTML='<section class="admin-section"><header><h2>Conversations.</h2><div class="v5-comment-filters">'+tabs+'</div></header>'+
+      (list.length?'<div class="admin-card-list">'+list.map(c=>'<article class="admin-comment"><header><div><strong>'+esc(c.author_name)+'</strong> · <small>'+esc(c.post_title)+'</small></div><time datetime="'+esc(c.created_at)+'" data-relative>'+readable(c.created_at)+'</time></header><p>'+esc(c.body)+'</p><footer>'+
+        (mode==='pending'?'<button data-moderate="approve" data-comment="'+c.id+'">Approve ✓</button>':'')+
+        (mode!=='hidden'&&mode!=='deleted'?'<button data-moderate="hide" data-comment="'+c.id+'">Hide</button>':'')+
+        (mode!=='deleted'?'<button data-moderate="delete" data-comment="'+c.id+'">Delete</button>':'')+
+        (mode==='approved'?'<button data-v5-studio-reply="'+c.id+'" data-v5-studio-post="'+c.post_id+'" type="button">Reply ↗</button>':'')+
+      '</footer></article>').join('')+'</div>':empty('Nothing in this view.','Try another comment filter.'))+'</section>';
+    window.CornerRelativeTime?.update(root);
+    $$('[data-v5-comment-filter]').forEach(button=>button.onclick=()=>{active.commentFilter=button.dataset.v5CommentFilter;comments()});
+    $$('[data-moderate]').forEach(button=>button.onclick=async()=>{if(button.dataset.moderate==='delete'&&!confirm('Delete this comment?'))return;
+      button.disabled=true;try{await api('/corner/api/admin/comments/'+button.dataset.comment+'/'+button.dataset.moderate,'POST');toast('Comment updated.','success');comments()}catch(error){toast(error.message,'error');button.disabled=false}
+    });
+    $$('[data-v5-studio-reply]').forEach(button=>button.onclick=()=>{
+      const article=button.closest('.admin-comment'),postId=button.dataset.v5StudioPost,parentId=button.dataset.v5StudioReply;
+      article.querySelector('.v5-studio-reply')?.remove();
+      const form=document.createElement('form');form.className='v5-studio-reply';
+      form.innerHTML='<label>Reply to this thread<textarea name="body" required minlength="3" maxlength="1000" rows="3" placeholder="Write a reply to this reader…"></textarea></label><button type="submit">Publish reply ↗</button><p role="status" aria-live="polite"></p>';
+      article.append(form);form.querySelector('textarea').focus();
+      form.onsubmit=async event=>{event.preventDefault();const send=form.querySelector('[type=submit]');send.disabled=true;
+        try{const result=await api('/corner/api/v5/posts/'+encodeURIComponent(postId)+'/threads','POST',{parentId,body:form.elements.body.value});
+          toast(result.message||'Reply submitted.','success');comments()
+        }catch(error){form.querySelector('[role=status]').textContent=error.message;send.disabled=false}
+      };
+    });
   }
   async function guestbook(){
     const response=await api('/corner/api/v1/admin/v3/guestbook');
