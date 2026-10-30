@@ -48,6 +48,7 @@
     const triggers=$$('[data-post-photo]');
     const photograph=$('figure img',gallery),caption=$('figure figcaption',gallery);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduced.matches;
     let index=0,returnFocus=null,gesture=null,ignoreClickUntil=0;
     const releaseDrag=()=>{
       photograph.style.transform='';photograph.style.opacity='';
