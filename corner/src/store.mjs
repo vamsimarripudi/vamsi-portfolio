@@ -5,10 +5,11 @@ import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.mjs';
 import { uid, now, sha, slugify, pureText, parseTags, TYPES, REACTIONS, typeCategories, encodeCursor, decodeCursor, nextYearly, httpError, clamp, isValidTimeZone } from './domain.mjs';
+import {installJournalSeries,validateJournalMembership} from './journal-series.mjs';
 const SCHEMA=fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)),'schema.sql'),'utf8');
 const bool=(v)=>v?1:0;
 const normPost=(r)=>r ? {...r,tags:JSON.parse(r.tags||'[]'),featured:!!r.featured,pinned:!!r.pinned,allow_comments:!!r.allow_comments,allow_reactions:!!r.allow_reactions,milestone:!!r.milestone}:null;
-const pubFields=['id','slug','type','title','excerpt','body','emoji','category','tags','published_at','updated_at','featured','pinned','allow_comments','allow_reactions','milestone','version','created_at'];
+const pubFields=['id','slug','type','title','excerpt','body','emoji','category','tags','published_at','updated_at','featured','pinned','allow_comments','allow_reactions','milestone','series_id','series_part','version','created_at'];
 export const publicPost=(r)=>{const p=normPost(r);if(!p)return null;return Object.fromEntries(pubFields.map(k=>[k,p[k]]));};
 export class Store{
   constructor(location=config.dbPath){
@@ -25,6 +26,7 @@ export class Store{
     if(!mediaColumns.includes('sort_index'))this.db.exec('ALTER TABLE media ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 0');
     this.db.exec("UPDATE media SET sort_index=(SELECT COUNT(*) FROM media AS m2 WHERE m2.owner_id IS media.owner_id AND (m2.created_at<media.created_at OR (m2.created_at=media.created_at AND m2.id<=media.id))) WHERE sort_index=0");
     this.statements=new Map();
+    installJournalSeries(this);
     this.initV6Search();
   }
   initV6Search(){
@@ -156,13 +158,14 @@ export class Store{
     if(method!=='draft'&&!body&&!Array.isArray(fields.mediaIds))throw httpError(400,'Add some content or media before publishing.');
     const timezone=fields.timezone||config.timezone;
     if(!isValidTimeZone(timezone))throw httpError(400,'Select a valid IANA timezone.');
-    return {type,title,excerpt,body,emoji,category,tags,featured:bool(fields.featured),pinned:bool(fields.pinned),allow_comments:bool(fields.allowComments??fields.allow_comments),allow_reactions:fields.allowReactions===false||fields.allowReactions===0?0:fields.allowReactions===undefined&&fields.allow_reactions===0?0:1,milestone:bool(fields.milestone),upcoming_public:bool(fields.upcomingPublic??fields.upcoming_public),timezone};
+    const {seriesId,seriesPart}=validateJournalMembership(this,fields,type);
+    return {type,title,excerpt,body,emoji,category,tags,featured:bool(fields.featured),pinned:bool(fields.pinned),allow_comments:bool(fields.allowComments??fields.allow_comments),allow_reactions:fields.allowReactions===false||fields.allowReactions===0?0:fields.allowReactions===undefined&&fields.allow_reactions===0?0:1,milestone:bool(fields.milestone),upcoming_public:bool(fields.upcomingPublic??fields.upcoming_public),timezone,seriesId,seriesPart};
   }
   uniqueSlug(base,exclude=''){let slug=slugify(base),n=2;while(this.one('SELECT id FROM posts WHERE slug=? AND id<>?',slug,exclude)){slug=slugify(base).slice(0,80)+'-'+n++;}return slug;}
   createPost(payload,actor){
     const data=this.validatePost(payload,'draft'),stamp=now(),id=uid('post'),slug=this.uniqueSlug(payload.slug||data.title);
-    this.exec(`INSERT INTO posts(id,slug,type,title,excerpt,body,emoji,category,tags,featured,pinned,allow_comments,allow_reactions,milestone,upcoming_public,timezone,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,slug,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,stamp,stamp);
+    this.exec(`INSERT INTO posts(id,slug,type,title,excerpt,body,emoji,category,tags,featured,pinned,allow_comments,allow_reactions,milestone,upcoming_public,timezone,series_id,series_part,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,slug,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,data.seriesId,data.seriesPart,stamp,stamp);
     this.audit(actor,'post.created','post',id);return normPost(this.one('SELECT * FROM posts WHERE id=?',id));
   }
   savePost(id,payload,actor){
@@ -173,7 +176,7 @@ export class Store{
     if(!Object.hasOwn(merged,'allowComments'))merged.allowComments=!!prev.allow_comments;
     if(!Object.hasOwn(merged,'allowReactions'))merged.allowReactions=!!prev.allow_reactions;
     const data=this.validatePost(merged,'draft'),stamp=now(),version=prev.version+1;
-    this.exec(`UPDATE posts SET type=?,title=?,excerpt=?,body=?,emoji=?,category=?,tags=?,featured=?,pinned=?,allow_comments=?,allow_reactions=?,milestone=?,upcoming_public=?,timezone=?,updated_at=?,version=? WHERE id=?`,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,stamp,version,id);
+    this.exec(`UPDATE posts SET type=?,title=?,excerpt=?,body=?,emoji=?,category=?,tags=?,featured=?,pinned=?,allow_comments=?,allow_reactions=?,milestone=?,upcoming_public=?,timezone=?,series_id=?,series_part=?,updated_at=?,version=? WHERE id=?`,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,data.seriesId,data.seriesPart,stamp,version,id);
     this.audit(actor,'post.updated','post',id);
     if(prev.state==='published')this.emit('post.updated',id,version,{slug:prev.slug});
     return normPost(this.one('SELECT * FROM posts WHERE id=?',id));
