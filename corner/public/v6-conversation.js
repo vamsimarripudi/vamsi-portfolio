@@ -142,6 +142,7 @@
    if(id!==serial||!dialog.open)return;
    field.value='';replyTo=null;field.placeholder='Write something thoughtful…';
    await refresh(id);
+   window.CornerReaderMotion?.reply(get('.v6-sheet-send'),sent?.state==='pending');
    announce(sent?.state==='pending'?'Awaiting review. Only you and moderators can see this reply.':
     'Your reply is live.');
   }catch(error){if(id===serial&&dialog.open)announce(error.message)}

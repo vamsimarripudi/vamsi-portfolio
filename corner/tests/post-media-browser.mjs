@@ -255,7 +255,10 @@ try{
  assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
  await dialog.locator('figure img').evaluate(el=>{
    el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:17,pointerType:'touch',clientX:240,clientY:250}));
+   el.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:17,pointerType:'touch',clientX:150,clientY:248}));
+   if(!el.style.transform.includes('translate3d('))throw Error('Photograph must follow the finger before swipe commits');
    el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
+   if(el.style.transform)throw Error('Dragged photograph must reset its inline transform after swipe');
  });
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
  // Browser-generated click following a swipe must NOT immediately dismiss the viewer.
