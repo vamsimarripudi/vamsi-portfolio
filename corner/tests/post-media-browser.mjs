@@ -216,18 +216,23 @@ try{
    });
    assert.ok(layout.scroll<=width+1,'Studio Media must not overflow at '+width+' '+JSON.stringify(layout));
    assert.ok(layout.cards.every(c=>c.left>=-1&&c.right<=width+1),'Media cards inside screen '+width+' '+JSON.stringify(layout));
-   assert.ok(layout.cards.every(c=>c.width>=Math.min(235,layout.panelWidth-1)),'No narrow/tall fixed cards '+width+' '+JSON.stringify(layout));
-   assert.ok(layout.captionClamp.every(v=>v==='2'),'Long captions are previewed in two readable lines');
+   assert.ok(layout.cards.every(c=>c.width>=Math.min(105,layout.panelWidth/3.4)),'Image thumbnails remain tappable '+width+' '+JSON.stringify(layout));
+   // The V7 library is intentionally photo-first: hidden metadata is only shown after opening an item.
+   if(width<768){
+     assert.equal(layout.cards[0].left!==layout.cards[1].left,true,'Two-column photo grid on phones '+width);
+   }
    if(width>=1024){
-     assert.ok(layout.cards[0].width>=Math.min(260,layout.panelWidth/3),'Gallery fills available workspace '+width);
+     assert.ok(layout.cards[0].width>=Math.min(220,layout.panelWidth/3.2),'Three-column gallery fills available workspace '+width);
    }
  }
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.locator('#admin-view .corner-library-grid .media-quick-edit').count(),0,'Library shows no attachment edit forms');
+ assert.equal(await libraryCards.first().locator('.media-card-caption').isVisible(),false,'Media grid contains no visible caption cards');
+ assert.equal(await libraryCards.first().locator('[data-media-edit]').isVisible(),false,'Media grid contains no visible edit buttons');
  const captions=(await libraryCards.locator('.media-card-caption').allTextContents()).map(c=>c.trim()).sort();
  assert.deepEqual(captions,['Third carousel moment.','Second caption updated.'].sort(),'Library reflects delete and preserved captions');
  const selectedCaption=(await libraryCards.first().locator('.media-card-caption').textContent()).trim();
- await libraryCards.first().locator('[data-media-edit]').click();
+ await libraryCards.first().locator('.media-view-link').click();
  await page.locator('#media-editor textarea[name="alt"]').waitFor({state:'visible'});
  assert.equal(await page.locator('#media-editor input[name="caption"]').inputValue(),selectedCaption,'Edit details opens selected asset');
  await page.locator('#back-media').click();
