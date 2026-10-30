@@ -48,7 +48,8 @@ test('Studio schedule, crop, basic Insights and switches have regression contrac
  assert.match(admin,/corner-schedule-modal/);
  assert.match(admin,/Schedule publication/);
  assert.match(admin,/formSchedule\.elements\.localTime\.value/);
- assert.match(admin,/\.querySelector\('\[data-crop-upload\]'\)/);
+ assert.match(admin,/crop\.dataset\.cropUpload/,'Crop control remains available inside explicit photo options');
+ assert.doesNotMatch(admin,/requestAnimationFrame\(\(\)=>previewList\.querySelector\('\[data-crop-upload\]'\)\?\.click\(\)\)/,'Cropping cannot open automatically on selection');
  assert.match(crop,/createImageBitmap/);
  assert.match(crop,/canvas\.toBlob/);
  assert.match(auth,/api\/v1\/auth\/session/);
