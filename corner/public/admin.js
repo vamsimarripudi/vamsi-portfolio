@@ -93,13 +93,26 @@
       <label>Pinned <input type="checkbox" name="pinned" ${p.pinned?'checked':''}></label>
       <label>Milestone <input type="checkbox" name="milestone" ${p.milestone?'checked':''}></label>
       <label>Public upcoming teaser <input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}></label>
+      <div class="v7-series-settings"><span>Journal series · optional</span>
+        <label for="v7-series-select">Part of a series
+          <select id="v7-series-select" name="seriesSlug">
+            <option value="" ${!p.series?.slug?'selected':''}>Standalone journal entry</option>
+            <option value="learning-everything-doing-nothing" ${p.series?.slug==='learning-everything-doing-nothing'?'selected':''}>Learning Everything, Doing Nothing</option>
+          </select>
+        </label>
+        <label for="v7-series-part">Chapter number
+          <input id="v7-series-part" name="seriesPart" type="number" inputmode="numeric" min="1" max="99"
+            value="${Number(p.series?.partNumber||2)}">
+        </label>
+        <small>Chapter design applies automatically. Unpublished parts stay private; existing chapters retain their own URL.</small>
+      </div>
       <p class="v5-edit-hint">Your title and summary are derived from your writing. Change the presentation only if needed.</p>
     </div><div class="v5-editor-media-actions"><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media">＋ Attach photo or video <span class="corner-media-count" id="media-count" hidden></span></button><span id="save-indicator" class="v5-editor-status">${id?'Last saved '+esc(p.updated_at||''):'Start writing to autosave'}</span></div></div>
     <div class="editor-actions v5-editor-actions"><button type="button" class="secondary" id="save-post">Save draft</button><button type="button" id="publish-post">Publish ↗</button><button type="button" class="secondary" id="schedule-post">Schedule</button>${p.state==='draft'&&id?'<button type="button" class="v5-editor-danger" id="delete-draft">Delete draft</button>':''}${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div></div>`;
   }
   function formValues(form){
     const body=form.elements.body.value,chosen=form.elements.type.value;
-    const type=chosen==='auto'?autoType(body):chosen;
+    const type=form.elements.seriesSlug?.value?'journal':chosen==='auto'?autoType(body):chosen;
     return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
   }
   function updatePreview(form){const p=formValues(form),card=$('.preview-card');if(!card)return;
@@ -142,6 +155,22 @@
       pendingSave=(async()=>{try{
         const values=formValues(form),savedRevision=editorRevision;
         const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
+        // Series membership is separate from the original story text/media.
+        // Retain the saved post ID/version if linking fails so retries are safe.
+        const previousSeries=p.series||null;
+        const seriesSlug=String(form.elements.seriesSlug?.value||'');
+        const seriesPart=Number(form.elements.seriesPart?.value||2);
+        const needsSeriesUpdate=seriesSlug!==String(previousSeries?.slug||'')||
+          (seriesSlug&&seriesPart!==Number(previousSeries?.partNumber));
+        if(needsSeriesUpdate){
+          try{
+            stored.series=await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',
+              {slug:seriesSlug,partNumber:seriesPart});
+          }catch(seriesError){
+            p={...stored,series:previousSeries};active.post=p;active.dirty=true;
+            throw new Error('Story saved, but chapter assignment failed: '+seriesError.message);
+          }
+        }else stored.series=previousSeries;
         // Persisted draft is safe, but never apply a stale response to a different Studio view.
         if(controller.signal.aborted)return null;
         p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
