@@ -86,6 +86,16 @@
     <label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, a build, something worth sharing…">${esc(p.body||'')}</textarea>
     <div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>
       <label>Presentation<select name="type"><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label>
+      <div class="v7-series-settings" data-journal-series-settings>
+        <label>Part of a series (optional)<select name="seriesId" aria-label="Choose Journal series">
+          <option value="">Not part of a series</option>${p.series_id?`<option value="${esc(p.series_id)}" selected>Current series</option>`:''}
+        </select></label>
+        <div class="v7-series-chapter" data-journal-series-part ${p.series_id?'':'hidden'}>
+          <label>Chapter number<input type="number" name="seriesPart" min="1" max="99" step="1" value="${Number(p.series_part)||1}" inputmode="numeric"></label>
+          <p data-journal-series-hint>Each chapter has its own story and position. The first part stays unchanged.</p>
+          <a data-journal-series-href href="/series/learning-everything-doing-nothing" target="_blank" rel="noopener">View series ↗</a>
+        </div>
+      </div>
       <label>Symbol <input name="emoji" maxlength="8" value="${esc(p.emoji||'✳')}"></label>
       <label>Allow comments <input type="checkbox" name="allowComments" ${p.allow_comments!==false&&p.allow_comments!==0?'checked':''}></label>
       <label>Allow reactions <input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}></label>
@@ -99,12 +109,13 @@
   }
   function formValues(form){
     const body=form.elements.body.value,chosen=form.elements.type.value;
-    const type=chosen==='auto'?autoType(body):chosen;
-    return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
+    const seriesId=form.elements.seriesId?.value||null;
+    const type=seriesId?'journal':chosen==='auto'?autoType(body):chosen;
+    return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,seriesId,seriesPart:seriesId?Number(form.elements.seriesPart?.value||1):null,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
   }
   function updatePreview(form){const p=formValues(form),card=$('.preview-card');if(!card)return;
     card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
-    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();
+    $('.preview-category',card).textContent=p.seriesId?'JOURNAL SERIES':typeNames[p.type].toUpperCase();
     $('.preview-title',card).textContent=p.title;
     $('.preview-excerpt',card).textContent=p.excerpt||'A moment taking shape.';
     const quote=$('.preview-story-quote',card);if(quote){quote.hidden=true;quote.textContent='';}
@@ -120,6 +131,39 @@
     const publishMotion=window.CornerPublishMotion?.mount(publishButton);
     controller.signal.addEventListener('abort',()=>publishMotion?.cancel(),{once:true});
     const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
+    const seriesControl=form.elements.seriesId,seriesPartControl=form.elements.seriesPart;
+    const seriesPartPanel=form.querySelector('[data-journal-series-part]');
+    let availableSeries=[];
+    const updateSeriesControls=()=>{
+      const selected=availableSeries.find(x=>x.id===seriesControl.value);
+      seriesPartPanel.hidden=!seriesControl.value;
+      const href=form.querySelector('[data-journal-series-href]');
+      if(href&&selected)href.href='/series/'+encodeURIComponent(selected.slug);
+      const hint=form.querySelector('[data-journal-series-hint]');
+      if(hint&&selected)hint.textContent='Part '+(seriesPartControl.value||1)+' of '+selected.title+'. Each chapter has a unique number.';
+      if(seriesControl.value&&form.elements.type.value!=='journal')form.elements.type.value='journal';
+    };
+    seriesControl.addEventListener('change',()=>{
+      const chosen=availableSeries.find(x=>x.id===seriesControl.value);
+      if(chosen&&seriesControl.value!==p.series_id)seriesPartControl.value=String(chosen.nextPart||1);
+      updateSeriesControls();updatePreview(form);
+    });
+    seriesPartControl.addEventListener('input',()=>{updateSeriesControls();updatePreview(form)});
+    updateSeriesControls();
+    api('/corner/api/admin/series').then(series=>{
+      if(controller.signal.aborted)return;
+      availableSeries=series;
+      const previous=seriesControl.value;
+      seriesControl.replaceChildren(new Option('Not part of a series',''));
+      for(const item of series)seriesControl.add(new Option(item.title,item.id));
+      seriesControl.value=previous;
+      if(previous&&!seriesControl.value){
+        // Preserve the original value if the list could not resolve the link.
+        seriesControl.add(new Option('Previously linked series',previous,true,true));
+      }
+      updateSeriesControls();
+    }).catch(err=>{if(!controller.signal.aborted)console.warn('Series selection temporarily unavailable:',err.message)});
+
     const hideSettings=()=>{if(menu){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}};
     toggle?.addEventListener('click',()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden))});
     document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
