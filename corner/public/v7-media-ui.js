@@ -68,7 +68,7 @@
    tabs.replaceChildren();
    cards.forEach((card,index)=>{
     const tab=document.createElement('button');tab.type='button';
-    tab.className='v7-media-tab';tab.textContent='Photo '+(index+1);
+    tab.className='v7-media-tab';tab.textContent='File '+(index+1);
     tab.setAttribute('aria-pressed',String(index===activeIndex));
     tab.onclick=()=>{activeIndex=index;refresh()};
     tabs.append(tab);

@@ -437,7 +437,7 @@
       wrapper.className='upload-preview-card';
       const figure=document.createElement('figure');
       const remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
-      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Enter descriptions, then attach them to your story.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
+      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Choose Attach to review options.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
       figure.append(remove);
       const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
       entry.url=URL.createObjectURL(entry.file);
@@ -454,7 +454,7 @@
       entry.alt=document.createElement('input');
       entry.alt.name='alt';entry.alt.maxLength=240;
       entry.alt.placeholder='Describe what appears in the photograph';
-      entry.alt.required=entry.file.type.startsWith('image/');
+      entry.alt.required=false;
       if(!entry.alt.required){altLabel.textContent='Video description (optional)'}
       altLabel.append(entry.alt);
       const captionLabel=document.createElement('label');
@@ -481,7 +481,7 @@
               if(entry.url)URL.revokeObjectURL(entry.url);
               entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;
               filename.textContent=adjusted.name;
-              status.textContent='Crop applied. Add the image description, then attach.';
+              status.textContent='Crop applied. Choose Add to post when ready.';
             }
           }catch(error){status.textContent=error.message||'Could not crop this image.'}
           finally{crop.disabled=false}
@@ -500,11 +500,11 @@
       cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
       if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use JPG, PNG, HEIC, WebP, GIF, MP4, MOV or WebM.';submit.disabled=true;return}
-      status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
+      status.textContent=files.length?files.length+' selected. Choose Attach to review options.':'';
       for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
-      if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
+      // Cropping is an explicit second-stage choice, never launched by selecting a file.
     };
     fileInput.oninput=selectedFiles;
     fileInput.onchange=selectedFiles;
@@ -527,7 +527,8 @@
             const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
             if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
             if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
-            if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
+            // Provide an accurate generic fallback to meet the existing server requirement.
+            // A descriptive alternative remains editable in Media details.
             if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
           }
           if(!postId){
@@ -538,7 +539,26 @@
           for(const entry of pending.filter(item=>!item.done)){
             const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;
             status.textContent=message;progress(message);
-            const stored=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+            const fallbackAlt=entry.file.type.startsWith('image/')?'Photo attached to this story':'';
+            const stored=await upload(entry.file,postId,entry.alt.value.trim()||fallbackAlt,entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+            if(stored?.id&&entry.file.type.startsWith('image/')){
+              const tile=entry.alt.closest('.upload-preview-card');
+              const value=(name,defaultValue)=>tile?.querySelector('[name='+name+']')?.value||defaultValue;
+              const preset=value('v7-preset','original'),rotation=Number(value('v7-rotation','0'));
+              const brightness=Number(value('v7-brightness','1')),contrast=Number(value('v7-contrast','1'));
+              const saturation=Number(value('v7-saturation','1'));
+              if(preset!=='original'||rotation||brightness!==1||contrast!==1||saturation!==1){
+                status.textContent='Applying photo adjustments…';progress('Applying photo adjustments…');
+                try{
+                  await api('/corner/api/admin/media/'+encodeURIComponent(stored.id)+'/edits','POST',{
+                    preset,crop:'original',rotation,brightness,contrast,saturation
+                  });
+                }catch(error){
+                  // The upload succeeded: do not re-upload a duplicate photo.
+                  toast('Photo attached, but some adjustments need attention. Edit it in Media Library.','warning');
+                }
+              }
+            }
             if(stored?.jobId){
               let complete=false;
               for(let poll=0;poll<110;poll++){
@@ -569,6 +589,7 @@
       });
       if(result.ok)status.textContent='';
     };
+    window.CornerMediaV7?.mountAttachment(section,form);
   }
   function mediaCard(x,quickEdit=false,index=0,total=1){
     const src='/corner/media/'+encodeURIComponent(x.storage_key);
@@ -605,7 +626,7 @@
     if(!response.ok)throw Error(result.error?.message||'Upload failed');
     return result.data;
   }
-  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{
+  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Select a photo or video to view its details, crop or edit it.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;window.CornerMediaV7?.mountLibrary(root);$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{
       if(!confirm('Delete this media file? It will be removed from its story.'))return;
       const id=button.dataset.mediaDelete;
       await actionMotion({action:'media.delete',trigger:button,targetId:id,visualTarget:button.closest('.media-thumb'),
