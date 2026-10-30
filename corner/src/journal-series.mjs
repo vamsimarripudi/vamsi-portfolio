@@ -1,0 +1,107 @@
+import {httpError} from './domain.mjs';
+import {publicPost} from './store.mjs';
+
+export const FIRST_SERIES_SLUG='learning-everything-doing-nothing';
+export const FIRST_PART_SLUG='learning-everything-doing-nothing';
+export const FIRST_PART_ID='post_fdbce666-5456-40e4-a3bc-1027b881b64e';
+export const FIRST_SERIES_TITLE='Learning Everything, Doing Nothing';
+export const FIRST_SERIES_SUMMARY='On curiosity, unfinished beginnings, and the distance between knowing and doing.';
+const stamp=()=>new Date().toISOString();
+const asPartNumber=n=>Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=99?Number(n):null;
+const validSlug=slug=>typeof slug==='string'&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)&&slug.length<=80;
+
+export class JournalSeries{
+  constructor(store){
+    this.store=store;
+    // Additive schema: never change an existing article's text, slug or media.
+    store.db.exec(`
+      CREATE TABLE IF NOT EXISTS journal_series (
+        slug TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        summary TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'ongoing',
+        theme TEXT NOT NULL DEFAULT 'marginalia',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS journal_series_parts (
+        post_id TEXT PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+        series_slug TEXT NOT NULL REFERENCES journal_series(slug) ON DELETE CASCADE,
+        part_number INTEGER NOT NULL CHECK(part_number BETWEEN 1 AND 99),
+        UNIQUE(series_slug,part_number)
+      );
+      CREATE INDEX IF NOT EXISTS idx_journal_series_order ON journal_series_parts(series_slug,part_number);
+    `);
+    // Only attach the exact, already-published Part 01. Never fabricate or
+    // republish content if the real entry does not exist.
+    const original=store.one("SELECT id FROM posts WHERE id=? AND slug=? AND type='journal' AND state='published'",
+      FIRST_PART_ID,FIRST_PART_SLUG);
+    if(original){
+      const today=stamp();
+      store.exec(`INSERT OR IGNORE INTO journal_series(slug,title,summary,status,theme,created_at,updated_at)
+        VALUES(?,?,?,'ongoing','marginalia',?,?)`,FIRST_SERIES_SLUG,FIRST_SERIES_TITLE,FIRST_SERIES_SUMMARY,today,today);
+      store.exec(`INSERT OR IGNORE INTO journal_series_parts(series_slug,post_id,part_number)
+        VALUES(?,?,1)`,FIRST_SERIES_SLUG,original.id);
+    }
+  }
+  adminSeries(){return this.store.all("SELECT slug,title,summary,status,theme FROM journal_series ORDER BY created_at,slug");}
+  assignment(postId){
+    const row=this.store.one(`SELECT s.slug,s.title,s.summary,p.part_number AS partNumber
+      FROM journal_series_parts p JOIN journal_series s ON s.slug=p.series_slug WHERE p.post_id=?`,postId);
+    return row||null;
+  }
+  published(slug){
+    if(!validSlug(slug))return null;
+    const meta=this.store.one('SELECT slug,title,summary,status,theme FROM journal_series WHERE slug=?',slug);
+    if(!meta)return null;
+    const rows=this.store.all(`SELECT p.*,s.part_number AS partNumber
+      FROM journal_series_parts s JOIN posts p ON p.id=s.post_id
+      WHERE s.series_slug=? AND p.state='published' AND p.type='journal'
+      ORDER BY s.part_number ASC,p.published_at ASC,p.id ASC`,slug);
+    if(!rows.length)return null;
+    const parts=rows.map(row=>{
+      const post=publicPost(row);
+      const media=this.store.listMedia(post.id);
+      const cover=media.find(m=>String(m.mime_type||'').startsWith('image/'))||null;
+      return {...post,partNumber:row.partNumber,cover};
+    });
+    return {...meta,parts};
+  }
+  forPost(id){
+    const assigned=this.assignment(id);
+    if(!assigned)return null;
+    const info=this.published(assigned.slug);
+    if(!info)return null;
+    const index=info.parts.findIndex(part=>part.id===id);
+    if(index<0)return null;
+    return {...info,partNumber:info.parts[index].partNumber,previous:info.parts[index-1]||null,next:info.parts[index+1]||null};
+  }
+  decorate(post){
+    if(!post||post.type!=='journal')return post;
+    const assignment=this.assignment(post.id);
+    if(!assignment)return post;
+    return {...post,series:{slug:assignment.slug,title:assignment.title,partNumber:assignment.partNumber}};
+  }
+  assign(postId,slug,partNumber,actor){
+    const post=this.store.adminPost(postId);
+    if(!post)throw httpError(404,'Post not found');
+    if(slug===''||slug===null){
+      this.store.exec('DELETE FROM journal_series_parts WHERE post_id=?',postId);
+      this.store.audit(actor,'journal.series.unlinked','post',postId);
+      return null;
+    }
+    if(post.type!=='journal')throw httpError(400,'Choose Journal presentation before adding a chapter.');
+    if(!validSlug(slug)||!this.store.one('SELECT slug FROM journal_series WHERE slug=?',slug))
+      throw httpError(404,'Journal series not found');
+    const order=asPartNumber(partNumber);
+    if(order===null)throw httpError(400,'Chapter number must be between 1 and 99');
+    const collision=this.store.one('SELECT post_id FROM journal_series_parts WHERE series_slug=? AND part_number=?',slug,order);
+    if(collision&&collision.post_id!==postId)throw httpError(409,'That chapter number is already in use.');
+    this.store.transaction(()=>{
+      this.store.exec('DELETE FROM journal_series_parts WHERE post_id=?',postId);
+      this.store.exec('INSERT INTO journal_series_parts(series_slug,post_id,part_number) VALUES(?,?,?)',slug,postId,order);
+      this.store.audit(actor,'journal.series.assigned','post',postId,{slug,partNumber:order});
+    });
+    return this.assignment(postId);
+  }
+}
