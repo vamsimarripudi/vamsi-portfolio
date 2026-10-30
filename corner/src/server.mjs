@@ -175,7 +175,7 @@ async function mediaFile(req,res,key,variant=''){
   res.writeHead(200,{...headers,'content-length':stat.size});
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
-function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...studioJournalSeries(store).map(s=>'/series/'+s.slug),...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
+function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...studioJournalSeries(store).filter(s=>store.one("SELECT 1 AS ok FROM posts WHERE series_id=? AND state='published' LIMIT 1",s.id)).map(s=>'/series/'+s.slug),...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
@@ -236,7 +236,7 @@ async function api(req,res,pathName,url){
   const seriesApi=pathName.match(/^\/api\/series\/([a-z0-9-]+)$/);
   if(seriesApi&&method==='GET'){
     const series=journalSeriesBySlug(store,seriesApi[1]);
-    if(!series)throw httpError(404,'Series not found');
+    if(!series||!series.publishedCount)throw httpError(404,'Series not found');
     return ok(res,series);
   }
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}
@@ -515,7 +515,7 @@ async function route(req,res){
     const seriesRoute=pathname.match(/^\/series\/([a-z0-9-]+)$/);
     if(seriesRoute){
       const series=journalSeriesBySlug(store,seriesRoute[1]);
-      if(!series)throw httpError(404,'Series not found');
+      if(!series||!series.publishedCount)throw httpError(404,'Series not found');
       return page(res,journalSeriesPage({series}));
     }
     if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),journalSeries:category==='Journal'?journalSeriesBySlug(store,'learning-everything-doing-nothing'):null,demo:config.demo&&store.getFeed({category}).items.length===0}))}

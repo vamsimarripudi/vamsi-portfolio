@@ -54,6 +54,14 @@ test('existing published Part 01 becomes series cover without new published stor
  const journal=await (await fetch(base+'/category/journal')).text();
  assert.match(journal,/journal-series-spotlight/);
  assert.equal((await fetch(base+'/series/no-such-series')).status,404);
+ // Creating a new series in Studio must not expose it before publication.
+ const unopened=new Store(db);
+ unopened.exec("INSERT INTO journal_series(id,slug,title,subtitle,description,planned_parts,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
+  'series_private','private-in-progress','A private draft series','','','[]',stamp,stamp);
+ unopened.close();
+ assert.equal((await fetch(base+'/series/private-in-progress')).status,404);
+ assert.equal((await fetch(base+'/api/series/private-in-progress')).status,404);
+ assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),/private-in-progress/);
  assert.equal((await fetch(base+'/api/admin/series')).status,401,'Only staff can read publishing controls');
  const after=new Store(db),preserved=after.adminPost(postId);
  assert.equal(preserved.body,original);assert.equal(preserved.version,4);
