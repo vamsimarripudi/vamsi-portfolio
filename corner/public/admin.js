@@ -553,7 +553,7 @@
                   await api('/corner/api/admin/media/'+encodeURIComponent(stored.id)+'/edits','POST',{
                     preset,crop:'original',rotation,brightness,contrast,saturation
                   });
-                }catch(error){
+                }catch{
                   // The upload succeeded: do not re-upload a duplicate photo.
                   toast('Photo attached, but some adjustments need attention. Edit it in Media Library.','warning');
                 }
