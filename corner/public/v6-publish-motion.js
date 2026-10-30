@@ -3,6 +3,7 @@
 (()=>{
  'use strict';
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+ const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduce.matches;
  const nap=milliseconds=>new Promise(resolve=>setTimeout(resolve,Math.max(0,milliseconds)));
  const staticSVG='<svg viewBox="0 0 60 60" aria-hidden="true" focusable="false">'+
   '<circle class="v6-publish-ring-track" cx="30" cy="30" r="24"/>'+
@@ -53,13 +54,13 @@
    async success(){
     if(phase!=='pending')return false;
     const run=token;
-    if(!reduce.matches)await nap(Math.max(0,420-(performance.now()-startAt)));
+    if(!minimal())await nap(Math.max(0,420-(performance.now()-startAt)));
     if(!alive(run))return false;
     state('confirmed','Your story is published.');
-    if(!reduce.matches)await nap(230);
+    if(!minimal())await nap(230);
     if(!alive(run))return false;
     state('success','Published successfully.');
-    await nap(reduce.matches?0:1150);
+    await nap(minimal()?0:1150);
     return alive(run);
    },
    failure(message='Could not publish. Please try again.'){

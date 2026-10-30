@@ -5,9 +5,10 @@
  const media=matchMedia('(prefers-reduced-motion: reduce)');
  const read=key=>{try{return sessionStorage.getItem(key)}catch{return null}};
  const write=(key,value)=>{try{sessionStorage.setItem(key,value)}catch{/* preference storage is optional */}};
- let paused=read('corner-motion-off')==='1',library,viewContext,disposed=false;
+ const policy=window.CornerMotionPolicy;
+ let paused=policy?policy.mode()==='minimal':read('corner-motion-off')==='1',library,viewContext,disposed=false;
  const counters=new Map(),effects=new Set();
- const enabled=()=>!disposed&&!media.matches&&!paused&&!navigator.connection?.saveData;
+ const enabled=()=>!disposed&&!media.matches&&!paused&&!navigator.connection?.saveData&&!(policy?.isReduced?.());
  const load=()=>{
   if(window.gsap)return Promise.resolve(window.gsap);
   if(!library)library=new Promise((resolve,reject)=>{
@@ -60,10 +61,12 @@
  }
  function stop(){viewContext?.revert();viewContext=null;for(const node of [...counters.keys()])cancelCount(node);for(const effect of effects){effect.progress(1);effect.kill()}effects.clear();html.dataset.studioMotion='off'}
  function preference(){
+  if(policy)paused=policy.mode()==='minimal';
   document.querySelectorAll('[data-motion-toggle]').forEach(button=>{button.setAttribute('aria-pressed',String(paused||media.matches));button.setAttribute('aria-label',media.matches?'Reduced motion follows device settings':paused?'Enable animations':'Reduce animations');button.title=button.getAttribute('aria-label')});
   if(enabled())refresh();else stop();
  }
- document.querySelectorAll('[data-motion-toggle]').forEach(button=>button.addEventListener('click',()=>{paused=!paused;write('corner-motion-off',paused?'1':'0');preference()}));
+ document.querySelectorAll('[data-motion-toggle]').forEach(button=>button.addEventListener('click',()=>{if(policy)policy.setMode(paused?'balanced':'minimal');else{paused=!paused;write('corner-motion-off',paused?'1':'0')}preference()}));
+ document.addEventListener('corner:motion-preference-change',preference);
  media.addEventListener?.('change',preference);
  const collapse=document.querySelector('[data-studio-collapse]');
  const applyCollapse=value=>{html.dataset.studioCollapsed=String(value);if(collapse){collapse.setAttribute('aria-expanded',String(!value));collapse.setAttribute('aria-label',value?'Expand sidebar':'Collapse sidebar');collapse.title=collapse.getAttribute('aria-label')}};
@@ -84,6 +87,6 @@
   catch(error){button.disabled=false;let note=sidebar.querySelector('[role=status]');if(!note){note=document.createElement('p');note.setAttribute('role','status');sidebar.append(note)}note.textContent=error.message}
  });
  window.CornerMotion={refresh,count,react};preference();
- addEventListener('pagehide',()=>{disposed=true;stop();observer?.disconnect();media.removeEventListener?.('change',preference)});
+ addEventListener('pagehide',()=>{disposed=true;stop();observer?.disconnect();media.removeEventListener?.('change',preference);document.removeEventListener('corner:motion-preference-change',preference)});
  addEventListener('pageshow',event=>{if(event.persisted){disposed=false;observer?.observe(sidebar);media.addEventListener?.('change',preference);preference()}});
 })();

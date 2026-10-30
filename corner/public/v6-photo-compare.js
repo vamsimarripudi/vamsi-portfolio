@@ -2,6 +2,7 @@
 (()=>{
  'use strict';
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduced.matches;
  const filters={
   original:'',warm:'sepia(.18) hue-rotate(-9deg) saturate(1.09)',
   film:'sepia(.24) contrast(1.12) saturate(.8)',
@@ -49,7 +50,7 @@
    const reveal=clamp(range.value,0,100,52);
    panel.style.setProperty('--corner-compare-reveal',reveal+'%');
    pct.textContent=reveal+'%';
-   if(reduced.matches)changed.style.transition='none';
+   changed.style.transition=minimal()?'none':'';
   };
   form.addEventListener('input',update);
   form.addEventListener('change',update);

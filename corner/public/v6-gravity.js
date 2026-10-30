@@ -8,7 +8,7 @@
  const mode=()=>{
   try{return localStorage.getItem('corner-motion-mode')||'subtle'}catch{return 'subtle'}
  };
- if(reduce.matches||mode()==='off'||navigator.connection?.saveData)return;
+ if(reduce.matches||window.CornerMotionPolicy?.isReduced?.()||mode()==='off'||mode()==='minimal'||navigator.connection?.saveData)return;
  const keyboard=document.createElement('button');keyboard.type='button';keyboard.className='v6-gravity-play';
  keyboard.textContent='Play the star';keyboard.title='Play a small falling-star animation';
  keyboard.setAttribute('aria-label','Play the decorative falling star effect');
@@ -75,6 +75,7 @@
  star.addEventListener('pointercancel',()=>{lastTap=null});
  keyboard.addEventListener('click',play);
  document.addEventListener('corner:v6-reading',event=>{if(event.detail?.active)cancel()});
+ document.addEventListener('corner:motion-preference-change',event=>{if(event.detail?.reduced)cancel()});
  document.addEventListener('corner:v6-modal',event=>{if(event.detail?.open)cancel()});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel()});
  window.addEventListener('scroll',()=>{if(active&&Math.abs(scrollY-initialY)>9)cancel()},{passive:true});

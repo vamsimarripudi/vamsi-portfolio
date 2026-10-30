@@ -3,6 +3,7 @@
  'use strict';
  const active=new WeakMap(),targets=new Map();
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+ const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduce.matches;
  const definitions={
   'draft.save':['paper','Saving…','Saved',320],
   'post.schedule':['clock','Scheduling…','Scheduled',480],
@@ -69,7 +70,7 @@
    progress(message){state('processing',message||spec[1]);},
    async success(label){
     state('success',label||spec[2]);
-    if(!reduce.matches)await new Promise(resolve=>setTimeout(resolve,spec[3]));
+    if(!minimal())await new Promise(resolve=>setTimeout(resolve,spec[3]));
    },
    failure(error){state('error','Try again');announce.textContent=error?.message||'Action failed.';},
    close(){
@@ -116,7 +117,7 @@
       motion?.failure(error);
       try{onFailure?.(error)}catch{/* Never change the real operation outcome from a toast/feedback error. */}
       // Keep retry/error visible long enough to read; no success is manufactured.
-      if(!reduce.matches&&motion&&trigger.isConnected)
+      if(!minimal()&&motion&&trigger.isConnected)
         await new Promise(resolve=>setTimeout(resolve,420));
     }
     return {ok:false,error,stale:aborted};

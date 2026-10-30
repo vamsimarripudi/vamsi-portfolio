@@ -43,3 +43,5 @@
 :root[data-corner-motion-level="minimal"]::view-transition-old(root),
 :root[data-corner-motion-level="minimal"]::view-transition-new(root),
 :root[data-corner-motion-level="minimal"]::view-transition-group(corner-v6-cover){animation-duration:.01ms!important;animation-delay:0ms!important}
+
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-public-header .category-tabs.corner-rail{transition:none!important}

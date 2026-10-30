@@ -2,6 +2,7 @@
 (()=>{
  'use strict';
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduced.matches;
  const timers=new WeakMap();
  function confirm(button,kind,state='confirmed'){
   if(!button?.isConnected)return;
@@ -15,7 +16,7 @@
   button.append(mark);
   button.dataset.cornerReaderMotion=kind;
   button.dataset.cornerReaderState=state;
-  const delay=reduced.matches?480:820;
+  const delay=minimal()?480:820;
   const timer=setTimeout(()=>{
    if(button.isConnected&&button.querySelector(':scope > .corner-reader-motion-mark')===mark){
     mark.remove();
