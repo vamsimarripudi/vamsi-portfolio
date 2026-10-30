@@ -340,6 +340,7 @@ try{
   'The reveal slider moves the photo mask without writing media');
  const compareOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
  assert.ok(compareOverflow<=1,'Before/after editor does not overflow the phone viewport: '+compareOverflow);
+ await compare.scrollIntoViewIfNeeded();
  await page.screenshot({path:'screenshots/corner-media-before-after-mobile.png',animations:'disabled'});
  await page.locator('#back-media').click();
  await page.locator('#admin-view [data-media-edit]').first().waitFor({state:'visible'});

@@ -13,5 +13,10 @@
 .corner-comfort .corner-photo-compare-label{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:.79rem;color:#474039}
 .corner-comfort .corner-photo-compare-label input{min-width:0;flex:1 1 90px;accent-color:#346a54;touch-action:pan-x}
 .corner-comfort .corner-photo-compare-label output{min-width:35px;font-variant-numeric:tabular-nums;text-align:right}
-@media(max-width:460px){.corner-comfort .corner-photo-compare{padding:10px}.corner-comfort .corner-photo-compare-label{flex-wrap:wrap;gap:8px}}
+@media(max-width:460px){
+ .corner-comfort .corner-photo-compare{padding:10px}
+ .corner-comfort .corner-photo-compare-label{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+ .corner-comfort .corner-photo-compare-label input{grid-column:1/-1;grid-row:2;width:100%;min-width:0}
+ .corner-comfort .corner-photo-compare-label output{grid-column:2;grid-row:1;min-width:35px}
+}
 @media(prefers-reduced-motion:reduce){.corner-comfort .corner-photo-compare-frame img{transition:none!important}}
