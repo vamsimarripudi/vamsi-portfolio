@@ -338,8 +338,8 @@ try{
  await reveal.evaluate(el=>{el.value='73';el.dispatchEvent(new Event('input',{bubbles:true}))});
  assert.equal(await compare.evaluate(el=>el.style.getPropertyValue('--corner-compare-reveal')),'73%',
   'The reveal slider moves the photo mask without writing media');
- const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
- assert.ok(overflow<=1,'Before/after editor does not overflow the phone viewport: '+overflow);
+ const compareOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+ assert.ok(compareOverflow<=1,'Before/after editor does not overflow the phone viewport: '+compareOverflow);
  await page.screenshot({path:'screenshots/corner-media-before-after-mobile.png',animations:'disabled'});
  await page.locator('#back-media').click();
  await page.locator('#admin-view [data-media-edit]').first().waitFor({state:'visible'});
