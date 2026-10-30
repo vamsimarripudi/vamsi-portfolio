@@ -67,7 +67,7 @@ const postId=initial.postId;
 window.CornerPublicLive=Object.freeze({reactionPending:()=>reactionPending>0,apply(data){
    if(initial.page==='feed'){
     if(['post.published','post.updated','post.archived'].includes(data.type))showUpdate('A new note is ready.');
-    if(data.type==='status.updated'){const current=$('.now-status strong');if(current)current.textContent=data.payload?.status?.label||'Keeping a little corner alive.';}
+    if(data.type==='status.updated')window.CornerPulse?.apply?.(data.payload?.status||null);
    }
     if(data.type==='reaction.updated'&&initial.page==='detail'&&data.entityId===postId)$$('.reactions button').forEach(button=>{const n=$('span',button);if(n){n.textContent=data.payload?.counts?.[button.dataset.reaction]||0;window.CornerMotion?.count(n)}});
    if(initial.page==='detail'&&data.type==='comment.created'&&data.entityId===postId)toast('The conversation was updated.');

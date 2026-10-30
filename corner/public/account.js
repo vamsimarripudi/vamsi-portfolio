@@ -48,6 +48,11 @@
       try{sessionStorage.setItem('corner-mfa-challenge',challenge)}catch{ /* storage or URL fragment may be unavailable; keep the form usable */ }
     }).catch(error=>response(mfaForm,error.message,true));
   }
+  async function actionMotion(options){
+    if(window.CornerActionMotion?.run)return window.CornerActionMotion.run(options);
+    try{const result=await options.execute({progress:()=>{}});await options.onSuccess?.(result);return {ok:true,result}}
+    catch(error){options.onFailure?.(error);return {ok:false,error}}
+  }
   for(const form of many('form[data-account-form]')){
     form.addEventListener('submit',async(event)=>{
       event.preventDefault();
@@ -82,17 +87,23 @@
       try{
         let result;
         if(kind==='mfa-activate')result=await api(endpoints[kind],'POST',{challenge,code:data.code});
-        else if(kind==='profile'){
-          // Profile and preferences are separate screens. Preserve the member's
-          // existing preferences when editing name/bio through the established API.
-          result=await api(endpoints.profile,'PATCH',{
-            displayName:data.displayName,bio:data.bio,
-            locale:initial.account?.locale||'en',emailUpdates:initial.account?.emailUpdates===true
-          });
-        }else if(kind==='preferences'){
-          result=await api(endpoints.preferences,'PATCH',{
-            locale:data.locale,emailUpdates:!!first('input[name=emailUpdates]',form)?.checked
-          });
+        else if(kind==='profile'||kind==='preferences'){
+          // Only ordinary account/profile edits animate; security stays quiet.
+          const operation=kind==='profile'?'profile.save':'account.preferences';
+          const outcome=await actionMotion({action:operation,trigger:button,targetId:kind,
+            visualTarget:form.closest('.account-card')||form,
+            execute:()=>kind==='profile'
+              ?api(endpoints.profile,'PATCH',{
+                displayName:data.displayName,bio:data.bio,
+                locale:initial.account?.locale||'en',emailUpdates:initial.account?.emailUpdates===true
+               })
+              :api(endpoints.preferences,'PATCH',{
+                locale:data.locale,emailUpdates:!!first('input[name=emailUpdates]',form)?.checked
+               }),
+            confirm:value=>!!value,
+            onFailure:error=>response(form,error.message,true)});
+          if(!outcome.ok)return;
+          result=outcome.result;
         }else result=await api(endpoints[kind],'POST',data);
         if(kind==='login'){location.assign(base+'/profile');return}
         if(kind==='admin-register'){

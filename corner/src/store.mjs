@@ -115,13 +115,41 @@ export class Store{
     const seq=Number(lastId)||0;if(seq<0||seq>Number.MAX_SAFE_INTEGER)return [];
     return this.all('SELECT seq,id,type,occurred_at,entity_id,version,payload FROM realtime_events WHERE seq>? ORDER BY seq ASC LIMIT 80',seq).map(e=>({id:e.id,seq:e.seq,type:e.type,occurredAt:e.occurred_at,entityId:e.entity_id,version:e.version,payload:JSON.parse(e.payload)}));
   }
-  currentStatus(){let status=this.one('SELECT * FROM site_status WHERE id=1');if(!status||!status.is_active)return null;let stamp=now();if(status.active_from&&status.active_from>stamp)return null;if(status.active_until&&status.active_until<=stamp)return null;return {label:status.label,detail:status.detail,icon:status.icon,version:status.version,updatedAt:status.updated_at};}
-  updateStatus(data,actor){
-    const label=pureText(data.label,55), detail=pureText(data.detail,115),icon=pureText(data.icon,8)||'✳';let timestamp=now(),prev=this.one('SELECT version FROM site_status WHERE id=1');const version=(prev?.version||0)+1;
-    this.exec('UPDATE site_status SET label=?,detail=?,icon=?,is_active=?,active_from=?,active_until=?,version=?,updated_at=? WHERE id=1',label,detail,icon,bool(data.isActive&&label),data.activeFrom||null,data.activeUntil||null,version,timestamp);
-    this.audit(actor,'status.updated','site_status','1');this.emit('status.updated','1',version,{status:this.currentStatus()});return this.currentStatus();
+  // Corner Pulse is ephemeral; storage and owner audit remain, public reads never expose expired content.
+  currentStatus(){
+    const status=this.one('SELECT * FROM site_status WHERE id=1');
+    if(!status||!status.is_active||!status.label)return null;
+    const timestamp=now();
+    if(status.active_from&&status.active_from>timestamp)return null;
+    const startMs=Date.parse(status.active_from||status.updated_at);
+    if(!Number.isFinite(startMs))return null;
+    // Legacy rows without active_until also expire, avoiding indefinite old statuses.
+    const legacyEnd=new Date(startMs+24*60*60*1000).toISOString();
+    const expiresAt=status.active_until&&Number.isFinite(Date.parse(status.active_until))
+      ?new Date(Math.min(Date.parse(status.active_until),Date.parse(legacyEnd))).toISOString():legacyEnd;
+    if(expiresAt<=timestamp)return null;
+    return {label:status.label,detail:status.detail,icon:status.icon,version:status.version,
+      updatedAt:status.updated_at,expiresAt,durationHours:24};
   }
-  validatePost(fields,method='draft'){
+  updateStatus(data,actor){
+    const label=pureText(data.label,55),detail=pureText(data.detail,115),icon=pureText(data.icon,8)||'✳';
+    const timestamp=now(),nowMs=Date.parse(timestamp),prev=this.one('SELECT version FROM site_status WHERE id=1');
+    const version=(prev?.version||0)+1,enabled=bool(data.isActive&&label);
+    // The owner may end a Pulse early. A date supplied by a client cannot extend its 24-hour lifetime.
+    const requestedStart=typeof data.activeFrom==='string'?Date.parse(data.activeFrom):NaN;
+    const activeFrom=Number.isFinite(requestedStart)?new Date(requestedStart).toISOString():null;
+    const startedAt=Number.isFinite(requestedStart)?requestedStart:nowMs;
+    const maximumExpiry=startedAt+24*60*60*1000;
+    const requestedExpiry=typeof data.activeUntil==='string'?Date.parse(data.activeUntil):NaN;
+    const finalExpiry=Number.isFinite(requestedExpiry)?Math.min(maximumExpiry,requestedExpiry):maximumExpiry;
+    const activeUntil=enabled?new Date(Math.max(startedAt,finalExpiry)).toISOString():null;
+    this.exec('UPDATE site_status SET label=?,detail=?,icon=?,is_active=?,active_from=?,active_until=?,version=?,updated_at=? WHERE id=1',
+      label,detail,icon,enabled,activeFrom,activeUntil,version,timestamp);
+    this.audit(actor,'status.updated','site_status','1',{temporary:true,maxHours:24});
+    this.emit('status.updated','1',version,{status:this.currentStatus()});
+    return this.currentStatus();
+  }
+    validatePost(fields,method='draft'){
     let type=String(fields.type||'tech_note');if(!TYPES.includes(type))throw httpError(400,'Choose a valid content type.');
     const title=pureText(fields.title,180),excerpt=pureText(fields.excerpt,380),body=pureText(fields.body,25000),emoji=pureText(fields.emoji,8),tags=parseTags(fields.tags),category=typeCategories[type];
     if(!title||title.length>150)throw httpError(400,'A title of up to 150 characters is required.');

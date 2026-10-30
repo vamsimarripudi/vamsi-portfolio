@@ -48,8 +48,17 @@ export function collectionPage(memories,slug){
  return simplePage({title:c.title,path:'/collections/'+c.slug,lead:c.summary||'Read in order.',body:'<div class="v3m-content"><a class="v3m-back" href="/collections">← All collections</a>'+'<section class="v3m-series">'+items+'</section></div>'});
 }
 export function nowHistoryPage(memories,current){
- const rows=memories.nowHistory().map(x=>'<article class="v3m-now-item"><time>'+e(x.changedAt.slice(0,10))+'</time><span aria-hidden="true">'+e(x.icon)+'</span><div><h2>'+e(x.label)+'</h2><p>'+e(x.detail)+'</p></div></article>').join('');
- return simplePage({title:'Now',path:'/now',lead:current?.label||'What is happening in this little corner.',body:'<div class="v3m-content">'+'<section class="v3m-now-history"><h2>Earlier updates</h2>'+(rows||empty('The first update is coming'))+'</section></div>'});
+ // Ephemeral content is intentionally not a public archive. Owner history remains private.
+ const live=!!current;
+ const pulse='<section class="corner-pulse-page corner-pulse-card'+(live?' is-live':' is-idle')+'" data-corner-pulse-card data-pulse-empty-label="No Pulse right now" data-pulse-empty-detail="A new passing thought can appear here at any time." data-pulse-expires="'+e(current?.expiresAt||'')+'">'+
+  '<p class="eyebrow">CORNER PULSE / FOR THIS DAY ONLY</p>'+
+  '<div class="corner-pulse-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 24h11l5-10 7 20 5-10h10"/><circle cx="24" cy="24" r="20" stroke-opacity=".28"/></svg></div>'+
+  '<h2 data-pulse-label>'+e(current?.label||'No Pulse right now')+'</h2>'+
+  '<p data-pulse-detail>'+e(current?.detail||'A new passing thought can appear here at any time.')+'</p>'+
+  '<div class="corner-pulse-timeline" aria-hidden="true"><span data-pulse-progress></span></div>'+
+  '<p class="corner-pulse-expiry" data-pulse-meta>'+(live?'This thought leaves the public Corner automatically after 24 hours.':'A temporary update will appear here when it is shared.')+'</p>'+
+  '</section>';
+ return simplePage({title:'Corner Pulse',path:'/now',lead:'A little thought, here for a day. Not a permanent story.',body:'<div class="v3m-content">'+pulse+'</div>'});
 }
 const option=(value,name,selected='')=>'<option value="'+e(value)+'"'+(value===selected?' selected':'')+'>'+e(name)+'</option>';
 const kindOptions=['personal','build','work','learning','celebration'].map(x=>option(x,x)).join('');

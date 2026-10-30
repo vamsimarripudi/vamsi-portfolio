@@ -22,7 +22,7 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  child.stderr.on('data',d=>{let text=String(d);if(!text.includes('Warning:'))console.error('CHILD',text)});
  t.after(async()=>{child?.kill('SIGTERM');await sleep(90);fs.rmSync(folder,{recursive:true,force:true})});
  let ready=false;for(let i=0;i<60;i++){try{let r=await fetch(base+'/api/health');if(r.ok){ready=true;break}}catch{}await sleep(80)}assert.equal(ready,true,'backend ready');
- const home=await fetch(base+'/');assert.equal(home.status,200);const html=await home.text();assert.ok(html.includes('Thoughts, updates'));assert.ok(html.includes('Nothing here yet.'));
+ const home=await fetch(base+'/');assert.equal(home.status,200);const html=await home.text();assert.ok(html.includes('Thoughts, updates'));assert.ok(html.includes('Nothing published here yet.'));
  const noAuth=await parsed(await request('/api/admin/posts','POST',{title:'No access'}));assert.equal(noAuth.status,401);
  const invalid=await parsed(await request('/api/admin/login','POST',{email:ADMIN_EMAIL,password:'bad'}));assert.equal(invalid.status,401);
  const authResponse=await request('/api/admin/login','POST',{email:ADMIN_EMAIL,password:ADMIN_PASSWORD});assert.equal(authResponse.status,200);let cookie=authResponse.headers.get('set-cookie')?.split(';')[0];assert.ok(cookie?.startsWith('corner_session='));
