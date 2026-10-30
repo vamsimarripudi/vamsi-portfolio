@@ -1,0 +1,45 @@
+/* Corner Motion policy: a single reduced-motion contract for all modules.
+   Loaded before existing comfort stylesheet; all overrides are narrowly scoped. */
+.corner-comfort .quiet-motion-panel{display:grid;gap:12px}
+.corner-comfort .quiet-motion-panel h3{margin:0;color:#272222;font-size:1.05rem}
+.corner-comfort .quiet-motion-panel>p{margin:0;font-size:.81rem;line-height:1.55;color:#6b635f}
+.corner-comfort .quiet-motion-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:3px 0;padding:0;border:0}
+.corner-comfort .quiet-motion-options legend{font-weight:700;font-size:.84rem;margin:0 0 8px}
+.corner-comfort .quiet-motion-options label{display:flex;flex-direction:column;gap:5px;align-items:flex-start;min-width:0;padding:12px 10px;
+ border:1px solid #d8cec6;border-radius:13px;background:#fffefa;cursor:pointer}
+.corner-comfort .quiet-motion-options input{width:18px;height:18px;accent-color:#33634e}
+.corner-comfort .quiet-motion-options strong{font-size:.83rem;color:#302924}
+.corner-comfort .quiet-motion-options small{font-size:.72rem;line-height:1.35;color:#726a63}
+.corner-comfort .quiet-motion-options label:has(input:checked){background:#eff7f1;border-color:#5d8c70}
+.corner-comfort .quiet-motion-options label:focus-within{outline:3px solid #365da7;outline-offset:2px}
+.corner-comfort [data-corner-motion-status]{min-height:20px;color:#5e615e;font-size:.8rem}
+@media(max-width:410px){.corner-comfort .quiet-motion-options{grid-template-columns:1fr;gap:7px}
+ .corner-comfort .quiet-motion-options label{display:grid;grid-template-columns:22px 1fr;align-items:center;column-gap:10px}
+ .corner-comfort .quiet-motion-options label small{grid-column:2}}
+/* The user's Minimal preference and OS Reduce Motion carry equal precedence. */
+:root[data-corner-motion-level="minimal"] .corner-comfort [data-corner-motion-state],
+:root[data-corner-motion-level="minimal"] .corner-comfort [data-corner-motion-object],
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-motion-visual svg,
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-motion-visual svg *,
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-reader-motion-mark,
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-photo-compare-frame img,
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-reader-toggle{
+ animation:none!important;transition:none!important;transform:none!important;filter:none!important
+}
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-gravity-ghost{display:none!important}
+:root[data-corner-motion-level="minimal"] .corner-comfort .corner-public-header,
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-reader-show{transition:none!important}
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-publish-slot>button.v6-publish-button,
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-publish-slot>button.v6-publish-button *{
+ animation:none!important;transition:none!important;transform:none!important
+}
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-publish-slot>button.v6-publish-button[data-v6-publish-state="pending"]{
+ inline-size:100%!important;background:linear-gradient(180deg,#60b6ff,#0669e2)!important;
+ border-color:#1172d2!important;color:#fff!important
+}
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-publish-slot>button.v6-publish-button[data-v6-publish-state="pending"] .v6-publish-label{opacity:1!important}
+:root[data-corner-motion-level="minimal"] .corner-comfort .v6-publish-slot>button.v6-publish-button[data-v6-publish-state="pending"] .v6-publish-orb{opacity:0!important}
+:root[data-corner-motion-level="minimal"] .corner-comfort dialog.v6-conversation-sheet[open]{animation:none!important}
+:root[data-corner-motion-level="minimal"]::view-transition-old(root),
+:root[data-corner-motion-level="minimal"]::view-transition-new(root),
+:root[data-corner-motion-level="minimal"]::view-transition-group(corner-v6-cover){animation-duration:.01ms!important;animation-delay:0ms!important}
