@@ -11,7 +11,7 @@ export function journalSeriesPage({series}){
  const photo=imageFor(series.cover);
  const cover=photo?
   '<div class="journal-series-cover"><img src="'+photo+'" alt="'+e(series.cover.alt_text||'Series cover photograph')+'">'+
-   '<div class="journal-series-cover-shade"><span>CHAPTERS FROM AN OPEN NOTEBOOK</span><strong>What if I’m confusing learning with progress?</strong></div></div>':
+   '<div class="journal-series-cover-shade"><span>CHAPTERS FROM AN OPEN NOTEBOOK</span><strong>'+e(series.slug==='learning-everything-doing-nothing'?'What if I’m confusing learning with progress?':series.subtitle)+'</strong></div></div>':
   '<div class="journal-series-cover journal-series-cover-empty" aria-hidden="true"><span>LEARNING / BECOMING / BEGINNING</span><strong>✳</strong></div>';
  const items=series.parts.map((part,index)=>{
   const content='<span class="journal-series-chapter-number">'+String(part.part).padStart(2,'0')+'</span>'+
@@ -40,7 +40,7 @@ export function journalSeriesPage({series}){
   '<p class="journal-series-subtitle">'+e(series.subtitle)+'</p>'+
   '<div class="journal-series-meta"><span>▣ '+series.total+' parts</span><span>✧ Personal series</span><span>◷ Ongoing</span></div>'+
   (first?'<a class="journal-series-start" href="'+postHref(first.post)+'">Start reading <span aria-hidden="true">↗</span></a>':'<p class="journal-series-coming">The first chapter is coming soon.</p>')+
-  '<blockquote class="journal-series-quote"><span aria-hidden="true">“</span><p>Learning gives me a sense of accomplishment. Execution demands proof.</p></blockquote></div></section>'+
+  (series.slug==='learning-everything-doing-nothing'?'<blockquote class="journal-series-quote"><span aria-hidden="true">“</span><p>Learning gives me a sense of accomplishment. Execution demands proof.</p></blockquote>':'')+'</div></section>'+
   '<section class="journal-series-index" aria-labelledby="journal-series-parts"><div class="journal-series-index-heading"><span>THE COMPLETE JOURNAL</span><h2 id="journal-series-parts">Series chapters<span>.</span></h2><p>Read each part in order. New chapters will appear here when they are published.</p></div>'+
   '<div class="journal-series-chapters">'+items+'</div></section>'+
   '<section class="journal-series-about"><p class="journal-series-kicker">ABOUT THIS STORY</p><h2>Some beginnings take time.</h2><p>'+e(series.description)+'</p><a href="/category/journal">Explore more Journal stories <span aria-hidden="true">↗</span></a></section>'+
