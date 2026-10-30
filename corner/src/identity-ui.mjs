@@ -146,6 +146,13 @@ const quietSavedScreen=()=>'<section class="quiet-screen" data-quiet-screen="sav
  '<div class="quiet-panel quiet-saved-panel"><div class="quiet-panel-top"><h3>Your collection</h3><span class="quiet-count" data-bookmark-count aria-live="polite">—</span></div>'+
  '<div class="quiet-bookmarks" data-account-bookmarks role="status" aria-live="polite"><p>Loading saved stories…</p></div>'+
  '</div></section>';
+const quietMotionPreferences='<section class="quiet-panel quiet-motion-panel" data-corner-motion-preferences aria-label="Motion preferences">'+
+ '<h3>Motion &amp; effects.</h3><p>Choose how transitions and action confirmations feel. This choice stays on this device; your device’s Reduce Motion setting takes priority.</p>'+
+ '<fieldset class="quiet-motion-options"><legend>Motion intensity</legend>'+
+ '<label><input type="radio" name="cornerMotionPreference" value="minimal"><strong>Minimal</strong><small>No decorative movement. Status stays clear.</small></label>'+
+ '<label><input type="radio" name="cornerMotionPreference" value="balanced"><strong>Balanced</strong><small>Gentle, purposeful transitions.</small></label>'+
+ '<label><input type="radio" name="cornerMotionPreference" value="playful"><strong>Playful</strong><small>Expressive feedback where permitted.</small></label>'+
+ '</fieldset><p data-corner-motion-status role="status" aria-live="polite">Reading motion settings…</p></section>';
 const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-screen="preferences">'+
  quietHeading('PERSONALIZATION','Preferences.','Just the essentials. You decide how your Corner behaves.')+
  '<div class="quiet-panel quiet-editor-panel">'+form('preferences',
@@ -154,7 +161,7 @@ const quietPreferencesScreen=(user)=>'<section class="quiet-screen" data-quiet-s
  '<label class="quiet-switch-row"><span class="quiet-switch-copy"><strong>Optional email updates</strong>'+
  '<small>Controls optional account notices. Newsletter subscriptions require separate email confirmation.</small></span>'+
  '<span class="quiet-switch"><input type="checkbox" name="emailUpdates" role="switch" aria-label="Optional email updates"><span aria-hidden="true"></span></span></label>',
- 'Save preferences')+'</div>'+(process.env.CORNER_V3_FOLLOW==='1'?'<div class="quiet-panel"><h3>Story emails &amp; newsletters</h3><p class="quiet-data-hint">Choose categories and instant or weekly delivery. Verify your subscription email separately; registration never enrolls you automatically.</p><a href="/follow" class="account-text-button">Manage email subscription ↗</a></div>':'')+'</section>';
+ 'Save preferences')+'</div>'+quietMotionPreferences+(process.env.CORNER_V3_FOLLOW==='1'?'<div class="quiet-panel"><h3>Story emails &amp; newsletters</h3><p class="quiet-data-hint">Choose categories and instant or weekly delivery. Verify your subscription email separately; registration never enrolls you automatically.</p><a href="/follow" class="account-text-button">Manage email subscription ↗</a></div>':'')+'</section>';
 const quietSecurityScreen=(user)=>{
  const active='<section class="quiet-panel quiet-sessions-panel"><div class="quiet-panel-top"><div><h3>Active sessions.</h3><p>See and revoke devices that have access.</p></div></div>'+
   '<div data-account-sessions role="status" aria-live="polite"><p>Loading active sessions…</p></div></section>';

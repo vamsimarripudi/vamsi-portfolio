@@ -8,6 +8,7 @@
     const dots=$$('[data-carousel-dot]',carousel),counter=$('[data-carousel-count]',carousel);
     const previous=$('[data-carousel-prev]',carousel),next=$('[data-carousel-next]',carousel);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduced.matches;
     let active=0,scrollTimer=0;
     const clampIndex=i=>Math.max(0,Math.min(slides.length-1,i));
     const update=i=>{
@@ -17,7 +18,7 @@
       if(previous)previous.disabled=active===0;
       if(next)next.disabled=active===slides.length-1;
     };
-    const go=(i,behavior=reduced.matches?'auto':'smooth')=>{
+    const go=(i,behavior=minimal()?'auto':'smooth')=>{
       const target=clampIndex(i),slide=slides[target];if(!slide)return;
       track.scrollTo({left:slide.offsetLeft-track.offsetLeft,behavior});update(target);
     };
@@ -47,6 +48,7 @@
     const triggers=$$('[data-post-photo]');
     const photograph=$('figure img',gallery),caption=$('figure figcaption',gallery);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    const minimal=()=>window.CornerMotionPolicy?.isReduced?.()??reduced.matches;
     let index=0,returnFocus=null,gesture=null,ignoreClickUntil=0;
     const releaseDrag=()=>{
       photograph.style.transform='';photograph.style.opacity='';
@@ -62,7 +64,7 @@
       photograph.alt=source.alt;
       caption.textContent=trigger.dataset.caption||'';
       gallery.setAttribute('aria-label','Photograph '+(index+1)+' of '+triggers.length);
-      if(swipeDirection&&!reduced.matches&&typeof photograph.animate==='function'){
+      if(swipeDirection&&!minimal()&&typeof photograph.animate==='function'){
         photograph.animate([
           {opacity:.72,transform:'translateX('+(swipeDirection>0?12:-12)+'px)'},
           {opacity:1,transform:'translateX(0)'}
@@ -86,7 +88,7 @@
       gesture={id:event.pointerId,x:event.clientX,y:event.clientY};
     });
     gallery.addEventListener('pointermove',event=>{
-      if(!gesture||gesture.id!==event.pointerId||reduced.matches)return;
+      if(!gesture||gesture.id!==event.pointerId||minimal())return;
       const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
       if(Math.abs(dx)<7||Math.abs(dx)<Math.abs(dy)*1.15)return;
       const translate=Math.max(-62,Math.min(62,dx*.48));
