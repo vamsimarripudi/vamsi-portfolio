@@ -177,6 +177,8 @@ jobs:
       - name: Verify responsive glass rail and Corner Pulse in real browser
         run: |
           node corner/tests/navigation-companion-browser.mjs
+      - name: Verify Marginalia Journal Series chapter layouts on phone and desktop
+        run: node corner/tests/journal-series-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4
