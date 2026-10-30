@@ -37,7 +37,8 @@ import { identityRoutes, isIdentityPath } from './identity-routes.mjs';
 import { accountPage } from './identity-ui.mjs';
 import { legalPage, isLegalPath } from './legal-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
-import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage } from './ui.mjs';
+import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
+import {journalSeriesBySlug,journalSeriesForPost,studioJournalSeries,createJournalSeries} from './journal-series.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
 import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText, sha, clamp, secureEqual, isValidTimeZone } from './domain.mjs';
@@ -173,7 +174,7 @@ async function mediaFile(req,res,key,variant=''){
   res.writeHead(200,{...headers,'content-length':stat.size});
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
-function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
+function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...studioJournalSeries(store).map(s=>'/series/'+s.slug),...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
@@ -231,6 +232,12 @@ async function api(req,res,pathName,url){
     return json(res,{data:{ready:database&&storage,database,storage,backupFresh:backupFresh(store)},meta:{}},database&&storage?200:503);
   }
   if(pathName==='/api/openapi.json'&&method==='GET')return json(res,openApiDocument(config.siteUrl),200,{'cache-control':'public,max-age=300'});
+  const seriesApi=pathName.match(/^\/api\/series\/([a-z0-9-]+)$/);
+  if(seriesApi&&method==='GET'){
+    const series=journalSeriesBySlug(store,seriesApi[1]);
+    if(!series)throw httpError(404,'Series not found');
+    return ok(res,series);
+  }
   if(pathName==='/api/posts'&&method==='GET'){const data=store.getFeed({category:url.searchParams.get('category')||'Latest',cursor:url.searchParams.get('cursor')||'',tag:url.searchParams.get('tag')||'',limit:url.searchParams.get('limit')||15});return ok(res,data.items.map(p=>({...p,media:store.listMedia(p.id)})),{nextCursor:data.nextCursor})}
   if(/^\/api\/posts\/[a-z0-9-]+$/.test(pathName)&&method==='GET'){
     let slug=pathName.split('/').at(-1);let post=store.getPost(slug);if(!post)throw httpError(404,'Post not found');const localized=languages.localize(post,url.searchParams.get('lang')||'en');return ok(res,{post:localized.post,availableLanguages:localized.available,media:store.listMedia(post.id),reactions:store.getReactions(post.id),comments:post.allow_comments?store.getComments(post.id):[]});}
@@ -289,6 +296,11 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/logout'&&method==='POST'){let token=decodeURIComponent(cookieHeader(req).corner_session||'');if(token)store.revokeSession(token);res.setHeader('set-cookie',adminCookie('',0));return ok(res,{authenticated:false})}
   if(!pathName.startsWith('/api/admin/'))throw httpError(404,'API route not found','NOT_FOUND');
   const owner=requireOwner(req,pathName,method);if(method!=='GET')limit(req,'admin',130,60);
+  if(pathName==='/api/admin/series'&&method==='GET')return ok(res,studioJournalSeries(store));
+  if(pathName==='/api/admin/series'&&method==='POST'){
+    if(owner.role!=='owner')throw httpError(403,'Owner permission required');
+    return ok(res,createJournalSeries(store,await readJSON(req,2500),owner.id));
+  }
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName==='/api/admin/posts'&&method==='GET')return ok(res,store.allAdminPosts(url.searchParams.get('state')||'all'));
   if(pathName==='/api/admin/posts'&&method==='POST'){
@@ -499,8 +511,14 @@ async function route(req,res){
     if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||'',url.searchParams.get('cursor')||''));
     if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''}));
     if(pathname==='/'){let f=publicSnapshot(),featured=store.getFeatured();if(!featured&&f.items.length)featured=f.items.find(p=>p.featured);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,status:store.currentStatus(),featured,onThisDay:store.onThisDay(),eventCursor:eventCursor(),upcoming:store.upcoming(true),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed().items.length===0}))}
-    if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),demo:config.demo&&store.getFeed({category}).items.length===0}))}
-    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);const related=posts.filter(x=>x.id!==post.id).map(x=>({post:x,score:(x.category===post.category?5:0)+(x.type===post.type?3:0)+(x.tags||[]).filter(tag=>(post.tags||[]).includes(tag)).length*2})).sort((a,b)=>b.score-a.score||String(b.post.published_at).localeCompare(String(a.post.published_at))).slice(0,3).map(x=>x.post);const localized=languages.localize(post,url.searchParams.get('lang')||'en');return page(res,detailPage({post:localized.post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:social.approved(post.id),media:postMedia(post),next,related,languages:localized.available,activeLanguage:localized.language}));}
+    const seriesRoute=pathname.match(/^\/series\/([a-z0-9-]+)$/);
+    if(seriesRoute){
+      const series=journalSeriesBySlug(store,seriesRoute[1]);
+      if(!series)throw httpError(404,'Series not found');
+      return page(res,journalSeriesPage({series}));
+    }
+    if(pathname.startsWith('/category/')){let category=CATEGORIES.find(v=>v.toLowerCase()===pathname.slice(10));if(!category||category==='Latest')throw httpError(404,'Page not found');let f=publicSnapshot(category);return page(res,feedPage({posts:f.items,cursor:f.nextCursor,active:category,status:store.currentStatus(),eventCursor:eventCursor(),mediaByPost:Object.fromEntries(f.items.map(p=>[p.id,postMedia(p)])),journalSeries:category==='Journal'?journalSeriesBySlug(store,'learning-everything-doing-nothing'):null,demo:config.demo&&store.getFeed({category}).items.length===0}))}
+    if(pathname.startsWith('/post/')){let slug=decodeURIComponent(pathname.slice(6));let post=store.getPost(slug);if(!post&&config.demo)post=samples().find(x=>x.slug===slug);if(!post)throw httpError(404,'Post not found');let posts=store.getFeed({limit:25}).items;if(config.demo&&!posts.length)posts=samples();let next=posts.find(x=>x.id!==post.id);const related=posts.filter(x=>x.id!==post.id).map(x=>({post:x,score:(x.category===post.category?5:0)+(x.type===post.type?3:0)+(x.tags||[]).filter(tag=>(post.tags||[]).includes(tag)).length*2})).sort((a,b)=>b.score-a.score||String(b.post.published_at).localeCompare(String(a.post.published_at))).slice(0,3).map(x=>x.post);const localized=languages.localize(post,url.searchParams.get('lang')||'en');return page(res,detailPage({post:localized.post,counts:post.demo?{}:store.getReactions(post.id),comments:post.demo?[]:social.approved(post.id),media:postMedia(post),next,related,seriesContext:journalSeriesForPost(store,post),languages:localized.available,activeLanguage:localized.language}));}
     if(pathname==='/about')return page(res,simplePage({path:'/about',title:'About this space',lead:'A personal publication. Not a network, not a newsfeed.',body:'<p>Vamsi’s Corner is a place to collect moments, technical notes, updates, and good wishes over time.</p><p>Small cards invite you in. The longer stories stay just one tap away. New updates arrive quietly, without interrupting what you are reading.</p>',}));
     if(isLegalPath(pathname))return page(res,legalPage(pathname));
     if(pathname==='/now')return page(res,nowHistoryPage(memories,store.currentStatus()));
