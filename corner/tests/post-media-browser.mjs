@@ -255,7 +255,10 @@ try{
  assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
  await dialog.locator('figure img').evaluate(el=>{
    el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:17,pointerType:'touch',clientX:240,clientY:250}));
+   el.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:17,pointerType:'touch',clientX:150,clientY:248}));
+   if(!el.style.transform.includes('translate3d('))throw Error('Photograph must follow the finger before swipe commits');
    el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
+   if(el.style.transform)throw Error('Dragged photograph must reset its inline transform after swipe');
  });
  assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
  // Browser-generated click following a swipe must NOT immediately dismiss the viewer.
@@ -316,6 +319,31 @@ try{
  }
  fs.mkdirSync('screenshots',{recursive:true});
  await page.screenshot({path:'screenshots/corner-photo-post-mobile.png',fullPage:true,animations:'disabled'});
+
+ // Owner Studio: before/after editing is local until Save and must remain
+ // legible at an actual 390px mobile viewport.
+ await page.setViewportSize({width:390,height:844});
+ await page.goto(base+'/admin',{waitUntil:'domcontentloaded'});
+ await page.locator('.admin-shell').waitFor({state:'visible',timeout:10000});
+ await page.locator('[data-admin-view="media"]').click();
+ const editMedia=page.locator('#admin-view [data-media-edit]').first();
+ await editMedia.waitFor({state:'visible',timeout:9000});
+ await editMedia.click();
+ const compare=page.locator('#media-editor .corner-photo-compare');
+ await compare.waitFor({state:'visible',timeout:9000});
+ assert.equal(await compare.locator('img').count(),2,'Original and preview both render from the same first-party media');
+ await page.locator('#media-editor [name="preset"]').selectOption('mono');
+ assert.match(await compare.locator('.corner-photo-compare-edited').evaluate(el=>el.style.filter),/grayscale\(1\)/);
+ const reveal=compare.locator('input[type="range"]');
+ await reveal.evaluate(el=>{el.value='73';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ assert.equal(await compare.evaluate(el=>el.style.getPropertyValue('--corner-compare-reveal')),'73%',
+  'The reveal slider moves the photo mask without writing media');
+ const compareOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+ assert.ok(compareOverflow<=1,'Before/after editor does not overflow the phone viewport: '+compareOverflow);
+ await compare.scrollIntoViewIfNeeded();
+ await page.screenshot({path:'screenshots/corner-media-before-after-mobile.png',animations:'disabled'});
+ await page.locator('#back-media').click();
+ await page.locator('#admin-view [data-media-edit]').first().waitFor({state:'visible'});
  assert.deepEqual(browserErrors,[],'No client JavaScript runtime errors');
  await page.close();
  console.log('PASS: pending red-X removal, attached delete, ordering, Instagram carousel, swipe, dots, keyboard viewer and security');

@@ -48,8 +48,13 @@
     const photograph=$('figure img',gallery),caption=$('figure figcaption',gallery);
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
     let index=0,returnFocus=null,gesture=null,ignoreClickUntil=0;
+    const releaseDrag=()=>{
+      photograph.style.transform='';photograph.style.opacity='';
+      photograph.style.transition='';
+    };
     const display=(i,swipeDirection=0)=>{
       if(!triggers.length)return;
+      releaseDrag();
       index=(i+triggers.length)%triggers.length;
       const trigger=triggers[index],source=$('img',trigger);
       if(!source)return;
@@ -80,10 +85,20 @@
       if(!gallery.open)return;
       gesture={id:event.pointerId,x:event.clientX,y:event.clientY};
     });
+    gallery.addEventListener('pointermove',event=>{
+      if(!gesture||gesture.id!==event.pointerId||reduced.matches)return;
+      const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+      if(Math.abs(dx)<7||Math.abs(dx)<Math.abs(dy)*1.15)return;
+      const translate=Math.max(-62,Math.min(62,dx*.48));
+      photograph.style.transition='none';
+      photograph.style.transform='translate3d('+translate+'px,0,0)';
+      photograph.style.opacity=String(1-Math.min(.17,Math.abs(translate)/360));
+    });
     gallery.addEventListener('pointerup',event=>{
       if(!gesture||gesture.id!==event.pointerId)return;
       const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
       gesture=null;
+      releaseDrag();
       if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.2){
         ignoreClickUntil=performance.now()+450;
         if(triggers.length>1)display(index+(dx<0?1:-1),dx<0?1:-1);
@@ -92,7 +107,7 @@
         ignoreClickUntil=performance.now()+250;
       }
     });
-    gallery.addEventListener('pointercancel',()=>{gesture=null});
+    gallery.addEventListener('pointercancel',()=>{gesture=null;releaseDrag()});
     gallery.addEventListener('click',event=>{
       if(performance.now()<ignoreClickUntil){event.preventDefault();return}
       close();
@@ -106,7 +121,7 @@
       // The native dialog also supports Escape, including for assistive technology.
     });
     gallery.addEventListener('close',()=>{
-      gesture=null;ignoreClickUntil=0;
+      gesture=null;ignoreClickUntil=0;releaseDrag();
       photograph.removeAttribute('src');
       returnFocus?.focus({preventScroll:true});
     });

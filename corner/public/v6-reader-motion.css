@@ -1,0 +1,34 @@
+/* Quiet, real-state confirmations for Corner readers — no extra network or analytics. */
+.corner-comfort [data-corner-reader-motion]{position:relative;isolation:isolate}
+.corner-comfort .corner-reader-motion-mark{
+ position:absolute;right:-5px;top:-11px;z-index:2;display:grid;place-items:center;
+ width:23px;height:23px;border-radius:9px;
+ background:#356c53;color:white;
+ box-shadow:0 3px 11px #153d3528;
+ font:700 15px/1 system-ui,sans-serif;pointer-events:none;
+ transform-origin:55% 70%;animation:corner-reader-confirm .4s cubic-bezier(.21,1.2,.36,1) both
+}
+.corner-comfort [data-corner-reader-motion="bookmark"] .corner-reader-motion-mark{
+ border-radius:2px 2px 6px 6px;background:#316c51;
+ clip-path:polygon(8% 0,92% 0,92% 100%,50% 75%,8% 100%)
+}
+.corner-comfort [data-corner-reader-motion="bookmark"][data-corner-reader-state="removed"] .corner-reader-motion-mark{
+ background:#725e48
+}
+.corner-comfort [data-corner-reader-motion="share"] .corner-reader-motion-mark{background:#426e91}
+.corner-comfort [data-corner-reader-motion="reply"] .corner-reader-motion-mark{
+ background:#735b88;animation:corner-reader-reply .42s cubic-bezier(.22,1,.36,1) both
+}
+.corner-comfort [data-corner-reader-motion="reply"][data-corner-reader-state="review"] .corner-reader-motion-mark{background:#8e7249}
+@keyframes corner-reader-confirm{
+ from{opacity:0;transform:translateY(5px) rotate(-14deg) scale(.55)}
+ 70%{opacity:1;transform:translateY(-2px) rotate(3deg) scale(1.04)}
+ to{opacity:1;transform:translateY(0) rotate(0) scale(1)}
+}
+@keyframes corner-reader-reply{
+ from{opacity:.15;transform:translate3d(0,9px,0) scale(.75)}
+ to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .corner-comfort .corner-reader-motion-mark{animation:none!important;transform:none!important}
+}

@@ -1,0 +1,22 @@
+/* Owner Studio: accurate source retention, approximate local visual comparisons only. */
+.corner-comfort .corner-photo-compare{--corner-compare-reveal:52%;margin:0 0 21px;padding:15px;border:1px solid #ddd7ce;border-radius:15px;background:#faf9f6;min-width:0}
+.corner-comfort .corner-photo-compare-heading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 13px;margin-bottom:12px}
+.corner-comfort .corner-photo-compare-heading strong{font-size:.92rem;color:#262522}
+.corner-comfort .corner-photo-compare-heading small{font-size:.76rem;color:#655e57}
+.corner-comfort .corner-photo-compare-frame{position:relative;display:block;aspect-ratio:4/3;width:100%;max-height:420px;border-radius:12px;overflow:hidden;background:#262626;isolation:isolate}
+.corner-comfort .corner-photo-compare-frame img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;transition:filter .22s ease,transform .24s ease;transform-origin:center;pointer-events:none}
+.corner-comfort .corner-photo-compare-edited{clip-path:inset(0 calc(100% - var(--corner-compare-reveal)) 0 0)}
+.corner-comfort .corner-photo-compare-divider{position:absolute;left:var(--corner-compare-reveal);top:0;bottom:0;z-index:1;width:2px;background:#fff;box-shadow:0 0 0 1px #1414146e;pointer-events:none;transform:translateX(-1px)}
+.corner-comfort .corner-photo-compare-frame[data-photo-crop="square"]{aspect-ratio:1/1}
+.corner-comfort .corner-photo-compare-frame[data-photo-crop="portrait"]{aspect-ratio:3/4}
+.corner-comfort .corner-photo-compare-frame[data-photo-crop="landscape"]{aspect-ratio:16/9}
+.corner-comfort .corner-photo-compare-label{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:.79rem;color:#474039}
+.corner-comfort .corner-photo-compare-label input{min-width:0;flex:1 1 90px;accent-color:#346a54;touch-action:pan-x}
+.corner-comfort .corner-photo-compare-label output{min-width:35px;font-variant-numeric:tabular-nums;text-align:right}
+@media(max-width:460px){
+ .corner-comfort .corner-photo-compare{padding:10px}
+ .corner-comfort .corner-photo-compare-label{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+ .corner-comfort .corner-photo-compare-label input{grid-column:1/-1;grid-row:2;width:100%;min-width:0}
+ .corner-comfort .corner-photo-compare-label output{grid-column:2;grid-row:1;min-width:35px}
+}
+@media(prefers-reduced-motion:reduce){.corner-comfort .corner-photo-compare-frame img{transition:none!important}}

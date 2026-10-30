@@ -45,10 +45,10 @@ pulseAction('reaction',button,{active:response.yours===button.dataset.reaction})
 }catch(err){readingSignal('request_failed');toast(err.message,'error');pulseAction('error',button);}finally{button.disabled=false;reactionPending--}
 });
 });
-$('[data-copy-url]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);toast('Link copied.','success');readingSignal('share');request('/corner/api/analytics/event',{type:'share',postId:initial.postId,path:location.pathname,device:innerWidth<768?'mobile':'desktop'}).catch(()=>{
+$('[data-copy-url]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);toast('Link copied.','success');window.CornerReaderMotion?.share($('[data-copy-url]'));readingSignal('share');request('/corner/api/analytics/event',{type:'share',postId:initial.postId,path:location.pathname,device:innerWidth<768?'mobile':'desktop'}).catch(()=>{
 });}catch{toast('Select the address to copy.','error')} });
 $('#comment-form')?.addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const button=$('button[type="submit"]',form);button.disabled=true;
-try{const result=await request(`/corner/api/posts/${encodeURIComponent(form.dataset.postId)}/comments`,{body:form.elements.body.value});toast(result.message||'Comment sent for review.','success');readingSignal('comment_success');form.reset();pulseAction('comment',button);}
+try{const result=await request(`/corner/api/posts/${encodeURIComponent(form.dataset.postId)}/comments`,{body:form.elements.body.value});toast(result.message||'Comment sent for review.','success');readingSignal('comment_success');form.reset();window.CornerReaderMotion?.comment(button,result?.state==='pending');pulseAction('comment',button);}
 catch(err){readingSignal('request_failed');toast(err.message,'error');pulseAction('error',button);}finally{button.disabled=false}
 });
 const loadMore=$('[data-load-more]');
@@ -88,7 +88,7 @@ bookmark.disabled=true;
 try{
 if(active)await getJson('/corner/api/v1/me/bookmarks/'+encodeURIComponent(postId),{method:'DELETE'});
 else await getJson('/corner/api/v1/me/bookmarks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({postId})});
-active=!active;draw();
+active=!active;draw();window.CornerReaderMotion?.bookmark(bookmark,active);
 }catch(err){toast(err.message,'error')}finally{bookmark.disabled=false}
 });
 }).catch(()=>{});
