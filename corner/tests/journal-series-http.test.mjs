@@ -1,0 +1,62 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {Store} from '../src/store.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const postId='post_fdbce666-5456-40e4-a3bc-1027b881b64e';
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/V3sAAAAASUVORK5CYII=','base64');
+
+test('existing published Part 01 becomes series cover without new published stories or draft leaks',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'corner-journal-series-')),db=path.join(dir,'db.sqlite');
+ const port=59600+Math.floor(Math.random()*400),origin='http://127.0.0.1:'+port,base=origin+'/corner';
+ const original='Learning Everything, Doing Nothing\n\nPart 1 — The Illusion of Progress\n\nI love learning new things.\n\nWhat if I’m confusing learning with progress?';
+ const before=new Store(db),stamp='2026-10-29T17:56:24.667Z';
+ before.exec("INSERT INTO posts(id,slug,type,title,body,state,published_at,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+  postId,'learning-everything-doing-nothing','journal','Learning Everything, Doing Nothing',original,'published',stamp,4,stamp,stamp);
+ before.addMedia({id:'media_series_original',ownerId:postId,storageKey:'seriesphoto.png',mimeType:'image/png',size:png.length,alt:'The original owner photograph'});
+ const partTwo=before.createPost({type:'journal',title:'Private draft — not ready yet',body:'This material must not leak.',
+  seriesId:'series_learning_everything_doing_nothing',seriesPart:2},'owner');
+ assert.equal(partTwo.state,'draft');before.close();
+ fs.mkdirSync(path.join(dir,'uploads'),{recursive:true});fs.writeFileSync(path.join(dir,'uploads','seriesphoto.png'),png);
+ const env={...process.env,HOST:'127.0.0.1',PORT:String(port),SITE_URL:base,CORNER_BASE_PATH:'/corner',NODE_ENV:'test',DEMO_CONTENT:'0',DATA_DIR:dir,DB_PATH:db};
+ const child=spawn(process.execPath,['--no-warnings','src/server.mjs'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
+ const errors=[];child.stderr.on('data',chunk=>errors.push(String(chunk)));
+ t.after(async()=>{child.kill('SIGTERM');await sleep(150);fs.rmSync(dir,{recursive:true,force:true})});
+ let running=false;
+ for(let i=0;i<100;i++){if(child.exitCode!==null)break;try{if((await fetch(base+'/api/health')).ok){running=true;break}}catch{}await sleep(100)}
+ assert.equal(running,true,errors.join('').slice(0,500));
+ const hub=await fetch(base+'/series/learning-everything-doing-nothing');assert.equal(hub.status,200);
+ const html=await hub.text();
+ assert.match(html,/Learning Everything, Doing Nothing/);
+ assert.match(html,/The Illusion of Progress/);
+ assert.match(html,/\/corner\/media\/seriesphoto.png/);
+ assert.match(html,/Addicted to New Beginnings/);
+ assert.match(html,/Coming soon/);
+ assert.doesNotMatch(html,/Private draft — not ready yet|This material must not leak/);
+ const api=await fetch(base+'/api/series/learning-everything-doing-nothing');
+ assert.equal(api.status,200);
+ const data=(await api.json()).data;assert.equal(data.publishedCount,1);
+ assert.equal(data.parts[0].post.id,postId);
+ assert.equal(data.parts[1].published,false);
+ assert.ok(!data.parts.some(p=>p.post?.id===partTwo.id));
+ const story=await fetch(base+'/post/learning-everything-doing-nothing');assert.equal(story.status,200);
+ const chapter=await story.text();
+ assert.match(chapter,/<h1>The Illusion of Progress<\/h1>/);
+ assert.match(chapter,/I love learning new things/);
+ assert.match(chapter,/journal-chapter-follow/);
+ assert.match(chapter,/Addicted to New Beginnings/);
+ const journal=await (await fetch(base+'/category/journal')).text();
+ assert.match(journal,/journal-series-spotlight/);
+ assert.equal((await fetch(base+'/series/no-such-series')).status,404);
+ assert.equal((await fetch(base+'/api/admin/series')).status,401,'Only staff can read publishing controls');
+ const after=new Store(db),preserved=after.adminPost(postId);
+ assert.equal(preserved.body,original);assert.equal(preserved.version,4);
+ assert.equal(preserved.series_part,1);
+ after.close();
+});
