@@ -562,7 +562,51 @@
         onFailure:error=>toast(error.message,'error')});
     });}
   function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save media details</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
-    $('#back-media').onclick=()=>returnPostId?editor(returnPostId):media();$('#media-editor [data-v5-restore-photo]')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/media/'+id+'/edits','DELETE');toast('Original restored.','success');returnPostId?editor(returnPostId):media()}catch(error){toast(error.message,'error')}});$('#media-editor').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget;try{await api('/corner/api/admin/media/'+id,'PATCH',{altText:f.elements.alt.value,caption:f.elements.caption.value,focalX:f.elements.focalX.value,focalY:f.elements.focalY.value});if(x.mime_type.startsWith('image/'))await api('/corner/api/admin/media/'+id+'/edits','POST',{preset:f.elements.preset.value,crop:f.elements.crop.value,rotation:Number(f.elements.rotation.value),brightness:Number(f.elements.brightness.value),contrast:Number(f.elements.contrast.value),saturation:Number(f.elements.saturation.value)});toast('Media details saved.','success');returnPostId?editor(returnPostId):media()}catch(err){toast(err.message,'error')}};
+    const editForm=$('#media-editor');
+    if(x.mime_type.startsWith('image/'))window.CornerPhotoCompare?.mount(editForm,x);
+    const returnToMedia=()=>{if(returnPostId)void editor(returnPostId);else void media()};
+    $('#back-media').onclick=returnToMedia;
+    editForm.querySelector('[data-v5-restore-photo]')?.addEventListener('click',async event=>{
+      await actionMotion({action:'media.edit',trigger:event.currentTarget,targetId:id,
+        successLabel:'Original restored',visualTarget:editForm.querySelector('.corner-photo-compare'),
+        execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','DELETE'),
+        onSuccess:()=>{toast('Original restored.','success');returnToMedia()},
+        onFailure:error=>toast(error.message,'error')
+      });
+    });
+    editForm.onsubmit=async event=>{
+      event.preventDefault();
+      const form=event.currentTarget;
+      const trigger=form.querySelector('button[type="submit"]');
+      let detailsSaved=false;
+      await actionMotion({action:'media.edit',trigger,targetId:id,
+        visualTarget:form.querySelector('.corner-photo-compare'),
+        successLabel:'Media saved',
+        execute:async({progress})=>{
+          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{
+            altText:form.elements.alt.value,caption:form.elements.caption.value,
+            focalX:form.elements.focalX.value,focalY:form.elements.focalY.value
+          });
+          detailsSaved=true;
+          if(x.mime_type.startsWith('image/')){
+            progress('Saving photo adjustments…');
+            await api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','POST',{
+              preset:form.elements.preset.value,crop:form.elements.crop.value,
+              rotation:Number(form.elements.rotation.value),
+              brightness:Number(form.elements.brightness.value),
+              contrast:Number(form.elements.contrast.value),
+              saturation:Number(form.elements.saturation.value)
+            });
+          }
+          return {saved:true};
+        },
+        confirm:result=>result?.saved===true,
+        onSuccess:()=>{toast('Media details saved.','success');returnToMedia()},
+        onFailure:error=>{
+          toast(detailsSaved?'Description saved, but photo adjustments did not finish. Retry to complete the edit.':error.message,'error');
+        }
+      });
+    };
   }
   async function comments(){const list=await api('/corner/api/admin/comments?state='+encodeURIComponent(active.commentFilter||'pending'));root.innerHTML=`<section class="admin-section"><header><h2>Conversations and moderation.</h2><div class="v5-comment-filters" role="group" aria-label="Moderation filters">${['pending','approved','hidden','deleted'].map(value=>`<button type="button" data-v5-comment-filter="${value}" aria-label="${value} comments" title="${value} comments" aria-pressed="${(active.commentFilter||'pending')===value}" class="${(active.commentFilter||'pending')===value?'is-active':''}">${studioIcon(value)}<span class="v6-action-label">${value}</span></button>`).join('')}</div></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}" aria-label="Approve comment" title="Approve">${studioIcon('approve')}<span class="v6-action-label">Approve</span></button><button data-moderate="hide" data-comment="${c.id}" aria-label="Hide comment" title="Hide">${studioIcon('hide')}<span class="v6-action-label">Hide</span></button><button data-moderate="delete" data-comment="${c.id}" aria-label="Delete comment" title="Delete">${studioIcon('delete')}<span class="v6-action-label">Delete</span></button>${c.state==='approved'?`<button type="button" data-v5-studio-reply="${c.id}" data-v5-studio-post="${c.post_id}" aria-label="Reply to comment" title="Reply">${studioIcon('reply')}<span class="v6-action-label">Reply</span></button>`:''}</footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
     $$('[data-v5-comment-filter]').forEach(button=>button.onclick=()=>{active.commentFilter=button.dataset.v5CommentFilter;comments()});
