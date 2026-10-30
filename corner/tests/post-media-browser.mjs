@@ -82,13 +82,27 @@ try{
  assert.equal(await cards.locator('.upload-preview-remove').count(),4,'Every pending image has a red-X remove control');
  await cards.last().locator('.upload-preview-remove').click();
  assert.equal(await cards.count(),3,'Red X removes only the chosen pending image before upload');
- await cards.nth(0).locator('input[name="alt"]').fill('First little photograph');
- await cards.nth(0).locator('input[name="caption"]').fill('A new Corner beginning.');
- await cards.nth(1).locator('input[name="alt"]').fill('Second little photograph');
- await cards.nth(1).locator('input[name="caption"]').fill('One more quiet moment.');
- await cards.nth(2).locator('input[name="alt"]').fill('Third little photograph');
- await cards.nth(2).locator('input[name="caption"]').fill('Third carousel moment.');
- await page.locator('#editor-upload button[type="submit"]').click();
+ const v7Form=page.locator('#editor-upload');
+ assert.equal(await v7Form.getAttribute('data-v7-stage'),'select','Images are shown first, before editing options');
+ assert.equal(await v7Form.locator('.upload-preview-card .v7-photo-options:visible').count(),0,
+   'Descriptions and adjustments stay out of the initial image-only view');
+ await v7Form.locator('button[type="submit"]').click();
+ assert.equal(await v7Form.getAttribute('data-v7-stage'),'options','Attach now offers editing options before final upload');
+ assert.equal(await v7Form.locator('.v7-photo-options:visible').count(),1,'Exactly one image editor is visible');
+ // The uploaded photo is allowed to have no caption or description.
+ for(const [index,alt,caption] of [
+   [0,'First little photograph','A new Corner beginning.'],
+   [1,'Second little photograph','One more quiet moment.'],
+   [2,'Third little photograph','Third carousel moment.']
+ ]){
+   await v7Form.locator('.v7-media-tab').nth(index).click();
+   const edit=cards.nth(index);
+   await edit.locator('.v7-more-options summary').click();
+   await edit.locator('input[name="alt"]').fill(alt);
+   await edit.locator('input[name="caption"]').fill(caption);
+   if(index===0)await edit.locator('[name="v7-preset"]').selectOption('original');
+ }
+ await v7Form.locator('button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===3,null,{timeout:18000});
  assert.equal(await page.locator('[data-editor-photo-preview] img').count(),1,'Attached image appears in Studio card preview');
  const inline=page.locator('#editor-media form[data-media-quick-edit]');
