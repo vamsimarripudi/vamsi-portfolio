@@ -56,7 +56,7 @@ export function createJournalSeries(store,fields,actor){
 export function studioJournalSeries(store){
  return store.all('SELECT * FROM journal_series ORDER BY created_at ASC').map(row=>{
   const last=store.one('SELECT MAX(series_part) AS part FROM posts WHERE series_id=?',row.id);
-  return {id:row.id,slug:row.slug,title:row.title,subtitle:row.subtitle,description:row.description,plannedParts:plan(row),nextPart:Math.min(99,Number(last?.part||0)+1)};
+  return {id:row.id,slug:row.slug,title:row.title,subtitle:row.subtitle,description:row.description,plannedParts:plan(row),nextPart:Math.min(99,Number(last?.part||0)+1),coverKey:journalSeriesBySlug(store,row.slug)?.cover?.storage_key||null};
  });
 }
 export function journalSeriesBySlug(store,slug){

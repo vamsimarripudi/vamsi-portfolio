@@ -91,6 +91,7 @@
           <option value="">Not part of a series</option>${p.series_id?`<option value="${esc(p.series_id)}" selected>Current series</option>`:''}
         </select></label>
         <div class="v7-series-chapter" data-journal-series-part ${p.series_id?'':'hidden'}>
+          <div class="v7-series-preview" data-journal-series-preview hidden><img data-journal-series-cover src="" alt=""><span><strong data-journal-series-title>Journal series</strong><small>Linked chapter · your original story is preserved</small></span></div>
           <label>Chapter number<input type="number" name="seriesPart" min="1" max="99" step="1" value="${Number(p.series_part)||1}" inputmode="numeric"></label>
           <p data-journal-series-hint>Each chapter has its own story and position. The first part stays unchanged.</p>
           <a data-journal-series-href href="/series/learning-everything-doing-nothing" target="_blank" rel="noopener">View series ↗</a>
@@ -139,6 +140,13 @@
       seriesPartPanel.hidden=!seriesControl.value;
       const href=form.querySelector('[data-journal-series-href]');
       if(href&&selected)href.href='/series/'+encodeURIComponent(selected.slug);
+      const preview=form.querySelector('[data-journal-series-preview]');
+      if(preview){
+        preview.hidden=!selected;
+        const image=preview.querySelector('[data-journal-series-cover]');
+        if(image){image.hidden=!selected?.coverKey;if(selected?.coverKey)image.src='/corner/media/'+encodeURIComponent(selected.coverKey);}
+        const title=preview.querySelector('[data-journal-series-title]');if(title&&selected)title.textContent=selected.title;
+      }
       const hint=form.querySelector('[data-journal-series-hint]');
       if(hint&&selected)hint.textContent='Part '+(seriesPartControl.value||1)+' of '+selected.title+'. Each chapter has a unique number.';
       if(seriesControl.value&&form.elements.type.value!=='journal')form.elements.type.value='journal';
