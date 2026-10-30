@@ -7,6 +7,8 @@ on:
     paths:
       - "corner/public/**"
       - "corner/src/ui.mjs"
+      - "corner/src/journal-series*.mjs"
+      - "corner/tests/journal-series*.mjs"
       - "corner/src/server.mjs"
       - "corner/tests/design-contract.test.mjs"
       - "corner/tests/post-media-browser.mjs"
@@ -172,6 +174,8 @@ jobs:
           cat "$RUNNER_TEMP/corner-v6.log";exit 1
       - name: Verify V6 public view transitions and immersive touch layout
         run: CORNER_TEST_ORIGIN=http://127.0.0.1:4144 node corner/tests/v6-experience-browser.mjs
+      - name: Verify approved Journal Series layout, chapter status and mobile accessibility
+        run: CORNER_TEST_ORIGIN=http://127.0.0.1:4144 node corner/tests/journal-series-browser.mjs
       - name: Verify account Motion preference persists across pages and respects Reduce Motion
         run: CORNER_TEST_ORIGIN=http://127.0.0.1:4144 node corner/tests/v6-motion-policy-browser.mjs
       - name: Verify responsive glass rail and Corner Pulse in real browser
