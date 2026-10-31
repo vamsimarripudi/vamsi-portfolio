@@ -37,8 +37,10 @@ test('API end-to-end: secure owner publishing, realtime persistence, comments, r
  const deniedUpload=await fetch(base+'/api/admin/media/upload?postId='+encodeURIComponent(post.id)+'&alt=QA',{method:'POST',headers:{Origin:'https://forged.example',Cookie:cookie,'Content-Type':'image/png'},body:imageFixture});
  assert.equal(deniedUpload.status,403,'cross-origin upload denied');
  assert.equal((await upload('image/jpeg',imageFixture)).status,415,'invalid declared MIME rejected');
- assert.equal((await upload('image/png',imageFixture,'')).status,400,'image alt text required');
- const imageSaved=await parsed(await upload('image/png',imageFixture));assert.equal(imageSaved.status,200);const imageUrl=imageSaved.data.url;
+ const imageSaved=await parsed(await upload('image/png',imageFixture,''));
+ assert.equal(imageSaved.status,200,'clean image upload does not require author-written metadata');
+ assert.match(imageSaved.data.alt_text,/A tiny verified build/,'server derives an accessibility fallback from the story');
+ const imageUrl=imageSaved.data.url;
  assert.match(imageUrl,/^\/media\/[A-Za-z0-9_-]+\.png$/);
  assert.equal((await fetch(base+imageUrl)).status,404,'unpublished image is private');
  let imagePreview=await fetch(base+imageUrl,{headers:{Cookie:cookie}});
