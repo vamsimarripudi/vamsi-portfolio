@@ -194,7 +194,7 @@
         else if(value.startsWith('url:'))location.assign(value.slice(4));
       };
     }
-    $('[data-command-filter]').forEach(select=>{
+    $$('[data-command-filter]').forEach(select=>{
       const key=select.dataset.commandFilter;select.value=filters[key]||'all';
       select.onchange=()=>{filters[key]=select.value;renderQueue()};
     });
