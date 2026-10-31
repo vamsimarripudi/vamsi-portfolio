@@ -39,6 +39,7 @@ import { legalPage, isLegalPath } from './legal-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
 import {JournalSeries} from './journal-series.mjs';
+import {OwnerCommand} from './owner-command.mjs';
 import {createCornerMcpNodeHandler} from './mcp.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -46,6 +47,7 @@ import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText,
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const journalSeries=new JournalSeries(store);
+const ownerCommand=new OwnerCommand(store);
 const cornerMcp=createCornerMcpNodeHandler({store,journalSeries,siteUrl:config.siteUrl});
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
@@ -294,6 +296,17 @@ async function api(req,res,pathName,url){
   if(!pathName.startsWith('/api/admin/'))throw httpError(404,'API route not found','NOT_FOUND');
   const owner=requireOwner(req,pathName,method);if(method!=='GET')limit(req,'admin',130,60);
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
+  if(pathName.startsWith('/api/admin/command')){
+    if(owner.role!=='owner')throw httpError(403,'Only the owner can access the command center.','OWNER_ONLY');
+    if(pathName==='/api/admin/command/summary'&&method==='GET')return ok(res,ownerCommand.summary());
+    if(pathName==='/api/admin/command/items'&&method==='GET')return ok(res,ownerCommand.list({
+      workspace:url.searchParams.get('workspace')||'',state:url.searchParams.get('state')||'',kind:url.searchParams.get('kind')||''
+    }));
+    if(pathName==='/api/admin/command/items'&&method==='POST')return ok(res,ownerCommand.create(await readJSON(req,10000),owner.id));
+    const commandItem=pathName.match(/^\/api\/admin\/command\/items\/([A-Za-z0-9_-]+)$/);
+    if(commandItem&&method==='GET'){const item=ownerCommand.get(commandItem[1]);if(!item)throw httpError(404,'Command item not found.');return ok(res,item)}
+    if(commandItem&&method==='PATCH')return ok(res,ownerCommand.update(commandItem[1],await readJSON(req,10000),owner.id));
+  }
   if(pathName==='/api/admin/posts'&&method==='GET')return ok(res,store.allAdminPosts(url.searchParams.get('state')||'all'));
   if(pathName==='/api/admin/series'&&method==='GET')return ok(res,journalSeries.adminSeries());
   if(pathName==='/api/admin/posts'&&method==='POST'){
