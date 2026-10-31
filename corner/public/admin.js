@@ -131,7 +131,7 @@
       <div class="command-list command-list-wide">${renderList(openItems)}</div>
     </section>`;
 
-    $('[data-agentic-prompt]').forEach(button=>button.onclick=()=>{
+    $$('[data-agentic-prompt]').forEach(button=>button.onclick=()=>{
       const input=$('#command-agent-question');if(!input)return;
       input.value=button.dataset.agenticPrompt||'';input.focus();
       input.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
