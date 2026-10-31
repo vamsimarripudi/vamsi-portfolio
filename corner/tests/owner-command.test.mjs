@@ -98,6 +98,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.doesNotMatch(js,/data-command-state="done"/,'State changes use one dropdown instead of four action buttons');
   assert.doesNotMatch(js,/[^$]\$\('\[data-agentic-prompt\]'\)\.forEach/,'Agentic prompt binding must use the multi-element selector helper');
   assert.doesNotMatch(js,/[^$]\$\('\[data-admin-view\]'\)\.forEach/,'Studio navigation sync must use the multi-element selector helper');
+  assert.doesNotMatch(js,/[^$]\$\('\[data-command-filter\]'\)\.forEach/,'Command filters must use the multi-element selector helper');
   assert.match(css,/command-filterbar/);
   assert.match(css,/command-disclosure/);
   assert.match(css,/command-row-main/);
