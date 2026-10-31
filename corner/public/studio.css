@@ -78,7 +78,6 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
 @media(prefers-reduced-motion:reduce){.corner-comfort .admin-shell .admin-nav .studio-icon{animation:none!important;transition:none!important;transform:none!important}}
 
 
-/* Mobile Studio V4 — labeled, touch-first navigation. Overrides older icon-only rules. */
 @media(max-width:767px){
   .corner-comfort .admin-shell .admin-sidebar{
     position:sticky;
@@ -128,7 +127,6 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
     margin:0!important;
     overflow-x:auto!important;
     overflow-y:hidden!important;
-    max-width:100%!important;
     scroll-snap-type:x proximity;
     overscroll-behavior-x:contain;
     scrollbar-width:none!important;
@@ -138,9 +136,6 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
     position:relative;
     display:flex!important;
     flex:0 0 70px!important;
-    width:70px!important;
-    min-width:70px!important;
-    max-width:70px!important;
     min-height:66px!important;
     height:66px!important;
     padding:7px 5px 8px!important;
@@ -160,11 +155,6 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   }
   .corner-comfort .admin-shell .admin-nav .studio-nav-label{
     display:block!important;
-    position:static!important;
-    width:auto!important;
-    height:auto!important;
-    overflow:visible!important;
-    clip-path:none!important;
     color:inherit!important;
     font-size:.59rem!important;
   }
