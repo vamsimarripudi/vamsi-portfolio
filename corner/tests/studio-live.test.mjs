@@ -26,10 +26,11 @@ test('private frame supplies one sidebar without replacing trusted content',()=>
  assert.equal((html.match(/<aside /g)||[]).length,1);assert.match(html,/<main id="content">Existing private form<\/main>/);
  assert.doesNotMatch(html,/class="site-header"|class="site-footer"/);
 });
-test('sidebar is viewport-fixed, content is top-aligned, and narrow navigation remains reachable',()=>{
+test('sidebar is viewport-fixed, content is top-aligned, and mobile navigation collapses to one dropdown',()=>{
  const css=asset('studio.css');assert.match(css,/\.admin-sidebar\{position:fixed/);
  assert.match(css,/\.admin-main\{[^}]*margin:0/);assert.match(css,/\.admin-nav\{[^}]*overflow-y:auto/);
  assert.match(css,/@media\(max-width:767px\)/);assert.match(css,/position:sticky;top:0/);
+ assert.match(css,/studio-section-picker/);assert.match(css,/\.admin-shell \.admin-nav\{display:none!important\}/);
  assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/data-studio-collapsed=true/);
 });
 test('live wish input renders text locally and cannot publish as a preview side effect',()=>{
