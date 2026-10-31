@@ -9,11 +9,12 @@ Release gate:
 3. Run/inspect all required tests, static checks, integration/browser checks and security checks for the exact head SHA.
 4. Require every mandatory check to be completed successfully. Pending is not green.
 5. Require the preview/build target to succeed for that exact SHA.
-6. Merge only the exact tested head. Never merge a changed head using stale evidence.
-7. Verify the production provider deployed the resulting merge SHA.
-8. Check runtime health and relevant logs; do not treat a successful build alone as production success.
-9. Smoke-test the user-visible flow.
-10. Report the exact SHA and any remaining external gate.
+6. When the exact tested head is green, present the release evidence and ask the owner for explicit merge/deploy approval.
+7. Merge only after that approval, and only the exact tested head. Never merge a changed head using stale evidence.
+8. Verify the production provider deployed the resulting merge SHA.
+9. Check runtime health and relevant logs; do not treat a successful build alone as production success.
+10. Smoke-test the user-visible flow.
+11. Report the exact SHA and any remaining external gate.
 
 If a check fails, diagnose and repair only the real cause, rerun the exact-head gate, and keep production unchanged until green.
 
