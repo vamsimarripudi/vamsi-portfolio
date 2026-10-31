@@ -922,6 +922,6 @@
   if(!root)return;
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
-  const requested=location.hash.slice(1);const allowed=$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
+  const requested=location.hash.slice(1);const allowed=$$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
   addEventListener('hashchange',()=>{if(allowed.includes(location.hash.slice(1)))showView(location.hash.slice(1))});
 })();
