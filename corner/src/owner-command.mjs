@@ -82,7 +82,7 @@ export class OwnerCommand{
       detail:clean(data.detail??existing?.detail,1800),
       evidenceNote:clean(data.evidenceNote??data.evidence_note??existing?.evidence_note,1200),
       sourceRef:clean(data.sourceRef??data.source_ref??existing?.source_ref,600),
-      needsApproval:boolean(data.needsApproval??data.needs_approval??existing?.needs_approval)
+      needsApproval:true
     };
   }
 
