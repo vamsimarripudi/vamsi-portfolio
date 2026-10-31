@@ -214,6 +214,7 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page] .studio-icon{
     stroke:currentColor!important;
   }
+  .corner-comfort .studio-section-picker{display:none!important}
   .corner-comfort .admin-shell .admin-main{
     padding:12px 10px 18px;
   }
