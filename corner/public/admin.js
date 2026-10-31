@@ -64,6 +64,14 @@
       ${item.state!=='dismissed'?'<button type="button" data-command-state="dismissed" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Dismiss</button>':''}
     </div></article>`;
 
+  const commandMoment=moment=>'<article class="command-moment"><div class="command-moment-top"><span>'+esc(moment.signal)+'</span><strong>'+esc(moment.title)+'</strong></div><p>'+esc(moment.instruction)+'</p><button type="button" data-agentic-prompt="'+esc(moment.prompt)+'">Ask Command ↗</button></article>';
+  const commandQuickPrompts=[
+    ['What needs me?','What needs my attention right now? Give me at most three items, with evidence and the exact owner decision if one is required.'],
+    ['Find weak evidence','Find the weakest evidence in my active queue and tell me exactly what source would verify it.'],
+    ['Prepare approvals','Prepare approval packets for every action that is actually ready: evidence, exact action, risk, reversibility, and approval question.'],
+    ['DODO next','What can DODO safely prepare next without executing anything?']
+  ];
+  const commandQuickButtons=()=>commandQuickPrompts.map(([label,prompt])=>'<button type="button" data-agentic-prompt="'+esc(prompt)+'">'+esc(label)+'</button>').join('');
   async function command(){
     if(initial.ownerRole!=='owner'){root.innerHTML=empty('Owner access only.');return}
     const [summary,items]=await Promise.all([
@@ -82,7 +90,12 @@
       <div class="command-agent-head"><div><p class="eyebrow">OWNER AI / ADVISORY</p><h2>Ask Command.</h2>
       <p>${summary.agent?.ready?'Uses only the private command queue below as factual context. High-risk actions still require approval.':'AI is not connected yet. The command queue and decision system still work normally.'}</p></div>
       <span class="command-agent-state ${summary.agent?.ready?'ready':'offline'}">${summary.agent?.ready?'READY':'NOT CONNECTED'}</span></div>
-      ${summary.agent?.ready?'<form id="command-agent-form"><label for="command-agent-question">What do you need decided or prioritized?</label><div class="command-agent-compose"><textarea id="command-agent-question" name="question" maxlength="2400" rows="2" required placeholder="What should I focus on next? What is blocked? Which decision has the highest leverage?"></textarea><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<p class="command-agent-offline">Connect the dedicated OpenAI API key and enable <code>CORNER_COMMAND_AI=1</code> to activate this layer. No key is stored in the browser or command database.</p>'}
+      ${summary.agent?.ready?'<form id="command-agent-form"><label for="command-agent-question">What do you need decided or prioritized?</label><div class="command-agent-quick">'+commandQuickButtons()+'</div><div class="command-agent-compose"><textarea id="command-agent-question" name="question" maxlength="2400" rows="2" required placeholder="What should I focus on next? What is blocked? Which decision has the highest leverage?"></textarea><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<p class="command-agent-offline">Connect the dedicated OpenAI API key and enable <code>CORNER_COMMAND_AI=1</code> to activate this layer. No key is stored in the browser or command database.</p>'}
+    </section>
+    <section class="command-moments" aria-labelledby="command-moments-title">
+      <div class="command-section-head"><div><p class="eyebrow">AGENTIC MOMENTS</p><h2 id="command-moments-title">When the system should lean in.</h2>
+      <p class="command-moments-help">A moment appears only when the queue has a meaningful signal. It gives you an instruction and a question; it never executes the action.</p></div></div>
+      <div class="command-moment-grid">${(summary.moments||[]).map(commandMoment).join('')}</div>
     </section>
     <section class="command-kpis">
       <article><small>NOW</small><strong>${Number(summary.counts.now||0)}</strong><span>must move</span></article>
@@ -118,6 +131,11 @@
       <div class="command-list command-list-wide">${renderList(openItems)}</div>
     </section>`;
 
+    $('[data-agentic-prompt]').forEach(button=>button.onclick=()=>{
+      const input=$('#command-agent-question');if(!input)return;
+      input.value=button.dataset.agenticPrompt||'';input.focus();
+      input.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+    });
     const agentForm=$('#command-agent-form');
     if(agentForm)agentForm.onsubmit=async event=>{
       event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]'),answer=$('[data-command-agent-answer]');
