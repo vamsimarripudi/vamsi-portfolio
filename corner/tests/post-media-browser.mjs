@@ -39,7 +39,7 @@ try{
  await page.locator('.admin-shell').waitFor({state:'visible',timeout:14000});
  await page.locator('#create-from-overview').click();
  // V5 derives the title automatically from the single story textarea.
- await page.locator('#post-editor textarea[name="body"]').fill('First photo-led Corner story. Two photographs with captions, tested in a real mobile browser.');
+ await page.locator('#post-editor textarea[name="body"]').fill('First photo-led Corner story. Two clean photographs, tested in a real mobile browser.');
  const attachmentDialog=page.locator('dialog#editor-media');
  assert.equal(await attachmentDialog.count(),1,'Uploader is rendered as a native dialog');
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'No bottom attachment card is visible before opening');
@@ -82,20 +82,15 @@ try{
  assert.equal(await cards.locator('.upload-preview-remove').count(),4,'Every pending image has a red-X remove control');
  await cards.last().locator('.upload-preview-remove').click();
  assert.equal(await cards.count(),3,'Red X removes only the chosen pending image before upload');
- await cards.nth(0).locator('input[name="alt"]').fill('First little photograph');
- await cards.nth(0).locator('input[name="caption"]').fill('A new Corner beginning.');
- await cards.nth(1).locator('input[name="alt"]').fill('Second little photograph');
- await cards.nth(1).locator('input[name="caption"]').fill('One more quiet moment.');
- await cards.nth(2).locator('input[name="alt"]').fill('Third little photograph');
- await cards.nth(2).locator('input[name="caption"]').fill('Third carousel moment.');
+ assert.equal(await cards.locator('input[name="alt"],input[name="caption"]').count(),0,
+   'Image selection is final: no description or caption fields interrupt attachment');
  await page.locator('#editor-upload button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===3,null,{timeout:18000});
  assert.equal(await page.locator('[data-editor-photo-preview] img').count(),1,'Attached image appears in Studio card preview');
- const inline=page.locator('#editor-media form[data-media-quick-edit]');
- assert.equal(await inline.count(),3,'Every existing image has inline caption editor');
- await inline.nth(1).locator('input[name="caption"]').fill('Second caption updated.');
- await inline.nth(1).locator('button[type="submit"]').click();
- await page.getByText('Caption and description saved.').first().waitFor({timeout:12000});
+ assert.equal(await page.locator('#editor-media form[data-media-quick-edit]').count(),0,
+   'Attached images stay clean with no inline metadata editor');
+ assert.equal(await page.locator('#editor-media input[name="alt"],#editor-media input[name="caption"],#editor-media textarea[name="alt"]').count(),0,
+   'Attachment dialog never asks for image descriptions or captions');
  assert.equal(await page.locator('#media-count').textContent(),'3','Editor shows current attachment count');
  // Delete an already attached image using the red X.
  page.once('dialog',dialog=>dialog.accept());
@@ -105,13 +100,15 @@ try{
  // Reorder the remaining pair so the third image becomes the carousel cover.
  const attached=page.locator('#editor-media .media-thumb');
  assert.equal(await attached.locator('[data-media-move]').count(),4,'Attached media exposes previous/next ordering controls');
+ const beforeOrder=await attached.locator('.media-view-link').evaluateAll(links=>links.map(link=>link.getAttribute('href')));
  await attached.first().locator('[data-media-move][data-direction="1"]').click();
- await page.waitForFunction(()=>document.querySelector('#editor-media .media-thumb .media-card-caption')?.textContent?.includes('Third carousel moment.'));
- assert.equal((await page.locator('#editor-media .media-thumb').first().locator('.media-card-caption').textContent()).trim(),'Third carousel moment.','Reorder endpoint changes the public carousel order');
+ await page.waitForFunction(expected=>document.querySelector('#editor-media .media-thumb .media-view-link')?.getAttribute('href')===expected,beforeOrder[1]);
+ const afterOrder=await page.locator('#editor-media .media-thumb .media-view-link').evaluateAll(links=>links.map(link=>link.getAttribute('href')));
+ assert.equal(afterOrder[0],beforeOrder[1],'Reorder endpoint changes the public carousel order');
  await attachmentDialog.locator('[data-media-dismiss]').last().click();
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Done closes the attachment modal');
  await page.locator('#open-media-panel').click();
- assert.equal(await attachmentDialog.locator('.media-thumb').count(),2,'Reopening preserves deletion, order and captions');
+ assert.equal(await attachmentDialog.locator('.media-thumb').count(),2,'Reopening preserves deletion and order');
  await page.keyboard.press('Escape');
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Escape dismisses the native dialog');
  assert.equal(await page.locator('#open-media-panel').evaluate(element=>element===document.activeElement),true,'Focus returns to the media trigger');
@@ -197,28 +194,25 @@ try{
      const r=cards.map(c=>c.getBoundingClientRect());
      return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,panelWidth:p.width,
        cards:r.map(c=>({width:c.width,left:c.left,right:c.right})),
-       columns:getComputedStyle(panel).gridTemplateColumns,
-       captionClamp:cards.map(c=>getComputedStyle(c.querySelector('.media-card-caption')).webkitLineClamp)};
+       columns:getComputedStyle(panel).gridTemplateColumns};
    });
    assert.ok(layout.scroll<=width+1,'Studio Media must not overflow at '+width+' '+JSON.stringify(layout));
    assert.ok(layout.cards.every(c=>c.left>=-1&&c.right<=width+1),'Media cards inside screen '+width+' '+JSON.stringify(layout));
    assert.ok(layout.cards.every(c=>c.width>=Math.min(235,layout.panelWidth-1)),'No narrow/tall fixed cards '+width+' '+JSON.stringify(layout));
-   assert.ok(layout.captionClamp.every(v=>v==='2'),'Long captions are previewed in two readable lines');
    if(width>=1024){
      assert.ok(layout.cards[0].width>=Math.min(260,layout.panelWidth/3),'Gallery fills available workspace '+width);
    }
  }
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.locator('#admin-view .corner-library-grid .media-quick-edit').count(),0,'Library shows no attachment edit forms');
- const captions=(await libraryCards.locator('.media-card-caption').allTextContents()).map(c=>c.trim()).sort();
- assert.deepEqual(captions,['Third carousel moment.','Second caption updated.'].sort(),'Library reflects delete and preserved captions');
- const selectedCaption=(await libraryCards.first().locator('.media-card-caption').textContent()).trim();
+ assert.equal(await libraryCards.locator('.media-card-caption').count(),0,'Clean uploads do not show caption rows');
  await libraryCards.first().locator('[data-media-edit]').click();
- await page.locator('#media-editor textarea[name="alt"]').waitFor({state:'visible'});
- assert.equal(await page.locator('#media-editor input[name="caption"]').inputValue(),selectedCaption,'Edit details opens selected asset');
+ await page.locator('#media-editor input[name="focalX"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('#media-editor textarea[name="alt"],#media-editor input[name="caption"]').count(),0,
+   'Photo adjustments do not reintroduce description or caption prompts');
  await page.locator('#back-media').click();
  await page.locator('#admin-view .corner-library-grid').waitFor({state:'visible'});
- console.log('PASS Studio media gallery: responsive card widths, captions, details editor and mobile fit');
+ console.log('PASS Studio media gallery: responsive clean cards, adjustment editor and mobile fit');
  const slug=await page.evaluate(async()=>{
   const r=await fetch('/corner/api/admin/posts?state=published',{credentials:'same-origin'});
   const j=await r.json();return j.data.find(p=>p.title==='First photo-led Corner story')?.slug;
@@ -228,8 +222,7 @@ try{
  await page.locator('[data-post-carousel]').waitFor({state:'visible',timeout:10000});
  const images=page.locator('[data-carousel-slide] .post-photo');
  assert.equal(await images.count(),2,'Both photos are publicly rendered');
- await page.getByText('Third carousel moment.').waitFor();
- await page.getByText('Second caption updated.').waitFor();
+ assert.equal(await page.locator('.post-carousel-empty-caption').count(),2,'Clean photographs render without visible captions');
  assert.equal(await page.locator('[data-carousel-count]').textContent(),'1 / 2','Carousel starts at the ordered cover');
  assert.equal(await page.locator('[data-carousel-dot]').count(),2,'Carousel renders one position dot per attachment');
  assert.equal(await page.locator('[data-carousel-dot]').first().getAttribute('aria-current'),'true');
@@ -250,9 +243,9 @@ try{
  assert.equal(await dialog.locator('[data-post-counter],[data-post-prev],[data-post-next]').count(),0,'No viewer arrows or counter');
  const closeStyle=await dialog.locator('[data-post-close]').evaluate(el=>({width:el.getBoundingClientRect().width,clip:getComputedStyle(el).clipPath}));
  assert.ok(closeStyle.width<=1&&closeStyle.clip.includes('inset(50%)'),'Close action stays visually hidden until keyboard-focused '+JSON.stringify(closeStyle));
- assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.');
+ assert.equal(await dialog.locator('figcaption').textContent(),'');
  await page.keyboard.press('ArrowRight');
- assert.equal(await dialog.locator('figcaption').textContent(),'Second caption updated.','Keyboard navigation works without visible arrows');
+ assert.equal(await dialog.locator('figcaption').textContent(),'','Keyboard navigation works without visible arrows or captions');
  await dialog.locator('figure img').evaluate(el=>{
    el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:17,pointerType:'touch',clientX:240,clientY:250}));
    el.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:17,pointerType:'touch',clientX:150,clientY:248}));
@@ -260,7 +253,7 @@ try{
    el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:17,pointerType:'touch',clientX:90,clientY:248}));
    if(el.style.transform)throw Error('Dragged photograph must reset its inline transform after swipe');
  });
- assert.equal(await dialog.locator('figcaption').textContent(),'Third carousel moment.','Swipe left advances to the next photo');
+ assert.equal(await dialog.locator('figcaption').textContent(),'','Swipe left advances to the next photo without adding a caption');
  // Browser-generated click following a swipe must NOT immediately dismiss the viewer.
  await dialog.locator('figure img').dispatchEvent('click');
  assert.equal(await dialog.evaluate(el=>el.open),true,'The swipe completion click cannot close the viewer');
