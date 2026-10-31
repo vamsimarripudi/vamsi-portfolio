@@ -121,6 +121,9 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   .corner-comfort .admin-shell .admin-sidebar-footer>a{display:none}
   .corner-comfort .admin-shell .admin-nav{
     display:flex!important;
+    flex:none!important;
+    height:62px!important;
+    max-height:62px!important;
     flex-direction:row!important;
     gap:3px!important;
     padding:3px 0 1px!important;
