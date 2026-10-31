@@ -80,8 +80,11 @@
     if(/\b(photo|picture|rain|sunset|moment|beautiful sky|video|photograph)\b/.test(text))return 'moment';
     if(text.length>650)return 'journal';return 'tech_note';
   };
-  function postFields(p={}){
-    const id=!!p.id;
+  function postFields(p={},seriesList=[]){
+    const id=!!p.id,currentSeries=p.series||null;
+    const seriesChoice=currentSeries?.slug||'__new__';
+    const seriesOptions=seriesList.map(series=>`<option value="${esc(series.slug)}" data-next="${series.nextPart||''}" ${seriesChoice===series.slug?'selected':''}>${esc(series.title)} · ${Number(series.chapterCount||0)} ${Number(series.chapterCount||0)===1?'chapter':'chapters'}</option>`).join('');
+    const publishedSeriesLocked=!!(currentSeries&&p.state==='published');
     return `<div class="v5-composer"><div class="v5-editor-surface"><div class="v5-editor-top"><strong>${id?'EDIT YOUR STORY':'YOUR CORNER / NEW STORY'} ${tag(p.state||'draft')}</strong><button type="button" class="v5-editor-menu-button" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings">···</button></div>
     <label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, a build, something worth sharing…">${esc(p.body||'')}</textarea>
     <div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>
