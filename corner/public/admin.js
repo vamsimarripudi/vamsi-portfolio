@@ -998,7 +998,7 @@
   if(!root)return;
   const studioSectionSelect=$('#studio-section-select');
   if(studioSectionSelect){
-    const navEntries=$('.admin-nav [data-admin-view],.admin-nav a.admin-v3-link');
+    const navEntries=$$('.admin-nav [data-admin-view],.admin-nav a.admin-v3-link');
     for(const node of navEntries){
       const label=node.querySelector('.studio-nav-label')?.textContent?.trim()||node.getAttribute('title')||'Section';
       const value=node.dataset.adminView?'view:'+node.dataset.adminView:'url:'+node.getAttribute('href');
@@ -1012,7 +1012,7 @@
       }else if(value.startsWith('url:'))location.assign(value.slice(4));
     };
   }
-  $('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
+  $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
   const requested=location.hash.slice(1);const allowed=$$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
   addEventListener('hashchange',()=>{if(allowed.includes(location.hash.slice(1)))showView(location.hash.slice(1))});
