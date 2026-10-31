@@ -46,7 +46,12 @@ test('real HTTP: owner uploads two captioned images, draft stays private, public
  const upload=async(caption,alt)=>fetch(base+'/api/admin/media/upload?'+new URLSearchParams({
   postId:post.id,caption,alt}).toString(),{
   method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'image/png'},body:png});
- assert.equal((await upload('No description','')).status,400,'Every image requires alt text');
+ const clean=await upload('','');
+ assert.equal(clean.status,200,'Images can be attached without asking the author for a description or caption');
+ const cleanMedia=(await clean.json()).data;
+ assert.match(cleanMedia.alt_text,/Captioned photograph test/,'Server supplies a neutral accessibility fallback');
+ assert.equal(cleanMedia.caption,'');
+ assert.equal((await send('/api/admin/media/'+cleanMedia.id,{method:'DELETE',cookie})).status,200);
  const first=await upload('The first photograph.','Sunlit window');
  const second=await upload('Second <moment> & a quiet room','A quiet room');
  assert.equal(first.status,200);assert.equal(second.status,200);
