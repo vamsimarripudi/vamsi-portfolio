@@ -86,6 +86,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/data-agentic-prompt/);
   assert.match(js,/it never executes the action/);
   assert.match(js,/command-agent-quick/);
+  assert.doesNotMatch(js,/[^$]\$\('\[data-agentic-prompt\]'\)\.forEach/,'Agentic prompt binding must use the multi-element selector helper');
   assert.match(css,/command-kpis/);
   assert.match(css,/max-width:1050px/);
   assert.match(server,/Only the owner can access the command center/);
