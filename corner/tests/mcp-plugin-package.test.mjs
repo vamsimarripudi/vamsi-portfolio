@@ -13,8 +13,8 @@ test('Corner plugin package points only at the public read-only MCP server',()=>
 
   assert.equal(plugin.name,'vamsis-corner-studio');
   assert.deepEqual(plugin.extensions['com.openai'].interface.capabilities,['Read']);
-  assert.equal(plugin.extensions['com.openai'].privacyPolicyURL,'https://vamsimarripudi.me/corner/privacy');
-  assert.equal(plugin.extensions['com.openai'].termsOfServiceURL,'https://vamsimarripudi.me/corner/terms');
+  assert.equal(plugin.extensions['com.openai'].interface.privacyPolicyURL,'https://vamsimarripudi.me/corner/privacy');
+  assert.equal(plugin.extensions['com.openai'].interface.termsOfServiceURL,'https://vamsimarripudi.me/corner/terms');
 
   assert.equal(mcp.mcpServers.corner.type,'streamable-http');
   assert.equal(mcp.mcpServers.corner.url,'https://vamsimarripudi.me/corner/mcp');
