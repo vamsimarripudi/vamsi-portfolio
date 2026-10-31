@@ -553,7 +553,7 @@ async function route(req,res){
 }
 export function createServer(){return http.createServer((req,res)=>{route(req,res).catch(err=>{log('error',{where:'unhandled',message:err?.message});if(!res.headersSent)json(res,{error:{code:'INTERNAL_ERROR',message:'Unexpected error'}},500);else res.end()})})}
 if(process.argv[1]===fileURLToPath(import.meta.url)){
-  const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
+  const server=createServer();server.listen(config.port,config.host,()=>{const address=server.address();const boundPort=typeof address==='object'&&address?address.port:config.port;console.log(`Vamsi's Corner running at http://${config.host}:${boundPort}`)});
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));
    void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
