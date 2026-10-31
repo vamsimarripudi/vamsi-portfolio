@@ -36,13 +36,103 @@
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span class="v6-empty-icon" aria-hidden="true">${studioIcon('approved')}</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
   function showView(view){active.editorAbort?.abort();window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
-    const labels={overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
+    const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
-    ({overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().then(()=>window.CornerMotion?.refresh()).catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
+    ({command,overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().then(()=>window.CornerMotion?.refresh()).catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
   }
+  const commandEvidenceLabel={verified:'Verified',reported:'Reported',unverified:'Needs verification',blocked:'Blocked'};
+  const commandAuthorityLabel={read:'Read only',draft:'Draft',write:'Change data',money:'Money',legal:'Legal',security:'Security'};
+  const commandPriorityLabel={now:'NOW',next:'NEXT',later:'LATER'};
+  const commandDue=item=>item.dueAt?new Date(item.dueAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'No due date';
+  const commandItem=item=>`<article class="command-item command-priority-${esc(item.priority)}" data-command-id="${esc(item.id)}">
+    <div class="command-item-head"><div><span class="command-workspace ${esc(item.workspace)}">${item.workspace==='kravia'?'KRAVIA':'PERSONAL'}</span>
+      <span class="command-kind">${esc(item.kind.toUpperCase())}</span></div><span class="command-priority">${esc(commandPriorityLabel[item.priority]||item.priority)}</span></div>
+    <h3>${esc(item.title)}</h3>${item.project?'<p class="command-project">'+esc(item.project)+'</p>':''}
+    ${item.detail?'<p class="command-detail">'+esc(item.detail)+'</p>':''}
+    <div class="command-meta"><span class="evidence-${esc(item.evidenceStatus)}">${esc(commandEvidenceLabel[item.evidenceStatus]||item.evidenceStatus)}</span>
+      <span>${esc(commandAuthorityLabel[item.authority]||item.authority)}</span><span>${esc(commandDue(item))}</span>
+      ${item.needsApproval?'<strong>Approval required</strong>':''}</div>
+    ${item.evidenceNote?'<p class="command-evidence">'+esc(item.evidenceNote)+'</p>':''}
+    ${item.sourceRef?'<p class="command-source">Source: '+esc(item.sourceRef)+'</p>':''}
+    <div class="command-actions">
+      ${item.state!=='done'?'<button type="button" data-command-state="done" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Done</button>':''}
+      ${item.state!=='waiting'?'<button type="button" data-command-state="waiting" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Waiting</button>':''}
+      ${item.state!=='open'?'<button type="button" data-command-state="open" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Reopen</button>':''}
+      ${item.state!=='dismissed'?'<button type="button" data-command-state="dismissed" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Dismiss</button>':''}
+    </div></article>`;
+
+  async function command(){
+    if(initial.ownerRole!=='owner'){root.innerHTML=empty('Owner access only.');return}
+    const [summary,items]=await Promise.all([
+      api('/corner/api/admin/command/summary'),
+      api('/corner/api/admin/command/items')
+    ]);
+    const openItems=items.filter(item=>['open','waiting'].includes(item.state));
+    const renderList=list=>list.length?list.map(commandItem).join(''):empty('Nothing here.','The command queue is clear.');
+    root.innerHTML=`<section class="command-hero">
+      <div><p class="eyebrow">OWNER COMMAND / PRIVATE</p><h2>One queue. Clear decisions.</h2>
+      <p>Use this as the founder-level control layer. KRAVIA and personal ventures stay operationally separate; this screen keeps only the minimum status needed to decide what you do next.</p></div>
+      <div class="command-boundary"><strong>Boundary lock</strong><span>Never mix company and personal money, credentials, branding or customer records.</span></div>
+    </section>
+    <section class="command-kpis">
+      <article><small>NOW</small><strong>${Number(summary.counts.now||0)}</strong><span>must move</span></article>
+      <article><small>DECISIONS</small><strong>${Number(summary.counts.decisions||0)}</strong><span>need judgment</span></article>
+      <article><small>RISKS</small><strong>${Number(summary.counts.risks||0)}</strong><span>need control</span></article>
+      <article><small>APPROVALS</small><strong>${Number(summary.counts.approvals||0)}</strong><span>cannot auto-run</span></article>
+    </section>
+    <section class="command-grid">
+      <div class="command-column"><div class="command-section-head"><div><p class="eyebrow">FOCUS</p><h2>What needs you now.</h2></div></div>
+        <div class="command-list">${renderList(summary.nowItems)}</div>
+        ${summary.overdue?.length?'<div class="command-section-head command-subhead"><h3>Overdue</h3></div><div class="command-list">'+renderList(summary.overdue)+'</div>':''}
+      </div>
+      <aside class="command-capture admin-surface"><p class="eyebrow">CAPTURE ONCE</p><h2>Add to command.</h2>
+        <form id="command-capture" class="admin-form">
+          <div class="editor-inline"><label>Workspace<select name="workspace"><option value="personal">Personal ventures</option><option value="kravia">KRAVIA founder-level only</option></select></label>
+          <label>Type<select name="kind"><option value="task">Task</option><option value="decision">Decision</option><option value="risk">Risk</option><option value="idea">Idea</option></select></label></div>
+          <label>Title<input name="title" maxlength="160" required placeholder="What must be decided or moved?"></label>
+          <label>Project<input name="project" maxlength="100" placeholder="PakkaFollow, FileBloom, VidyaLuma…"></label>
+          <label>Context<textarea name="detail" maxlength="1800" rows="3" placeholder="Only the minimum context needed to act."></textarea></label>
+          <div class="editor-inline"><label>Priority<select name="priority"><option value="now">Now</option><option value="next" selected>Next</option><option value="later">Later</option></select></label>
+          <label>Evidence<select name="evidenceStatus"><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified" selected>Needs verification</option><option value="blocked">Blocked</option></select></label></div>
+          <label>Evidence note<input name="evidenceNote" maxlength="1200" placeholder="What proves this? What is still unknown?"></label>
+          <label>Source / reference<input name="sourceRef" maxlength="600" placeholder="PR, email, document, provider page or note"></label>
+          <div class="editor-inline"><label>Authority<select name="authority"><option value="read">Read only</option><option value="draft">Draft</option><option value="write">Change data</option><option value="money">Money</option><option value="legal">Legal</option><option value="security">Security</option></select></label>
+          <label>Due<input name="dueAt" type="datetime-local"></label></div>
+          <label class="command-approval"><input type="checkbox" name="needsApproval"> Require my approval before execution</label>
+          <button type="submit" class="admin-primary">Add to command</button>
+        </form>
+        <p class="command-scope-note">KRAVIA entries here are routing metadata only. Company records, credentials and finance remain in KRAVIA-controlled systems.</p>
+      </aside>
+    </section>
+    <section class="command-all"><div class="command-section-head"><div><p class="eyebrow">QUEUE</p><h2>Open and waiting.</h2></div><span>${openItems.length} active</span></div>
+      <div class="command-list command-list-wide">${renderList(openItems)}</div>
+    </section>`;
+
+    $('#command-capture').onsubmit=async event=>{
+      event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]');
+      const due=form.elements.dueAt.value?new Date(form.elements.dueAt.value).toISOString():null;
+      await actionMotion({action:'command.create',trigger:button,targetId:'owner-command',
+        execute:()=>api('/corner/api/admin/command/items','POST',{
+          workspace:form.elements.workspace.value,kind:form.elements.kind.value,title:form.elements.title.value,
+          project:form.elements.project.value,detail:form.elements.detail.value,priority:form.elements.priority.value,
+          evidenceStatus:form.elements.evidenceStatus.value,evidenceNote:form.elements.evidenceNote.value,
+          sourceRef:form.elements.sourceRef.value,authority:form.elements.authority.value,
+          needsApproval:form.elements.needsApproval.checked,dueAt:due
+        }),
+        onSuccess:()=>{toast('Added to command.','success');command()},
+        onFailure:error=>toast(error.message,'error')});
+    };
+    $('[data-command-state]').forEach(button=>button.onclick=async()=>{
+      const id=button.dataset.id,state=button.dataset.commandState,version=Number(button.dataset.version);
+      await actionMotion({action:'command.state',trigger:button,targetId:id,
+        execute:()=>api('/corner/api/admin/command/items/'+encodeURIComponent(id),'PATCH',{state,version}),
+        onSuccess:()=>command(),onFailure:error=>toast(error.message,'error')});
+    });
+  }
+
   async function overview(){const summary=await api('/corner/api/admin/overview');
     root.innerHTML=`<section class="admin-grid">${[
       ['Drafts',summary.drafts||0],['Scheduled',summary.scheduled||0],['Published',summary.published||0],['Review comments',summary.pendingComments||0],
@@ -816,6 +906,6 @@
   if(!root)return;
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
-  const requested=location.hash.slice(1);const allowed=$$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
+  const requested=location.hash.slice(1);const allowed=$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
   addEventListener('hashchange',()=>{if(allowed.includes(location.hash.slice(1)))showView(location.hash.slice(1))});
 })();
