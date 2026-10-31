@@ -1,4 +1,4 @@
-import {httpError} from './domain.mjs';
+import {httpError,slugify,pureText} from './domain.mjs';
 import {publicPost} from './store.mjs';
 
 export const FIRST_SERIES_SLUG='learning-everything-doing-nothing';
@@ -58,7 +58,44 @@ export class JournalSeries{
       }
     }
   }
-  adminSeries(){return this.store.all("SELECT slug,title,summary,status,theme FROM journal_series ORDER BY created_at,slug");}
+  adminSeries(){
+    return this.store.all(`SELECT s.slug,s.title,s.summary,s.status,s.theme,
+      COUNT(p.post_id) AS chapterCount,COALESCE(MAX(p.part_number),0) AS maxPart
+      FROM journal_series s LEFT JOIN journal_series_parts p ON p.series_slug=s.slug
+      GROUP BY s.slug,s.title,s.summary,s.status,s.theme,s.created_at
+      ORDER BY s.created_at,s.slug`).map(row=>{
+        const maxPart=Number(row.maxPart||0);
+        return {...row,chapterCount:Number(row.chapterCount||0),nextPart:maxPart>=99?null:maxPart+1};
+      });
+  }
+  publicSlugs(){
+    return this.store.all(`SELECT s.series_slug AS slug
+      FROM journal_series_parts s JOIN posts p ON p.id=s.post_id
+      WHERE p.state='published' AND p.type='journal'
+      GROUP BY s.series_slug
+      ORDER BY MAX(p.published_at) DESC,s.series_slug ASC`).map(row=>row.slug);
+  }
+  featured(){
+    const slug=this.publicSlugs()[0];
+    return slug?this.published(slug):null;
+  }
+  uniqueSlug(title){
+    const base=(slugify(title).slice(0,72)||'journal-series');
+    let candidate=base,index=2;
+    while(this.store.one('SELECT slug FROM journal_series WHERE slug=?',candidate)){
+      const suffix='-'+index++;
+      candidate=base.slice(0,80-suffix.length)+suffix;
+    }
+    return candidate;
+  }
+  nextPart(slug){
+    if(!validSlug(slug)||!this.store.one('SELECT slug FROM journal_series WHERE slug=?',slug))
+      throw httpError(404,'Journal series not found');
+    const row=this.store.one('SELECT COALESCE(MAX(part_number),0) AS n FROM journal_series_parts WHERE series_slug=?',slug);
+    const next=Number(row?.n||0)+1;
+    if(next>99)throw httpError(409,'This series already has the maximum number of chapters.');
+    return next;
+  }
   assignment(postId){
     const row=this.store.one(`SELECT s.slug,s.title,s.summary,p.part_number AS partNumber
       FROM journal_series_parts p JOIN journal_series s ON s.slug=p.series_slug WHERE p.post_id=?`,postId);
@@ -95,6 +132,63 @@ export class JournalSeries{
     const assignment=this.assignment(post.id);
     if(!assignment)return post;
     return {...post,series:{slug:assignment.slug,title:assignment.title,partNumber:assignment.partNumber}};
+  }
+  createForPost(postId,actor,{allowMove=false}={}){
+    const post=this.store.adminPost(postId);
+    if(!post)throw httpError(404,'Post not found');
+    if(post.type!=='journal')throw httpError(400,'Choose Journal presentation before starting a series.');
+    const current=this.assignment(postId);
+    if(current&&!allowMove)return {...current,created:false};
+    if(current&&post.state==='published')
+      throw httpError(409,'Published chapters keep their current series. Create a new draft to start another series.');
+    const title=pureText(post.title,120)||'Untitled Journal';
+    const summary=pureText(post.excerpt||'An ongoing journal series.',300);
+    const slug=this.uniqueSlug(title),today=stamp();
+    this.store.transaction(()=>{
+      this.store.exec(`INSERT INTO journal_series(slug,title,summary,status,theme,created_at,updated_at)
+        VALUES(?,?,?,'ongoing','marginalia',?,?)`,slug,title,summary,today,today);
+      if(current)this.store.exec('DELETE FROM journal_series_parts WHERE post_id=?',postId);
+      this.store.exec('INSERT INTO journal_series_parts(series_slug,post_id,part_number) VALUES(?,?,1)',slug,postId);
+      this.store.audit(actor,'journal.series.created','series',slug,{postId,title});
+      this.store.audit(actor,'journal.series.assigned','post',postId,{slug,partNumber:1});
+    });
+    return {...this.assignment(postId),created:true};
+  }
+  assignNext(postId,slug,actor,{allowMove=false}={}){
+    const post=this.store.adminPost(postId);
+    if(!post)throw httpError(404,'Post not found');
+    if(post.type!=='journal')throw httpError(400,'Choose Journal presentation before adding a chapter.');
+    if(!validSlug(slug)||!this.store.one('SELECT slug FROM journal_series WHERE slug=?',slug))
+      throw httpError(404,'Journal series not found');
+    const current=this.assignment(postId);
+    if(current?.slug===slug)return {...current,created:false};
+    if(current&&!allowMove)
+      throw httpError(409,'This chapter already belongs to a series. Use Change series first.');
+    if(current&&post.state==='published')
+      throw httpError(409,'Published chapters cannot be moved between series.');
+    const order=this.nextPart(slug);
+    this.store.transaction(()=>{
+      if(current)this.store.exec('DELETE FROM journal_series_parts WHERE post_id=?',postId);
+      this.store.exec('INSERT INTO journal_series_parts(series_slug,post_id,part_number) VALUES(?,?,?)',slug,postId,order);
+      this.store.audit(actor,'journal.series.assigned','post',postId,{slug,partNumber:order,automatic:true});
+    });
+    return {...this.assignment(postId),created:false};
+  }
+  organize(postId,data,actor){
+    const mode=String(data?.mode||'existing');
+    if(mode==='new')return this.createForPost(postId,actor,{allowMove:data?.allowMove===true});
+    if(mode==='existing')return this.assignNext(postId,String(data?.slug||''),actor,{allowMove:data?.allowMove===true});
+    if(mode==='unlink'){
+      const post=this.store.adminPost(postId);
+      if(!post)throw httpError(404,'Post not found');
+      const current=this.assignment(postId);
+      if(!current)return null;
+      if(post.state==='published')throw httpError(409,'Published chapters keep their series assignment.');
+      this.store.exec('DELETE FROM journal_series_parts WHERE post_id=?',postId);
+      this.store.audit(actor,'journal.series.unlinked','post',postId,{slug:current.slug});
+      return null;
+    }
+    throw httpError(400,'Invalid Journal series action.');
   }
   assign(postId,slug,partNumber,actor){
     const post=this.store.adminPost(postId);

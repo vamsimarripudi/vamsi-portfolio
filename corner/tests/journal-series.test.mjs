@@ -85,6 +85,36 @@ test('New chapters stay private until published, then previous and next links co
  const wrong=store.createPost({type:'moment',title:'Not a journal',body:'Photo moment'},'owner');
  assert.throws(()=>series.assign(wrong.id,FIRST_SERIES_SLUG,3,'owner'),{status:400});
 });
+test('Journal organizer starts new series at Chapter 01 and assigns existing series automatically',t=>{
+ const store=fixture(t,{first:false});const series=new JournalSeries(store);
+ const first=store.createPost({type:'journal',title:'Quiet Experiments',excerpt:'A series about testing ideas.',body:'The first experiment.'},'owner');
+ const created=series.organize(first.id,{mode:'new'},'owner');
+ assert.equal(created.created,true);assert.equal(created.partNumber,1);
+ assert.equal(created.title,'Quiet Experiments');
+ const list=series.adminSeries();
+ assert.equal(list.length,1);assert.equal(list[0].chapterCount,1);assert.equal(list[0].nextPart,2);
+ const second=store.createPost({type:'journal',title:'The second experiment',body:'A continuation.'},'owner');
+ const joined=series.organize(second.id,{mode:'existing',slug:created.slug},'owner');
+ assert.equal(joined.partNumber,2,'Next chapter number is server-assigned');
+ const retry=series.organize(second.id,{mode:'new'},'owner');
+ assert.equal(retry.slug,created.slug,'Retry never creates a duplicate series for an already assigned chapter');
+ assert.equal(series.adminSeries().length,1);
+ store.publish(first.id,'owner');store.publish(second.id,'owner');
+ assert.deepEqual(series.publicSlugs(),[created.slug]);
+ assert.equal(series.featured().slug,created.slug);
+});
+test('Changing series requires an explicit draft move and published chapters stay stable',t=>{
+ const store=fixture(t,{first:false});const series=new JournalSeries(store);
+ const one=store.createPost({type:'journal',title:'Series One',body:'One.'},'owner');
+ const two=store.createPost({type:'journal',title:'Series Two',body:'Two.'},'owner');
+ const oneSeries=series.organize(one.id,{mode:'new'},'owner');
+ const twoSeries=series.organize(two.id,{mode:'new'},'owner');
+ assert.throws(()=>series.organize(two.id,{mode:'existing',slug:oneSeries.slug},'owner'),{status:409});
+ const moved=series.organize(two.id,{mode:'existing',slug:oneSeries.slug,allowMove:true},'owner');
+ assert.equal(moved.slug,oneSeries.slug);assert.equal(moved.partNumber,2);
+ store.publish(two.id,'owner');
+ assert.throws(()=>series.organize(two.id,{mode:'existing',slug:twoSeries.slug,allowMove:true},'owner'),{status:409});
+});
 test('Marginalia series page uses the actual first cover and only published chapter links',t=>{
  const store=fixture(t);const series=new JournalSeries(store);
  const html=journalSeriesPage({series:series.published(FIRST_SERIES_SLUG)});
@@ -126,13 +156,15 @@ test('Journal feed highlights real series while unrelated categories remain unch
  assert.doesNotMatch(feedPage({active:'Builds',posts:[]}),/SERIAL JOURNAL/);
  assert.doesNotMatch(card({...post,series:null}),/SERIES · CHAPTER/);
 });
-test('Mobile layout, reduced motion, and Studio series selectors exist',()=>{
+test('Mobile layout, reduced motion, and automatic Studio series selection exist',()=>{
  const css=fs.readFileSync(new URL('../public/journal-series.css',import.meta.url),'utf8');
  const admin=fs.readFileSync(new URL('../public/admin.js',import.meta.url),'utf8');
  const server=fs.readFileSync(new URL('../src/server.mjs',import.meta.url),'utf8');
  assert.match(css,/max-width:760px/);assert.match(css,/prefers-reduced-motion:reduce/);
- assert.match(css,/series-cover-photo/);assert.match(css,/journal-series-article/);
- assert.match(admin,/name="seriesSlug"/);assert.match(admin,/name="seriesPart"/);
- assert.match(server,/journalSeries\.assign/);
+ assert.match(css,/series-cover-photo/);assert.match(css,/journal-series-article/);assert.match(css,/v7-series-question/);
+ assert.match(admin,/name="seriesChoice"/);assert.doesNotMatch(admin,/name="seriesPart"/);
+ assert.match(admin,/Start a new series from this Journal/);assert.match(admin,/data-journal-series/);
+ assert.match(admin,/next chapter number is assigned automatically/i);
+ assert.match(server,/journalSeries\.organize/);
  assert.match(server,/journalSeriesPage/);
 });
