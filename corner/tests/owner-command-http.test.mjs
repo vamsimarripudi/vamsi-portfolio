@@ -17,7 +17,7 @@ test('owner command HTTP is private, owner-controlled and AI fails closed when d
   let actualPort=null,origin='',base='';
   const email='owner@command-http.test',password=crypto.randomBytes(28).toString('base64url');
   const env={...process.env,NODE_ENV:'test',HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,
-    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:base,CORNER_BASE_PATH:'/corner',
+    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:'http://fixture.test/corner',CORNER_BASE_PATH:'/corner',
     ADMIN_EMAIL:email,ADMIN_PASSWORD_HASH:passwordHash(password),SESSION_SECRET:crypto.randomBytes(48).toString('hex'),
     DEMO_CONTENT:'0',CORNER_COMMAND_AI:'0',OPENAI_API_KEY:''};
   const child=spawn(process.execPath,['--no-warnings','src/server.mjs'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
