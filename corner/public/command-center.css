@@ -4,7 +4,8 @@
   gap:clamp(16px,2.6vw,34px);align-items:start;margin:0 0 18px;
 }
 .corner-comfort .command-hero h2{margin:2px 0 8px;font-size:clamp(1.45rem,2.1vw,2rem);letter-spacing:-.045em}
-.corner-comfort .command-hero>div>p:last-child{max-width:70ch;color:#69615d;line-height:1.65}
+.corner-comfort .command-hero>div>p:not(.eyebrow){max-width:70ch;color:#69615d;line-height:1.65}
+.corner-comfort .command-maker-note{margin-top:8px!important;font-size:.69rem!important;font-weight:700;color:#8b6d5b!important;letter-spacing:.015em}
 .corner-comfort .command-boundary{
   display:grid;gap:5px;padding:14px 16px;border:1px solid #e6d7c8;border-radius:15px;background:#fffaf5;
 }
@@ -24,6 +25,17 @@
 .corner-comfort .command-agent-answer{white-space:pre-wrap;padding:13px;border:1px solid #e4ddd7;border-radius:12px;background:#fbfaf9;color:#373330;font-size:.78rem;line-height:1.65}
 .corner-comfort .command-agent-offline{margin:0;color:#756e69;font-size:.72rem;line-height:1.55}
 .corner-comfort .command-agent-offline code{font-size:.69rem}
+.corner-comfort .command-moments{margin:0 0 18px}
+.corner-comfort .command-moments-help{margin:4px 0 0;max-width:72ch;color:#7b746f;font-size:.71rem;line-height:1.5}
+.corner-comfort .command-moment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.corner-comfort .command-moment{display:grid;gap:9px;align-content:start;padding:13px 14px;border:1px solid #e6ded8;border-radius:14px;background:linear-gradient(180deg,#fff,#fbf8f6)}
+.corner-comfort .command-moment-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.corner-comfort .command-moment-top span{padding:3px 7px;border-radius:999px;background:#f0ebe7;color:#735f52;font:720 .56rem/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+.corner-comfort .command-moment-top strong{font-size:.78rem;color:#2f2925}
+.corner-comfort .command-moment p{margin:0;color:#655e59;font-size:.72rem;line-height:1.52}
+.corner-comfort .command-moment button,.corner-comfort .command-agent-quick button{min-height:38px;padding:7px 9px;border:1px solid #ddd4cd;border-radius:9px;background:#fff;color:#3b3531;font-size:.68rem;font-weight:720}
+.corner-comfort .command-moment button:is(:hover,:focus-visible),.corner-comfort .command-agent-quick button:is(:hover,:focus-visible){border-color:#a88a79;background:#fffaf6}
+.corner-comfort .command-agent-quick{display:flex;gap:7px;flex-wrap:wrap}
 .corner-comfort .command-kpis{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 18px;
 }
@@ -73,11 +85,13 @@
 .corner-comfort .command-capture{position:sticky;top:20px;padding:16px}
 .corner-comfort .command-capture h2{margin:2px 0 12px;font-size:1.15rem}
 .corner-comfort .command-capture .admin-form{gap:10px}
-.corner-comfort .command-approval{display:flex!important;align-items:center;gap:8px}
-.corner-comfort .command-approval input{width:18px!important;height:18px!important;min-height:0!important}
+.corner-comfort .command-approval-lock{display:grid;gap:3px;padding:10px 11px;border:1px solid #ead7c9;border-radius:10px;background:#fff7f1}
+.corner-comfort .command-approval-lock strong{font-size:.72rem;color:#88492e}
+.corner-comfort .command-approval-lock span{font-size:.66rem;line-height:1.45;color:#75685f}
 .corner-comfort .command-scope-note{margin:12px 0 0;padding-top:10px;border-top:1px solid #ebe5df;color:#7b716a;font-size:.66rem;line-height:1.5}
 .corner-comfort .command-all{margin-top:22px}
 @media(max-width:1050px){
+  .corner-comfort .command-moment-grid{grid-template-columns:minmax(0,1fr)}
   .corner-comfort .command-grid{grid-template-columns:minmax(0,1fr)}
   .corner-comfort .command-capture{position:static}
   .corner-comfort .command-list-wide{grid-template-columns:minmax(0,1fr)}
@@ -94,5 +108,5 @@
   .corner-comfort .command-kpis{grid-template-columns:minmax(0,1fr)}
 }
 @media(prefers-reduced-motion:reduce){
-  .corner-comfort .command-item,.corner-comfort .command-actions button{transition:none!important;animation:none!important}
+  .corner-comfort .command-item,.corner-comfort .command-actions button,.corner-comfort .command-moment,.corner-comfort .command-moment button{transition:none!important;animation:none!important}
 }

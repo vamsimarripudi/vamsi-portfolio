@@ -291,7 +291,7 @@ async function api(req,res,pathName,url){
   }
   if(pathName==='/api/admin/login'&&method==='POST'){
     limit(req,'staff-login',7,900);const result=identity.loginAdmin(await readJSON(req,5000),sourceIp(req),req.headers['user-agent']||'');
-    if(result.token){res.setHeader('set-cookie',adminCookie(result.token));return ok(res,{authenticated:true,expires:result.expires,user:result.user});}
+    if(result.token){const age=result.user.role==='owner'?30*24*3600:8*3600;res.setHeader('set-cookie',adminCookie(result.token,age));return ok(res,{authenticated:true,expires:result.expires,user:result.user});}
     return ok(res,result);
   }
   if(pathName==='/api/admin/logout'&&method==='POST'){let token=decodeURIComponent(cookieHeader(req).corner_session||'');if(token)store.revokeSession(token);res.setHeader('set-cookie',adminCookie('',0));return ok(res,{authenticated:false})}

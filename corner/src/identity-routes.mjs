@@ -59,7 +59,7 @@ export function identityRoutes({ identity,store,config,readJSON,readBody,ok,json
     if(path==='/api/auth/admin/login'&&method==='POST'){
       limit(req,'staff-login',7,900);
       const result=identity.loginAdmin(await readJSON(req,4000),sourceIp(req),req.headers['user-agent']||'');
-      if(result.token){res.setHeader('set-cookie',staffCookie(result.token,8*3600));return jsonResult(res,{authenticated:true,scope:'admin',expires:result.expires,user:result.user})}
+      if(result.token){const age=result.user.role==='owner'?30*24*3600:8*3600;res.setHeader('set-cookie',staffCookie(result.token,age));return jsonResult(res,{authenticated:true,scope:'admin',expires:result.expires,user:result.user})}
       return jsonResult(res,result);
     }
     if(path==='/api/admin/invitations'&&method==='POST'){
@@ -77,7 +77,8 @@ export function identityRoutes({ identity,store,config,readJSON,readBody,ok,json
     if(path==='/api/auth/mfa/activate'&&method==='POST'){
       limit(req,'mfa-activate',7,900);
       const result=identity.activateMfa(await readJSON(req,3500),sourceIp(req),req.headers['user-agent']||'');
-      res.setHeader('set-cookie',staffCookie(result.token,8*3600));
+      const age=result.user.role==='owner'?30*24*3600:8*3600;
+      res.setHeader('set-cookie',staffCookie(result.token,age));
       return jsonResult(res,{authenticated:true,recoveryCodes:result.recoveryCodes,user:result.user});
     }
     if(path==='/api/auth/password/forgot'&&method==='POST'){

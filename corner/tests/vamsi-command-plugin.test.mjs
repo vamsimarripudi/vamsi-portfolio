@@ -15,6 +15,7 @@ test('Vamsi Command packages the owner method without claiming unsafe powers',{s
   const owner=read('vamsi-command/skills/owner-command/SKILL.md');
   const release=read('vamsi-command/skills/release-control/SKILL.md');
   const daily=read('vamsi-command/skills/daily-brief/SKILL.md');
+  const moments=read('vamsi-command/skills/agentic-moments/SKILL.md');
 
   assert.equal(plugin.name,'vamsi-command');
   assert.deepEqual(plugin.extensions['com.openai'].interface.capabilities,['Read']);
@@ -25,11 +26,14 @@ test('Vamsi Command packages the owner method without claiming unsafe powers',{s
   assert.match(setup,/KRAVIA PRIVATE LIMITED is a corporate workspace/);
   assert.match(setup,/Personal ventures and Vamsi's Corner remain personal/);
   assert.match(owner,/VERIFIED/);
-  assert.match(owner,/Money movement, live charging, contracts, legal filings/);
+  assert.match(owner,/Every external or state-changing action requires explicit owner approval/);
   assert.match(release,/exact tested head/);
   assert.match(release,/Pending is not green/);
   assert.match(daily,/Do not send messages, change events, merge, deploy, charge, publish/);
+  assert.match(moments,/Maximum three visible moments at once/);
+  assert.match(moments,/must not submit automatically/);
+  assert.match(moments,/execution still requires explicit owner approval/);
 
-  const combined=[setup,owner,release,daily].join('\n');
+  const combined=[setup,owner,release,daily,moments].join('\n');
   assert.doesNotMatch(combined,/api[_ -]?key\s*[:=]|password\s*[:=]|secret\s*[:=]/i);
 });
