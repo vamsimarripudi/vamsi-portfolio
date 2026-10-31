@@ -18,7 +18,7 @@ test('public MCP exposes only published Corner content through read-only tools',
   let actualPort=null,origin='',base='';
   const email='owner@mcp.test',password=crypto.randomBytes(28).toString('base64url');
   const env={...process.env,NODE_ENV:'test',HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,
-    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:base,CORNER_BASE_PATH:'/corner',
+    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:'http://fixture.test/corner',CORNER_BASE_PATH:'/corner',
     ADMIN_EMAIL:email,ADMIN_PASSWORD_HASH:passwordHash(password),SESSION_SECRET:crypto.randomBytes(48).toString('hex'),
     DEMO_CONTENT:'0'};
   const child=spawn(process.execPath,['--no-warnings','src/server.mjs'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
