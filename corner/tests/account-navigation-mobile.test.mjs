@@ -106,11 +106,12 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.match(await (await go('/settings/profile',{cookie:memberCookie})).text(),/Sign in to access your private information/);
 });
 test('mobile Studio navigation uses one compact section dropdown instead of the icon strip',()=>{
- const styles=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
+ const studio=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
+ const command=fs.readFileSync(new URL('../public/command-center.css',import.meta.url),'utf8');
  const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
- assert.match(styles,/max-width:767px/);
- assert.match(styles,/studio-section-picker/);
- assert.match(styles,/\.admin-shell \.admin-nav\{display:none!important\}/);
- assert.match(styles,/min-height:40px/);
+ assert.match(studio,/max-width:767px/);
+ assert.match(command,/studio-section-picker/);
+ assert.match(command,/admin-sidebar \.admin-nav\{display:none!important\}/);
+ assert.match(command,/min-height:40px/);
  assert.match(ui,/id="studio-section-select"/);
 });
