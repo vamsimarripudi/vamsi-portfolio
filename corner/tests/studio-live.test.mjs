@@ -32,7 +32,7 @@ test('sidebar is viewport-fixed, content is top-aligned, and mobile navigation b
  assert.match(css,/@media\(max-width:767px\)/);assert.match(css,/position:sticky;[\s\S]*top:0/);
  assert.match(css,/flex:0 0 64px!important/);
  assert.match(css,/studio-nav-label[\s\S]*display:block!important/);
- assert.match(command,/command-section-switch/);assert.match(command,/command-overview-card/);
+ assert.doesNotMatch(command,/command-section-switch/);assert.match(command,/command-overview-card/);
  assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/data-studio-collapsed=true/);
 });
 test('live wish input renders text locally and cannot publish as a preview side effect',()=>{
