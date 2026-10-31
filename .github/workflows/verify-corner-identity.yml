@@ -227,18 +227,19 @@ jobs:
               await ui.setContent(markup,{waitUntil:'load'});
               const layout=await ui.evaluate(()=>{
                 const box=css=>document.querySelector(css)?.getBoundingClientRect();
+                const nav=document.querySelector('.admin-nav');
                 return {body:document.documentElement.scrollWidth,viewport:innerWidth,
-                 sidebar:box('.admin-sidebar')?.height,nav:box('.admin-nav')?.height,
-                 currentTab:box('.admin-nav button.is-active')?.height,mainY:box('.admin-main')?.top};
+                 sidebar:box('.admin-sidebar')?.height,picker:box('#studio-section-select'),
+                 navDisplay:nav?getComputedStyle(nav).display:null,mainY:box('.admin-main')?.top};
               });
               assert.ok(layout.body<=layout.viewport+1,'Mobile owner page overflow '+width+' '+JSON.stringify(layout));
-              assert.ok(layout.sidebar>0&&layout.sidebar<155,'Sidebar/header compact '+width+' '+JSON.stringify(layout));
-              assert.ok(layout.nav>0&&layout.nav<=65,'Navigation one-row '+width+' '+JSON.stringify(layout));
-              assert.ok(layout.currentTab>=43&&layout.currentTab<=48,'Active tab not stretched '+width+' '+JSON.stringify(layout));
-              assert.ok(layout.mainY<160,'Editor near top, not after huge gap '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.sidebar>0&&layout.sidebar<110,'Sidebar/header compact '+width+' '+JSON.stringify(layout));
+              assert.equal(layout.navDisplay,'none','Legacy icon navigation hidden '+width);
+              assert.ok(layout.picker&&layout.picker.height>=40,'Section dropdown reachable '+width+' '+JSON.stringify(layout));
+              assert.ok(layout.mainY<150,'Editor near top, not after huge gap '+width+' '+JSON.stringify(layout));
               await ui.close();
             }
-            console.log('PASS compact 320–430px owner Studio navigation, no giant selected tab or horizontal overflow');
+            console.log('PASS compact 320–430px owner Studio section dropdown, no horizontal overflow');
           }finally{await browser.close();server.kill('SIGTERM');await sleep(130);fs.rmSync(directory,{recursive:true,force:true})}
           JS
       - name: Upload Quiet Desk account screenshots

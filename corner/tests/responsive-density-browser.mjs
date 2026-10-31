@@ -88,13 +88,14 @@ try{
   if(width<=767){
    const boxes=await page.evaluate(()=>{
     const rect=sel=>document.querySelector(sel)?.getBoundingClientRect();
-    return {sidebar:rect('.admin-sidebar'),nav:rect('.admin-nav'),
-      tab:rect('.admin-nav button.is-active'),main:rect('.admin-main')};
+    const nav=document.querySelector('.admin-nav');
+    return {sidebar:rect('.admin-sidebar'),picker:rect('#studio-section-select'),
+      navDisplay:nav?getComputedStyle(nav).display:null,main:rect('.admin-main')};
    });
-   assert.ok(boxes.sidebar.height<155,'Studio header too tall '+width+': '+boxes.sidebar.height);
-   assert.ok(boxes.nav.height<=65,'Studio nav wraps '+width+': '+boxes.nav.height);
-   assert.ok(boxes.tab.height<=49,'Active nav tab stretches '+width+': '+boxes.tab.height);
-   assert.ok(boxes.main.top<158,'Studio content too far down '+width+': '+boxes.main.top);
+   assert.ok(boxes.sidebar.height<110,'Studio mobile chrome too tall '+width+': '+boxes.sidebar.height);
+   assert.equal(boxes.navDisplay,'none','Legacy horizontal Studio nav is hidden '+width);
+   assert.ok(boxes.picker&&boxes.picker.height>=40,'Section dropdown is reachable '+width+': '+JSON.stringify(boxes.picker));
+   assert.ok(boxes.main.top<150,'Studio content too far down '+width+': '+boxes.main.top);
   }
   if(screenshotWidths.has(width))
    await page.screenshot({path:'screenshots/density-'+width+'-studio.png',fullPage:false,animations:'disabled'});

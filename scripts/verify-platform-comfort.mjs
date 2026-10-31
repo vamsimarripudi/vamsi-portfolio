@@ -89,7 +89,7 @@ try {
   assert.deepEqual(errors,[],'Public browser errors '+width);await p.close();
   const a=await auth.newPage();await a.setViewportSize({width,height});
   for(const route of full?privateRoutes:['/corner/admin']){const response=await a.goto(corner+route,{waitUntil:'domcontentloaded'});assert.equal(response.status(),200,route);assert.equal(await a.locator('.signin-box').count(),0,'Owner session required '+route);await check(a,'Private '+route+' @'+width)}
-  await a.goto(corner+'/corner/admin');await a.locator('[data-admin-view="overview"]').click();await a.locator('#create-from-overview').click();await a.locator('#post-editor').waitFor();await check(a,'Studio editor @'+width);
+  await a.goto(corner+'/corner/admin');if(width<768)await a.locator('#studio-section-select').selectOption('view:overview');else await a.locator('[data-admin-view="overview"]').click();await a.locator('#create-from-overview').click();await a.locator('#post-editor').waitFor();await check(a,'Studio editor @'+width);
   if([390,1366].includes(width))await a.screenshot({path:path.join(screenshots,'editor-'+width+'.png'),animations:'disabled'});
   await a.close();console.log('PASS platform viewport '+width+'x'+height);
  }
