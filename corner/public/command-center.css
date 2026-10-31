@@ -4,7 +4,8 @@
   gap:clamp(16px,2.6vw,34px);align-items:start;margin:0 0 18px;
 }
 .corner-comfort .command-hero h2{margin:2px 0 8px;font-size:clamp(1.45rem,2.1vw,2rem);letter-spacing:-.045em}
-.corner-comfort .command-hero>div>p:last-child{max-width:70ch;color:#69615d;line-height:1.65}
+.corner-comfort .command-hero>div>p:not(.eyebrow){max-width:70ch;color:#69615d;line-height:1.65}
+.corner-comfort .command-maker-note{margin-top:8px!important;font-size:.69rem!important;font-weight:700;color:#8b6d5b!important;letter-spacing:.015em}
 .corner-comfort .command-boundary{
   display:grid;gap:5px;padding:14px 16px;border:1px solid #e6d7c8;border-radius:15px;background:#fffaf5;
 }
