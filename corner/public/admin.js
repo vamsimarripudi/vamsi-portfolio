@@ -141,7 +141,7 @@
         onSuccess:()=>{toast('Added to command.','success');command()},
         onFailure:error=>toast(error.message,'error')});
     };
-    $('[data-command-state]').forEach(button=>button.onclick=async()=>{
+    $$('[data-command-state]').forEach(button=>button.onclick=async()=>{
       const id=button.dataset.id,state=button.dataset.commandState,version=Number(button.dataset.version);
       await actionMotion({action:'command.state',trigger:button,targetId:id,
         execute:()=>api('/corner/api/admin/command/items/'+encodeURIComponent(id),'PATCH',{state,version}),
