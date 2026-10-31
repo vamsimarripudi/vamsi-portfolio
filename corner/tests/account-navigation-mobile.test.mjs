@@ -105,13 +105,16 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.equal((await go('/settings/profile',{cookie:memberCookie})).status,200);
  assert.match(await (await go('/settings/profile',{cookie:memberCookie})).text(),/Sign in to access your private information/);
 });
-test('mobile Studio navigation uses one compact section dropdown instead of the icon strip',()=>{
+test('mobile Studio navigation is labeled, touch-sized, and Command keeps a local Section dropdown',()=>{
  const studio=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
  const command=fs.readFileSync(new URL('../public/command-center.css',import.meta.url),'utf8');
  const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
- assert.match(studio,/max-width:767px/);
- assert.match(command,/studio-section-picker/);
- assert.match(command,/admin-sidebar \.admin-nav\{display:none!important\}/);
- assert.match(command,/min-height:40px/);
+ assert.match(studio,/position:sticky;[\s\S]*top:0/);
+ assert.match(studio,/flex:0 0 64px!important/);
+ assert.match(studio,/studio-nav-label[\s\S]*display:block!important/);
+ assert.match(studio,/background:#fff1e9!important/);
+ assert.match(studio,/studio-section-picker\{display:none!important\}/);
+ assert.match(command,/command-section-switch/);
+ assert.match(command,/command-overview-card/);
  assert.match(ui,/id="studio-section-select"/);
 });
