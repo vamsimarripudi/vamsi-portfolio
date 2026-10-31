@@ -76,7 +76,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/Boundary lock/);
   assert.match(js,/Owner approval required/);
   assert.doesNotMatch(js,/name="needsApproval"/);
-  assert.match(js,/Built by a backbencher + AI/);
+  assert.match(js,/Built by a backbencher \+ AI/);
   assert.match(css,/command-kpis/);
   assert.match(css,/max-width:1050px/);
   assert.match(server,/Only the owner can access the command center/);
