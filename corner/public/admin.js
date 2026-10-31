@@ -164,7 +164,7 @@
       seriesSelect.disabled=false;seriesSelect.dataset.moveAllowed='true';event.currentTarget.hidden=true;seriesSelect.focus();syncSeriesPanel();
     });
     let editorRevision=0;
-    updatePreview(form);syncSeriesPanel();form.addEventListener('change',()=>{updatePreview(form);syncSeriesPanel()});form.addEventListener('input',()=>{
+    updatePreview(form);syncSeriesPanel();form.addEventListener('change',event=>{updatePreview(form);syncSeriesPanel();if(event.target===form.elements.type&&formValues(form).type==='journal')requestAnimationFrame(()=>seriesSelect?.focus())});form.addEventListener('input',()=>{
       editorRevision++;active.dirty=true;$('#save-indicator').textContent='Unsaved edits';
       updatePreview(form);syncSeriesPanel();
       if(p.state==='draft'&&form.elements.body.value.trim()){
@@ -201,6 +201,11 @@
         // Persisted draft is safe, but never apply a stale response to a different Studio view.
         if(controller.signal.aborted)return null;
         p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
+        if(p.series&&seriesSelect){
+          let option=[...seriesSelect.options].find(item=>item.value===p.series.slug);
+          if(!option){option=new Option(p.series.title,p.series.slug);option.dataset.next=String(Number(p.series.partNumber||0)+1);seriesSelect.add(option)}
+          seriesSelect.value=p.series.slug;seriesSelect.disabled=true;delete seriesSelect.dataset.moveAllowed;syncSeriesPanel();
+        }
         form.querySelector('#save-indicator').textContent=active.dirty
           ?'Earlier edits saved · newer edits unsaved'
           :'Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
