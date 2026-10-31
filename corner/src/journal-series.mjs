@@ -3,6 +3,7 @@ import {publicPost} from './store.mjs';
 
 export const FIRST_SERIES_SLUG='learning-everything-doing-nothing';
 export const FIRST_PART_SLUG='learning-everything-doing-nothing';
+export const SECOND_PART_SLUG='theres-something-beautiful-about-starting-something-new';
 export const FIRST_PART_ID='post_fdbce666-5456-40e4-a3bc-1027b881b64e';
 export const FIRST_SERIES_TITLE='Learning Everything, Doing Nothing';
 export const FIRST_SERIES_SUMMARY='On curiosity, unfinished beginnings, and the distance between knowing and doing.';
@@ -42,6 +43,19 @@ export class JournalSeries{
         VALUES(?,?,?,'ongoing','marginalia',?,?)`,FIRST_SERIES_SLUG,FIRST_SERIES_TITLE,FIRST_SERIES_SUMMARY,today,today);
       store.exec(`INSERT OR IGNORE INTO journal_series_parts(series_slug,post_id,part_number)
         VALUES(?,?,1)`,FIRST_SERIES_SLUG,original.id);
+
+      // Chapter 02 was published before the series controls were available in
+      // Studio. Link that exact existing post once, without changing its text,
+      // media, slug, publication time or any unrelated Journal entry.
+      const second=store.one("SELECT id FROM posts WHERE slug=? AND type='journal' AND state='published'",SECOND_PART_SLUG);
+      if(second){
+        const occupied=store.one('SELECT post_id FROM journal_series_parts WHERE series_slug=? AND part_number=2',FIRST_SERIES_SLUG);
+        const assigned=store.one('SELECT series_slug,part_number FROM journal_series_parts WHERE post_id=?',second.id);
+        if(!occupied&&!assigned){
+          store.exec('INSERT INTO journal_series_parts(series_slug,post_id,part_number) VALUES(?,?,2)',
+            FIRST_SERIES_SLUG,second.id);
+        }
+      }
     }
   }
   adminSeries(){return this.store.all("SELECT slug,title,summary,status,theme FROM journal_series ORDER BY created_at,slug");}
