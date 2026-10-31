@@ -74,8 +74,8 @@ export class OwnerCommand{
     const title=clean(data.title??existing?.title,160);
     if(title.length<2)throw httpError(400,'Add a clear command title.');
     const dueRaw=data.dueAt??data.due_at??existing?.due_at??null;
-    const dueAt=dueRaw?new Date(dueRaw).toISOString():null;
     if(dueRaw&&!Number.isFinite(Date.parse(dueRaw)))throw httpError(400,'Due date is invalid.');
+    const dueAt=dueRaw?new Date(dueRaw).toISOString():null;
     return {
       workspace,kind,priority,state,evidenceStatus,authority,title,dueAt,
       project:clean(data.project??existing?.project,100),
