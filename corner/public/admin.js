@@ -39,7 +39,8 @@
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
-    $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
+    $('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
+    const sectionPicker=$('#studio-section-select');if(sectionPicker) sectionPicker.value='view:'+view;
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
     ({command,overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().then(()=>window.CornerMotion?.refresh()).catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
   }
@@ -995,7 +996,23 @@
     };return;
   }
   if(!root)return;
-  $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
+  const studioSectionSelect=$('#studio-section-select');
+  if(studioSectionSelect){
+    const navEntries=$('.admin-nav [data-admin-view],.admin-nav a.admin-v3-link');
+    for(const node of navEntries){
+      const label=node.querySelector('.studio-nav-label')?.textContent?.trim()||node.getAttribute('title')||'Section';
+      const value=node.dataset.adminView?'view:'+node.dataset.adminView:'url:'+node.getAttribute('href');
+      const option=new Option(label,value);studioSectionSelect.add(option);
+    }
+    studioSectionSelect.onchange=()=>{
+      const value=studioSectionSelect.value;
+      if(value.startsWith('view:')){
+        if(active.dirty&&!confirm('Leave with unsaved edits?')){studioSectionSelect.value='view:'+active.view;return}
+        showView(value.slice(5));
+      }else if(value.startsWith('url:'))location.assign(value.slice(4));
+    };
+  }
+  $('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
   const requested=location.hash.slice(1);const allowed=$$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
   addEventListener('hashchange',()=>{if(allowed.includes(location.hash.slice(1)))showView(location.hash.slice(1))});
