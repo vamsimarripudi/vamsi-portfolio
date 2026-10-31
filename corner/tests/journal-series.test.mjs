@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {Store} from '../src/store.mjs';
-import {JournalSeries,FIRST_SERIES_SLUG,FIRST_PART_ID,FIRST_PART_SLUG,FIRST_SERIES_TITLE} from '../src/journal-series.mjs';
+import {JournalSeries,FIRST_SERIES_SLUG,FIRST_PART_ID,FIRST_PART_SLUG,SECOND_PART_SLUG,FIRST_SERIES_TITLE} from '../src/journal-series.mjs';
 import {journalSeriesPage,detailPage,feedPage,card} from '../src/ui.mjs';
 import {getChapterTitle,seriesStoryBody} from '../src/journal-series-ui.mjs';
 
@@ -35,6 +35,24 @@ test('Exact published Part 01 is linked without rewriting original post or media
  assert.deepEqual(store.listMedia(FIRST_PART_ID),media);
  new JournalSeries(store);
  assert.equal(store.one('SELECT count(*) AS n FROM journal_series_parts').n,1,'Startup seeding remains idempotent');
+});
+test('Exact already-published Chapter 02 is linked into the existing series without rewriting it',t=>{
+ const store=fixture(t);
+ const date='2026-10-30T15:59:49.605Z',secondId='post_second_published';
+ const secondBody="There's something beautiful about starting something new. A new idea. A new skill. A new project.";
+ store.exec(`INSERT INTO posts(id,slug,type,title,excerpt,body,state,published_at,created_at,updated_at)
+   VALUES(?,?,?,?,?,?,?,?,?,?)`,secondId,SECOND_PART_SLUG,'journal',
+   "There's something beautiful about starting something new",'A new beginning.',secondBody,'published',date,date,date);
+ const original=store.one('SELECT id,slug,title,body,published_at,version FROM posts WHERE id=?',secondId);
+ const series=new JournalSeries(store);
+ const published=series.published(FIRST_SERIES_SLUG);
+ assert.equal(published.parts.length,2);
+ assert.equal(published.parts[1].id,secondId);
+ assert.equal(published.parts[1].partNumber,2);
+ assert.equal(series.forPost(secondId).previous.id,FIRST_PART_ID);
+ assert.deepEqual(store.one('SELECT id,slug,title,body,published_at,version FROM posts WHERE id=?',secondId),original);
+ new JournalSeries(store);
+ assert.equal(store.one('SELECT count(*) AS n FROM journal_series_parts').n,2,'Known Chapter 02 backfill is idempotent');
 });
 test('No fabricated public series exists without the real published Part 01',t=>{
  const store=fixture(t,{first:false});

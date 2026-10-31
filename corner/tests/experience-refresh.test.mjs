@@ -106,16 +106,18 @@ test('glass rail and active V5 work while legacy companion stays disabled by def
 });
 
 
-test('Media Library has responsive filled columns, clear details actions, and caption clamps',()=>{
+test('Media Library has responsive filled columns and clean adjustment actions',()=>{
  const admin=asset('admin.js'),studio=asset('media-library.css');
  assert.match(admin,/class="media-gallery corner-library-grid"/);
  assert.match(admin,/list\.map\(\(x,index\)=>mediaCard\(x,false,index,list\.length\)\)/);
  assert.doesNotMatch(admin,/list\.map\(mediaCard\)/);
  assert.match(admin,/media-thumb--library/);
- assert.match(admin,/Edit details ↗/);
+ assert.match(admin,/Adjust ↗/);
+ assert.doesNotMatch(admin,/Image description/);
+ assert.doesNotMatch(admin,/Add a caption/);
+ assert.doesNotMatch(admin,/media-card-caption/);
  assert.match(studio,/\.corner-library-grid/);
  assert.match(studio,/repeat\(auto-fit,minmax\(min\(100%,280px\),1fr\)\)/);
- assert.match(studio,/-webkit-line-clamp:2/);
  assert.match(studio,/@media \(max-width:600px\)/);
 });
 

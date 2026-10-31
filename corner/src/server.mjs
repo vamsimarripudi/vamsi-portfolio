@@ -374,9 +374,13 @@ async function api(req,res,pathName,url){
     }
     const ext=converted?.ext||fileMagic(buf,mime);if(!ext)throw httpError(415,'Unsupported media type or invalid file contents');
     if(image&&!converted)buf=sanitizeImage(buf,mime);
-    const postId=url.searchParams.get('postId');if(!postId||!store.adminPost(postId))throw httpError(400,'Select an existing post before uploading media');
-    if(image&&!pureText(url.searchParams.get('alt'),240))throw httpError(400,'Describe the image with alt text');
-    const altText=pureText(url.searchParams.get('alt'),240);
+    const postId=url.searchParams.get('postId'),mediaPost=postId?store.adminPost(postId):null;
+    if(!mediaPost)throw httpError(400,'Select an existing post before uploading media');
+    // Studio no longer asks the author to write media metadata. Preserve
+    // accessible image alternatives by deriving a neutral fallback from the
+    // story title when an API client does not supply one.
+    const requestedAlt=pureText(url.searchParams.get('alt'),240);
+    const altText=requestedAlt||(image?pureText((mediaPost.title||'Story')+' — photograph',240):'');
     const caption=pureText(url.searchParams.get('caption'),300);
     const dimensions=converted?{width:converted.width,height:converted.height}:image?imageDimensions(buf,mime):null;
     if(image&&(!dimensions||!dimensions.width||!dimensions.height||dimensions.width*dimensions.height>50_000_000))throw httpError(422,'Unsupported or oversized image dimensions');
