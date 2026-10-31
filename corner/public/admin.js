@@ -77,6 +77,12 @@
       <p>Use this as the founder-level control layer. KRAVIA and personal ventures stay operationally separate; this screen keeps only the minimum status needed to decide what you do next.</p></div>
       <div class="command-boundary"><strong>Boundary lock</strong><span>Never mix company and personal money, credentials, branding or customer records.</span></div>
     </section>
+    <section class="command-agent admin-surface" data-command-agent>
+      <div class="command-agent-head"><div><p class="eyebrow">OWNER AI / ADVISORY</p><h2>Ask Command.</h2>
+      <p>${summary.agent?.ready?'Uses only the private command queue below as factual context. High-risk actions still require approval.':'AI is not connected yet. The command queue and decision system still work normally.'}</p></div>
+      <span class="command-agent-state ${summary.agent?.ready?'ready':'offline'}">${summary.agent?.ready?'READY':'NOT CONNECTED'}</span></div>
+      ${summary.agent?.ready?'<form id="command-agent-form"><label for="command-agent-question">What do you need decided or prioritized?</label><div class="command-agent-compose"><textarea id="command-agent-question" name="question" maxlength="2400" rows="2" required placeholder="What should I focus on next? What is blocked? Which decision has the highest leverage?"></textarea><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<p class="command-agent-offline">Connect the dedicated OpenAI API key and enable <code>CORNER_COMMAND_AI=1</code> to activate this layer. No key is stored in the browser or command database.</p>'}
+    </section>
     <section class="command-kpis">
       <article><small>NOW</small><strong>${Number(summary.counts.now||0)}</strong><span>must move</span></article>
       <article><small>DECISIONS</small><strong>${Number(summary.counts.decisions||0)}</strong><span>need judgment</span></article>
@@ -111,6 +117,16 @@
       <div class="command-list command-list-wide">${renderList(openItems)}</div>
     </section>`;
 
+    const agentForm=$('#command-agent-form');
+    if(agentForm)agentForm.onsubmit=async event=>{
+      event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]'),answer=$('[data-command-agent-answer]');
+      button.disabled=true;answer.hidden=false;answer.textContent='Reviewing the verified command context…';
+      try{
+        const result=await api('/corner/api/admin/command/ask','POST',{question:form.elements.question.value});
+        answer.textContent=result.text;
+      }catch(error){answer.textContent=error.message;toast(error.message,'error')}
+      finally{button.disabled=false}
+    };
     $('#command-capture').onsubmit=async event=>{
       event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]');
       const due=form.elements.dueAt.value?new Date(form.elements.dueAt.value).toISOString():null;
