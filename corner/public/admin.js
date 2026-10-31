@@ -107,7 +107,7 @@
           <label>Source / reference<input name="sourceRef" maxlength="600" placeholder="PR, email, document, provider page or note"></label>
           <div class="editor-inline"><label>Authority<select name="authority"><option value="read">Read only</option><option value="draft">Draft</option><option value="write">Change data</option><option value="money">Money</option><option value="legal">Legal</option><option value="security">Security</option></select></label>
           <label>Due<input name="dueAt" type="datetime-local"></label></div>
-          <label class="command-approval"><input type="checkbox" name="needsApproval"> Require my approval before execution</label>
+          <div class="command-approval-lock"><strong>Owner approval required</strong><span>Every execution stays blocked until you explicitly approve it.</span></div>
           <button type="submit" class="admin-primary">Add to command</button>
         </form>
         <p class="command-scope-note">KRAVIA entries here are routing metadata only. Company records, credentials and finance remain in KRAVIA-controlled systems.</p>
@@ -136,7 +136,7 @@
           project:form.elements.project.value,detail:form.elements.detail.value,priority:form.elements.priority.value,
           evidenceStatus:form.elements.evidenceStatus.value,evidenceNote:form.elements.evidenceNote.value,
           sourceRef:form.elements.sourceRef.value,authority:form.elements.authority.value,
-          needsApproval:form.elements.needsApproval.checked,dueAt:due
+          needsApproval:true,dueAt:due
         }),
         onSuccess:()=>{toast('Added to command.','success');command()},
         onFailure:error=>toast(error.message,'error')});
