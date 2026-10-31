@@ -80,7 +80,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/initial\.ownerRole==='owner'\?'command'/);
   assert.match(js,/Which series does this Journal belong to\?/);
   assert.match(js,/Personal ↔ KRAVIA boundary locked/);
-  assert.match(js,/Owner approval required/);
+  assert.match(js,/Owner approval is required before every execution/);
   assert.doesNotMatch(js,/name="needsApproval"/);
   assert.match(js,/Built by a backbencher \+ AI/);
   assert.match(js,/Agentic moments/);
@@ -94,6 +94,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.doesNotMatch(js,/command-kpis/,'Dense KPI cards are removed from the redesigned Command workspace');
   assert.doesNotMatch(js,/data-command-state="done"/,'State changes use one dropdown instead of four action buttons');
   assert.doesNotMatch(js,/[^$]\$\('\[data-agentic-prompt\]'\)\.forEach/,'Agentic prompt binding must use the multi-element selector helper');
+  assert.doesNotMatch(js,/[^$]\$\('\[data-admin-view\]'\)\.forEach/,'Studio navigation sync must use the multi-element selector helper');
   assert.match(css,/command-filterbar/);
   assert.match(css,/command-disclosure/);
   assert.match(css,/command-row-main/);
