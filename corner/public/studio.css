@@ -108,6 +108,7 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
     letter-spacing:.1em;
   }
   .corner-comfort .admin-shell .admin-sidebar-footer{
+    position:absolute;
     inset:7px 10px auto auto;
     width:90px;
     min-width:90px;
