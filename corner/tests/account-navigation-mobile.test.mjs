@@ -114,7 +114,8 @@ test('mobile Studio navigation is labeled, touch-sized, and Command keeps a loca
  assert.match(studio,/studio-nav-label[\s\S]*display:block!important/);
  assert.match(studio,/background:#fff1e9!important/);
  assert.match(studio,/studio-section-picker\{display:none!important\}/);
- assert.match(command,/command-section-switch/);
+ assert.doesNotMatch(command,/command-section-switch/);
+ assert.match(command,/command-filter-panel/);
  assert.match(command,/command-overview-card/);
  assert.match(ui,/id="studio-section-select"/);
 });
