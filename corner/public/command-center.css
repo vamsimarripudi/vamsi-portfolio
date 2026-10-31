@@ -51,29 +51,6 @@
   font-size:.78rem;
   line-height:1.55;
 }
-.corner-comfort .command-section-switch{
-  display:none;
-  align-items:center;
-  gap:8px;
-  flex:none;
-}
-.corner-comfort .command-section-switch>span{
-  color:#5f5954;
-  font-size:.68rem;
-  font-weight:750;
-}
-.corner-comfort .command-section-switch select{
-  min-width:136px;
-  min-height:42px;
-  padding:8px 34px 8px 11px;
-  border:1px solid #d9d3ce;
-  border-radius:11px;
-  background:#fff;
-  color:#282421;
-  font-size:.78rem;
-  font-weight:700;
-}
-
 .corner-comfort .command-status-row{
   display:flex;
   align-items:center;
@@ -372,6 +349,27 @@
   color:#746d67;
   font-size:.64rem;
 }
+.corner-comfort .command-filter-panel{
+  margin-bottom:12px;
+  border:1px solid #e4ded9;
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+.corner-comfort .command-filter-panel>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:44px;
+  padding:9px 11px;
+  cursor:pointer;
+  list-style:none;
+}
+.corner-comfort .command-filter-panel>summary::-webkit-details-marker{display:none}
+.corner-comfort .command-filter-panel>summary span{font-size:.72rem;font-weight:750;color:#3a3531}
+.corner-comfort .command-filter-panel>summary small{color:#8a827c;font-size:.61rem}
+.corner-comfort .command-filter-panel[open]>summary{border-bottom:1px solid #ece7e3;background:#fbfaf9}
 .corner-comfort .command-filterbar{
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
@@ -503,7 +501,6 @@
     font-size:.73rem;
     line-height:1.5;
   }
-  .corner-comfort .command-section-switch{display:flex}
   .corner-comfort .command-status-row{margin-bottom:12px}
   .corner-comfort .command-boundary-inline{
     max-width:100%;
@@ -544,6 +541,8 @@
   .corner-comfort .command-filterbar{
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:8px;
+    padding:10px;
+    margin:0;
   }
   .corner-comfort .command-filterbar label{
     min-width:0;
@@ -567,7 +566,6 @@
     font-weight:550;
     outline:0;
   }
-  .corner-comfort .command-filterbar label:last-child{grid-column:1}
   .corner-comfort .command-row-main{
     grid-template-columns:minmax(0,1fr);
     gap:9px;
@@ -591,8 +589,6 @@
   .corner-comfort .command-overview-card,
   .corner-comfort .command-queue-card{padding:13px}
   .corner-comfort .command-title-block h2{font-size:1.8rem}
-  .corner-comfort .command-section-switch>span{display:none}
-  .corner-comfort .command-section-switch select{min-width:124px}
 }
 
 @media(prefers-reduced-motion:reduce){
