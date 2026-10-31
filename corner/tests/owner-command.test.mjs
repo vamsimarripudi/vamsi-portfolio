@@ -91,6 +91,9 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/data-command-filter="state"/);
   assert.match(js,/data-command-state-select/);
   assert.match(js,/commandMatches/);
+  assert.match(js,/document\.documentElement\.dataset\.studioView=view/);
+  assert.match(js,/id="command-section-select"/);
+  assert.match(js,/command-tool-icon/);
   assert.doesNotMatch(js,/command-kpis/,'Dense KPI cards are removed from the redesigned Command workspace');
   assert.doesNotMatch(js,/data-command-state="done"/,'State changes use one dropdown instead of four action buttons');
   assert.doesNotMatch(js,/[^$]\$\('\[data-agentic-prompt\]'\)\.forEach/,'Agentic prompt binding must use the multi-element selector helper');
@@ -98,6 +101,12 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/command-filterbar/);
   assert.match(css,/command-disclosure/);
   assert.match(css,/command-row-main/);
+  assert.match(css,/command-overview-card/);
+  assert.match(css,/command-section-switch/);
+  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/command-tool-icon/);
+  assert.match(css,/command-live-dot/);
   assert.doesNotMatch(css,/command-kpis/);
   assert.match(css,/max-width:980px/);
   assert.match(server,/Only the owner can access the command center/);
