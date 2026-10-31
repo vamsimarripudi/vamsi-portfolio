@@ -6,7 +6,7 @@
   const variantTypes=['wish','announcement','tech_note','journal','build','moment'];
   const typeNames={wish:'Wish',announcement:'Announcement',tech_note:'Tech Note',journal:'Journal',build:'Build Log',moment:'Moment'};
   const states=['all','draft','scheduled','published','archived'];
-  const active={view:'overview',filter:'all',post:null,saveTimer:null,previewDevice:'laptop',dirty:false};
+  const active={view:'overview',filter:'all',post:null,saveTimer:null,previewDevice:'laptop',dirty:false,commandFilters:{workspace:'all',kind:'all',priority:'all',evidence:'all',state:'active'}};
   const studioIcon=name=>'<svg class="v6-mobile-action-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+({"pending":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>","approved":"<path d=\"M20 6 9 17l-5-5\"/>","hidden":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","deleted":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","approve":"<path d=\"M20 6 9 17l-5-5\"/>","hide":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","delete":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","reply":"<path d=\"M9 17 4 12l5-5M4 12h10a6 6 0 0 1 6 6v1\"/>"}[name]||'')+'</svg>';
   const toastStack=$('#toast-stack');
   function toast(message,variant='info'){
@@ -45,97 +45,156 @@
   }
   const commandEvidenceLabel={verified:'Verified',reported:'Reported',unverified:'Needs verification',blocked:'Blocked'};
   const commandAuthorityLabel={read:'Read only',draft:'Draft',write:'Change data',money:'Money',legal:'Legal',security:'Security'};
-  const commandPriorityLabel={now:'NOW',next:'NEXT',later:'LATER'};
+  const commandPriorityLabel={now:'Now',next:'Next',later:'Later'};
+  const commandStateLabel={open:'Open',waiting:'Waiting',done:'Done',dismissed:'Dismissed'};
   const commandDue=item=>item.dueAt?new Date(item.dueAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'No due date';
-  const commandItem=item=>`<article class="command-item command-priority-${esc(item.priority)}" data-command-id="${esc(item.id)}">
-    <div class="command-item-head"><div><span class="command-workspace ${esc(item.workspace)}">${item.workspace==='kravia'?'KRAVIA':'PERSONAL'}</span>
-      <span class="command-kind">${esc(item.kind.toUpperCase())}</span></div><span class="command-priority">${esc(commandPriorityLabel[item.priority]||item.priority)}</span></div>
-    <h3>${esc(item.title)}</h3>${item.project?'<p class="command-project">'+esc(item.project)+'</p>':''}
-    ${item.detail?'<p class="command-detail">'+esc(item.detail)+'</p>':''}
-    <div class="command-meta"><span class="evidence-${esc(item.evidenceStatus)}">${esc(commandEvidenceLabel[item.evidenceStatus]||item.evidenceStatus)}</span>
-      <span>${esc(commandAuthorityLabel[item.authority]||item.authority)}</span><span>${esc(commandDue(item))}</span>
-      ${item.needsApproval?'<strong>Approval required</strong>':''}</div>
-    ${item.evidenceNote?'<p class="command-evidence">'+esc(item.evidenceNote)+'</p>':''}
-    ${item.sourceRef?'<p class="command-source">Source: '+esc(item.sourceRef)+'</p>':''}
-    <div class="command-actions">
-      ${item.state!=='done'?'<button type="button" data-command-state="done" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Done</button>':''}
-      ${item.state!=='waiting'?'<button type="button" data-command-state="waiting" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Waiting</button>':''}
-      ${item.state!=='open'?'<button type="button" data-command-state="open" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Reopen</button>':''}
-      ${item.state!=='dismissed'?'<button type="button" data-command-state="dismissed" data-id="'+esc(item.id)+'" data-version="'+item.version+'">Dismiss</button>':''}
-    </div></article>`;
-
-  const commandMoment=moment=>'<article class="command-moment"><div class="command-moment-top"><span>'+esc(moment.signal)+'</span><strong>'+esc(moment.title)+'</strong></div><p>'+esc(moment.instruction)+'</p><button type="button" data-agentic-prompt="'+esc(moment.prompt)+'">Ask Command ↗</button></article>';
+  const commandStateOptions=item=>Object.entries(commandStateLabel).map(([value,label])=>'<option value="'+value+'" '+(item.state===value?'selected':'')+'>'+label+'</option>').join('');
+  const commandItem=item=>{
+    const hasDetails=!!(item.detail||item.evidenceNote||item.sourceRef);
+    return '<article class="command-row command-priority-'+esc(item.priority)+'" data-command-id="'+esc(item.id)+'">'+
+      '<div class="command-row-main"><div class="command-row-copy">'+
+      '<div class="command-row-kicker"><span class="command-workspace '+esc(item.workspace)+'">'+(item.workspace==='kravia'?'KRAVIA':'PERSONAL')+'</span>'+
+      '<span>'+esc(item.kind)+'</span><span>'+esc(commandPriorityLabel[item.priority]||item.priority)+'</span></div>'+
+      '<h3>'+esc(item.title)+'</h3>'+
+      '<div class="command-row-meta">'+(item.project?'<span>'+esc(item.project)+'</span>':'')+
+      '<span class="evidence-'+esc(item.evidenceStatus)+'">'+esc(commandEvidenceLabel[item.evidenceStatus]||item.evidenceStatus)+'</span>'+
+      '<span>'+esc(commandDue(item))+'</span><span>'+esc(commandAuthorityLabel[item.authority]||item.authority)+'</span>'+
+      (item.needsApproval?'<span class="command-lock">Approval locked</span>':'')+'</div></div>'+
+      '<label class="command-state-control"><span class="sr-only">State for '+esc(item.title)+'</span><select data-command-state-select data-id="'+esc(item.id)+'" data-version="'+item.version+'">'+commandStateOptions(item)+'</select></label></div>'+
+      (hasDetails?'<details class="command-row-details"><summary>Details</summary><div>'+
+        (item.detail?'<p>'+esc(item.detail)+'</p>':'')+
+        (item.evidenceNote?'<p><strong>Evidence:</strong> '+esc(item.evidenceNote)+'</p>':'')+
+        (item.sourceRef?'<p><strong>Source:</strong> '+esc(item.sourceRef)+'</p>':'')+
+      '</div></details>':'')+
+    '</article>';
+  };
+  const commandMoment=moment=>'<article class="command-moment"><div><span>'+esc(moment.signal)+'</span><strong>'+esc(moment.title)+'</strong></div><p>'+esc(moment.instruction)+'</p><button type="button" data-agentic-prompt="'+esc(moment.prompt)+'">Use prompt</button></article>';
   const commandQuickPrompts=[
     ['What needs me?','What needs my attention right now? Give me at most three items, with evidence and the exact owner decision if one is required.'],
     ['Find weak evidence','Find the weakest evidence in my active queue and tell me exactly what source would verify it.'],
     ['Prepare approvals','Prepare approval packets for every action that is actually ready: evidence, exact action, risk, reversibility, and approval question.'],
     ['DODO next','What can DODO safely prepare next without executing anything?']
   ];
-  const commandQuickButtons=()=>commandQuickPrompts.map(([label,prompt])=>'<button type="button" data-agentic-prompt="'+esc(prompt)+'">'+esc(label)+'</button>').join('');
+  const commandPromptOptions=()=>'<option value="">Choose a shortcut…</option>'+commandQuickPrompts.map(([label,prompt])=>'<option value="'+esc(prompt)+'">'+esc(label)+'</option>').join('');
+  const commandMatches=(item,filters)=>{
+    if(filters.state==='active'&&!['open','waiting'].includes(item.state))return false;
+    if(filters.state!=='active'&&filters.state!=='all'&&item.state!==filters.state)return false;
+    if(filters.workspace!=='all'&&item.workspace!==filters.workspace)return false;
+    if(filters.kind!=='all'&&item.kind!==filters.kind)return false;
+    if(filters.priority!=='all'&&item.priority!==filters.priority)return false;
+    if(filters.evidence!=='all'&&item.evidenceStatus!==filters.evidence)return false;
+    return true;
+  };
   async function command(){
     if(initial.ownerRole!=='owner'){root.innerHTML=empty('Owner access only.');return}
     const [summary,items]=await Promise.all([
       api('/corner/api/admin/command/summary'),
       api('/corner/api/admin/command/items')
     ]);
-    const openItems=items.filter(item=>['open','waiting'].includes(item.state));
-    const renderList=list=>list.length?list.map(commandItem).join(''):empty('Nothing here.','The command queue is clear.');
-    root.innerHTML=`<section class="command-hero">
-      <div><p class="eyebrow">OWNER COMMAND / PRIVATE</p><h2>One queue. Clear decisions.</h2>
-      <p>Use this as the founder-level control layer. KRAVIA and personal ventures stay operationally separate; this screen keeps only the minimum status needed to decide what you do next.</p>
-      <p class="command-maker-note">Built by a backbencher + AI. Run by evidence, approval and clear decisions.</p></div>
-      <div class="command-boundary"><strong>Boundary lock</strong><span>Never mix company and personal money, credentials, branding or customer records.</span></div>
-    </section>
-    <section class="command-agent admin-surface" data-command-agent>
-      <div class="command-agent-head"><div><p class="eyebrow">OWNER AI / ADVISORY</p><h2>Ask Command.</h2>
-      <p>${summary.agent?.ready?'Uses only the private command queue below as factual context. High-risk actions still require approval.':'AI is not connected yet. The command queue and decision system still work normally.'}</p></div>
-      <span class="command-agent-state ${summary.agent?.ready?'ready':'offline'}">${summary.agent?.ready?'READY':'NOT CONNECTED'}</span></div>
-      ${summary.agent?.ready?'<form id="command-agent-form"><label for="command-agent-question">What do you need decided or prioritized?</label><div class="command-agent-quick">'+commandQuickButtons()+'</div><div class="command-agent-compose"><textarea id="command-agent-question" name="question" maxlength="2400" rows="2" required placeholder="What should I focus on next? What is blocked? Which decision has the highest leverage?"></textarea><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<p class="command-agent-offline">Connect the dedicated OpenAI API key and enable <code>CORNER_COMMAND_AI=1</code> to activate this layer. No key is stored in the browser or command database.</p>'}
-    </section>
-    <section class="command-moments" aria-labelledby="command-moments-title">
-      <div class="command-section-head"><div><p class="eyebrow">AGENTIC MOMENTS</p><h2 id="command-moments-title">When the system should lean in.</h2>
-      <p class="command-moments-help">A moment appears only when the queue has a meaningful signal. It gives you an instruction and a question; it never executes the action.</p></div></div>
-      <div class="command-moment-grid">${(summary.moments||[]).map(commandMoment).join('')}</div>
-    </section>
-    <section class="command-kpis">
-      <article><small>NOW</small><strong>${Number(summary.counts.now||0)}</strong><span>must move</span></article>
-      <article><small>DECISIONS</small><strong>${Number(summary.counts.decisions||0)}</strong><span>need judgment</span></article>
-      <article><small>RISKS</small><strong>${Number(summary.counts.risks||0)}</strong><span>need control</span></article>
-      <article><small>APPROVALS</small><strong>${Number(summary.counts.approvals||0)}</strong><span>cannot auto-run</span></article>
-    </section>
-    <section class="command-grid">
-      <div class="command-column"><div class="command-section-head"><div><p class="eyebrow">FOCUS</p><h2>What needs you now.</h2></div></div>
-        <div class="command-list">${renderList(summary.nowItems)}</div>
-        ${summary.overdue?.length?'<div class="command-section-head command-subhead"><h3>Overdue</h3></div><div class="command-list">'+renderList(summary.overdue)+'</div>':''}
+    const filters=active.commandFilters;
+    const activeTotal=items.filter(item=>['open','waiting'].includes(item.state)).length;
+    root.innerHTML=`<section class="command-shell">
+      <header class="command-topbar">
+        <div><p class="eyebrow">OWNER COMMAND / PRIVATE</p><h2>Command</h2><p>One queue for decisions, risks and work that actually needs you.</p></div>
+        <div class="command-top-actions">
+          <span class="command-ai-status ${summary.agent?.ready?'ready':'offline'}">${summary.agent?.ready?'AI ready':'AI offline'}</span>
+          <span class="command-boundary-inline">Personal ↔ KRAVIA boundary locked</span>
+        </div>
+      </header>
+
+      <div class="command-summary-strip" aria-label="Command summary">
+        <span><strong>${activeTotal}</strong> active</span>
+        <span><strong>${Number(summary.counts.now||0)}</strong> now</span>
+        <span><strong>${Number(summary.counts.decisions||0)}</strong> decisions</span>
+        <span><strong>${Number(summary.counts.risks||0)}</strong> risks</span>
+        <span><strong>${Number(summary.counts.approvals||0)}</strong> approval locked</span>
       </div>
-      <aside class="command-capture admin-surface"><p class="eyebrow">CAPTURE ONCE</p><h2>Add to command.</h2>
-        <form id="command-capture" class="admin-form">
-          <div class="editor-inline"><label>Workspace<select name="workspace"><option value="personal">Personal ventures</option><option value="kravia">KRAVIA founder-level only</option></select></label>
-          <label>Type<select name="kind"><option value="task">Task</option><option value="decision">Decision</option><option value="risk">Risk</option><option value="idea">Idea</option></select></label></div>
-          <label>Title<input name="title" maxlength="160" required placeholder="What must be decided or moved?"></label>
-          <label>Project<input name="project" maxlength="100" placeholder="PakkaFollow, FileBloom, VidyaLuma…"></label>
-          <label>Context<textarea name="detail" maxlength="1800" rows="3" placeholder="Only the minimum context needed to act."></textarea></label>
-          <div class="editor-inline"><label>Priority<select name="priority"><option value="now">Now</option><option value="next" selected>Next</option><option value="later">Later</option></select></label>
-          <label>Evidence<select name="evidenceStatus"><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified" selected>Needs verification</option><option value="blocked">Blocked</option></select></label></div>
-          <label>Evidence note<input name="evidenceNote" maxlength="1200" placeholder="What proves this? What is still unknown?"></label>
-          <label>Source / reference<input name="sourceRef" maxlength="600" placeholder="PR, email, document, provider page or note"></label>
-          <div class="editor-inline"><label>Authority<select name="authority"><option value="read">Read only</option><option value="draft">Draft</option><option value="write">Change data</option><option value="money">Money</option><option value="legal">Legal</option><option value="security">Security</option></select></label>
-          <label>Due<input name="dueAt" type="datetime-local"></label></div>
-          <div class="command-approval-lock"><strong>Owner approval required</strong><span>Every execution stays blocked until you explicitly approve it.</span></div>
-          <button type="submit" class="admin-primary">Add to command</button>
-        </form>
-        <p class="command-scope-note">KRAVIA entries here are routing metadata only. Company records, credentials and finance remain in KRAVIA-controlled systems.</p>
-      </aside>
-    </section>
-    <section class="command-all"><div class="command-section-head"><div><p class="eyebrow">QUEUE</p><h2>Open and waiting.</h2></div><span>${openItems.length} active</span></div>
-      <div class="command-list command-list-wide">${renderList(openItems)}</div>
+
+      <section class="command-tools" aria-label="Command tools">
+        <details class="command-disclosure command-add" id="command-add-panel">
+          <summary><span><strong>+ Add item</strong><small>Capture once, then close it.</small></span></summary>
+          <form id="command-capture" class="command-form">
+            <label class="command-form-title">Title<input name="title" maxlength="160" required placeholder="What needs attention?"></label>
+            <label>Project<input name="project" maxlength="100" placeholder="Optional"></label>
+            <div class="command-form-grid">
+              <label>Workspace<select name="workspace"><option value="personal">Personal</option><option value="kravia">KRAVIA</option></select></label>
+              <label>Type<select name="kind"><option value="task">Task</option><option value="decision">Decision</option><option value="risk">Risk</option><option value="idea">Idea</option></select></label>
+              <label>Priority<select name="priority"><option value="now">Now</option><option value="next" selected>Next</option><option value="later">Later</option></select></label>
+            </div>
+            <details class="command-form-more"><summary>More details</summary><div>
+              <label>Context<textarea name="detail" maxlength="1800" rows="3" placeholder="Only what is needed to decide or act."></textarea></label>
+              <div class="command-form-grid">
+                <label>Evidence<select name="evidenceStatus"><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified" selected>Needs verification</option><option value="blocked">Blocked</option></select></label>
+                <label>Authority<select name="authority"><option value="read">Read only</option><option value="draft">Draft</option><option value="write">Change data</option><option value="money">Money</option><option value="legal">Legal</option><option value="security">Security</option></select></label>
+                <label>Due<input name="dueAt" type="datetime-local"></label>
+              </div>
+              <label>Evidence note<input name="evidenceNote" maxlength="1200" placeholder="What proves this?"></label>
+              <label>Source / reference<input name="sourceRef" maxlength="600" placeholder="PR, email, document or provider reference"></label>
+            </div></details>
+            <div class="command-form-footer"><span>Owner approval is required before every execution.</span><button type="submit" class="admin-primary">Add item</button></div>
+          </form>
+        </details>
+
+        <details class="command-disclosure command-ai-panel" id="command-ai-panel">
+          <summary><span><strong>Ask Command</strong><small>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</small></span></summary>
+          ${summary.agent?.ready?'<form id="command-agent-form" class="command-ai-form"><label>Shortcut<select id="command-prompt-preset">'+commandPromptOptions()+'</select></label><label for="command-agent-question">Question<textarea id="command-agent-question" name="question" maxlength="2400" rows="3" required placeholder="Ask what matters, what is blocked, or what needs your approval."></textarea></label><div class="command-form-footer"><span>Advisory only. It cannot execute without approval.</span><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<div class="command-panel-note">The command queue still works normally. AI becomes available only when the private server connection is ready.</div>'}
+        </details>
+
+        <details class="command-disclosure command-moments-panel">
+          <summary><span><strong>Agentic moments</strong><small>${(summary.moments||[]).length} current signals</small></span></summary>
+          <div class="command-moment-list">${(summary.moments||[]).map(commandMoment).join('')||'<p class="command-panel-note">No agentic intervention is needed right now.</p>'}</div>
+        </details>
+      </section>
+
+      <section class="command-queue">
+        <div class="command-queue-head">
+          <div><h2>Queue</h2><p>Filter first. Open details only when you need context.</p></div>
+          <span id="command-visible-count"></span>
+        </div>
+        <div class="command-filterbar">
+          <label>Workspace<select data-command-filter="workspace"><option value="all">All</option><option value="personal">Personal</option><option value="kravia">KRAVIA</option></select></label>
+          <label>Type<select data-command-filter="kind"><option value="all">All</option><option value="task">Tasks</option><option value="decision">Decisions</option><option value="risk">Risks</option><option value="idea">Ideas</option></select></label>
+          <label>Priority<select data-command-filter="priority"><option value="all">All</option><option value="now">Now</option><option value="next">Next</option><option value="later">Later</option></select></label>
+          <label>Evidence<select data-command-filter="evidence"><option value="all">All</option><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified">Needs verification</option><option value="blocked">Blocked</option></select></label>
+          <label>Status<select data-command-filter="state"><option value="active">Open + waiting</option><option value="open">Open</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="dismissed">Dismissed</option><option value="all">All</option></select></label>
+        </div>
+        <div class="command-list" id="command-queue-list"></div>
+      </section>
+
+      <footer class="command-footer-note">Built by a backbencher + AI · evidence first · approval always.</footer>
     </section>`;
 
+    const renderQueue=()=>{
+      const visible=items.filter(item=>commandMatches(item,filters));
+      const host=$('#command-queue-list');
+      if(host)host.innerHTML=visible.length?visible.map(commandItem).join(''):empty('Nothing matches these filters.','Change a dropdown or add a new command item.');
+      const count=$('#command-visible-count');if(count)count.textContent=visible.length+' shown';
+      $$('[data-command-state-select]').forEach(select=>select.onchange=async()=>{
+        const id=select.dataset.id,state=select.value,version=Number(select.dataset.version),previous=items.find(item=>item.id===id)?.state;
+        select.disabled=true;
+        await actionMotion({action:'command.state',trigger:select,targetId:id,
+          execute:()=>api('/corner/api/admin/command/items/'+encodeURIComponent(id),'PATCH',{state,version}),
+          onSuccess:()=>command(),
+          onFailure:error=>{select.value=previous||'open';select.disabled=false;toast(error.message,'error')}});
+      });
+    };
+
+    $$('[data-command-filter]').forEach(select=>{
+      const key=select.dataset.commandFilter;select.value=filters[key]||'all';
+      select.onchange=()=>{filters[key]=select.value;renderQueue()};
+    });
+
+    const promptPreset=$('#command-prompt-preset');
+    if(promptPreset)promptPreset.onchange=()=>{
+      const input=$('#command-agent-question');if(!input||!promptPreset.value)return;
+      input.value=promptPreset.value;input.focus();
+    };
     $$('[data-agentic-prompt]').forEach(button=>button.onclick=()=>{
-      const input=$('#command-agent-question');if(!input)return;
-      input.value=button.dataset.agenticPrompt||'';input.focus();
+      const panel=$('#command-ai-panel'),input=$('#command-agent-question');if(!input)return;
+      if(panel)panel.open=true;input.value=button.dataset.agenticPrompt||'';input.focus();
       input.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
     });
+
     const agentForm=$('#command-agent-form');
     if(agentForm)agentForm.onsubmit=async event=>{
       event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]'),answer=$('[data-command-agent-answer]');
@@ -146,7 +205,9 @@
       }catch(error){answer.textContent=error.message;toast(error.message,'error')}
       finally{button.disabled=false}
     };
-    $('#command-capture').onsubmit=async event=>{
+
+    const capture=$('#command-capture');
+    if(capture)capture.onsubmit=async event=>{
       event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]');
       const due=form.elements.dueAt.value?new Date(form.elements.dueAt.value).toISOString():null;
       await actionMotion({action:'command.create',trigger:button,targetId:'owner-command',
@@ -160,12 +221,7 @@
         onSuccess:()=>{toast('Added to command.','success');command()},
         onFailure:error=>toast(error.message,'error')});
     };
-    $$('[data-command-state]').forEach(button=>button.onclick=async()=>{
-      const id=button.dataset.id,state=button.dataset.commandState,version=Number(button.dataset.version);
-      await actionMotion({action:'command.state',trigger:button,targetId:id,
-        execute:()=>api('/corner/api/admin/command/items/'+encodeURIComponent(id),'PATCH',{state,version}),
-        onSuccess:()=>command(),onFailure:error=>toast(error.message,'error')});
-    });
+    renderQueue();
   }
 
   async function overview(){const summary=await api('/corner/api/admin/overview');
