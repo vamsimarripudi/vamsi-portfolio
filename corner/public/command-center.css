@@ -10,6 +10,20 @@
 }
 .corner-comfort .command-boundary strong{font-size:.78rem;color:#7d4f37}
 .corner-comfort .command-boundary span{font-size:.72rem;line-height:1.55;color:#72655c}
+.corner-comfort .command-agent{display:grid;gap:12px;margin:0 0 18px;padding:15px}
+.corner-comfort .command-agent-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.corner-comfort .command-agent-head h2{margin:2px 0 5px;font-size:1.15rem}
+.corner-comfort .command-agent-head p:last-child{margin:0;color:#6d6661;font-size:.75rem;line-height:1.5}
+.corner-comfort .command-agent-state{flex:none;padding:5px 8px;border-radius:999px;font:750 .57rem/1 ui-monospace,monospace;letter-spacing:.07em}
+.corner-comfort .command-agent-state.ready{background:#eaf6ed;color:#356148}
+.corner-comfort .command-agent-state.offline{background:#f2efed;color:#756e69}
+.corner-comfort #command-agent-form{display:grid;gap:7px}
+.corner-comfort #command-agent-form>label{font-size:.72rem;font-weight:700;color:#554e49}
+.corner-comfort .command-agent-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end}
+.corner-comfort .command-agent-compose textarea{min-height:62px;resize:vertical}
+.corner-comfort .command-agent-answer{white-space:pre-wrap;padding:13px;border:1px solid #e4ddd7;border-radius:12px;background:#fbfaf9;color:#373330;font-size:.78rem;line-height:1.65}
+.corner-comfort .command-agent-offline{margin:0;color:#756e69;font-size:.72rem;line-height:1.55}
+.corner-comfort .command-agent-offline code{font-size:.69rem}
 .corner-comfort .command-kpis{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 18px;
 }
@@ -70,6 +84,9 @@
 }
 @media(max-width:720px){
   .corner-comfort .command-hero{grid-template-columns:minmax(0,1fr)}
+  .corner-comfort .command-agent-head{display:grid}
+  .corner-comfort .command-agent-state{justify-self:start}
+  .corner-comfort .command-agent-compose{grid-template-columns:minmax(0,1fr)}
   .corner-comfort .command-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .corner-comfort .command-section-head{align-items:flex-start}
 }
