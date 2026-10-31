@@ -101,3 +101,120 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
  .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link):is(:hover,:focus-visible) .studio-icon{transform:translateY(-2px) rotate(-3deg)}
 }
 @media(prefers-reduced-motion:reduce){.corner-comfort .admin-shell .admin-nav .studio-icon{animation:none!important;transition:none!important;transform:none!important}}
+
+
+/* Mobile Studio V4 — labeled, touch-first navigation. Overrides older icon-only rules. */
+@media(max-width:767px){
+  .corner-comfort .admin-shell .admin-sidebar{
+    position:sticky;
+    top:0;
+    z-index:40;
+    width:100%;
+    height:auto;
+    padding:10px 12px 8px;
+    gap:7px;
+    border-bottom:1px solid #e9e4df;
+    background:#fff;
+    box-shadow:0 10px 30px -28px #000;
+    overflow:hidden;
+  }
+  .corner-comfort .studio-brand-row{
+    min-height:48px;
+    padding-right:104px;
+  }
+  .corner-comfort .admin-brand{
+    gap:8px;
+    font-size:.84rem;
+  }
+  .corner-comfort .admin-brand>span{width:36px;height:36px}
+  .corner-comfort .admin-brand small{
+    margin-top:2px;
+    color:#88817b;
+    font-size:.58rem;
+    letter-spacing:.1em;
+  }
+  .corner-comfort .admin-shell .admin-sidebar-footer{
+    inset:10px 12px auto auto;
+    width:96px;
+    min-width:96px;
+    max-width:96px;
+    display:flex;
+    justify-content:flex-end;
+    gap:6px;
+    padding:0;
+    border:0;
+  }
+  .corner-comfort .admin-shell .admin-sidebar-footer>a{display:none}
+  .corner-comfort .admin-shell .admin-nav{
+    display:flex!important;
+    flex-direction:row!important;
+    gap:7px!important;
+    padding:5px 0 2px!important;
+    margin:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    max-width:100%!important;
+    scroll-snap-type:x proximity;
+    overscroll-behavior-x:contain;
+    scrollbar-width:none!important;
+  }
+  .corner-comfort .admin-shell .admin-nav::-webkit-scrollbar{display:none}
+  .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){
+    position:relative;
+    display:flex!important;
+    flex:0 0 70px!important;
+    width:70px!important;
+    min-width:70px!important;
+    max-width:70px!important;
+    min-height:66px!important;
+    height:66px!important;
+    padding:7px 5px 8px!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    gap:5px!important;
+    border-radius:12px!important;
+    background:transparent!important;
+    color:#48423d!important;
+    font-size:.59rem!important;
+    line-height:1.1!important;
+    font-weight:650!important;
+    text-align:center;
+    white-space:normal!important;
+    scroll-snap-align:center;
+    box-shadow:none!important;
+  }
+  .corner-comfort .admin-shell .admin-nav .studio-nav-label{
+    display:block!important;
+    position:static!important;
+    width:auto!important;
+    height:auto!important;
+    overflow:visible!important;
+    clip-path:none!important;
+    color:inherit!important;
+    font-size:.59rem!important;
+  }
+  .corner-comfort .admin-shell .admin-nav .studio-icon{
+    width:22px;
+    height:22px;
+    stroke-width:1.75;
+  }
+  .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page]{
+    background:#fff1e9!important;
+    color:#dc5823!important;
+    box-shadow:none!important;
+  }
+  .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page]::after{
+    content:"";
+    position:absolute;
+    inset:auto 12px 2px;
+    height:3px;
+    border-radius:999px;
+    background:#e95b2a;
+  }
+  .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link)[aria-current=page] .studio-icon{
+    stroke:currentColor!important;
+  }
+  .corner-comfort .admin-shell .admin-main{
+    padding:12px 10px 18px;
+  }
+}
