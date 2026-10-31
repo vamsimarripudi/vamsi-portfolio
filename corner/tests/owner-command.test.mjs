@@ -38,6 +38,11 @@ test('owner command keeps evidence, authority, workspace and approval state expl
   assert.equal(summary.counts.approvals,2);
   assert.equal(summary.counts.personal,1);
   assert.equal(summary.counts.kravia,1);
+  assert.ok(summary.moments.length<=3,'Agentic moments stay intentionally quiet');
+  assert.deepEqual(summary.moments.map(moment=>moment.id),['protect-focus','verify-before-action','founder-decision']);
+  assert.match(summary.moments[0].instruction,/marked NOW/);
+  assert.match(summary.moments[1].prompt,/weakest evidence/i);
+  assert.match(summary.moments[2].prompt,/approval packets/i);
 
   const updated=command.update(first.id,{state:'waiting',version:first.version},'owner');
   assert.equal(updated.state,'waiting');
@@ -77,6 +82,10 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/Owner approval required/);
   assert.doesNotMatch(js,/name="needsApproval"/);
   assert.match(js,/Built by a backbencher \+ AI/);
+  assert.match(js,/AGENTIC MOMENTS/);
+  assert.match(js,/data-agentic-prompt/);
+  assert.match(js,/it never executes the action/);
+  assert.match(js,/command-agent-quick/);
   assert.match(css,/command-kpis/);
   assert.match(css,/max-width:1050px/);
   assert.match(server,/Only the owner can access the command center/);
