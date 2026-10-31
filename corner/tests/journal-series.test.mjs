@@ -96,7 +96,9 @@ test('Journal organizer starts new series at Chapter 01 and assigns existing ser
  const second=store.createPost({type:'journal',title:'The second experiment',body:'A continuation.'},'owner');
  const joined=series.organize(second.id,{mode:'existing',slug:created.slug},'owner');
  assert.equal(joined.partNumber,2,'Next chapter number is server-assigned');
- assert.throws(()=>series.organize(second.id,{mode:'new'},'owner'),{status:undefined});
+ const retry=series.organize(second.id,{mode:'new'},'owner');
+ assert.equal(retry.slug,created.slug,'Retry never creates a duplicate series for an already assigned chapter');
+ assert.equal(series.adminSeries().length,1);
  store.publish(first.id,'owner');store.publish(second.id,'owner');
  assert.deepEqual(series.publicSlugs(),[created.slug]);
  assert.equal(series.featured().slug,created.slug);
