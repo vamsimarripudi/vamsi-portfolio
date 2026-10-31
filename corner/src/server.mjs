@@ -40,6 +40,7 @@ import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
 import {JournalSeries} from './journal-series.mjs';
 import {OwnerCommand} from './owner-command.mjs';
+import {CommandAgent} from './command-agent.mjs';
 import {createCornerMcpNodeHandler} from './mcp.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -48,6 +49,7 @@ const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const journalSeries=new JournalSeries(store);
 const ownerCommand=new OwnerCommand(store);
+const commandAgent=new CommandAgent({apiKey:process.env.OPENAI_API_KEY||'',enabled:process.env.CORNER_COMMAND_AI==='1',model:process.env.CORNER_COMMAND_MODEL||'gpt-6.1-sol'});
 const cornerMcp=createCornerMcpNodeHandler({store,journalSeries,siteUrl:config.siteUrl});
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
@@ -298,7 +300,12 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName.startsWith('/api/admin/command')){
     if(owner.role!=='owner')throw httpError(403,'Only the owner can access the command center.','OWNER_ONLY');
-    if(pathName==='/api/admin/command/summary'&&method==='GET')return ok(res,ownerCommand.summary());
+    if(pathName==='/api/admin/command/summary'&&method==='GET')return ok(res,{...ownerCommand.summary(),agent:{ready:commandAgent.ready()}});
+    if(pathName==='/api/admin/command/ask'&&method==='POST'){
+      limit(req,'command-ai',12,60);
+      const body=await readJSON(req,8000),summary=ownerCommand.summary(),items=ownerCommand.list({});
+      return ok(res,await commandAgent.ask({question:body.question,summary,items}));
+    }
     if(pathName==='/api/admin/command/items'&&method==='GET')return ok(res,ownerCommand.list({
       workspace:url.searchParams.get('workspace')||'',state:url.searchParams.get('state')||'',kind:url.searchParams.get('kind')||''
     }));
