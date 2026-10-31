@@ -1,0 +1,42 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "vamsi-command",
+  "version": "0.1.0",
+  "description": "A private owner operating system for evidence-first priorities, decisions, releases and workspace boundaries.",
+  "author": {
+    "name": "Vamsi Marripudi",
+    "url": "https://vamsimarripudi.me"
+  },
+  "homepage": "https://vamsimarripudi.me/corner",
+  "repository": "https://github.com/vamsimarripudi/vamsi-portfolio",
+  "keywords": [
+    "founder",
+    "operations",
+    "decisions",
+    "release-control",
+    "portfolio"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "Vamsi Command",
+        "shortDescription": "Run founder work through one evidence-first command method.",
+        "longDescription": "A private founder workflow that separates KRAVIA corporate operations from personal ventures, verifies changing facts from connected sources, keeps a compact decision queue, and refuses to claim releases or high-risk actions without evidence.",
+        "developerName": "Vamsi Marripudi",
+        "category": "Productivity",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://vamsimarripudi.me/corner",
+        "privacyPolicyURL": "https://vamsimarripudi.me/corner/privacy",
+        "termsOfServiceURL": "https://vamsimarripudi.me/corner/terms",
+        "defaultPrompt": [
+          "Run my owner command review and tell me only what needs my attention.",
+          "Audit this release and ship it only if every required gate is green.",
+          "Turn these updates into one decision with evidence, risks and the next action."
+        ]
+      }
+    }
+  }
+}
