@@ -118,7 +118,53 @@ export class OwnerCommand{
       personal:active.filter(item=>item.workspace==='personal').length,
       kravia:active.filter(item=>item.workspace==='kravia').length
     };
-    return {counts,nowItems,approvals,risks,decisions,overdue,updatedAt:now()};
+    const evidenceGaps=active.filter(item=>['unverified','blocked'].includes(item.evidenceStatus));
+    const sensitive=active.filter(item=>['money','legal','security'].includes(item.authority));
+    const moments=[];
+    const add=(id,title,instruction,prompt,signal)=>moments.push({id,title,instruction,prompt,signal});
+    if(overdue.length)add(
+      'recover-overdue',
+      'Recover the overdue edge.',
+      String(overdue.length)+' active '+(overdue.length===1?'item is':'items are')+' past due. Clear the dependency before adding more work.',
+      'Review the overdue items. Which one creates the biggest downstream delay, what evidence is missing, and what exact owner decision is needed?',
+      String(overdue.length)+' overdue'
+    );
+    if(nowItems.length)add(
+      'protect-focus',
+      'Protect the next focus window.',
+      String(counts.now)+' '+(counts.now===1?'item is':'items are')+' marked NOW. Keep the owner queue narrow and move the highest-leverage blocker first.',
+      'From the NOW queue, pick at most three items in execution order. Explain what I should do, what DODO can prepare, and what must wait.',
+      String(counts.now)+' now'
+    );
+    if(evidenceGaps.length)add(
+      'verify-before-action',
+      'Verify before action.',
+      String(evidenceGaps.length)+' active '+(evidenceGaps.length===1?'item has':'items have')+' weak or blocked evidence. Do not convert uncertainty into execution.',
+      'Find the weakest evidence in my active queue. Tell me what source would verify each item and which action should remain blocked until then.',
+      String(evidenceGaps.length)+' evidence '+(evidenceGaps.length===1?'gap':'gaps')
+    );
+    if(decisions.length)add(
+      'founder-decision',
+      'A founder decision is waiting.',
+      String(counts.decisions)+' active '+(counts.decisions===1?'decision needs':'decisions need')+' judgment. Reduce each to the smallest reversible choice.',
+      'Turn my active decisions into concise approval packets: evidence, options, recommendation, downside, reversibility, and the exact approval question.',
+      String(counts.decisions)+' '+(counts.decisions===1?'decision':'decisions')
+    );
+    if(sensitive.length)add(
+      'sensitive-authority',
+      'Sensitive authority detected.',
+      String(sensitive.length)+' active '+(sensitive.length===1?'item touches':'items touch')+' money, legal, or security authority. Keep them advisory until explicit approval.',
+      'Review the money, legal, and security items. Separate analysis from execution and tell me the exact approval boundary for each.',
+      String(sensitive.length)+' sensitive'
+    );
+    if(!active.length)add(
+      'clear-desk',
+      'The desk is clear.',
+      'There are no open or waiting command items. Capture only the next real decision, risk, or task instead of inventing work.',
+      'My command queue is clear. Based only on current verified context, what should I watch for next and what should I deliberately ignore?',
+      '0 active'
+    );
+    return {counts,nowItems,approvals,risks,decisions,overdue,moments:moments.slice(0,3),updatedAt:now()};
   }
 
   create(data,actor){
