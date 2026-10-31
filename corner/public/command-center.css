@@ -73,8 +73,9 @@
 .corner-comfort .command-capture{position:sticky;top:20px;padding:16px}
 .corner-comfort .command-capture h2{margin:2px 0 12px;font-size:1.15rem}
 .corner-comfort .command-capture .admin-form{gap:10px}
-.corner-comfort .command-approval{display:flex!important;align-items:center;gap:8px}
-.corner-comfort .command-approval input{width:18px!important;height:18px!important;min-height:0!important}
+.corner-comfort .command-approval-lock{display:grid;gap:3px;padding:10px 11px;border:1px solid #ead7c9;border-radius:10px;background:#fff7f1}
+.corner-comfort .command-approval-lock strong{font-size:.72rem;color:#88492e}
+.corner-comfort .command-approval-lock span{font-size:.66rem;line-height:1.45;color:#75685f}
 .corner-comfort .command-scope-note{margin:12px 0 0;padding-top:10px;border-top:1px solid #ebe5df;color:#7b716a;font-size:.66rem;line-height:1.5}
 .corner-comfort .command-all{margin-top:22px}
 @media(max-width:1050px){
