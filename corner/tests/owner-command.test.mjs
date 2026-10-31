@@ -73,6 +73,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   const js=fs.readFileSync(new URL('../public/admin.js',import.meta.url),'utf8');
   const css=fs.readFileSync(new URL('../public/command-center.css',import.meta.url),'utf8');
   const server=fs.readFileSync(new URL('../src/server.mjs',import.meta.url),'utf8');
+  const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
   assert.match(owner,/data-admin-view="command"/);
   assert.doesNotMatch(admin,/data-admin-view="command"/);
   assert.doesNotMatch(editor,/data-admin-view="command"/);
@@ -90,4 +91,6 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/command-kpis/);
   assert.match(css,/max-width:1050px/);
   assert.match(server,/Only the owner can access the command center/);
+  assert.match(server,/command-center\.css/);
+  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=1'/);
 });
