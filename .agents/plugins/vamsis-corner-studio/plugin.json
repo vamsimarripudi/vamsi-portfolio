@@ -1,0 +1,41 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "vamsis-corner-studio",
+  "version": "0.1.0",
+  "description": "Connect ChatGPT and Codex to the public, published side of Vamsi's Corner through a read-only MCP server.",
+  "author": {
+    "name": "Vamsi Marripudi",
+    "url": "https://vamsimarripudi.me"
+  },
+  "homepage": "https://vamsimarripudi.me/corner",
+  "repository": "https://github.com/vamsimarripudi/vamsi-portfolio",
+  "keywords": [
+    "journal",
+    "publishing",
+    "stories",
+    "mcp"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/get-started/SKILL.md",
+      "interface": {
+        "displayName": "Vamsi’s Corner Studio",
+        "shortDescription": "Explore published Corner stories and Journal series.",
+        "longDescription": "Search, read and review publicly published Vamsi’s Corner stories and Journal series through a bounded read-only MCP connection. Private Studio data and write actions are intentionally not included in this first release.",
+        "developerName": "Vamsi Marripudi",
+        "category": "Productivity",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://vamsimarripudi.me/corner",
+        "privacyPolicyURL": "https://vamsimarripudi.me/corner/privacy",
+        "termsOfServiceURL": "https://vamsimarripudi.me/corner/terms",
+        "defaultPrompt": [
+          "Find my recent published Corner stories.",
+          "Show the chapters in my published Journal series.",
+          "Search Vamsi’s Corner for something I wrote about learning."
+        ]
+      }
+    }
+  }
+}
