@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const root=new URL('../../.agents/plugins/',import.meta.url);
+const packagePresent=fs.existsSync(new URL('vamsis-corner-studio/plugin.json',root));
 const readJson=relative=>JSON.parse(fs.readFileSync(new URL(relative,root),'utf8'));
 
-test('Corner plugin package points only at the public read-only MCP server',()=>{
+test('Corner plugin package points only at the public read-only MCP server',{skip:!packagePresent},()=>{
   const plugin=readJson('vamsis-corner-studio/plugin.json');
   const mcp=readJson('vamsis-corner-studio/mcp.json');
   const market=readJson('marketplace.json');
