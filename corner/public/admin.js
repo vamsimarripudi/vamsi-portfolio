@@ -38,7 +38,7 @@
   function showView(view){active.editorAbort?.abort();window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
-    active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
+    active.view=view;document.documentElement.dataset.studioView=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
     const sectionPicker=$('#studio-section-select');if(sectionPicker) sectionPicker.value='view:'+view;
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
@@ -95,25 +95,28 @@
     const filters=active.commandFilters;
     const activeTotal=items.filter(item=>['open','waiting'].includes(item.state)).length;
     root.innerHTML=`<section class="command-shell">
-      <header class="command-topbar">
-        <div><p class="eyebrow">OWNER COMMAND / PRIVATE</p><h2>Command</h2><p>One queue for decisions, risks and work that actually needs you.</p></div>
-        <div class="command-top-actions">
-          <span class="command-ai-status ${summary.agent?.ready?'ready':'offline'}">${summary.agent?.ready?'AI ready':'AI offline'}</span>
+      <section class="command-overview-card">
+        <header class="command-topbar">
+          <div class="command-title-block"><p class="eyebrow">STUDIO</p><h2>Command<span>.</span></h2><p>One queue for decisions, risks and work that actually needs you.</p></div>
+          <label class="command-section-switch"><span>Section</span><select id="command-section-select" aria-label="Studio section"></select></label>
+        </header>
+
+        <div class="command-status-row">
+          <span class="command-ai-status ${summary.agent?.ready?'ready':'offline'}"><i aria-hidden="true"></i>${summary.agent?.ready?'AI ready':'AI offline'}</span>
           <span class="command-boundary-inline">Personal ↔ KRAVIA boundary locked</span>
         </div>
-      </header>
 
-      <div class="command-summary-strip" aria-label="Command summary">
-        <span><strong>${activeTotal}</strong> active</span>
-        <span><strong>${Number(summary.counts.now||0)}</strong> now</span>
-        <span><strong>${Number(summary.counts.decisions||0)}</strong> decisions</span>
-        <span><strong>${Number(summary.counts.risks||0)}</strong> risks</span>
-        <span><strong>${Number(summary.counts.approvals||0)}</strong> approval locked</span>
-      </div>
+        <div class="command-summary-strip" aria-label="Command summary">
+          <span><strong>${activeTotal}</strong><small>Active</small></span>
+          <span><strong>${Number(summary.counts.now||0)}</strong><small>Now</small></span>
+          <span><strong>${Number(summary.counts.decisions||0)}</strong><small>Decisions</small></span>
+          <span><strong>${Number(summary.counts.risks||0)}</strong><small>Risks</small></span>
+          <span><strong>${Number(summary.counts.approvals||0)}</strong><small>Approval locked</small></span>
+        </div>
 
       <section class="command-tools" aria-label="Command tools">
         <details class="command-disclosure command-add" id="command-add-panel">
-          <summary><span><strong>+ Add item</strong><small>Capture once, then close it.</small></span></summary>
+          <summary><span class="command-tool-icon">${studioIcon('plus')}</span><span class="command-tool-copy"><strong>Add item</strong><small>Capture once, then close it.</small></span></summary>
           <form id="command-capture" class="command-form">
             <label class="command-form-title">Title<input name="title" maxlength="160" required placeholder="What needs attention?"></label>
             <label>Project<input name="project" maxlength="100" placeholder="Optional"></label>
@@ -137,17 +140,18 @@
         </details>
 
         <details class="command-disclosure command-ai-panel" id="command-ai-panel">
-          <summary><span><strong>Ask Command</strong><small>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</small></span></summary>
+          <summary><span class="command-tool-icon">${studioIcon('comments')}</span><span class="command-tool-copy"><strong>Ask Command</strong><small><i class="command-live-dot ${summary.agent?.ready?'ready':'offline'}" aria-hidden="true"></i>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</small></span></summary>
           ${summary.agent?.ready?'<form id="command-agent-form" class="command-ai-form"><label>Shortcut<select id="command-prompt-preset">'+commandPromptOptions()+'</select></label><label for="command-agent-question">Question<textarea id="command-agent-question" name="question" maxlength="2400" rows="3" required placeholder="Ask what matters, what is blocked, or what needs your approval."></textarea></label><div class="command-form-footer"><span>Advisory only. It cannot execute without approval.</span><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<div class="command-panel-note">The command queue still works normally. AI becomes available only when the private server connection is ready.</div>'}
         </details>
 
         <details class="command-disclosure command-moments-panel">
-          <summary><span><strong>Agentic moments</strong><small>${(summary.moments||[]).length} current signals</small></span></summary>
+          <summary><span class="command-tool-icon command-tool-icon--accent">✦</span><span class="command-tool-copy"><strong>Agentic moments</strong><small><i class="command-live-dot signal" aria-hidden="true"></i>${(summary.moments||[]).length} current signals</small></span></summary>
           <div class="command-moment-list">${(summary.moments||[]).map(commandMoment).join('')||'<p class="command-panel-note">No agentic intervention is needed right now.</p>'}</div>
         </details>
       </section>
+      </section>
 
-      <section class="command-queue">
+      <section class="command-queue command-queue-card">
         <div class="command-queue-head">
           <div><h2>Queue</h2><p>Filter first. Open details only when you need context.</p></div>
           <span id="command-visible-count"></span>
@@ -180,7 +184,17 @@
       });
     };
 
-    $$('[data-command-filter]').forEach(select=>{
+    const commandSectionSelect=$('#command-section-select'),studioSectionSelect=$('#studio-section-select');
+    if(commandSectionSelect&&studioSectionSelect){
+      commandSectionSelect.innerHTML=studioSectionSelect.innerHTML;
+      commandSectionSelect.value='view:command';
+      commandSectionSelect.onchange=()=>{
+        const value=commandSectionSelect.value;
+        if(value.startsWith('view:'))showView(value.slice(5));
+        else if(value.startsWith('url:'))location.assign(value.slice(4));
+      };
+    }
+    $('[data-command-filter]').forEach(select=>{
       const key=select.dataset.commandFilter;select.value=filters[key]||'all';
       select.onchange=()=>{filters[key]=select.value;renderQueue()};
     });
