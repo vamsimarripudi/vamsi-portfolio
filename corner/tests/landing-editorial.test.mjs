@@ -68,6 +68,10 @@ test('approved paper and six-item bottom dock are route-scoped and accessible',(
  assert.match(css,/corner-explore-grid/);
  assert.match(css,/corner-journal-layout/);
  assert.match(css,/corner-home-spotlight/);
+ assert.match(css,/corner-journal-feed \.stories\{[\s\S]*grid-template-columns:minmax\(0,1fr\)/,
+   'Latest uses one real card column instead of reserving empty desktop columns');
+ assert.doesNotMatch(css,/grid-template-columns:minmax\(0,2\.85fr\) minmax\(240px,1fr\)/,
+   'Old oversized Latest/Spotlight split is removed');
  assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
  assert.match(css,/backdrop-filter:blur\(24px\)/);
  assert.match(css,/prefers-reduced-motion:reduce/);
