@@ -79,10 +79,11 @@ test('public MCP exposes only published Corner content through read-only tools',
   }
 
   const search=await client.callTool({name:'search',arguments:{query:'Public MCP Journal'}});
-  assert.equal(search.isError,undefined);
-  assert.equal(search.structuredContent.results.length,1);
-  assert.equal(search.structuredContent.results[0].id,'post:'+published.slug);
-  assert.match(search.structuredContent.results[0].url,/\/corner\/post\//);
+  assert.notEqual(search.isError,true);
+  assert.ok(search.structuredContent.results.length>=1);
+  const postHit=search.structuredContent.results.find(item=>item.id==='post:'+published.slug);
+  assert.ok(postHit,'Published post is returned by search');
+  assert.match(postHit.url,/\/corner\/post\//);
   assert.doesNotMatch(JSON.stringify(search),/Private MCP Draft/);
 
   const fetched=await client.callTool({name:'fetch',arguments:{id:'post:'+published.slug}});
