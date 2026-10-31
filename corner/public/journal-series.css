@@ -130,7 +130,13 @@
   white-space:nowrap;text-decoration:none;color:#7d5646;border-bottom:1px solid #b99a88;padding-bottom:4px}
 .corner-comfort .v7-series-settings{display:grid;gap:9px;padding:12px;margin:5px 0;
   border:1px solid #e2d5c4;border-radius:12px;background:#f6f0e9}
+.corner-comfort .v7-series-settings[hidden]{display:none!important}
 .corner-comfort .v7-series-settings>span{font:690 .79rem/1.4 system-ui,sans-serif;color:#5f483b}
+.corner-comfort .v7-series-question{margin:0;color:#2f2925;font:650 .84rem/1.45 system-ui,sans-serif}
+.corner-comfort .v7-series-context{margin:0;padding:9px 10px;border-radius:9px;background:#fffaf5;
+  color:#745d4e;font:600 .72rem/1.5 system-ui,sans-serif}
+.corner-comfort .v7-series-change{justify-self:start;margin:1px 0 0}
+.corner-comfort .v7-series-settings select:disabled{opacity:.72;background:#f1ece6;color:#5c5148}
 .corner-comfort .v7-series-settings select,.corner-comfort .v7-series-settings input{
   width:100%;box-sizing:border-box;min-height:44px;padding:9px;border:1px solid #ccbcab;border-radius:9px;
   background:white;color:#292520;font:400 16px system-ui}
