@@ -33,7 +33,7 @@ test('Command AI sends only bounded command context and preserves owner rules',a
   assert.equal(request.body.model,'gpt-6.1-sol');
   assert.equal(request.body.store,false);
   assert.match(request.body.instructions,/Use ONLY the supplied command context/);
-  assert.match(request.body.instructions,/Money movement, live charging, contracts, legal filings/);
+  assert.match(request.body.instructions,/Every external or state-changing action requires explicit owner approval/);
   assert.match(request.body.instructions,/KRAVIA PRIVATE LIMITED/);
   assert.match(request.body.input[0].content[0].text,/Provider gate/);
   assert.doesNotMatch(request.body.input[0].content[0].text,/sk-proj-/);
