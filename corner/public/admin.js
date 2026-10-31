@@ -343,7 +343,7 @@
     const badge=$('#media-count');
     if(badge){badge.textContent=String(attachments.length);badge.hidden=!attachments.length}
     section.innerHTML='<div class="corner-media-shell">'+
-      '<header class="corner-media-header"><div class="corner-media-heading"><p class="eyebrow">STORY / MEDIA</p><h2 id="media-editor-title">Attach files<span>.</span></h2><p id="media-editor-help">A dedicated space for your story photos, videos and captions.</p></div><button type="button" class="corner-media-close" data-media-dismiss aria-label="Close media dialog">×</button></header>'+
+      '<header class="corner-media-header"><div class="corner-media-heading"><p class="eyebrow">STORY / MEDIA</p><h2 id="media-editor-title">Attach files<span>.</span></h2><p id="media-editor-help">A clean space for your story photos and videos.</p></div><button type="button" class="corner-media-close" data-media-dismiss aria-label="Close media dialog">×</button></header>'+
       '<section class="post-media-editor" aria-label="Current attachments and new uploads">'+
       '<div class="post-media-head"><h3>Story attachments</h3><small class="corner-media-total">'+attachments.length+' '+(attachments.length===1?'file':'files')+'</small></div>'+
       (attachments.length?'<div class="media-gallery">'+attachments.map((x,index)=>mediaCard(x,true,index,attachments.length)).join('')+'</div>':
@@ -351,7 +351,7 @@
       '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
       '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/*,video/mp4,video/quicktime,video/webm,.heic,.heif,.mov" required></label>'+
       '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
-      '<p class="admin-hint">Describe each image and add an optional caption. JPG, PNG, HEIC, WebP, GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. Clips are optimized before playback.</p>'+
+      '<p class="admin-hint">JPG, PNG, HEIC, WebP or GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. Clips are optimized before playback.</p>'+
       '<p data-upload-status role="status" aria-live="polite"></p>'+
       '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
       '</form></section>'+
@@ -385,22 +385,6 @@
           onFailure:error=>toast(error.message,'error')});
       };
     });
-    $$('[data-media-quick-edit]',section).forEach(form=>{
-      form.onsubmit=async event=>{
-        event.preventDefault();
-        const button=form.querySelector('button[type=submit]');
-        const id=form.dataset.mediaQuickEdit;
-        await actionMotion({action:'media.edit',trigger:button,targetId:id,
-          visualTarget:form.closest('.media-thumb'),execute:()=>{
-            const altText=form.elements.alt.value.trim(),caption=form.elements.caption.value.trim();
-            const original=attachments.find(item=>item.id===id);
-            if(original?.mime_type.startsWith('image/')&&!altText)throw Error('Add an image description.');
-            return api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{altText,caption});
-          },
-          onSuccess:()=>{toast('Caption and description saved.','success');return mediaForPost(postId,ensureDraft)},
-          onFailure:error=>toast(error.message,'error')});
-      };
-    });
     const form=$('#editor-upload',section);
     const fileInput=form.elements.files;
     const previewList=$('[data-upload-previews]',form);
@@ -414,7 +398,7 @@
       wrapper.className='upload-preview-card';
       const figure=document.createElement('figure');
       const remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
-      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Enter descriptions, then attach them to your story.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
+      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Ready to attach.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
       figure.append(remove);
       const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
       entry.url=URL.createObjectURL(entry.file);
@@ -426,21 +410,7 @@
       filename.textContent=entry.file.name;
       figure.append(filename);
       const fields=document.createElement('div');
-      const altLabel=document.createElement('label');
-      altLabel.textContent='Image description';
-      entry.alt=document.createElement('input');
-      entry.alt.name='alt';entry.alt.maxLength=240;
-      entry.alt.placeholder='Describe what appears in the photograph';
-      entry.alt.required=entry.file.type.startsWith('image/');
-      if(!entry.alt.required){altLabel.textContent='Video description (optional)'}
-      altLabel.append(entry.alt);
-      const captionLabel=document.createElement('label');
-      captionLabel.textContent='Caption';
-      entry.caption=document.createElement('input');
-      entry.caption.name='caption';entry.caption.maxLength=300;
-      entry.caption.placeholder='A moment worth remembering…';
-      captionLabel.append(entry.caption);
-      fields.append(altLabel,captionLabel);      if(entry.file.type.startsWith('video/')&&entry.file.type!=='video/webm'){
+      if(entry.file.type.startsWith('video/')&&entry.file.type!=='video/webm'){
         const videoTrim=document.createElement('div');videoTrim.className='v5-video-trim';
         videoTrim.innerHTML='<label>Trim from (seconds)<input type="number" name="start" min="0" max="179" step="0.5" value="0"></label><label>Trim until (seconds, optional)<input type="number" name="end" min="0" max="180" step="0.5" placeholder="End of clip"></label>';
         fields.append(videoTrim);
@@ -458,7 +428,7 @@
               if(entry.url)URL.revokeObjectURL(entry.url);
               entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;
               filename.textContent=adjusted.name;
-              status.textContent='Crop applied. Add the image description, then attach.';
+              status.textContent='Crop applied. Ready to attach.';
             }
           }catch(error){status.textContent=error.message||'Could not crop this image.'}
           finally{crop.disabled=false}
@@ -477,8 +447,8 @@
       cleanup();pending=[];previewList.replaceChildren();
       if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
       if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use JPG, PNG, HEIC, WebP, GIF, MP4, MOV or WebM.';submit.disabled=true;return}
-      status.textContent=files.length?files.length+' selected. Enter descriptions, then attach them to your story.':'';
-      for(const file of files){const entry={file,done:false,url:null,alt:null,caption:null};pending.push(entry);previewEntry(entry)}
+      status.textContent=files.length?files.length+' selected. Ready to attach.':'';
+      for(const file of files){const entry={file,done:false,url:null};pending.push(entry);previewEntry(entry)}
       submit.disabled=!pending.length;
       submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
       if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
@@ -501,11 +471,8 @@
           let sent=0;
           for(const entry of pending.filter(item=>!item.done)){
             const isImage=entry.file.type.startsWith('image/');
-            const alt=entry.alt.value.trim(),caption=entry.caption.value.trim();
             if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
             if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
-            if(isImage&&!alt)throw Error('Add an image description for: '+entry.file.name);
-            if(alt.length>240||caption.length>300)throw Error('Description or caption is too long.');
           }
           if(!postId){
             const saved=await ensureDraft?.();
@@ -515,7 +482,7 @@
           for(const entry of pending.filter(item=>!item.done)){
             const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;
             status.textContent=message;progress(message);
-            const stored=await upload(entry.file,postId,entry.alt.value.trim(),entry.caption.value.trim(),{start:entry.start?.value||0,end:entry.end?.value||0});
+            const stored=await upload(entry.file,postId,{start:entry.start?.value||0,end:entry.end?.value||0});
             if(stored?.jobId){
               let complete=false;
               for(let poll=0;poll<110;poll++){
@@ -561,20 +528,15 @@
       '</div>';
     return '<article class="media-thumb '+(quickEdit?'media-thumb--attached':'media-thumb--library')+'">'+controls+
       '<a class="media-view-link" href="'+src+'" target="_blank" rel="noopener" aria-label="View attached media">'+preview+'</a>'+
-      (x.caption?'<p class="media-card-caption">'+esc(x.caption)+'</p>':'')+
       '<small>'+esc(x.mime_type)+' · '+Math.round(x.size_bytes/1024)+' KB</small>'+
-      (quickEdit?'<form class="media-quick-edit" data-media-quick-edit="'+esc(x.id)+'">'+
-        '<label>Caption<input name="caption" maxlength="300" value="'+esc(x.caption||'')+'" placeholder="Add a caption"></label>'+
-        '<label>Image description<input name="alt" maxlength="240" value="'+esc(x.alt_text||'')+'" '+(isImage?'required':'')+'></label>'+
-        '<button type="submit">Save details</button></form>':'')+
-      '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?'Advanced settings ↗':'Edit details ↗')+'</button>'+
+      '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?'Adjust image ↗':'Adjust ↗')+'</button>'+
       '</article>';
   }
-  async function upload(file,postId,alt,caption='',trim={}){
+  async function upload(file,postId,trim={}){
     if(!file)throw Error('Choose a file');
     if(!supportedMedia.has(file.type))throw Error('Unsupported file type');
     if(file.size>(file.type.startsWith('image/')?12:75)*1024*1024)throw Error('File is too large');
-    const params=new URLSearchParams({postId:String(postId||''),alt:String(alt||''),caption:String(caption||''),start:String(trim.start||0),end:String(trim.end||0)});
+    const params=new URLSearchParams({postId:String(postId||''),start:String(trim.start||0),end:String(trim.end||0)});
     const response=await fetch('/corner/api/admin/media/upload?'+params.toString(),{
       method:'POST',credentials:'same-origin',headers:{'content-type':file.type},body:file
     });
@@ -582,7 +544,7 @@
     if(!response.ok)throw Error(result.error?.message||'Upload failed');
     return result.data;
   }
-  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads and edit captions or descriptions without squeezing them into thumbnails.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{
+  async function media(){const list=await api('/corner/api/admin/media');root.innerHTML=`<section class="admin-section corner-media-library"><header class="corner-library-heading"><div><p class="eyebrow">STUDIO / YOUR LIBRARY</p><h2>Media library.</h2><p>Review uploads, crop or reframe photos, and manage files in one place.</p></div><span class="corner-library-count">${list.length} ${list.length===1?'file':'files'}</span></header><div class="admin-surface corner-library-surface">${list.length?`<div class="media-gallery corner-library-grid">${list.map((x,index)=>mediaCard(x,false,index,list.length)).join('')}</div>`:empty('No media here yet.','Add an image to a post to begin.')}</div></section>`;$$('[data-media-edit]').forEach(b=>b.onclick=()=>mediaEdit(b.dataset.mediaEdit,list));$$('[data-media-delete]').forEach(button=>button.onclick=async()=>{
       if(!confirm('Delete this media file? It will be removed from its story.'))return;
       const id=button.dataset.mediaDelete;
       await actionMotion({action:'media.delete',trigger:button,targetId:id,visualTarget:button.closest('.media-thumb'),
@@ -590,7 +552,7 @@
         onSuccess:()=>{toast('Media deleted.','success');return media()},
         onFailure:error=>toast(error.message,'error')});
     });}
-  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media details.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><label>Alt text<textarea name="alt" maxlength="240">${esc(x.alt_text||'')}</textarea></label><label>Caption<input name="caption" maxlength="300" value="${esc(x.caption||'')}"></label><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save media details</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
+  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media adjustments.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save adjustments</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
     const editForm=$('#media-editor');
     if(x.mime_type.startsWith('image/'))window.CornerPhotoCompare?.mount(editForm,x);
     const returnToMedia=()=>{if(returnPostId)void editor(returnPostId);else void media()};
@@ -613,7 +575,6 @@
         successLabel:'Media saved',
         execute:async({progress})=>{
           await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{
-            altText:form.elements.alt.value,caption:form.elements.caption.value,
             focalX:form.elements.focalX.value,focalY:form.elements.focalY.value
           });
           detailsSaved=true;
@@ -632,7 +593,7 @@
         confirm:result=>result?.saved===true,
         onSuccess:()=>{toast('Media details saved.','success');returnToMedia()},
         onFailure:error=>{
-          toast(detailsSaved?'Description saved, but photo adjustments did not finish. Retry to complete the edit.':error.message,'error');
+          toast(detailsSaved?'Image position saved, but photo adjustments did not finish. Retry to complete the edit.':error.message,'error');
         }
       });
     };
