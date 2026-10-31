@@ -39,7 +39,7 @@
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
-    $('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
+    $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
     const sectionPicker=$('#studio-section-select');if(sectionPicker) sectionPicker.value='view:'+view;
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
     ({command,overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().then(()=>window.CornerMotion?.refresh()).catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
