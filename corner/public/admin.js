@@ -38,7 +38,7 @@
   function showView(view){active.editorAbort?.abort();window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
-    active.view=view;document.documentElement.dataset.studioView=view;$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
+    active.view=view;document.documentElement.dataset.studioView=view;const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=view==='command';$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
     const sectionPicker=$('#studio-section-select');if(sectionPicker) sectionPicker.value='view:'+view;
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
@@ -98,7 +98,6 @@
       <section class="command-overview-card">
         <header class="command-topbar">
           <div class="command-title-block"><p class="eyebrow">STUDIO</p><h2>Command<span>.</span></h2><p>One queue for decisions, risks and work that actually needs you.</p></div>
-          <label class="command-section-switch"><span>Section</span><select id="command-section-select" aria-label="Studio section"></select></label>
         </header>
 
         <div class="command-status-row">
@@ -156,13 +155,16 @@
           <div><h2>Queue</h2><p>Filter first. Open details only when you need context.</p></div>
           <span id="command-visible-count"></span>
         </div>
-        <div class="command-filterbar">
-          <label>Workspace<select data-command-filter="workspace"><option value="all">All</option><option value="personal">Personal</option><option value="kravia">KRAVIA</option></select></label>
-          <label>Type<select data-command-filter="kind"><option value="all">All</option><option value="task">Tasks</option><option value="decision">Decisions</option><option value="risk">Risks</option><option value="idea">Ideas</option></select></label>
-          <label>Priority<select data-command-filter="priority"><option value="all">All</option><option value="now">Now</option><option value="next">Next</option><option value="later">Later</option></select></label>
-          <label>Evidence<select data-command-filter="evidence"><option value="all">All</option><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified">Needs verification</option><option value="blocked">Blocked</option></select></label>
-          <label>Status<select data-command-filter="state"><option value="active">Open + waiting</option><option value="open">Open</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="dismissed">Dismissed</option><option value="all">All</option></select></label>
-        </div>
+        <details class="command-filter-panel" id="command-filter-panel">
+          <summary><span>Filters</span><small>Workspace · Type · Priority · Evidence · Status</small></summary>
+          <div class="command-filterbar">
+            <label>Workspace<select data-command-filter="workspace"><option value="all">All</option><option value="personal">Personal</option><option value="kravia">KRAVIA</option></select></label>
+            <label>Type<select data-command-filter="kind"><option value="all">All</option><option value="task">Tasks</option><option value="decision">Decisions</option><option value="risk">Risks</option><option value="idea">Ideas</option></select></label>
+            <label>Priority<select data-command-filter="priority"><option value="all">All</option><option value="now">Now</option><option value="next">Next</option><option value="later">Later</option></select></label>
+            <label>Evidence<select data-command-filter="evidence"><option value="all">All</option><option value="verified">Verified</option><option value="reported">Reported</option><option value="unverified">Needs verification</option><option value="blocked">Blocked</option></select></label>
+            <label>Status<select data-command-filter="state"><option value="active">Open + waiting</option><option value="open">Open</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="dismissed">Dismissed</option><option value="all">All</option></select></label>
+          </div>
+        </details>
         <div class="command-list" id="command-queue-list"></div>
       </section>
 
@@ -184,16 +186,7 @@
       });
     };
 
-    const commandSectionSelect=$('#command-section-select'),studioSectionSelect=$('#studio-section-select');
-    if(commandSectionSelect&&studioSectionSelect){
-      commandSectionSelect.innerHTML=studioSectionSelect.innerHTML;
-      commandSectionSelect.value='view:command';
-      commandSectionSelect.onchange=()=>{
-        const value=commandSectionSelect.value;
-        if(value.startsWith('view:'))showView(value.slice(5));
-        else if(value.startsWith('url:'))location.assign(value.slice(4));
-      };
-    }
+    const filterPanel=$('#command-filter-panel');if(filterPanel&&matchMedia('(min-width:768px)').matches)filterPanel.open=true;
     $$('[data-command-filter]').forEach(select=>{
       const key=select.dataset.commandFilter;select.value=filters[key]||'all';
       select.onchange=()=>{filters[key]=select.value;renderQueue()};

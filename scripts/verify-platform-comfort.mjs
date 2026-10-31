@@ -43,7 +43,7 @@ try {
  await login.locator('#admin-login input[name=email]').fill(owner);await login.locator('#admin-login input[name=password]').fill(secret);
  await login.locator('#admin-login button[type=submit]').click();await login.locator('.admin-shell').waitFor({timeout:12000});await login.close();
  const check=async(page,label,{scale=1,fit=false}={})=>{
-  await page.locator('h1').first().waitFor({timeout:10000});await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.locator('h1:visible,h2:visible').first().waitFor({timeout:10000});await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const data=await page.evaluate(()=>{
    const visible=n=>n.getClientRects().length&&getComputedStyle(n).visibility!=='hidden';
    const headings=[...document.querySelectorAll('h1,h2,h3')].filter(visible).map(n=>({tag:n.tagName,size:parseFloat(getComputedStyle(n).fontSize),text:n.textContent.slice(0,45)}));
@@ -99,7 +99,7 @@ try {
   const overrideContext=await browser.newContext({bypassCSP:true,reducedMotion:'reduce'});
   const p=await overrideContext.newPage();await p.setViewportSize({width:mode==='short-keyboard'?390:320,height:mode==='short-keyboard'?360:640});
   for(const route of ['/corner/admin','/corner/login','/','/contact','/track']){
-   await p.goto((route.startsWith('/corner')?corner:portfolio)+route,{waitUntil:'domcontentloaded'});await p.locator('h1').first().waitFor();
+   await p.goto((route.startsWith('/corner')?corner:portfolio)+route,{waitUntil:'domcontentloaded'});await p.locator('h1:visible,h2:visible').first().waitFor();
    if(mode==='text-200')await p.addStyleTag({content:'html{font-size:200%!important}'});
    if(mode==='text-spacing')await p.addStyleTag({content:'*{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}p{margin-bottom:2em!important}'});
    await check(p,route+' '+mode,{scale:mode==='text-200'?2:1});

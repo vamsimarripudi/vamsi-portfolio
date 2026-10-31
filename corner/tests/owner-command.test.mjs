@@ -92,7 +92,8 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(js,/data-command-state-select/);
   assert.match(js,/commandMatches/);
   assert.match(js,/document\.documentElement\.dataset\.studioView=view/);
-  assert.match(js,/id="command-section-select"/);
+  assert.match(js,/studioTop\.hidden=view==='command'/);
+  assert.doesNotMatch(js,/id="command-section-select"/,'Command workspace must not render a second Section dropdown');
   assert.match(js,/command-tool-icon/);
   assert.doesNotMatch(js,/command-kpis/,'Dense KPI cards are removed from the redesigned Command workspace');
   assert.doesNotMatch(js,/data-command-state="done"/,'State changes use one dropdown instead of four action buttons');
@@ -103,7 +104,8 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/command-disclosure/);
   assert.match(css,/command-row-main/);
   assert.match(css,/command-overview-card/);
-  assert.match(css,/command-section-switch/);
+  assert.doesNotMatch(css,/command-section-switch/);
+  assert.match(css,/command-filter-panel/);
   assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/command-tool-icon/);
@@ -112,5 +114,5 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/max-width:980px/);
   assert.match(server,/Only the owner can access the command center/);
   assert.match(server,/command-center\.css/);
-  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=1/);
+  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=2/);
 });
