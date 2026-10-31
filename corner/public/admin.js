@@ -129,8 +129,11 @@
     $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
   }
   function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
-  async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();const controller=active.editorAbort,expectedView=active.view;active.post=null;let p=id? (await api('/corner/api/admin/posts/'+encodeURIComponent(id))).post : {state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};if(controller.signal.aborted||active.view!==expectedView)return;active.post=p;
-    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
+  async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();const controller=active.editorAbort,expectedView=active.view;active.post=null;
+    const [record,seriesList]=await Promise.all([id?api('/corner/api/admin/posts/'+encodeURIComponent(id)):Promise.resolve(null),api('/corner/api/admin/series')]);
+    let p=record?.post||{state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};
+    if(controller.signal.aborted||active.view!==expectedView)return;active.post=p;
+    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p,seriesList)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
     const form=$('#post-editor');
     const publishButton=$('#publish-post');
     const publishMotion=window.CornerPublishMotion?.mount(publishButton);
@@ -141,10 +144,29 @@
     document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu?.hidden){hideSettings();toggle.focus()}},{signal:active.editorAbort.signal});
 
+    const seriesPanel=$('[data-journal-series]',form),seriesSelect=form.elements.seriesChoice,seriesContext=$('[data-series-context]',form);
+    const syncSeriesPanel=()=>{
+      const values=formValues(form),journal=values.type==='journal';
+      if(seriesPanel)seriesPanel.hidden=!journal;
+      if(!journal||!seriesSelect||!seriesContext)return;
+      if(p.series&&seriesSelect.disabled){
+        seriesContext.textContent=p.series.title+' · Chapter '+String(p.series.partNumber).padStart(2,'0');
+        return;
+      }
+      if(seriesSelect.value==='__new__')seriesContext.textContent='No existing series selected. Saving starts a new series at Chapter 01 automatically.';
+      else{
+        const option=seriesSelect.selectedOptions[0],next=Number(option?.dataset.next||0);
+        seriesContext.textContent=next?'This will become Chapter '+String(next).padStart(2,'0')+' automatically.':'This series cannot accept another chapter.';
+      }
+    };
+    $('[data-change-series]',form)?.addEventListener('click',event=>{
+      if(!seriesSelect)return;
+      seriesSelect.disabled=false;seriesSelect.dataset.moveAllowed='true';event.currentTarget.hidden=true;seriesSelect.focus();syncSeriesPanel();
+    });
     let editorRevision=0;
-    updatePreview(form);form.addEventListener('change',()=>updatePreview(form));form.addEventListener('input',()=>{
+    updatePreview(form);syncSeriesPanel();form.addEventListener('change',()=>{updatePreview(form);syncSeriesPanel()});form.addEventListener('input',()=>{
       editorRevision++;active.dirty=true;$('#save-indicator').textContent='Unsaved edits';
-      updatePreview(form);
+      updatePreview(form);syncSeriesPanel();
       if(p.state==='draft'&&form.elements.body.value.trim()){
         clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)
       }
@@ -158,22 +180,24 @@
       pendingSave=(async()=>{try{
         const values=formValues(form),savedRevision=editorRevision;
         const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
-        // Series membership is separate from the original story text/media.
-        // Retain the saved post ID/version if linking fails so retries are safe.
+        // Journal organization is automatic: every Journal belongs to a series,
+        // and chapter numbers are assigned by the server to avoid collisions.
         const previousSeries=p.series||null;
-        const seriesSlug=String(form.elements.seriesSlug?.value||'');
-        const seriesPart=Number(form.elements.seriesPart?.value||2);
-        const needsSeriesUpdate=seriesSlug!==String(previousSeries?.slug||'')||
-          (seriesSlug&&seriesPart!==Number(previousSeries?.partNumber));
-        if(needsSeriesUpdate){
-          try{
-            stored.series=await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',
-              {slug:seriesSlug,partNumber:seriesPart});
-          }catch(seriesError){
-            p={...stored,series:previousSeries};active.post=p;active.dirty=true;
-            throw new Error('Story saved, but chapter assignment failed: '+seriesError.message);
-          }
-        }else stored.series=previousSeries;
+        try{
+          if(values.type==='journal'){
+            const choice=String(form.elements.seriesChoice?.value||'__new__');
+            const sameSeries=previousSeries&&choice===previousSeries.slug;
+            stored.series=sameSeries?previousSeries:await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',
+              choice==='__new__'
+                ?{mode:'new',allowMove:form.elements.seriesChoice?.dataset.moveAllowed==='true'}
+                :{mode:'existing',slug:choice,allowMove:form.elements.seriesChoice?.dataset.moveAllowed==='true'});
+          }else if(previousSeries){
+            stored.series=await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',{mode:'unlink'});
+          }else stored.series=null;
+        }catch(seriesError){
+          p={...stored,series:previousSeries};active.post=p;active.dirty=true;
+          throw new Error('Story saved, but Journal series setup failed: '+seriesError.message);
+        }
         // Persisted draft is safe, but never apply a stale response to a different Studio view.
         if(controller.signal.aborted)return null;
         p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
