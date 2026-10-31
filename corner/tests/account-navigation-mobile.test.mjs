@@ -105,13 +105,12 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.equal((await go('/settings/profile',{cookie:memberCookie})).status,200);
  assert.match(await (await go('/settings/profile',{cookie:memberCookie})).text(),/Sign in to access your private information/);
 });
-test('mobile Studio navigation stays compact, horizontal and icon-first without changing desktop',()=>{
- const styles=fs.readFileSync(new URL('../public/magic.css',import.meta.url),'utf8');
- assert.match(fs.readFileSync(new URL('../public/comfort.css',import.meta.url),'utf8'),/min-height:44px/);
+test('mobile Studio navigation uses one compact section dropdown instead of the icon strip',()=>{
+ const styles=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
+ const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
  assert.match(styles,/max-width:767px/);
- assert.match(styles,/\.admin-shell \.admin-sidebar\{/);
- assert.match(styles,/\.admin-shell \.admin-nav button,/);
- assert.match(styles,/height:44px/);
- assert.match(styles,/overflow-x:auto/);
- assert.match(styles,/\.admin-shell \.admin-main\{padding-top:18px\}/);
+ assert.match(styles,/studio-section-picker/);
+ assert.match(styles,/\.admin-shell \.admin-nav\{display:none!important\}/);
+ assert.match(styles,/min-height:40px/);
+ assert.match(ui,/id="studio-section-select"/);
 });
