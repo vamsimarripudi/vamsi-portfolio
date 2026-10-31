@@ -33,6 +33,10 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Install FFmpeg for current media/API fixtures
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
       - name: Build and test all phases and API security
         run: |
           npm ci
