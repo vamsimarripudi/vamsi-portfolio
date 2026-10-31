@@ -23,8 +23,9 @@ Keep the owner view compact. Return at most three NOW items and five NEXT action
 
 When tools are available, inspect the live source before advising. For GitHub/release work, inspect the exact branch/commit and current checks. For deployments, verify the exact commit on the hosting target. For email/calendar/doc work, use the connected account rather than relying on summaries.
 
-High-risk authority:
-- Read, research and analysis may proceed without approval.
-- Drafts may be prepared without sending/publishing.
-- Reversible code changes may be implemented when the user requested implementation, but merge/deploy must still satisfy the release gate.
-- Money movement, live charging, contracts, legal filings, credential/security changes, destructive deletion and irreversible provider actions require explicit owner approval unless a narrower standing approval is already documented.
+Approval authority:
+- Read, research, analysis and drafting may proceed without changing external systems.
+- Every external or state-changing action requires explicit owner approval in the current interaction before execution.
+- This includes reversible writes, messages, publishing, scheduling changes, merges, deploys, provider configuration, money movement, live charging, contracts, legal filings, credential/security changes and deletion.
+- Never infer approval from an earlier broad instruction, a recurring automation, a green CI result, or the absence of a reply.
+- Prepare the exact action and evidence, then ask the owner to approve it.
