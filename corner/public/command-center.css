@@ -451,3 +451,16 @@
   .corner-comfort .command-moment button,
   .corner-comfort .command-row{transition:none!important}
 }
+
+/* Mobile Studio chrome for the dropdown-first redesign. Higher specificity intentionally
+   overrides the legacy horizontal nav rules in studio.css without growing that baseline bundle. */
+.corner-comfort .studio-section-picker{display:none}
+@media(max-width:767px){
+ body.corner-comfort .admin-shell .admin-sidebar{height:60px!important;min-height:60px!important;padding-bottom:6px}
+ body.corner-comfort .admin-shell .admin-sidebar .admin-nav{display:none!important}
+ body.corner-comfort .admin-shell .admin-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,42%);align-items:end;gap:8px;margin-bottom:8px}
+ body.corner-comfort .studio-section-picker{display:grid;gap:3px;min-width:0}
+ body.corner-comfort .studio-section-picker>span{color:#7c756f;font-size:.56rem;font-weight:700;text-transform:uppercase}
+ body.corner-comfort .studio-section-picker select{width:100%;min-height:40px}
+ body.corner-comfort .admin-top>div:last-child{display:none}
+}
