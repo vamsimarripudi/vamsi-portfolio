@@ -39,12 +39,14 @@ import { legalPage, isLegalPath } from './legal-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
 import {JournalSeries} from './journal-series.mjs';
+import {createCornerMcpNodeHandler} from './mcp.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
 import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText, sha, clamp, secureEqual, isValidTimeZone } from './domain.mjs';
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const journalSeries=new JournalSeries(store);
+const cornerMcp=createCornerMcpNodeHandler({store,journalSeries,siteUrl:config.siteUrl});
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
 const memories=new V3Memories(store);
@@ -409,6 +411,14 @@ async function route(req,res){
     const url=new URL(req.url||'/',`http://${req.headers.host}`);
     if(config.basePath){if(url.pathname===config.basePath)url.pathname='/';else if(url.pathname.startsWith(config.basePath+'/'))url.pathname=url.pathname.slice(config.basePath.length);else throw httpError(404,'Route not found');}
     pathname=url.pathname;
+    if(pathname==='/mcp'){
+      res.setHeader('access-control-allow-origin','*');
+      res.setHeader('access-control-allow-methods','GET,POST,DELETE,OPTIONS');
+      res.setHeader('access-control-allow-headers','content-type,accept,mcp-protocol-version,mcp-session-id,last-event-id');
+      if(req.method==='OPTIONS')return end(res,204,'');
+      if(!['GET','POST','DELETE'].includes(req.method))throw httpError(405,'MCP method not supported.');
+      return cornerMcp.handle(req,res);
+    }
     if(pathname==='/api/v1'||pathname==='/api/v1/'){
       if(req.method!=='GET')throw httpError(405,'Method not allowed');
       return ok(res,{version:'1',status:'stable',openapi:(config.basePath||'')+'/api/v1/openapi.json',legacySupported:true,storageMode:'single-writer'});
@@ -551,6 +561,6 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
       });
     },25000):null;
 
-  const shutdown=()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);server.close(()=>{store.close();process.exit(0)})};
+  const shutdown=async()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);await cornerMcp.close().catch(()=>{});server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }
