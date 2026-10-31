@@ -92,5 +92,5 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/max-width:1050px/);
   assert.match(server,/Only the owner can access the command center/);
   assert.match(server,/command-center\.css/);
-  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=1'/);
+  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=1/);
 });
