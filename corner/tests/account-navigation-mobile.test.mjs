@@ -109,7 +109,7 @@ test('mobile Studio navigation is labeled, touch-sized, and Command keeps a loca
  const studio=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
  const command=fs.readFileSync(new URL('../public/command-center.css',import.meta.url),'utf8');
  const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
- assert.match(studio,/Mobile Studio V4/);
+ assert.match(studio,/position:sticky;[\s\S]*top:0/);
  assert.match(studio,/flex:0 0 70px!important/);
  assert.match(studio,/studio-nav-label[\s\S]*display:block!important/);
  assert.match(studio,/background:#fff1e9!important/);
