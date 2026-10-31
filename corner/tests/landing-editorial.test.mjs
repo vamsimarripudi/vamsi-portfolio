@@ -72,6 +72,10 @@ test('approved paper and six-item bottom dock are route-scoped and accessible',(
    'Latest uses one real card column instead of reserving empty desktop columns');
  assert.doesNotMatch(css,/grid-template-columns:minmax\(0,2\.85fr\) minmax\(240px,1fr\)/,
    'Old oversized Latest/Spotlight split is removed');
+ assert.match(css,/--corner-feed-main:clamp\(400px,31vw,500px\)/,'Desktop card width is bounded for eye comfort');
+ assert.match(css,/--corner-feed-photo:clamp\(190px,25vh,250px\)/,'Image height responds to viewport height');
+ assert.match(css,/@media\(min-width:901px\) and \(max-height:800px\)/,'Short desktop screens receive a compact mode');
+ assert.match(css,/width:min\(100%,680px\);margin-inline:auto/,'Tablet single-column feed remains comfortably bounded');
  assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
  assert.match(css,/backdrop-filter:blur\(24px\)/);
  assert.match(css,/prefers-reduced-motion:reduce/);
