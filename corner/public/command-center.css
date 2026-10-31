@@ -25,6 +25,17 @@
 .corner-comfort .command-agent-answer{white-space:pre-wrap;padding:13px;border:1px solid #e4ddd7;border-radius:12px;background:#fbfaf9;color:#373330;font-size:.78rem;line-height:1.65}
 .corner-comfort .command-agent-offline{margin:0;color:#756e69;font-size:.72rem;line-height:1.55}
 .corner-comfort .command-agent-offline code{font-size:.69rem}
+.corner-comfort .command-moments{margin:0 0 18px}
+.corner-comfort .command-moments-help{margin:4px 0 0;max-width:72ch;color:#7b746f;font-size:.71rem;line-height:1.5}
+.corner-comfort .command-moment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.corner-comfort .command-moment{display:grid;gap:9px;align-content:start;padding:13px 14px;border:1px solid #e6ded8;border-radius:14px;background:linear-gradient(180deg,#fff,#fbf8f6)}
+.corner-comfort .command-moment-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.corner-comfort .command-moment-top span{padding:3px 7px;border-radius:999px;background:#f0ebe7;color:#735f52;font:720 .56rem/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+.corner-comfort .command-moment-top strong{font-size:.78rem;color:#2f2925}
+.corner-comfort .command-moment p{margin:0;color:#655e59;font-size:.72rem;line-height:1.52}
+.corner-comfort .command-moment button,.corner-comfort .command-agent-quick button{min-height:38px;padding:7px 9px;border:1px solid #ddd4cd;border-radius:9px;background:#fff;color:#3b3531;font-size:.68rem;font-weight:720}
+.corner-comfort .command-moment button:is(:hover,:focus-visible),.corner-comfort .command-agent-quick button:is(:hover,:focus-visible){border-color:#a88a79;background:#fffaf6}
+.corner-comfort .command-agent-quick{display:flex;gap:7px;flex-wrap:wrap}
 .corner-comfort .command-kpis{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 18px;
 }
@@ -80,6 +91,7 @@
 .corner-comfort .command-scope-note{margin:12px 0 0;padding-top:10px;border-top:1px solid #ebe5df;color:#7b716a;font-size:.66rem;line-height:1.5}
 .corner-comfort .command-all{margin-top:22px}
 @media(max-width:1050px){
+  .corner-comfort .command-moment-grid{grid-template-columns:minmax(0,1fr)}
   .corner-comfort .command-grid{grid-template-columns:minmax(0,1fr)}
   .corner-comfort .command-capture{position:static}
   .corner-comfort .command-list-wide{grid-template-columns:minmax(0,1fr)}
@@ -96,5 +108,5 @@
   .corner-comfort .command-kpis{grid-template-columns:minmax(0,1fr)}
 }
 @media(prefers-reduced-motion:reduce){
-  .corner-comfort .command-item,.corner-comfort .command-actions button{transition:none!important;animation:none!important}
+  .corner-comfort .command-item,.corner-comfort .command-actions button,.corner-comfort .command-moment,.corner-comfort .command-moment button{transition:none!important;animation:none!important}
 }
