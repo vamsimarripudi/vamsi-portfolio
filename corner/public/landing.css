@@ -171,8 +171,8 @@ body.corner-comfort .corner-home-shell .corner-feed-view-all {
 }
 body.corner-comfort .corner-home-shell .corner-feed-view-all:hover {border-color:#3f3638}
 body.corner-comfort .corner-home-shell .corner-journal-layout{
-  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);
-  align-items:start;gap:clamp(22px,3vw,48px);min-width:0;
+  display:grid;grid-template-columns:minmax(0,620px) minmax(300px,400px);
+  justify-content:center;align-items:start;gap:clamp(28px,4vw,64px);min-width:0;
 }
 body.corner-comfort .corner-home-shell .corner-journal-feed,
 body.corner-comfort .corner-home-shell .corner-journal-feed .stories{min-width:0;width:100%}
