@@ -46,7 +46,7 @@ test('owner command HTTP is private, owner-controlled and AI fails closed when d
 
   const commandCss=await fetch(base+'/command-center.css');
   assert.equal(commandCss.status,200,'Command stylesheet is served under the Corner base path');
-  assert.match(await commandCss.text(),/command-moment-grid/);
+  assert.match(await commandCss.text(),/command-filterbar/);
 
   assert.equal((await send('/api/admin/command/summary')).status,401);
 
