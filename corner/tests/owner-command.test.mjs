@@ -79,7 +79,7 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.doesNotMatch(editor,/data-admin-view="command"/);
   assert.match(js,/initial\.ownerRole==='owner'\?'command'/);
   assert.match(js,/Which series does this Journal belong to\?/);
-  assert.match(js,/Boundary lock/);
+  assert.match(js,/Personal ↔ KRAVIA boundary locked/);
   assert.match(js,/Owner approval required/);
   assert.doesNotMatch(js,/name="needsApproval"/);
   assert.match(js,/Built by a backbencher \+ AI/);
