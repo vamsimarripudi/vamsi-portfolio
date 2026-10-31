@@ -88,7 +88,7 @@
     return `<div class="v5-composer"><div class="v5-editor-surface"><div class="v5-editor-top"><strong>${id?'EDIT YOUR STORY':'YOUR CORNER / NEW STORY'} ${tag(p.state||'draft')}</strong><button type="button" class="v5-editor-menu-button" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings">···</button></div>
     <label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, a build, something worth sharing…">${esc(p.body||'')}</textarea>
     <div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>
-      <label>Presentation<select name="type"><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label>
+      <label>Presentation<select name="type" ${publishedSeriesLocked?'disabled aria-describedby="v7-series-lock-note"':''}><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label>
       <label>Symbol <input name="emoji" maxlength="8" value="${esc(p.emoji||'✳')}"></label>
       <label>Allow comments <input type="checkbox" name="allowComments" ${p.allow_comments!==false&&p.allow_comments!==0?'checked':''}></label>
       <label>Allow reactions <input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}></label>
@@ -96,18 +96,18 @@
       <label>Pinned <input type="checkbox" name="pinned" ${p.pinned?'checked':''}></label>
       <label>Milestone <input type="checkbox" name="milestone" ${p.milestone?'checked':''}></label>
       <label>Public upcoming teaser <input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}></label>
-      <div class="v7-series-settings"><span>Journal series · optional</span>
-        <label for="v7-series-select">Part of a series
-          <select id="v7-series-select" name="seriesSlug">
-            <option value="" ${!p.series?.slug?'selected':''}>Standalone journal entry</option>
-            <option value="learning-everything-doing-nothing" ${p.series?.slug==='learning-everything-doing-nothing'?'selected':''}>Learning Everything, Doing Nothing</option>
+      <div class="v7-series-settings" data-journal-series ${p.type==='journal'?'':'hidden'}>
+        <span>Journal series</span>
+        <p class="v7-series-question">Which series does this Journal belong to?</p>
+        <label for="v7-series-select">Series
+          <select id="v7-series-select" name="seriesChoice" ${currentSeries?'disabled':''}>
+            <option value="__new__" ${seriesChoice==='__new__'?'selected':''}>Start a new series from this Journal</option>
+            ${seriesOptions}
           </select>
         </label>
-        <label for="v7-series-part">Chapter number
-          <input id="v7-series-part" name="seriesPart" type="number" inputmode="numeric" min="1" max="99"
-            value="${Number(p.series?.partNumber||2)}">
-        </label>
-        <small>Chapter design applies automatically. Unpublished parts stay private; existing chapters retain their own URL.</small>
+        <p class="v7-series-context" data-series-context aria-live="polite">${currentSeries?esc(currentSeries.title)+' · Chapter '+String(currentSeries.partNumber).padStart(2,'0'):'No existing series selected. Saving starts a new series at Chapter 01 automatically.'}</p>
+        ${currentSeries&&!publishedSeriesLocked?'<button type="button" class="admin-secondary v7-series-change" data-change-series>Change series</button>':''}
+        ${publishedSeriesLocked?'<small id="v7-series-lock-note">Published chapters keep their series and chapter number stable. Start a new Journal draft for another series.</small>':'<small>Choose an existing series and the next chapter number is assigned automatically. Leave “Start a new series” selected to begin at Chapter 01.</small>'}
       </div>
       <p class="v5-edit-hint">Your title and summary are derived from your writing. Change the presentation only if needed.</p>
     </div><div class="v5-editor-media-actions"><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media">＋ Attach photo or video <span class="corner-media-count" id="media-count" hidden></span></button><span id="save-indicator" class="v5-editor-status">${id?'Last saved '+esc(p.updated_at||''):'Start writing to autosave'}</span></div></div>
@@ -115,7 +115,7 @@
   }
   function formValues(form){
     const body=form.elements.body.value,chosen=form.elements.type.value;
-    const type=form.elements.seriesSlug?.value?'journal':chosen==='auto'?autoType(body):chosen;
+    const type=chosen==='auto'?autoType(body):chosen;
     return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
   }
   function updatePreview(form){const p=formValues(form),card=$('.preview-card');if(!card)return;
