@@ -68,6 +68,17 @@ export class JournalSeries{
         return {...row,chapterCount:Number(row.chapterCount||0),nextPart:maxPart>=99?null:maxPart+1};
       });
   }
+  publicSlugs(){
+    return this.store.all(`SELECT s.series_slug AS slug
+      FROM journal_series_parts s JOIN posts p ON p.id=s.post_id
+      WHERE p.state='published' AND p.type='journal'
+      GROUP BY s.series_slug
+      ORDER BY MAX(p.published_at) DESC,s.series_slug ASC`).map(row=>row.slug);
+  }
+  featured(){
+    const slug=this.publicSlugs()[0];
+    return slug?this.published(slug):null;
+  }
   uniqueSlug(title){
     const base=(slugify(title).slice(0,72)||'journal-series');
     let candidate=base,index=2;
