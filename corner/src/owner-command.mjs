@@ -112,9 +112,9 @@ export class OwnerCommand{
       open:active.filter(item=>item.state==='open').length,
       waiting:active.filter(item=>item.state==='waiting').length,
       now:active.filter(item=>item.priority==='now').length,
-      approvals:approvals.length,
-      risks:risks.length,
-      decisions:decisions.length,
+      approvals:active.filter(item=>item.needsApproval).length,
+      risks:active.filter(item=>item.kind==='risk').length,
+      decisions:active.filter(item=>item.kind==='decision').length,
       personal:active.filter(item=>item.workspace==='personal').length,
       kravia:active.filter(item=>item.workspace==='kravia').length
     };
