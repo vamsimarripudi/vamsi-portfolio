@@ -251,7 +251,8 @@ export class IdentityService{
       if(!data.code)throw httpError(428,'Enter your authenticator or recovery code.','MFA_REQUIRED');
       if(!this.checkMfa(user.id,data.code))throw httpError(401,'Invalid or already used authenticator code.','MFA_INVALID');
     }
-    const token=freshToken(),expires=this.store.createSession(user,token,ip,agent);
+    const sessionHours=user.role==='owner'?24*30:8;
+    const token=freshToken(),expires=this.store.createSession(user,token,ip,agent,sessionHours);
     return {token,expires,user:this.safeMe(this.account(user.id))};
   }
   beginMfa({challenge,actor}){
@@ -285,7 +286,8 @@ export class IdentityService{
       for(const code of codes)this.store.exec('INSERT INTO identity_mfa_recovery(user_id,code_hash,created_at) VALUES(?,?,?)',user.id,tokenDigest(code),now());
       this.store.audit(user.id,'mfa.enabled','user',user.id);
     });
-    const token=freshToken(),expires=this.store.createSession(user,token,ip,agent);
+    const sessionHours=user.role==='owner'?24*30:8;
+    const token=freshToken(),expires=this.store.createSession(user,token,ip,agent,sessionHours);
     return {token,expires,recoveryCodes:codes,user:this.safeMe(this.account(user.id))};
   }
   checkMfa(userId,raw){
