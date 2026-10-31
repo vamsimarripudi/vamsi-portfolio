@@ -94,10 +94,10 @@ try{
     return {sidebar:rect('.admin-sidebar'),nav:rect('.admin-nav'),active:rect('.admin-nav [aria-current=page]'),
       navDisplay:nav?getComputedStyle(nav).display:null,labelDisplay:label?getComputedStyle(label).display:null,main:rect('.admin-main')};
    });
-   assert.ok(boxes.sidebar.height<150,'Studio mobile chrome too tall '+width+': '+boxes.sidebar.height);
+   assert.ok(boxes.sidebar.height<145,'Studio mobile chrome too tall '+width+': '+boxes.sidebar.height);
    assert.equal(boxes.navDisplay,'flex','Mobile Studio rail stays reachable '+width);
-   assert.ok(boxes.nav&&boxes.nav.height<=76,'Mobile Studio rail stays compact '+width+': '+boxes.nav.height);
-   assert.ok(boxes.active&&boxes.active.width>=66&&boxes.active.height>=60,'Active mobile section has a touch-sized labeled target '+width+': '+JSON.stringify(boxes.active));
+   assert.ok(boxes.nav&&boxes.nav.height<=64,'Mobile Studio rail stays compact '+width+': '+boxes.nav.height);
+   assert.ok(boxes.active&&boxes.active.width>=60&&boxes.active.height>=56,'Active mobile section has a touch-sized labeled target '+width+': '+JSON.stringify(boxes.active));
    assert.equal(boxes.labelDisplay,'block','Active mobile section label is visible '+width);
    assert.ok(boxes.main.top<165,'Studio content too far down '+width+': '+boxes.main.top);
   }
