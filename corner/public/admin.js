@@ -74,7 +74,8 @@
     const renderList=list=>list.length?list.map(commandItem).join(''):empty('Nothing here.','The command queue is clear.');
     root.innerHTML=`<section class="command-hero">
       <div><p class="eyebrow">OWNER COMMAND / PRIVATE</p><h2>One queue. Clear decisions.</h2>
-      <p>Use this as the founder-level control layer. KRAVIA and personal ventures stay operationally separate; this screen keeps only the minimum status needed to decide what you do next.</p></div>
+      <p>Use this as the founder-level control layer. KRAVIA and personal ventures stay operationally separate; this screen keeps only the minimum status needed to decide what you do next.</p>
+      <p class="command-maker-note">Built by a backbencher + AI. Run by evidence, approval and clear decisions.</p></div>
       <div class="command-boundary"><strong>Boundary lock</strong><span>Never mix company and personal money, credentials, branding or customer records.</span></div>
     </section>
     <section class="command-agent admin-surface" data-command-agent>
