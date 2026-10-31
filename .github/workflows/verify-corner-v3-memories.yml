@@ -47,7 +47,7 @@ jobs:
         run: npm run check
       - name: Install Chromium
         run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
+          npm install --no-save --no-package-lock playwright@1.64.0
           npx playwright install chromium --with-deps
       - name: Test every memories page and keyboard lightbox
         working-directory: corner

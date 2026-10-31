@@ -37,6 +37,7 @@ try{
  await page.locator('#admin-login input[name="password"]').fill(password);
  await page.locator('#admin-login button[type="submit"]').click();
  await page.locator('.admin-shell').waitFor({state:'visible',timeout:14000});
+ await page.locator('[data-admin-view="overview"]').click();
  await page.locator('#create-from-overview').click();
  // V5 derives the title automatically from the single story textarea.
  await page.locator('#post-editor textarea[name="body"]').fill('First photo-led Corner story. Two clean photographs, tested in a real mobile browser.');

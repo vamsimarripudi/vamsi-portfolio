@@ -39,6 +39,8 @@ import { legalPage, isLegalPath } from './legal-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
 import {JournalSeries} from './journal-series.mjs';
+import {OwnerCommand} from './owner-command.mjs';
+import {CommandAgent} from './command-agent.mjs';
 import {createCornerMcpNodeHandler} from './mcp.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -46,6 +48,8 @@ import { CATEGORIES, REACTIONS, typeLabels, zoneLocalToUtc, httpError, pureText,
 const store=new Store();
 store.bootstrap(config.adminEmail,config.adminHash);
 const journalSeries=new JournalSeries(store);
+const ownerCommand=new OwnerCommand(store);
+const commandAgent=new CommandAgent({apiKey:process.env.OPENAI_API_KEY||'',enabled:process.env.CORNER_COMMAND_AI==='1',model:process.env.CORNER_COMMAND_MODEL||'gpt-6.1-sol'});
 const cornerMcp=createCornerMcpNodeHandler({store,journalSeries,siteUrl:config.siteUrl});
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
@@ -294,6 +298,22 @@ async function api(req,res,pathName,url){
   if(!pathName.startsWith('/api/admin/'))throw httpError(404,'API route not found','NOT_FOUND');
   const owner=requireOwner(req,pathName,method);if(method!=='GET')limit(req,'admin',130,60);
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
+  if(pathName.startsWith('/api/admin/command')){
+    if(owner.role!=='owner')throw httpError(403,'Only the owner can access the command center.','OWNER_ONLY');
+    if(pathName==='/api/admin/command/summary'&&method==='GET')return ok(res,{...ownerCommand.summary(),agent:{ready:commandAgent.ready()}});
+    if(pathName==='/api/admin/command/ask'&&method==='POST'){
+      limit(req,'command-ai',12,60);
+      const body=await readJSON(req,8000),summary=ownerCommand.summary(),items=ownerCommand.list({});
+      return ok(res,await commandAgent.ask({question:body.question,summary,items}));
+    }
+    if(pathName==='/api/admin/command/items'&&method==='GET')return ok(res,ownerCommand.list({
+      workspace:url.searchParams.get('workspace')||'',state:url.searchParams.get('state')||'',kind:url.searchParams.get('kind')||''
+    }));
+    if(pathName==='/api/admin/command/items'&&method==='POST')return ok(res,ownerCommand.create(await readJSON(req,10000),owner.id));
+    const commandItem=pathName.match(/^\/api\/admin\/command\/items\/([A-Za-z0-9_-]+)$/);
+    if(commandItem&&method==='GET'){const item=ownerCommand.get(commandItem[1]);if(!item)throw httpError(404,'Command item not found.');return ok(res,item)}
+    if(commandItem&&method==='PATCH')return ok(res,ownerCommand.update(commandItem[1],await readJSON(req,10000),owner.id));
+  }
   if(pathName==='/api/admin/posts'&&method==='GET')return ok(res,store.allAdminPosts(url.searchParams.get('state')||'all'));
   if(pathName==='/api/admin/series'&&method==='GET')return ok(res,journalSeries.adminSeries());
   if(pathName==='/api/admin/posts'&&method==='POST'){
@@ -533,7 +553,7 @@ async function route(req,res){
 }
 export function createServer(){return http.createServer((req,res)=>{route(req,res).catch(err=>{log('error',{where:'unhandled',message:err?.message});if(!res.headersSent)json(res,{error:{code:'INTERNAL_ERROR',message:'Unexpected error'}},500);else res.end()})})}
 if(process.argv[1]===fileURLToPath(import.meta.url)){
-  const server=createServer();server.listen(config.port,config.host,()=>console.log(`Vamsi's Corner running at http://${config.host}:${config.port}`));
+  const server=createServer();server.listen(config.port,config.host,()=>{const address=server.address();const boundPort=typeof address==='object'&&address?address.port:config.port;console.log(`Vamsi's Corner running at http://${config.host}:${boundPort}`)});
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));
    void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);

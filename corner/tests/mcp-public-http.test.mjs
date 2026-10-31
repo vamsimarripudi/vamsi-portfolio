@@ -14,22 +14,26 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 test('public MCP exposes only published Corner content through read-only tools',async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'corner-mcp-public-'));
-  const port=60300+Math.floor(Math.random()*300);
-  const origin='http://127.0.0.1:'+port,base=origin+'/corner';
+  const port=0;
+  let actualPort=null,origin='',base='';
   const email='owner@mcp.test',password=crypto.randomBytes(28).toString('base64url');
   const env={...process.env,NODE_ENV:'test',HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,
-    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:base,CORNER_BASE_PATH:'/corner',
+    DB_PATH:path.join(dir,'corner.sqlite'),SITE_URL:'http://fixture.test/corner',CORNER_BASE_PATH:'/corner',
     ADMIN_EMAIL:email,ADMIN_PASSWORD_HASH:passwordHash(password),SESSION_SECRET:crypto.randomBytes(48).toString('hex'),
     DEMO_CONTENT:'0'};
   const child=spawn(process.execPath,['--no-warnings','src/server.mjs'],{cwd:root,env,stdio:['ignore','pipe','pipe']});
-  const errors=[];child.stderr.on('data',chunk=>errors.push(String(chunk)));
+  const errors=[],output=[];child.stderr.on('data',chunk=>errors.push(String(chunk)));
+  child.stdout.on('data',chunk=>{const text=String(chunk);output.push(text);const match=text.match(/running at http:\/\/[^:]+:(\d+)/);if(match)actualPort=Number(match[1])});
   t.after(async()=>{child.kill('SIGTERM');await wait(180);fs.rmSync(dir,{recursive:true,force:true})});
 
+  for(let i=0;i<100&&!actualPort;i++){if(child.exitCode!==null)break;await wait(50)}
+  assert.ok(actualPort,'Server did not bind an OS-assigned port. '+errors.join('').slice(0,300)+' '+output.join('').slice(0,300));
+  origin='http://127.0.0.1:'+actualPort;base=origin+'/corner';
   let ready=false;
   for(let i=0;i<100;i++){
     if(child.exitCode!==null)break;
     try{if((await fetch(base+'/api/health')).ok){ready=true;break}}catch{}
-    await wait(80);
+    await wait(50);
   }
   assert.equal(ready,true,errors.join('').slice(0,500));
 

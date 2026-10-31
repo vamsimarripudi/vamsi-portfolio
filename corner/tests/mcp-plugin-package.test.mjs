@@ -21,8 +21,9 @@ test('Corner plugin package points only at the public read-only MCP server',{ski
   assert.equal(mcp.mcpServers.corner.url,'https://vamsimarripudi.me/corner/mcp');
   assert.equal(mcp.mcpServers.corner.extensions['com.openai'].auth.type,'none');
 
-  assert.equal(market.plugins[0].name,'vamsis-corner-studio');
-  assert.equal(market.plugins[0].source.path,'./vamsis-corner-studio');
+  const cornerEntry=market.plugins.find(item=>item.name==='vamsis-corner-studio');
+  assert.ok(cornerEntry,'Corner Studio remains registered in the marketplace');
+  assert.equal(cornerEntry.source.path,'./vamsis-corner-studio');
 
   assert.match(skill,/intentionally read-only/);
   assert.match(skill,/cannot see drafts/);
