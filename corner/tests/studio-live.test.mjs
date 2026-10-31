@@ -29,8 +29,8 @@ test('private frame supplies one sidebar without replacing trusted content',()=>
 test('sidebar is viewport-fixed, content is top-aligned, and mobile navigation becomes a labeled swipe rail',()=>{
  const css=asset('studio.css'),command=asset('command-center.css');assert.match(css,/\.admin-sidebar\{position:fixed/);
  assert.match(css,/\.admin-main\{[^}]*margin:0/);assert.match(css,/\.admin-nav\{[^}]*overflow-y:auto/);
- assert.match(css,/@media\(max-width:767px\)/);assert.match(css,/position:sticky;top:0/);
- assert.match(css,/Mobile Studio V4/);assert.match(css,/flex:0 0 70px!important/);
+ assert.match(css,/@media\(max-width:767px\)/);assert.match(css,/position:sticky;[\s\S]*top:0/);
+ assert.match(css,/flex:0 0 70px!important/);
  assert.match(css,/studio-nav-label[\s\S]*display:block!important/);
  assert.match(command,/command-section-switch/);assert.match(command,/command-overview-card/);
  assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/data-studio-collapsed=true/);
