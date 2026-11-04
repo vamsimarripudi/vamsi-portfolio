@@ -6,6 +6,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
+import {expect} from 'playwright/test';
 import sharp from 'sharp';
 import {startComposerFixture} from './composer-fixture.mjs';
 
@@ -130,16 +131,31 @@ try{
     assert.equal(await page.locator('#command-ai-panel .command-tool-icon svg path').count()>0,true,'Ask has a real SVG path');
     assert.equal(await page.locator('.command-tools > details').count(),3,'Command has three tools');
     assert.equal(await page.locator('.command-tools > details[open]').count(),0,'All tools start closed at '+label);
-    const tiles=await page.locator('.command-tools > details > summary').evaluateAll(summaries=>summaries.map(summary=>{
-      const icon=summary.querySelector('.command-tool-icon').getBoundingClientRect();
-      const text=summary.querySelector('.command-tool-copy strong'),copy=text.getBoundingClientRect(),box=summary.getBoundingClientRect();
-      return {label:text.textContent.trim(),top:box.top,width:box.width,height:box.height,iconBottom:icon.bottom,labelTop:copy.top};
-    }));
-    assert.deepEqual(tiles.map(tile=>tile.label),['Add item','Ask Command','Agentic moments']);
-    assert.ok(Math.max(...tiles.map(tile=>tile.top))-Math.min(...tiles.map(tile=>tile.top))<=1,'Three compact tools share one row at '+label);
-    for(const tile of tiles){
-      assert.ok(tile.width>=44&&tile.height>=44&&tile.height<130,'Tool stays compact and touch-sized '+JSON.stringify(tile));
-      assert.ok(tile.labelTop>=tile.iconBottom-1,'Tool label sits below its icon '+JSON.stringify(tile));
+    const actionNames=['Add item','Ask Command','Agentic moments'];
+    const controls=await page.locator('.command-tools > details > summary').evaluateAll(summaries=>summaries.map(summary=>({
+      name:summary.getAttribute('aria-label'),tooltip:summary.getAttribute('title'),
+      box:summary.getBoundingClientRect().toJSON(),icon:summary.querySelector('.command-tool-icon')?.getBoundingClientRect().toJSON()
+    })));
+    assert.deepEqual(controls.map(control=>control.name),actionNames,'Icon tools keep their accessible action names');
+    assert.deepEqual(controls.map(control=>control.tooltip),actionNames,'Icon tools explain their actions on hover');
+    assert.equal(await page.locator('.command-tools .command-tool-copy').count(),0,'Tools have no text labels beneath the icons');
+    for(const [index,control] of controls.entries()){
+      const {box,icon}=control;
+      assert.ok(box.width>=44&&box.width<=48&&box.height>=44&&box.height<=48,'Icon control has a compact 44–48px hit area '+JSON.stringify(control));
+      assert.ok(icon&&icon.width>0&&icon.width<=22&&icon.height>0&&icon.height<=22,'Icon remains small inside its touch target '+JSON.stringify(control));
+      // Native summary is omitted from Playwright's implicit button-role map.
+      // Verify its computed name directly while retaining native disclosure behavior.
+      await expect(page.locator('.command-tools > details > summary').nth(index)).toHaveAccessibleName(actionNames[index]);
+    }
+    const headingRow=await page.locator('.command-topbar').evaluate(element=>{
+      const heading=element.querySelector('h2'),toolbar=element.querySelector('.command-tools');
+      return heading&&toolbar?{container:element.getBoundingClientRect().toJSON(),heading:heading.getBoundingClientRect().toJSON(),toolbar:toolbar.getBoundingClientRect().toJSON()}:null;
+    });
+    assert.ok(headingRow,'Command heading and icon tools share the top bar');
+    assert.ok(headingRow.toolbar.left>=headingRow.heading.right-1,'All tools sit to the right of the Command heading at '+label);
+    assert.ok(headingRow.toolbar.left>=headingRow.container.left-1&&headingRow.toolbar.right<=headingRow.container.right+1,'Heading toolbar stays within its container at '+label);
+    for(const {box} of controls){
+      assert.ok(Math.abs(box.top+box.height/2-headingRow.heading.top-headingRow.heading.height/2)<=2,'Each icon aligns with the Command heading on one row at '+label);
     }
     if(width<768){
       const nav=await page.locator('.admin-nav').evaluate(element=>{
@@ -217,7 +233,7 @@ try{
     await page.locator('.command-shell').waitFor();
     assert.equal(await page.locator('[data-admin-view="command"]').getAttribute('aria-current'),'page','Icon navigation returns to Command');
   }
-  record('Command keeps three compact icon tools, labeled navigation and no Section selector at 1366, 390 and 320');
+  record('Command keeps three accessible icon-only controls to the right of its heading, labeled navigation and no Section selector at 1366, 390 and 320');
   record('Floating cards fit 1366x900, 390x844, 320x844 and 1366x530 without moving Queue; long forms scroll internally');
   record('Only one tool opens; Escape, close and outside clicks dismiss with correct focus, preserve unfinished input and send no writes');
 
