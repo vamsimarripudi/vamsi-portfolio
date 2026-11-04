@@ -112,26 +112,13 @@ const quietNav=(type)=>{
 const quietRow=(label,detail,url,icon,emphasis='')=>'<a class="quiet-link-row '+emphasis+'" href="'+url+'"><span class="quiet-row-icon">'+quietIcon(icon)+'</span>'+
  '<span class="quiet-row-content"><strong>'+label+'</strong><small>'+detail+'</small></span>'+quietIcon('chevron')+'</a>';
 const quietHeading=(kicker,title,subtitle)=>'<header class="quiet-screen-heading"><p class="quiet-eyebrow">'+kicker+'</p><h2>'+title+'</h2><p>'+subtitle+'</p></header>';
-const quietProfileScreen=(user)=>{
- const locale=({en:'English',te:'Telugu',hi:'Hindi'})[user.locale]||'English';
- return '<section class="quiet-screen quiet-overview" data-quiet-screen="overview">'+
-  '<div class="quiet-profile-hero"><div class="quiet-profile-cover" aria-hidden="true"><span>✦ YOUR OWN CORNER</span></div>'+
-  '<div class="quiet-profile-person">'+quietPhoto(user)+
-  '<div class="quiet-profile-person-text"><p class="quiet-eyebrow">MY PROFILE</p><h2>'+h(user.displayName||'Your profile')+'</h2>'+
-  '<p>'+(user.bio?h(user.bio):'A little place for the stories you keep.')+'</p></div>'+
-  '<a class="quiet-edit-pill" href="/settings/profile">'+quietIcon('pen')+' Edit profile</a></div></div>'+
-  '<div class="quiet-overview-grid"><section class="quiet-panel quiet-panel--intro">'+
-  '<div class="quiet-panel-heading"><h3>Your space, your way.</h3><p>Everything important is one tap away.</p></div>'+
-  quietRow('Edit profile','Photo, name and short bio','/settings/profile','pen')+
-  quietRow('Saved stories','Return to the notes you kept','/saved','bookmark')+
-  quietRow('Preferences',locale+' · Email updates '+(user.emailUpdates?'on':'off'),'/settings/preferences','sliders')+
-  quietRow('Security & sessions','Protect your account and active devices','/settings/security','shield')+
-  '</section><section class="quiet-panel quiet-panel--subtle"><div class="quiet-panel-heading"><h3>Private by design.</h3>'+
-  '<p>Your profile and saved stories are yours, not a public feed.</p></div>'+
-  quietRow('Your information','Export data and deletion requests','/settings/privacy','lock')+
-  '<p class="quiet-panel-footnote">You control what is saved and which optional updates you receive.</p></section></div>'+
-  '</section>';
-};
+const quietProfileScreen=(user)=>'<section class="quiet-screen quiet-overview" data-quiet-screen="overview">'+
+ '<div class="quiet-profile-hero"><div class="quiet-profile-cover" aria-hidden="true"><span>✦ YOUR OWN CORNER</span></div>'+
+ '<div class="quiet-profile-person">'+quietPhoto(user)+
+ '<div class="quiet-profile-person-text"><p class="quiet-eyebrow">MY PROFILE</p><h2>'+h(user.displayName||'Your profile')+'</h2>'+
+ '<p>'+(user.bio?h(user.bio):'A little place for the stories you keep.')+'</p></div>'+
+ '<a class="quiet-edit-pill" href="/settings/profile">'+quietIcon('pen')+' Edit profile</a></div></div>'+
+ '</section>';
 const quietEditScreen=(user)=>'<section class="quiet-screen" data-quiet-screen="edit">'+
  quietHeading('PERSONAL DETAILS','Edit profile.','Update how your private Corner account feels to you.')+
  '<div class="quiet-panel quiet-editor-panel">'+avatarCard(user)+

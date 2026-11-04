@@ -212,3 +212,10 @@ html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-bott
   .corner-comfort .account-shell--quiet .quiet-topbar nav{display:flex;align-items:center;gap:5px;flex:none}
   .corner-comfort .account-shell--quiet .account-theme-toggle{width:44px;height:44px;min-width:44px;border-radius:11px}
 }
+
+/* Dark theme must preserve the unboxed mobile overview hierarchy. */
+@media(max-width:700px){
+  html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-profile-hero{
+    background:transparent!important;border:0!important;box-shadow:none!important;
+  }
+}

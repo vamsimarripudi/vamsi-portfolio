@@ -49,6 +49,9 @@ test('Quiet Desk overview has one private profile hero and actions that open pro
   assert.match(html,/href="\/settings\/preferences"/);
   assert.match(html,/href="\/settings\/security"/);
   assert.match(html,/href="\/settings\/privacy"/);
+  assert.doesNotMatch(html,/Your space, your way\./,'Overview no longer repeats navigation in a second card');
+  assert.doesNotMatch(html,/Private by design\./,'Overview no longer adds a duplicate informational panel');
+  assert.equal((html.match(/quiet-profile-hero/g)||[]).length,1,'Overview has one primary profile surface');
   assert.doesNotMatch(html,/data-account-form="profile"/,'Editing is a separate screen');
   assert.doesNotMatch(html,/data-bookmark-count/,'Overview does not claim to have fetched bookmark totals');
 });

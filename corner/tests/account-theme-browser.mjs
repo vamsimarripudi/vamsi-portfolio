@@ -26,14 +26,16 @@ try{
  await expect(page.getByRole('button',{name:'Switch to light mode',exact:true})).toBeVisible();
  assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),'#0d100e');
  const dark=await page.evaluate(()=>{
-   const sidebar=document.querySelector('.quiet-sidebar'),nav=document.querySelector('.quiet-navigation'),current=document.querySelector('.quiet-nav-link.is-current');
-   const sc=getComputedStyle(sidebar),nc=getComputedStyle(nav),cc=getComputedStyle(current);
+   const sidebar=document.querySelector('.quiet-sidebar'),nav=document.querySelector('.quiet-navigation'),current=document.querySelector('.quiet-nav-link.is-current'),profile=document.querySelector('.quiet-profile-hero');
+   const sc=getComputedStyle(sidebar),nc=getComputedStyle(nav),cc=getComputedStyle(current),pc=getComputedStyle(profile);
    return {
     body:getComputedStyle(document.body).backgroundImage,sidebar:sc.backgroundColor,border:sc.borderTopWidth,
     shadow:sc.boxShadow,navDisplay:nc.display,columns:nc.gridTemplateColumns.split(' ').filter(Boolean).length,
     currentBackground:cc.backgroundColor,text:getComputedStyle(document.querySelector('.quiet-page-heading h1')).color,
     actionsInsideSidebar:!!document.querySelector('.quiet-sidebar .quiet-account-actions'),
-    actionsParent:document.querySelector('.quiet-account-actions')?.parentElement?.className
+    actionsParent:document.querySelector('.quiet-account-actions')?.parentElement?.className,
+    profileTop:profile.getBoundingClientRect().top,sidebarTop:sidebar.getBoundingClientRect().top,profileBorder:pc.borderTopWidth,
+    profileBackground:pc.backgroundColor,links:nav.querySelectorAll('.quiet-nav-link').length
    };
  });
  assert.match(dark.body,/rgb\(13, 16, 14\)|#0d100e|linear-gradient/i,'Dark body surface is active');
@@ -43,6 +45,9 @@ try{
  assert.equal(dark.navDisplay,'grid');assert.equal(dark.columns,3,'Mobile account sections use a stable 3×2 grid');
  assert.equal(dark.actionsInsideSidebar,false,'Studio and sign-out actions are outside the section navigator');
  assert.equal(dark.actionsParent,'quiet-main');
+ assert.ok(dark.profileTop<dark.sidebarTop,'Profile is the first primary surface on mobile '+JSON.stringify(dark));
+ assert.equal(dark.profileBorder,'0px','Mobile profile hero is unboxed');
+ assert.equal(dark.links,6,'Exactly six primary account destinations remain');
  await fit('390 dark My Corner');
  await page.screenshot({path:path.join(output,'theme-dark-profile-390.png'),fullPage:false,animations:'disabled'});
  console.log('PASS device dark preference resolves My Corner before paint');
