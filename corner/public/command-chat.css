@@ -106,3 +106,87 @@ html.cc-active .corner-comfort .admin-shell .admin-main{padding:16px 26px 0;min-
 @media(prefers-reduced-motion:reduce){.cc-root *,.cc-root *:before,.cc-root *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media(max-width:767px){html.cc-active .corner-comfort .admin-shell .admin-main{padding:9px 10px 0}.cc-root .cc-header{padding:0 2px 9px;gap:5px}.cc-root .cc-heading h2{font-size:19px}.cc-root .cc-header nav{gap:0}.cc-root .cc-header .cc-icon{width:40px;min-width:40px;padding:11px}.cc-root .cc-header .cc-icon svg{width:18px;height:18px}.cc-root .cc-workspace select{font-size:10px;max-width:150px}.cc-root .cc-column{padding:16px 6px}.cc-root .cc-empty{padding:20px 3px}.cc-root .cc-empty-mark{width:38px;height:38px;margin-bottom:14px;border-radius:13px}.cc-root .cc-empty-mark svg{width:21px;height:21px}.cc-root .cc-empty h1{font-size:23px;letter-spacing:-.7px}.cc-root .cc-empty p{font-size:12px;margin:10px 0 17px}.cc-root .cc-starters{max-width:340px;gap:6px}.cc-root .cc-starters button{font-size:10px;padding:8px 11px;min-height:36px}.cc-root .cc-bottom{padding:0 2px max(5px,env(safe-area-inset-bottom))}.cc-root .cc-composer{padding:10px 10px 7px;border-radius:20px}.cc-root #cc-input{font-size:16px}.cc-root .cc-input-note{display:none}.cc-root .cc-network{font-size:9px;margin-top:6px}.cc-root .cc-user{max-width:91%;padding:11px 14px}.cc-root .cc-message,.cc-root .cc-prose{font-size:13px}.cc-root .cc-proposal{padding:13px;border-radius:15px}.cc-root .cc-proposal dl>div{gap:8px;font-size:10px}.cc-root .cc-proposal dt{flex:0 0 33%}.cc-root .cc-card-actions{gap:5px}.cc-root .cc-card-actions button{font-size:11px;padding:8px 10px}.cc-root .cc-queue article{flex-direction:column;align-items:flex-start;gap:9px}.cc-root .cc-queue button{align-self:flex-end}.cc-root .cc-dialog{max-height:calc(100dvh - 24px);border-radius:18px}.cc-root .cc-dialog-body{padding:15px}.cc-root .cc-dialog form>header,.cc-root .cc-dialog form>footer{padding:12px 15px}.cc-root .cc-dialog h2{font-size:16px}.cc-root .cc-image-progress{min-height:180px}.cc-root .cc-conversation-title{font-size:9px}}
 @media(max-height:600px){.cc-root .cc-empty{padding-top:10px;padding-bottom:12px}.cc-root .cc-empty-mark{display:none}.cc-root .cc-empty p{margin:8px 0 12px}.cc-root .cc-conversation-title{display:none}}
+
+/* Command mobile work mode: prioritize the conversation, not the landing hero. */
+@media(max-width:767px){
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar{
+    padding:5px 8px 4px!important;gap:2px!important;
+  }
+  html.cc-active .corner-comfort .studio-brand-row{
+    min-height:36px!important;padding-right:126px!important;
+  }
+  html.cc-active .corner-comfort .admin-brand{gap:7px!important;font-size:.78rem!important}
+  html.cc-active .corner-comfort .admin-brand>span{width:29px!important;height:29px!important}
+  html.cc-active .corner-comfort .admin-brand small{font-size:.5rem!important;margin-top:0!important}
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar-footer{
+    inset:5px 8px auto auto!important;width:120px!important;min-width:120px!important;max-width:120px!important;gap:4px!important;
+  }
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar-footer .studio-icon-button{
+    width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;border-radius:10px!important;
+  }
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar-footer .studio-icon-button svg{width:18px!important;height:18px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav{
+    height:49px!important;max-height:49px!important;padding:1px 0 0!important;gap:2px!important;
+  }
+  html.cc-active .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){
+    flex:0 0 56px!important;width:56px!important;min-width:56px!important;max-width:56px!important;
+    min-height:46px!important;height:46px!important;padding:3px 3px 5px!important;gap:2px!important;border-radius:9px!important;
+  }
+  html.cc-active .corner-comfort .admin-shell .admin-nav .studio-icon{width:18px!important;height:18px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav .studio-nav-label{font-size:.5rem!important;line-height:1.05!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav .is-active{box-shadow:inset 0 -3px var(--accent,#b96349)!important}
+
+  html.cc-active .corner-comfort .admin-shell .admin-main{padding:6px 8px 0!important}
+  .cc-root .cc-header{
+    min-height:43px;padding:0 0 6px!important;gap:6px!important;align-items:center!important;
+  }
+  .cc-root .cc-heading{display:flex;align-items:center;gap:9px;min-width:0;overflow:hidden}
+  .cc-root .cc-heading h2{flex:none;font-size:17px!important;line-height:1.2!important;letter-spacing:-.45px!important}
+  .cc-root .cc-workspace{min-width:0;margin:0!important;gap:5px!important}
+  .cc-root .cc-workspace select{max-width:136px!important;min-height:25px!important;font-size:10px!important;padding-right:14px!important;text-overflow:ellipsis}
+  .cc-root .cc-header nav{gap:0!important}
+  .cc-root .cc-header .cc-icon{width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;padding:8px!important;border-radius:9px!important}
+  .cc-root .cc-header .cc-icon svg{width:17px!important;height:17px!important}
+
+  .cc-root .cc-scroll{min-height:0}
+  .cc-root .cc-column{padding:8px 3px 10px!important;min-height:100%!important}
+  .cc-root .cc-empty{
+    display:flex!important;align-items:center;justify-content:center;min-height:100%;margin:0!important;padding:18px 12px!important;
+  }
+  .cc-root .cc-empty[hidden]{display:none!important}
+  .cc-root .cc-empty-mark,.cc-root .cc-empty h1,.cc-root .cc-empty p,.cc-root .cc-starters{display:none!important}
+  .cc-root .cc-empty::after{
+    content:"Start a conversation. Use + for queue, ideas, files or images.";
+    max-width:250px;text-align:center;color:var(--cc-muted);font-size:11px;line-height:1.55;
+  }
+
+  .cc-root .cc-bottom{padding:0 0 max(4px,env(safe-area-inset-bottom))!important;background:linear-gradient(0deg,var(--cc-paper,#fff) 86%,transparent)!important}
+  .cc-root .cc-conversation-title{display:none!important}
+  .cc-root .cc-composer{padding:8px 9px 6px!important;border-radius:16px!important;box-shadow:0 4px 18px -12px #223b2329!important}
+  .cc-root #cc-input{min-height:27px!important;max-height:116px!important;padding:1px 3px 5px!important;font-size:16px!important;line-height:1.45!important}
+  .cc-root .cc-composer:not(:focus-within) #cc-input{height:27px!important;max-height:27px!important;overflow:hidden!important}
+  .cc-root .cc-compose-controls{min-height:34px!important}
+  .cc-root .cc-compose-controls>div{gap:3px!important}
+  .cc-root .cc-compose-controls .cc-icon{width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;padding:7px!important}
+  .cc-root button.cc-send{width:36px!important;height:36px!important;min-height:36px!important;padding:8px!important;border-radius:11px!important}
+  .cc-root .cc-network{font-size:8.5px!important;margin:4px 0 0!important;line-height:1.35!important}
+  .cc-root .cc-tools{bottom:52px!important;left:3px!important;width:min(294px,calc(100vw - 30px))!important;border-radius:13px!important}
+  .cc-root .cc-tools button{min-height:40px!important;padding:8px 9px!important;font-size:11px!important}
+  .cc-root .cc-message{margin-bottom:20px!important;font-size:13px!important}
+  .cc-root .cc-user{max-width:92%!important;padding:9px 12px!important;border-radius:16px 16px 4px 16px!important}
+  .cc-root .cc-prose{font-size:13px!important;line-height:1.7!important}
+}
+
+@media(max-width:767px){
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar{padding:4px 7px 3px!important}
+  html.cc-active .corner-comfort .studio-brand-row{min-height:32px!important;padding-right:112px!important}
+  html.cc-active .corner-comfort .admin-brand>span{width:27px!important;height:27px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar-footer{inset:4px 7px auto auto!important;width:108px!important;min-width:108px!important;max-width:108px!important;gap:4px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-sidebar-footer .studio-icon-button{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;padding:0!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav{height:44px!important;max-height:44px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){
+    flex:0 0 52px!important;width:52px!important;min-width:52px!important;max-width:52px!important;min-height:41px!important;height:41px!important;padding:2px 3px 4px!important;
+  }
+  html.cc-active .corner-comfort .admin-shell .admin-nav .studio-icon{width:17px!important;height:17px!important}
+  html.cc-active .corner-comfort .admin-shell .admin-nav .studio-nav-label{font-size:.48rem!important}
+}
