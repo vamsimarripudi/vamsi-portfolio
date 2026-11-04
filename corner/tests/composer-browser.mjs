@@ -13,7 +13,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const screenshots=path.join(root,'screenshots/studio-live');
 await fs.mkdir(screenshots,{recursive:true});
 const fixture=await startComposerFixture({seed:true});
-const evidence={isolated:true,externalDelivery:false,viewports:[1366,390,320],checks:[],screenshots:[]};
+const evidence={isolated:true,externalDelivery:false,viewports:[1366,390,320],shortDesktop:{width:1366,height:530},checks:[],screenshots:[]};
 const errors=[],writes=[];
 let browser,page;
 const record=label=>evidence.checks.push(label);
@@ -39,6 +39,35 @@ const noOverflow=async(label,selector)=>{
   },selector);
   assert.ok(layout.scroll<=layout.viewport+1,label+' document fits '+JSON.stringify(layout));
   assert.ok(layout.left>=-1&&layout.right<=layout.viewport+1,label+' content fits '+JSON.stringify(layout));
+};
+const settledLayout=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+const queuePosition=()=>page.locator('.command-queue').evaluate(element=>element.getBoundingClientRect().top+scrollY);
+const unchangedQueue=async(top,label)=>assert.ok(Math.abs(await queuePosition()-top)<=1,label+' does not move the Queue in document flow');
+const fittedToolCard=async(card,label)=>{
+  await settledLayout();
+  const bounds=await card.boundingBox(),viewport=page.viewportSize();
+  assert.ok(bounds&&bounds.x>=-1&&bounds.y>=-1&&bounds.x+bounds.width<=viewport.width+1&&bounds.y+bounds.height<=viewport.height+1,
+    label+' floating card stays within the viewport '+JSON.stringify({bounds,viewport}));
+  const close=card.locator('[data-command-tool-close]');
+  const closeBounds=await close.boundingBox();
+  assert.ok(closeBounds&&closeBounds.width>=44&&closeBounds.height>=44,label+' close has a touch-sized target');
+  assert.ok(closeBounds.y>=-1&&closeBounds.y+closeBounds.height<=viewport.height+1,label+' close remains reachable');
+  assert.ok(await close.getAttribute('aria-label'),label+' close has an accessible name');
+};
+const openCommandTool=async(id)=>{
+  const panel=page.locator('#'+id),summary=panel.locator(':scope > summary'),card=panel.locator('.command-tool-card');
+  await summary.click();
+  await card.waitFor({state:'visible'});
+  await page.waitForFunction(id=>{
+    const panel=document.getElementById(id);
+    return panel?.open&&panel.querySelector('.command-tool-card')?.contains(document.activeElement);
+  },id);
+  assert.equal(await page.locator('.command-tools > details[open]').count(),1,'Only one Command tool is open');
+  return {panel,summary,card};
+};
+const closedCommandTool=async(id,{restoreFocus=true}={})=>{
+  await page.waitForFunction(id=>!document.getElementById(id)?.open,id);
+  if(restoreFocus)await page.waitForFunction(id=>document.getElementById(id)?.querySelector(':scope > summary')===document.activeElement,id);
 };
 const waitSaved=async()=>{
   await page.waitForFunction(()=>/^Saved ·/.test(document.querySelector('#save-indicator')?.textContent||''),null,{timeout:15000});
@@ -69,6 +98,13 @@ try{
   page.on('request',request=>{
     if(!['GET','HEAD'].includes(request.method())&&request.url().includes('/corner/api/'))writes.push({method:request.method(),path:new URL(request.url()).pathname});
   });
+  // Render the real Ask form using synthetic availability while the fixture's
+  // server-side AI stays disabled. Opening a tool must never submit a question.
+  await page.route('**/corner/api/admin/command/summary',async route=>{
+    const response=await route.fetch(),result=await response.json();
+    result.data.agent={...result.data.agent,ready:true};
+    await route.fulfill({response,json:result});
+  });
   await page.goto(fixture.base+'/admin',{waitUntil:'networkidle'});
   await page.locator('#admin-login input[name=email]').fill(fixture.email);
   await page.locator('#admin-login input[name=password]').fill(fixture.password);
@@ -76,10 +112,14 @@ try{
   await page.locator('.admin-shell').waitFor();
   await page.locator('[data-admin-view="command"]').click();
   await page.locator('.command-shell').waitFor();
-  for(const width of evidence.viewports){
-    await page.setViewportSize({width,height:width===1366?900:844});
+  const commandWritesBefore=writes.length;
+  const commandViewports=[{width:1366,height:900},{width:390,height:844},{width:320,height:844},evidence.shortDesktop];
+  for(const {width,height} of commandViewports){
+    const label=width+'x'+height;
+    await page.setViewportSize({width,height});
     await page.evaluate(()=>scrollTo(0,0));
-    await noOverflow('Command '+width,'.command-shell');
+    await noOverflow('Command '+label,'.command-shell');
+    assert.equal(await page.locator('#studio-section-select,.studio-section-picker').count(),0,'No duplicate Section selector at '+label);
     const style=await page.locator('.command-overview-card').evaluate(element=>{
       const css=getComputedStyle(element);return {background:css.backgroundColor,radius:parseFloat(css.borderRadius),padding:parseFloat(css.paddingLeft)};
     });
@@ -88,9 +128,98 @@ try{
     assert.equal(await page.locator('#command-queue-list .command-row').count(),2,'Seeded queue items remain visible');
     assert.equal(await page.locator('#command-add-panel .command-tool-icon svg path').count()>0,true,'Add has a real SVG path');
     assert.equal(await page.locator('#command-ai-panel .command-tool-icon svg path').count()>0,true,'Ask has a real SVG path');
-    await shot('command-'+width);
+    assert.equal(await page.locator('.command-tools > details').count(),3,'Command has three tools');
+    assert.equal(await page.locator('.command-tools > details[open]').count(),0,'All tools start closed at '+label);
+    const tiles=await page.locator('.command-tools > details > summary').evaluateAll(summaries=>summaries.map(summary=>{
+      const icon=summary.querySelector('.command-tool-icon').getBoundingClientRect();
+      const text=summary.querySelector('.command-tool-copy strong'),copy=text.getBoundingClientRect(),box=summary.getBoundingClientRect();
+      return {label:text.textContent.trim(),top:box.top,width:box.width,height:box.height,iconBottom:icon.bottom,labelTop:copy.top};
+    }));
+    assert.deepEqual(tiles.map(tile=>tile.label),['Add item','Ask Command','Agentic moments']);
+    assert.ok(Math.max(...tiles.map(tile=>tile.top))-Math.min(...tiles.map(tile=>tile.top))<=1,'Three compact tools share one row at '+label);
+    for(const tile of tiles){
+      assert.ok(tile.width>=44&&tile.height>=44&&tile.height<130,'Tool stays compact and touch-sized '+JSON.stringify(tile));
+      assert.ok(tile.labelTop>=tile.iconBottom-1,'Tool label sits below its icon '+JSON.stringify(tile));
+    }
+    if(width<768){
+      const nav=await page.locator('.admin-nav').evaluate(element=>{
+        const active=element.querySelector('[aria-current="page"]'),label=active.querySelector('.studio-nav-label');
+        return {display:getComputedStyle(element).display,height:element.getBoundingClientRect().height,
+          labelDisplay:getComputedStyle(label).display,active:active.getBoundingClientRect().toJSON()};
+      });
+      assert.equal(nav.display,'flex','Phone navigation keeps its horizontal rail');
+      assert.ok(nav.height<=64&&nav.active.width>=44&&nav.active.height>=44,'Phone navigation remains compact and touch-sized');
+      assert.equal(nav.labelDisplay,'block','Phone navigation labels remain visible');
+    }
+    await shot('command-'+label);
+
+    const queueTop=await queuePosition();
+    const add=await openCommandTool('command-add-panel');
+    assert.equal(await add.card.locator('input[name=title]').evaluate(element=>element===document.activeElement),true,'Add focuses its title');
+    await fittedToolCard(add.card,'Add '+label);
+    await unchangedQueue(queueTop,'Opening Add '+label);
+    const unsent='An unfinished local command at '+label;
+    await add.card.locator('input[name=title]').fill(unsent);
+    await add.card.locator('.command-form-more > summary').click();
+    await add.card.locator('button[type=submit]').scrollIntoViewIfNeeded();
+    await fittedToolCard(add.card,'Expanded Add '+label);
+    const submitBounds=await add.card.locator('button[type=submit]').boundingBox();
+    assert.ok(submitBounds.y>=0&&submitBounds.y+submitBounds.height<=height+1,'The final Add action is reachable through internal scrolling at '+label);
+    if(height===530)assert.equal(await add.card.evaluate(element=>element.scrollHeight>element.clientHeight&&element.scrollTop>0),true,'Short desktop uses internal card scrolling');
+    await unchangedQueue(queueTop,'Expanding Add details '+label);
+    await shot('command-add-'+label,{preserveScroll:true});
+    await page.keyboard.press('Escape');
+    await closedCommandTool('command-add-panel');
+    await unchangedQueue(queueTop,'Closing Add '+label);
+
+    await openCommandTool('command-add-panel');
+    assert.equal(await add.card.locator('input[name=title]').inputValue(),unsent,'Closing a card keeps unfinished form values');
+    const restoredTitle=await add.card.locator('input[name=title]').boundingBox(),reopenedCard=await add.card.boundingBox();
+    assert.ok(restoredTitle.y>=reopenedCard.y&&restoredTitle.y+restoredTitle.height<=reopenedCard.y+reopenedCard.height,
+      'Reopening makes the focused title visible after a long form was scrolled');
+    // Keyboard activation also works when a floating card overlaps another tile.
+    await page.locator('#command-ai-panel > summary').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(()=>document.querySelector('#command-ai-panel')?.open&&!document.querySelector('#command-add-panel')?.open);
+    const ask=page.locator('#command-ai-panel .command-tool-card');
+    await page.waitForFunction(()=>document.querySelector('#command-agent-question')===document.activeElement);
+    assert.equal(await page.locator('.command-tools > details[open]').count(),1,'Switching tools closes the previous card');
+    await fittedToolCard(ask,'Ask '+label);
+    await ask.locator('button[type=submit]').scrollIntoViewIfNeeded();
+    await fittedToolCard(ask,'Scrolled Ask '+label);
+    await unchangedQueue(queueTop,'Switching to Ask '+label);
+    await ask.locator('[data-command-tool-close]').click();
+    await closedCommandTool('command-ai-panel');
+
+    const moments=await openCommandTool('command-moments-panel');
+    await fittedToolCard(moments.card,'Moments '+label);
+    await unchangedQueue(queueTop,'Opening Moments '+label);
+    await moments.card.locator('[data-command-tool-close]').click();
+    await closedCommandTool('command-moments-panel');
+
+    await openCommandTool('command-add-panel');
+    // This existing device-local button is outside every card and keeps focus
+    // on pointer dismissal. Toggle it back without navigating or sending data.
+    const outside=page.locator('[data-motion-toggle]');
+    await outside.click();
+    await closedCommandTool('command-add-panel',{restoreFocus:false});
+    assert.equal(await outside.evaluate(element=>element===document.activeElement),true,'Outside dismissal keeps focus on the clicked control');
+    await outside.click();
+    await unchangedQueue(queueTop,'Outside dismissal '+label);
+    assert.equal(await page.locator('.command-tools > details[open]').count(),0);
+    assert.deepEqual(writes.slice(commandWritesBefore),[],'Opening and dismissing tools sends no writes or AI requests');
+
+    await page.locator('[data-admin-view="posts"]').click();
+    await page.locator('#new-post').waitFor();
+    assert.equal(await page.locator('#studio-section-select,.studio-section-picker').count(),0,'Posts has no Section selector at '+label);
+    assert.equal(await page.locator('[data-admin-view="posts"]').getAttribute('aria-current'),'page','Icon navigation reaches Posts');
+    await page.locator('[data-admin-view="command"]').click();
+    await page.locator('.command-shell').waitFor();
+    assert.equal(await page.locator('[data-admin-view="command"]').getAttribute('aria-current'),'page','Icon navigation returns to Command');
   }
-  record('Command CSS loads once with styled cards, real icons and no overflow at 1366, 390 and 320');
+  record('Command keeps three compact icon tools, labeled navigation and no Section selector at 1366, 390 and 320');
+  record('Floating cards fit 1366x900, 390x844, 320x844 and 1366x530 without moving Queue; long forms scroll internally');
+  record('Only one tool opens; Escape, close and outside clicks dismiss with correct focus, preserve unfinished input and send no writes');
 
   await page.setViewportSize({width:1366,height:900});
   await page.locator('[data-admin-view="posts"]').click();
