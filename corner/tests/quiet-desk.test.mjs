@@ -22,6 +22,10 @@ test('Quiet Desk is a coherent private six-screen account workspace with real us
     assert.match(html,/aria-label="My account sections"/,route);
     assert.match(html,/href="\/account-quiet\.css\?v=quiet1"/,route);
     assert.match(html,/src="\/account\.js\?v=quiet1"/,route);
+    assert.match(html,/href="\/studio-theme\.css\?v=1"/,route);
+    assert.match(html,/src="\/studio-theme\.js\?v=1"/,route);
+    assert.match(html,/data-studio-theme-toggle/,route);
+    assert.match(html,/corner-studio-theme/,route);
     assert.match(html,/verified@example\.test/,route);
     assert.match(html,/Private account · Signed in/,route);
     assert.doesNotMatch(html,/class="quiet-session-note"[^>]*>[^<]*Signed in as/, 'Account status should not repeat the email on every screen');
@@ -141,6 +145,8 @@ test('Unauthorized visitors cannot access any private account content',()=>{
   const login=accountPage({type:'/login',user:null});
   assert.match(login,/data-account-form="login"/);
   assert.doesNotMatch(login,/account-shell--quiet/);
+  assert.match(login,/data-studio-theme-toggle/,'Signed-out account pages also expose the appearance control');
+  assert.match(login,/studio-theme\.css\?v=1/,'Signed-out account pages share the private theme layer');
   assert.match(accountPage({type:'/register',user:null,registrationOpen:true}),/data-account-form="register"/);
 });
 

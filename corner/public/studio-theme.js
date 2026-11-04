@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root=document.documentElement;
-  if(!location.pathname.includes('/admin'))return;
+  if(location.pathname.includes('/admin')!==true&&window.__CORNER__?.page!=='account')return;
   const KEY='corner-studio-theme';
   const media=matchMedia('(prefers-color-scheme: dark)');
   const read=()=>{try{const value=localStorage.getItem(KEY);return value==='dark'||value==='light'?value:null}catch{return null}};

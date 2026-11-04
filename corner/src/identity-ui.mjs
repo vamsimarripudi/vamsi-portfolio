@@ -90,9 +90,12 @@ const quietIcons={
  download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
  trash:'<path d="M4 7h16m-10-3h4m-8 3 1 14h10l1-14M10 11v7m4-7v7"/>',
  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9 2 2-3 3 2 2-3 3-2-2-2 2"/>',
- chevron:'<path d="m9 18 6-6-6-6"/>'
+ chevron:'<path d="m9 18 6-6-6-6"/>',
+ sun:'<path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
+ moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5"/>'
 };
 const quietIcon=name=>'<svg class="quiet-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(quietIcons[name]||quietIcons.user)+'</svg>';
+const privateThemeToggle=()=>'<button class="account-theme-toggle" type="button" data-studio-theme-toggle aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"><span class="studio-theme-icon studio-theme-icon--to-dark">'+quietIcon('moon')+'</span><span class="studio-theme-icon studio-theme-icon--to-light">'+quietIcon('sun')+'</span></button>';
 const quietPhoto=(user,size='large')=>'<span class="quiet-avatar quiet-avatar--'+h(size)+'">'+
  (user.hasAvatar?'<img alt="Your profile photo" src="/api/v1/me/avatar" width="80" height="80" loading="lazy">':
  '<span aria-hidden="true">'+h((user.displayName||'M').trim().slice(0,1).toUpperCase()||'M')+'</span>')+'</span>';
@@ -213,7 +216,7 @@ function quietDeskPage(type,user){
  const role=['owner','admin','editor','moderator'].includes(user.role)?'<a href="/admin" class="quiet-top-studio">Studio '+quietIcon('arrow')+'</a>':'';
  const top='<header class="account-top quiet-topbar"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true">'+
   '<img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span>'+
-  '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts"><a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
+  '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts">'+privateThemeToggle()+'<a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
  const main='<main class="quiet-main" id="content"><div class="quiet-page-heading"><p class="quiet-eyebrow">VAMSI’S CORNER / MEMBERS</p>'+
   '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
   '<p class="quiet-session-note"><span aria-hidden="true">●</span> Private account · Signed in</p></div><div class="quiet-desk-grid">'+
@@ -232,7 +235,7 @@ export function accountPage({type,user,registrationOpen=false}){
   const inner=profileLocked?`<div class="account-disabled"><p>Sign in to access your private information.</p><a class="account-cta-link" href="/login">Member sign-in ↗</a></div>`:type==='/profile'&&user?profileOverview(user):formHtml;
   const extra=type==='/profile'&&user?`<div class="account-side-section" id="account-saved"><h2>Saved stories.</h2><div data-account-bookmarks><p>Loading saved posts…</p></div></div><div class="account-side-section"><h2>Your information.</h2><button class="account-text-button" type="button" data-account-export>Export account data ↗</button><button class="account-text-button" type="button" data-account-delete>Request account deletion ↗</button></div>`:'';
   const sessions=type==='/settings/security'&&user?`<div class="account-side-section"><h2>Active sessions.</h2><div data-account-sessions>Loading…</div></div>${user.role==='owner'?'<div class="account-side-section"><h2>Owner email.</h2><p>Change the owner address through your Railway identity configuration. This avoids breaking the existing owner record.</p></div>':`<div class="account-side-section"><h2>Change email.</h2>${changeEmail}</div>`}${['owner','admin','editor','moderator'].includes(user.role)&&!user.mfaEnabled?'<div class="account-side-section"><h2>Authenticator security.</h2><a class="account-cta-link" href="/admin/mfa">Enable two-factor verification ↗</a></div>':''}`:'';
-  const top=`<div class="account-top"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true"><img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span><b>Vamsi's Corner</b></a><a class="account-back" href="/">← Back to stories</a></div>`;
+  const top=`<div class="account-top"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true"><img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span><b>Vamsi's Corner</b></a><div class="account-top-actions">${privateThemeToggle()}<a class="account-back" href="/">← Back to stories</a></div></div>`;
   const body=`<div class="account-shell" data-account-page="${h(type)}" data-signed-in="${user?'true':'false'}">${top}<main id="content" class="account-main"><section class="account-intro"><p class="eyebrow">${details.kicker}</p><h1>${details.title}</h1><p>${details.subtitle}</p><div class="account-geometry" aria-hidden="true"><span></span><span></span><span></span></div></section><section class="account-card">${user&&type==='/profile'?`<p class="account-status"><span>●</span> Signed in as ${h(user.email)}</p>`:''}${user&&['/profile','/settings/profile'].includes(type)?avatarCard(user):''}${inner}${details.foot}${extra}${sessions}${user?'<button type="button" class="account-text-button" data-account-logout>Sign out</button>':''}</section></main><footer class="account-bottom"><span>PRIVATE BY DEFAULT</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer><script src="/account.js" defer></script></div>`;
   return basePage({path:type,title:details.title,noindex:true,content:body,initial:{page:'account',authenticated:!!user,account:user,memberCompactPasswords:compactMemberPasswords()}});
 }

@@ -12,7 +12,11 @@ test('both renderers load one shared typography contract after legacy component 
   const html=basePage({path:'/test',initial:{page}});
   assert.match(html,/<body class="corner-comfort">/);
   const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(m=>m[1]);
-  assert.equal(styles.filter(s=>s==='/comfort.css').length,1);assert.equal(styles.at(-1),'/comfort.css');
+  assert.equal(styles.filter(s=>s==='/comfort.css').length,1);
+  if(page==='account'){
+   assert.equal(styles.at(-1),'/studio-theme.css?v=1');
+   assert.ok(styles.indexOf('/comfort.css')<styles.indexOf('/studio-theme.css?v=1'),'Private account appearance overrides the shared typography foundation only after it loads');
+  }else assert.equal(styles.at(-1),'/comfort.css');
  }
  assert.match(read('corner/src/server.mjs'),/\['\/style.css','\/comfort.css'/);
 });

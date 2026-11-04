@@ -111,3 +111,104 @@ html[data-studio-theme="dark"] .cc-root .cc-image-progress>span{background:#1118
 @media(max-width:767px){
   html[data-studio-theme="dark"] .corner-comfort .admin-shell .admin-sidebar{background:#121613!important;border-bottom-color:#29302a!important;box-shadow:0 10px 30px -28px #000}
 }
+
+/* My Corner / member account appearance uses the same saved private theme. */
+.account-theme-toggle{
+  display:inline-grid;place-items:center;flex:none;width:44px;height:44px;min-width:44px;padding:0;
+  border:1px solid #ded6d0;border-radius:12px;background:rgba(255,255,255,.8);color:#3b3536;
+  cursor:pointer;box-shadow:none;transition:background .15s,border-color .15s,color .15s;
+}
+.account-theme-toggle:hover{background:#f4ece8;border-color:#cec2ba;color:#181617}
+.account-theme-toggle .quiet-icon{width:19px;height:19px}
+.account-top-actions{display:flex;align-items:center;gap:8px}
+
+html[data-studio-theme="dark"] body.corner-comfort:has(.account-shell){
+  background:
+    radial-gradient(ellipse 52% 42% at 17% 12%,rgba(145,85,62,.18),transparent 84%),
+    radial-gradient(ellipse 45% 36% at 85% 17%,rgba(103,91,142,.19),transparent 86%),
+    linear-gradient(160deg,#0d100e,#111311 61%,#0b0e0c)!important;
+  color:#e9ede9!important;
+}
+html[data-studio-theme="dark"] .account-shell{
+  --account-black:#f3f5f3;--account-white:#151916;--account-ink:#edf1ed;--account-muted:#a6aea7;
+  --account-line:rgba(230,238,231,.16);color:var(--account-ink);
+}
+html[data-studio-theme="dark"] .account-shell .account-top,
+html[data-studio-theme="dark"] .account-shell .account-bottom{border-color:var(--account-line)}
+html[data-studio-theme="dark"] .account-shell :is(.account-brand,.account-back,.account-footer-links a,.account-text-button,.account-cta-link){color:#e7ece7}
+html[data-studio-theme="dark"] .account-shell .account-back:hover,
+html[data-studio-theme="dark"] .account-shell :is(.account-footer-links a,.account-text-button):hover{color:#fff;text-decoration-color:#fff}
+html[data-studio-theme="dark"] .account-shell .account-card{
+  background:#151916!important;border-color:#303831!important;color:#edf1ed!important;box-shadow:0 18px 44px -34px #000!important;
+}
+html[data-studio-theme="dark"] .account-shell :is(input:not([type=checkbox]),textarea,select){
+  background:#101411!important;border-color:#485149!important;color:#f0f3f0!important;box-shadow:none!important;
+}
+html[data-studio-theme="dark"] .account-shell :is(input,textarea)::placeholder{color:#7f8981!important}
+html[data-studio-theme="dark"] .account-shell option{background:#151916;color:#edf1ed}
+html[data-studio-theme="dark"] .account-shell :is(.account-field small,.account-help,.account-status,.account-side-section p,.account-side-section li,.account-disabled p){color:#9ea8a0!important}
+html[data-studio-theme="dark"] .account-shell :is(.account-side-section,.account-disabled){border-color:#303831!important}
+html[data-studio-theme="dark"] .account-shell .account-disabled{background:#171c18!important;color:#e9ede9!important}
+html[data-studio-theme="dark"] .account-shell .account-secret{background:#111512!important;border-color:#485149!important;color:#e8ede8!important}
+html[data-studio-theme="dark"] .account-shell .account-secret code{color:#f1f4f1!important}
+html[data-studio-theme="dark"] .account-shell .account-submit{background:#e8ede8!important;color:#141815!important;border-color:#e8ede8!important}
+html[data-studio-theme="dark"] .account-shell .account-submit:hover{background:#fff!important}
+html[data-studio-theme="dark"] .account-theme-toggle{background:#151a16;border-color:#3a433b;color:#e4e9e4}
+html[data-studio-theme="dark"] .account-theme-toggle:hover{background:#222923;border-color:#4a554b;color:#fff}
+
+/* Quiet Desk signed-in account workspace shown in My Corner. */
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet{
+  --quiet-ink:#edf1ed;--quiet-muted:#a1aba3;--quiet-line:#313932;
+  --quiet-terracotta:#d18b69;--quiet-lilac:#aaa0d1;color:var(--quiet-ink);
+}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-topbar,
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-bottom{border-color:#303731;color:#9ca69e}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .account-brand{color:#f0f3f0}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .account-brand small{color:#9d948d}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.account-back,.quiet-top-studio){
+  background:rgba(21,26,22,.86);border-color:#394139;color:#e5eae5;
+}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.account-back,.quiet-top-studio):is(:hover,:focus-visible){background:#252d27;color:#fff}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-page-heading h1{color:#f0f3f0}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-page-heading>p{color:#a8b0a9}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-eyebrow{color:#d19272}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-session-note{color:#aeb8b0}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-session-note span{color:#44a879}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-sidebar,.quiet-panel,.quiet-profile-hero,.quiet-editor-panel){
+  background:rgba(21,26,22,.92)!important;border-color:#323a33!important;color:#e9eee9!important;box-shadow:0 18px 50px -38px #000!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-sidebar{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link{color:#c9d1ca}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link:hover{background:#202721;color:#fff}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link.is-current{background:#25232e;color:#dcd5fa;border-color:#47405d}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-sidebar-identity-copy strong,
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-profile-person-text strong{color:#f2f4f2}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-sidebar-identity-copy small,.quiet-profile-person-text p,.quiet-screen-heading p,.quiet-panel p,.quiet-row-content p,.quiet-bookmark-copy small,.quiet-current-email,.quiet-data-hint,.quiet-panel-footnote){color:#9fa9a1!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-profile-cover{
+  background:
+    radial-gradient(circle at 84% 24%,rgba(139,124,190,.25),transparent 43%),
+    radial-gradient(circle at 13% 26%,rgba(189,112,77,.24),transparent 48%),
+    linear-gradient(135deg,#251b18,#1a1d22 56%,#17141d)!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-profile-person{background:#151916!important;border-color:#323a33!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-row-icon,.quiet-panel-symbol,.quiet-bookmark-icon){background:#222822!important;color:#c69378!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-link-row{border-color:#303831!important;color:#e5ebe5!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-link-row:hover{background:#1d231e!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-count{background:#202620;border-color:#343d35;color:#b7c1b8}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-bookmarks li{background:#171c18;border-color:#303831}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(input:not([type=checkbox]),textarea,select){background:#101411!important;border-color:#465047!important;color:#edf2ed!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-switch>span{background:#343b35;border-color:#566058}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-switch input:checked+span{background:#3f8b62;border-color:#3f8b62}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-secondary-action,.quiet-edit-exit,.quiet-bookmark-remove){background:#171c18!important;border-color:#3b443c!important;color:#dfe6df!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-danger-action{background:#2a1917!important;border-color:#70443a!important;color:#e9a99b!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-side-signout{color:#de9485!important;border-color:#50352f!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-confirm-dialog,
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-discard-dialog{background:#151916!important;border-color:#343d35!important;color:#e8ede8!important;box-shadow:0 28px 90px -20px #000!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-confirm-inner p{color:#a0aaa2!important}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-confirm-actions button{background:#191f1a;border-color:#3b443c;color:#e6ebe6}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-bottom a{color:#c7d0c8}
+
+@media(max-width:700px){
+  .corner-comfort .account-shell--quiet .quiet-topbar nav{display:flex;align-items:center;gap:5px;flex:none}
+  .corner-comfort .account-shell--quiet .account-theme-toggle{width:44px;height:44px;min-width:44px;border-radius:11px}
+}

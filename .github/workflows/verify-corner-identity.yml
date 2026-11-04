@@ -41,6 +41,8 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.64.0
           npx playwright install chromium --with-deps
+      - name: Run shared private Light/Dark theme acceptance
+        run: node corner/tests/account-theme-browser.mjs
       - name: Run isolated account browser acceptance
         run: |
           node --input-type=module <<'JS'
