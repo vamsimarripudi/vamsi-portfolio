@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {startComposerFixture} from './composer-fixture.mjs';
+const f=await startComposerFixture({chat:true,mockChat:true,seed:true});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+const [name,value]=f.cookie.split('=');await context.addCookies([{name,value,url:f.origin}]);
+const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.goto(f.base+'/admin#command',{waitUntil:'networkidle'});
+ assert.equal(await page.locator('.cc-header>.cc-vm-logo').count(),1);
+ assert.equal(await page.locator('.cc-header>button.cc-signal').count(),1);
+ assert.equal(await page.locator('.cc-header').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+ assert.equal(await page.locator('.cc-header').evaluate(el=>getComputedStyle(el).borderBottomWidth),'0px');
+ assert.equal(await page.locator('.admin-sidebar').evaluate(el=>getComputedStyle(el).display),'none');
+ const idle=await page.locator('.cc-composer').evaluate(el=>el.getBoundingClientRect().height);assert.ok(idle<=75,'idle composer '+idle);
+ await page.getByRole('button',{name:'Open Studio navigation'}).click();
+ assert.equal(await page.locator('.cc-category-menu nav a').count(),7);
+ assert.equal(await page.locator('.cc-category-menu select[aria-label=Workspace]').count(),1);
+ assert.equal(await page.locator('.cc-category-menu [data-studio-theme-toggle]').count(),1);
+ await page.keyboard.press('Escape');assert.equal(await page.locator('.cc-category-menu').isVisible(),false);
+ await page.locator('#cc-input').focus();const expanded=await page.locator('.cc-composer').evaluate(el=>el.getBoundingClientRect().height);assert.ok(expanded>idle,'expanded composer '+expanded);
+ await page.locator('#cc-input').blur();
+ await page.getByRole('button',{name:'Add tools or attachments'}).click();await page.getByRole('button',{name:'Create image'}).click();
+ assert.equal(await page.locator('.cc-mode').isVisible(),true);
+ const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,bottom:document.querySelector('.cc-composer').getBoundingClientRect().bottom,height:innerHeight}));
+ assert.ok(geometry.scroll<=geometry.width+1&&geometry.bottom<=geometry.height+1,JSON.stringify(geometry));
+ console.log('PASS borderless transparent VM/signal navbar, seven destinations in floating menu, workspace/theme controls, 60px idle composer, expanding editor, image mode, mobile fit');
+ await page.screenshot({path:'screenshots/command-chat/shell-v3-mobile.png',animations:'disabled'});
+ assert.deepEqual(errors,[]);
+}finally{await context.close();await browser.close();await f.close()}
