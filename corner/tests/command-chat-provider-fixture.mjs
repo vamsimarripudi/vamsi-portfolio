@@ -13,4 +13,5 @@ globalThis.fetch=async(url,options={})=>{
  assert.equal(body.store,false);assert.ok(body.instructions.includes('WORKSPACE:'));
  if(input.includes('FIXTURE_SLOW'))await pause(5000);else await pause(400);
  if(input.includes('FIXTURE_FAIL_ONCE')&&!attempted.has(input)){attempted.add(input);return new Response(JSON.stringify({error:{message:'Test failure'}}),{status:503})}
- return new Response(JSON.stringify({output_text:'A clear next step.\n\nThis is an isolated test response. **Review before action.**',usage:{total_tokens:40}}¶»§q«^
+ return new Response(JSON.stringify({output_text:'A clear next step.\n\nThis is an isolated test response. **Review before action.**',usage:{total_tokens:40}}),{headers:{'content-type':'application/json'}});
+};

@@ -19,4 +19,9 @@ const list=(dir,rel='')=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=
 const privateSrc=path.join(path.dirname(config.uploads),'command-private'),privateDest=path.join(target,'command-private');
 if(fs.existsSync(privateSrc))fs.cpSync(privateSrc,privateDest,{recursive:true,force:false});
 else fs.mkdirSync(privateDest,{mode:0o700});
-const names=['corner.sqlite',...list(mediaDest).map(s=¶»§q«^
+const names=['corner.sqlite',...list(mediaDest).map(s=>'uploads/'+s),...list(privateDest).map(s=>'command-private/'+s)];
+const manifest={format:'vamsis-corner-backup-v1',createdAt:new Date().toISOString(),files:Object.fromEntries(names.map(name=>[name,digest(path.join(target,name))]))};
+fs.writeFileSync(path.join(target,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+const check=new DatabaseSync(path.join(target,'corner.sqlite'));
+try{if(check.prepare('PRAGMA integrity_check').get().integrity_check!=='ok')throw Error('Backup integrity check failed')}finally{check.close()}
+console.log(JSON.stringify({ok:true,destination:target,files:names.length,verified:true}));
