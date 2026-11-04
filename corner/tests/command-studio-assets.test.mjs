@@ -59,6 +59,8 @@ for(const basePath of ['', '/corner']){
     assert.equal(response.status,200);
     assert.match(response.headers.get('cache-control'),/private.*no-store/);
     const html=await response.text();
+    assert.doesNotMatch(html,/studio-section-(?:select|picker)/,'Studio renders no duplicate Section selector at either mount');
+    assert.match(html,/<nav class="admin-nav" aria-label="Studio sections">/,'The labeled Studio navigation remains in the served page');
     const styles=[...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"/g)]
       .map(match=>match[1]);
     const command=styles.filter(href=>href.includes('command-center.css'));

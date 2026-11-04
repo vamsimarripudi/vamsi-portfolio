@@ -35,12 +35,11 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span class="v6-empty-icon" aria-hidden="true">${studioIcon('approved')}</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){active.editorAbort?.abort();clearTimeout(active.previewTimer);active.previewAbort?.abort();active.mediaBusy=false;active.attachments=[];active.mediaJobs=[];window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+  function showView(view){active.commandToolsAbort?.abort();active.editorAbort?.abort();clearTimeout(active.previewTimer);active.previewAbort?.abort();active.mediaBusy=false;active.attachments=[];active.mediaJobs=[];window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;document.documentElement.dataset.studioView=view;const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=view==='command';$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView===view;button.classList.toggle('is-active',selected);if(selected){button.setAttribute('aria-current','page');if(matchMedia('(max-width:767px)').matches)button.scrollIntoView({block:'nearest',inline:'nearest'});}else button.removeAttribute('aria-current')});
-    const sectionPicker=$('#studio-section-select');if(sectionPicker) sectionPicker.value='view:'+view;
     root.innerHTML='<div class="admin-loading">Updating workspace…</div>';
     ({command,overview,posts,media,comments,guestbook,analytics,settings}[view]||overview)().then(()=>window.CornerMotion?.refresh()).catch(err=>{root.innerHTML=empty('Could not load this section',err.message);toast(err.message,'error')});
   }
@@ -87,11 +86,16 @@
     return true;
   };
   async function command(){
+    if(active.view!=='command')return;
+    active.commandToolsAbort?.abort();
+    const toolsController=new AbortController();active.commandToolsAbort=toolsController;
     if(initial.ownerRole!=='owner'){root.innerHTML=empty('Owner access only.');return}
-    const [summary,items]=await Promise.all([
-      api('/corner/api/admin/command/summary'),
-      api('/corner/api/admin/command/items')
-    ]);
+    let summary,items;
+    try{[summary,items]=await Promise.all([
+      api('/corner/api/admin/command/summary','GET',undefined,{signal:toolsController.signal}),
+      api('/corner/api/admin/command/items','GET',undefined,{signal:toolsController.signal})
+    ])}catch(error){if(toolsController.signal.aborted)return;throw error}
+    if(toolsController.signal.aborted)return;
     const filters=active.commandFilters;
     const activeTotal=items.filter(item=>['open','waiting'].includes(item.state)).length;
     root.innerHTML=`<section class="command-shell">
@@ -115,9 +119,11 @@
 
       <section class="command-tools" aria-label="Command tools">
         <details class="command-disclosure command-add" id="command-add-panel">
-          <summary><span class="command-tool-icon">${studioIcon('plus')}</span><span class="command-tool-copy"><strong>Add item</strong><small>Capture once, then close it.</small></span></summary>
+          <summary id="command-add-trigger" aria-controls="command-add-card"><span class="command-tool-icon">${studioIcon('plus')}</span><span class="command-tool-copy"><strong>Add item</strong></span></summary>
+          <div class="command-tool-card" id="command-add-card" role="region" aria-labelledby="command-add-title">
+          <header class="command-tool-card-heading"><div><strong id="command-add-title" tabindex="-1">Add item</strong><p>Capture once, then close it.</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Add item">×</button></header>
           <form id="command-capture" class="command-form">
-            <label class="command-form-title">Title<input name="title" maxlength="160" required placeholder="What needs attention?"></label>
+            <label class="command-form-title">Title<input name="title" maxlength="160" required placeholder="What needs attention?" data-command-tool-focus></label>
             <label>Project<input name="project" maxlength="100" placeholder="Optional"></label>
             <div class="command-form-grid">
               <label>Workspace<select name="workspace"><option value="personal">Personal</option><option value="kravia">KRAVIA</option></select></label>
@@ -136,16 +142,23 @@
             </div></details>
             <div class="command-form-footer"><span>Owner approval is required before every execution.</span><button type="submit" class="admin-primary">Add item</button></div>
           </form>
+          </div>
         </details>
 
         <details class="command-disclosure command-ai-panel" id="command-ai-panel">
-          <summary><span class="command-tool-icon">${studioIcon('comments')}</span><span class="command-tool-copy"><strong>Ask Command</strong><small><i class="command-live-dot ${summary.agent?.ready?'ready':'offline'}" aria-hidden="true"></i>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</small></span></summary>
-          ${summary.agent?.ready?'<form id="command-agent-form" class="command-ai-form"><label>Shortcut<select id="command-prompt-preset">'+commandPromptOptions()+'</select></label><label for="command-agent-question">Question<textarea id="command-agent-question" name="question" maxlength="2400" rows="3" required placeholder="Ask what matters, what is blocked, or what needs your approval."></textarea></label><div class="command-form-footer"><span>Advisory only. It cannot execute without approval.</span><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<div class="command-panel-note">The command queue still works normally. AI becomes available only when the private server connection is ready.</div>'}
+          <summary id="command-ai-trigger" aria-controls="command-ai-card"><span class="command-tool-icon">${studioIcon('comments')}</span><span class="command-tool-copy"><strong>Ask Command</strong></span></summary>
+          <div class="command-tool-card" id="command-ai-card" role="region" aria-labelledby="command-ai-title">
+          <header class="command-tool-card-heading"><div><strong id="command-ai-title" tabindex="-1">Ask Command</strong><p><i class="command-live-dot ${summary.agent?.ready?'ready':'offline'}" aria-hidden="true"></i>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Ask Command">×</button></header>
+          ${summary.agent?.ready?'<form id="command-agent-form" class="command-ai-form"><label>Shortcut<select id="command-prompt-preset">'+commandPromptOptions()+'</select></label><label for="command-agent-question">Question<textarea id="command-agent-question" name="question" maxlength="2400" rows="3" required placeholder="Ask what matters, what is blocked, or what needs your approval." data-command-tool-focus></textarea></label><div class="command-form-footer"><span>Advisory only. It cannot execute without approval.</span><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<div class="command-panel-note">The command queue still works normally. AI becomes available only when the private server connection is ready.</div>'}
+          </div>
         </details>
 
-        <details class="command-disclosure command-moments-panel">
-          <summary><span class="command-tool-icon command-tool-icon--accent">✦</span><span class="command-tool-copy"><strong>Agentic moments</strong><small><i class="command-live-dot signal" aria-hidden="true"></i>${(summary.moments||[]).length} current signals</small></span></summary>
+        <details class="command-disclosure command-moments-panel" id="command-moments-panel">
+          <summary id="command-moments-trigger" aria-controls="command-moments-card"><span class="command-tool-icon command-tool-icon--accent" aria-hidden="true">✦</span><span class="command-tool-copy"><strong>Agentic moments</strong></span></summary>
+          <div class="command-tool-card" id="command-moments-card" role="region" aria-labelledby="command-moments-title">
+          <header class="command-tool-card-heading"><div><strong id="command-moments-title" tabindex="-1">Agentic moments</strong><p><i class="command-live-dot signal" aria-hidden="true"></i>${(summary.moments||[]).length} current signals</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Agentic moments">×</button></header>
           <div class="command-moment-list">${(summary.moments||[]).map(commandMoment).join('')||'<p class="command-panel-note">No agentic intervention is needed right now.</p>'}</div>
+          </div>
         </details>
       </section>
       </section>
@@ -170,6 +183,42 @@
 
       <footer class="command-footer-note">Built by a backbencher + AI · evidence first · approval always.</footer>
     </section>`;
+
+    const toolGroup=$('.command-tools'),toolPanels=$$('.command-tools > .command-disclosure');
+    const closeTool=(panel,restoreFocus=false)=>{
+      panel.open=false;
+      if(restoreFocus)panel.querySelector(':scope > summary')?.focus({preventScroll:true});
+    };
+    const closeOtherTools=panel=>toolPanels.forEach(other=>{if(other!==panel&&other.open)closeTool(other)});
+    const positionToolCards=()=>{
+      if(toolsController.signal.aborted||!toolGroup.isConnected||!toolPanels.some(panel=>panel.open))return;
+      const bounds=toolGroup.getBoundingClientRect(),below=window.innerHeight-bounds.bottom-24,above=bounds.top-24;
+      const placement=below<260&&above>below?'above':'below';
+      toolGroup.dataset.commandToolPlacement=placement;
+      toolGroup.style.setProperty('--command-tool-space',Math.max(0,Math.min(560,Math.floor(placement==='above'?above:below)))+'px');
+    };
+    for(const panel of toolPanels){
+      const trigger=panel.querySelector(':scope > summary');
+      trigger.addEventListener('click',()=>{if(!panel.open)closeOtherTools(panel)},{signal:toolsController.signal});
+      panel.addEventListener('toggle',()=>{
+        if(!panel.open||!panel.isConnected)return;
+        closeOtherTools(panel);positionToolCards();
+        panel.querySelector('.command-tool-card').scrollTop=0;
+        const target=panel.querySelector('[data-command-tool-focus]')||panel.querySelector('.command-moment button:not([disabled])')||panel.querySelector('.command-tool-card-heading strong');
+        target?.focus({preventScroll:true});
+      },{signal:toolsController.signal});
+      panel.querySelector('[data-command-tool-close]').addEventListener('click',()=>closeTool(panel,true),{signal:toolsController.signal});
+    }
+    document.addEventListener('keydown',event=>{
+      if(event.key!=='Escape'||event.defaultPrevented)return;
+      const panel=toolPanels.find(item=>item.open);if(!panel)return;
+      event.preventDefault();closeTool(panel,true);
+    },{signal:toolsController.signal});
+    document.addEventListener('pointerdown',event=>{
+      for(const panel of toolPanels)if(panel.open&&!panel.contains(event.target))closeTool(panel);
+    },{signal:toolsController.signal});
+    window.addEventListener('resize',positionToolCards,{signal:toolsController.signal});
+    window.addEventListener('scroll',positionToolCards,{passive:true,signal:toolsController.signal});
 
     const renderQueue=()=>{
       const visible=items.filter(item=>commandMatches(item,filters));
@@ -199,8 +248,9 @@
     };
     $$('[data-agentic-prompt]').forEach(button=>button.onclick=()=>{
       const panel=$('#command-ai-panel'),input=$('#command-agent-question');if(!input)return;
-      if(panel)panel.open=true;input.value=button.dataset.agenticPrompt||'';input.focus();
-      input.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+      input.value=button.dataset.agenticPrompt||'';
+      if(panel){closeOtherTools(panel);panel.open=true;positionToolCards()}
+      input.focus({preventScroll:true});
     });
 
     const agentForm=$('#command-agent-form');
@@ -360,12 +410,11 @@
   let recoveryStorage=null;try{recoveryStorage=window.sessionStorage}catch{ /* Server saves work when device storage is disabled. */ }
   const draftRecovery=composer?.recovery(initial.ownerId,recoveryStorage)||{read:()=>null,write:()=>false,remove:()=>{},clear:()=>{}};
   async function editor(id=null){
-    clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();active.editorAbort?.abort();
+    active.commandToolsAbort?.abort();clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();active.editorAbort?.abort();
     active.editorAbort=new AbortController();const controller=active.editorAbort;active.view='composer';active.post=null;active.dirty=false;active.attachments=[];active.mediaJobs=[];active.mediaBusy=false;active.previewDocuments=null;
     document.documentElement.dataset.studioView='composer';const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=true;
     history.replaceState(null,'',id?'#post/'+encodeURIComponent(id):'#create');
     $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView==='posts';button.classList.toggle('is-active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
-    const picker=$('#studio-section-select');if(picker)picker.value='view:posts';
     root.innerHTML='<div class="admin-loading" role="status">Opening your writing space…</div>';
     let record,seriesList,canManageSeries=true;
     try{[record,seriesList]=await Promise.all([id?api('/corner/api/admin/posts/'+encodeURIComponent(id)):Promise.resolve(null),api('/corner/api/admin/series').catch(error=>{if(error.status===403){canManageSeries=false;return []}throw error})])}
@@ -1083,22 +1132,6 @@
     };return;
   }
   if(!root)return;
-  const studioSectionSelect=$('#studio-section-select');
-  if(studioSectionSelect){
-    const navEntries=$$('.admin-nav [data-admin-view],.admin-nav a.admin-v3-link');
-    for(const node of navEntries){
-      const label=node.querySelector('.studio-nav-label')?.textContent?.trim()||node.getAttribute('title')||'Section';
-      const value=node.dataset.adminView?'view:'+node.dataset.adminView:'url:'+node.getAttribute('href');
-      const option=new Option(label,value);studioSectionSelect.add(option);
-    }
-    studioSectionSelect.onchange=()=>{
-      const value=studioSectionSelect.value;
-      if(value.startsWith('view:')){
-        if(active.dirty&&!confirm('Leave with unsaved edits?')){studioSectionSelect.value='view:'+active.view;return}
-        showView(value.slice(5));
-      }else if(value.startsWith('url:'))location.assign(value.slice(4));
-    };
-  }
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
   $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');draftRecovery.clear();location.reload()}catch(err){toast(err.message,'error')}});
   const allowed=$$('[data-admin-view]').map(button=>button.dataset.adminView);

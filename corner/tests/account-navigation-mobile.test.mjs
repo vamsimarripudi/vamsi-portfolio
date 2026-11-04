@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {Store} from '../src/store.mjs';
 import {IdentityService} from '../src/identity.mjs';
 import {passwordHash} from '../src/auth.mjs';
+import {adminPage} from '../src/ui.mjs';
 const cwd=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const wait=ms=>new Promise(done=>setTimeout(done,ms));
 test('member and owner can return from stories to Account without reauthenticating; bio edits live only in Settings',async t=>{
@@ -105,17 +106,22 @@ test('member and owner can return from stories to Account without reauthenticati
  assert.equal((await go('/settings/profile',{cookie:memberCookie})).status,200);
  assert.match(await (await go('/settings/profile',{cookie:memberCookie})).text(),/Sign in to access your private information/);
 });
-test('mobile Studio navigation is labeled, touch-sized, and Command keeps a local Section dropdown',()=>{
+test('mobile Studio keeps its labeled, touch-sized navigation without a duplicate Section selector',()=>{
  const studio=fs.readFileSync(new URL('../public/studio.css',import.meta.url),'utf8');
  const command=fs.readFileSync(new URL('../public/command-center.css',import.meta.url),'utf8');
- const ui=fs.readFileSync(new URL('../src/ui.mjs',import.meta.url),'utf8');
+ const ui=adminPage({owner:{id:'owner',role:'owner'}});
  assert.match(studio,/position:sticky;[\s\S]*top:0/);
  assert.match(studio,/flex:0 0 64px!important/);
  assert.match(studio,/studio-nav-label[\s\S]*display:block!important/);
  assert.match(studio,/background:#fff1e9!important/);
- assert.match(studio,/studio-section-picker\{display:none!important\}/);
+ assert.doesNotMatch(studio,/studio-section-picker/,'The obsolete selector is removed rather than hidden on phones');
  assert.doesNotMatch(command,/command-section-switch/);
  assert.match(command,/command-filter-panel/);
  assert.match(command,/command-overview-card/);
- assert.match(ui,/id="studio-section-select"/);
+ assert.doesNotMatch(ui,/studio-section-(?:select|picker)/);
+ assert.match(ui,/<nav class="admin-nav" aria-label="Studio sections">/);
+ for(const [view,label] of [['command','Command'],['posts','Posts'],['media','Media'],['settings','Settings']]){
+  assert.ok(ui.includes('data-admin-view="'+view+'"'),'The existing '+label+' navigation remains available');
+  assert.ok(ui.includes('class="studio-nav-label">'+label+'</span>'),'The '+label+' icon keeps its text label');
+ }
 });
