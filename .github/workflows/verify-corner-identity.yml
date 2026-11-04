@@ -233,7 +233,7 @@ jobs:
                 return {body:document.documentElement.scrollWidth,viewport:innerWidth,
                  sidebar:box('.admin-sidebar')?.height,nav:box('.admin-nav'),first:first?.getBoundingClientRect(),
                  navDisplay:nav?getComputedStyle(nav).display:null,labelDisplay:label?getComputedStyle(label).display:null,
-                 pickerDisplay:getComputedStyle(document.querySelector('.studio-section-picker')).display,mainY:box('.admin-main')?.top};
+                 sectionPickerCount:document.querySelectorAll('#studio-section-select,.studio-section-picker').length,mainY:box('.admin-main')?.top};
               });
               assert.ok(layout.body<=layout.viewport+1,'Mobile owner page overflow '+width+' '+JSON.stringify(layout));
               assert.ok(layout.sidebar>0&&layout.sidebar<130,'Sidebar/header compact '+width+' '+JSON.stringify(layout));
@@ -241,7 +241,7 @@ jobs:
               assert.ok(layout.nav&&layout.nav.height<=64,'Studio rail remains one compact row '+width+' '+JSON.stringify(layout.nav));
               assert.ok(layout.first&&layout.first.width>=60&&layout.first.height>=56,'Studio rail targets remain touch-sized '+width+' '+JSON.stringify(layout.first));
               assert.equal(layout.labelDisplay,'block','Studio rail labels remain visible '+width);
-              assert.equal(layout.pickerDisplay,'none','Legacy mobile section picker stays hidden '+width);
+              assert.equal(layout.sectionPickerCount,0,'Studio has no duplicate Section selector '+width);
               assert.ok(layout.mainY<135,'Editor near top, not after huge gap '+width+' '+JSON.stringify(layout));
               await ui.close();
             }
