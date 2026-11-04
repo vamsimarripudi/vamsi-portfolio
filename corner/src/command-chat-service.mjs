@@ -7,6 +7,8 @@ import {CommandChatStore,workspace} from './command-chat-store.mjs';
 import {CommandChatAgent} from './command-chat-agent.mjs';
 
 const imageIntent=s=>/\b(generate|create|make|draw|render|design)\b[\s\S]{0,120}\b(image|picture|illustration|poster|artwork|photo)\b/i.test(s);
+const commentFactsIntent=s=>/\bcomments?\b/i.test(String(s||''))&&/\b(how many|count|total|got|received|have|pending|approved|hidden|deleted|latest|recent|show|list)\b/i.test(String(s||''));
+const wantsCommentList=s=>/\b(latest|recent|show|list|who|what did|what are)\b/i.test(String(s||''));
 const itemView=item=>({id:item.id,title:item.title,detail:item.detail.slice(0,600),project:item.project,workspace:item.workspace,kind:item.kind,priority:item.priority,state:item.state,version:item.version,evidenceStatus:item.evidenceStatus,sourceRef:item.sourceRef,dueAt:item.dueAt});
 const safeError=error=>error.name==='TimeoutError'?'The request timed out. Your message is saved.':error.code==='COMMAND_AI_DISABLED'?'AI is not connected. Queue and capture tools still work.':error.status&&error.status<500?error.message:'The response could not finish. Your message is saved; retry when ready.';
 export class CommandChatService {
@@ -31,6 +33,24 @@ export class CommandChatService {
    {label:'Decisions',items:items.filter(i=>i.kind==='decision')}
   ].filter(group=>group.items.length).map(g=>({...g,items:g.items.slice(0,8)}));
  }
+ cornerPersonal(actor,scope){this.data.actor(actor);workspace(scope);if(scope!=='personal')throw httpError(409,'Vamsi’s Corner content records are in Personal workspace. Switch Command to Personal to read them.','PERSONAL_WORKSPACE_REQUIRED')}
+ commentSummary(actor,scope){
+  this.cornerPersonal(actor,scope);
+  const states=['pending','approved','hidden','deleted'],counts=Object.fromEntries(states.map(state=>[state,Number(this.store.one('SELECT count(*) AS n FROM comments WHERE state=?',state)?.n||0)]));
+  return {...counts,total:states.reduce((sum,state)=>sum+counts[state],0)};
+ }
+ comments(actor,scope,{state='all',limit=10}={}){
+  this.cornerPersonal(actor,scope);
+  if(!['all','pending','approved','hidden','deleted'].includes(state))throw httpError(400,'Choose a valid comment state.');
+  const size=Math.max(1,Math.min(20,Number(limit)||10));
+  const rows=state==='all'?this.store.all('SELECT comments.id,comments.author_name,comments.body,comments.state,comments.created_at,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id ORDER BY comments.created_at DESC LIMIT ?',size):this.store.pendingComments(state).slice(0,size);
+  return rows.map(row=>({id:row.id,authorName:row.author_name,body:String(row.body||'').slice(0,1000),state:row.state,createdAt:row.created_at,postTitle:row.post_title,authorNameSelfDeclared:true}));
+ }
+ cornerOverview(actor,scope){
+  this.cornerPersonal(actor,scope);
+  const m=this.store.metrics(),comments=this.commentSummary(actor,scope);
+  return {posts:{drafts:Number(m.drafts||0),scheduled:Number(m.scheduled||0),published:Number(m.published||0)},comments,analytics7d:{pageViews:Number(m.page_view||0),storyOpens:Number(m.post_open||0),shares:Number(m.share||0)},upcoming:m.upcoming?{title:m.upcoming.title,scheduledAt:m.upcoming.scheduled_at}:null,live:m.live?{label:m.live.label,detail:m.live.detail,isActive:!!m.live.is_active}:null};
+ }
  send(actor,id,scope,payload){
   if((payload.mode||'chat')==='chat'&&!this.consent(actor))throw httpError(403,'Review the AI privacy notice before sending.','AI_CONSENT_REQUIRED');
   if((payload.mode==='image'||imageIntent(payload.message||''))&&payload.fileIds?.length)throw httpError(400,'Image mode creates a new image from text. Remove attachments first; reference-image editing is not available.');
@@ -50,6 +70,13 @@ export class CommandChatService {
    const requestKey='proposal_'+turn.turnId+'_'+attempt;
    if(user.parts.mode==='queue'){
     parts.items=this.queueItems(actor,scope);content=parts.items.length?'Here is the recorded queue for this workspace. Open a status action to review a change.':'Your queue is clear. There are no recorded items in this workspace.';
+   }else if((user.parts.mode||'chat')==='chat'&&scope==='personal'&&commentFactsIntent(user.content)){
+    const summary=this.commentSummary(actor,scope);parts.commentSummary=summary;
+    content=`You have ${summary.total} comment${summary.total===1?'':'s'} recorded in Vamsi’s Corner: ${summary.pending} pending, ${summary.approved} approved, ${summary.hidden} hidden, and ${summary.deleted} deleted.`;
+    if(wantsCommentList(user.content)){
+     const recent=this.comments(actor,scope,{state:'all',limit:8});parts.comments=recent;
+     if(recent.length)content+=' Recent: '+recent.map(row=>`${row.authorName} on “${row.postTitle}” (${row.state})`).join('; ')+'.';
+    }
    }else if(user.parts.mode==='signals'){
     parts.signals=this.signals(actor,scope);content=parts.signals.length?'These signals come from your recorded queue.':'No active attention signals are recorded in this workspace.';
    }else if(user.parts.mode==='capture'){
@@ -68,10 +95,13 @@ export class CommandChatService {
     let proposed=0;
     const result=await this.ai.respond({workspace:scope,history,attachments,signal,execute:async(name,args,callId)=>{
      signal.throwIfAborted();this.data.conversation(actor,id,scope,true);
-     this.store.exec("UPDATE command_messages SET parts_json=?,updated_at=? WHERE id=? AND status='pending' AND attempt=?",JSON.stringify({...turn.assistant.parts,stage:name==='queue_list'?'Reading your queue':name==='signals_list'?'Reviewing recorded signals':'Preparing an approval'}),this.data.stamp(),turn.assistant.id,attempt);
+     this.store.exec("UPDATE command_messages SET parts_json=?,updated_at=? WHERE id=? AND status='pending' AND attempt=?",JSON.stringify({...turn.assistant.parts,stage:name==='queue_list'?'Reading your queue':name==='signals_list'?'Reviewing recorded signals':name==='corner_overview'?'Reading Corner overview':name==='comments_summary'||name==='comments_list'?'Reading Corner comments':'Preparing an approval'}),this.data.stamp(),turn.assistant.id,attempt);
      let value;
      if(name==='queue_list')value={items:this.queueItems(actor,scope)};
      else if(name==='signals_list')value={signals:this.signals(actor,scope)};
+     else if(name==='corner_overview')value=this.cornerOverview(actor,scope);
+     else if(name==='comments_summary')value=this.commentSummary(actor,scope);
+     else if(name==='comments_list')value={state:args.state,comments:this.comments(actor,scope,args)};
      else{
       if(++proposed>3)throw httpError(429,'Review the current proposals before adding more.');
       const p=this.data.propose(actor,id,scope,{messageId:turn.assistant.id,action:name==='propose_queue_create'?'queue.create':'queue.update',payload:args,targetId:args.targetId||null,targetVersion:args.version??null,requestKey:'tool_'+crypto.createHash('sha256').update(turn.turnId+':'+attempt+':'+callId).digest('hex')});
