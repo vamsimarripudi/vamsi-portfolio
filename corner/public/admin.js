@@ -35,7 +35,7 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span class="v6-empty-icon" aria-hidden="true">${studioIcon('approved')}</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){active.commandToolsAbort?.abort();active.editorAbort?.abort();clearTimeout(active.previewTimer);active.previewAbort?.abort();active.mediaBusy=false;active.attachments=[];active.mediaJobs=[];window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+  function showView(view){window.CornerCommandChat?.unmount();active.commandToolsAbort?.abort();active.editorAbort?.abort();clearTimeout(active.previewTimer);active.previewAbort?.abort();active.mediaBusy=false;active.attachments=[];active.mediaJobs=[];window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;document.documentElement.dataset.studioView=view;const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=view==='command';$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
@@ -87,6 +87,7 @@
   };
   async function command(){
     if(active.view!=='command')return;
+    if(initial.commandChat&&window.CornerCommandChat)return window.CornerCommandChat.mount({root,api,initial});
     active.commandToolsAbort?.abort();
     const toolsController=new AbortController();active.commandToolsAbort=toolsController;
     if(initial.ownerRole!=='owner'){root.innerHTML=empty('Owner access only.');return}
@@ -409,7 +410,7 @@
   let recoveryStorage=null;try{recoveryStorage=window.sessionStorage}catch{ /* Server saves work when device storage is disabled. */ }
   const draftRecovery=composer?.recovery(initial.ownerId,recoveryStorage)||{read:()=>null,write:()=>false,remove:()=>{},clear:()=>{}};
   async function editor(id=null){
-    active.commandToolsAbort?.abort();clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();active.editorAbort?.abort();
+    window.CornerCommandChat?.unmount();active.commandToolsAbort?.abort();clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();active.editorAbort?.abort();
     active.editorAbort=new AbortController();const controller=active.editorAbort;active.view='composer';active.post=null;active.dirty=false;active.attachments=[];active.mediaJobs=[];active.mediaBusy=false;active.previewDocuments=null;
     document.documentElement.dataset.studioView='composer';const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=true;
     history.replaceState(null,'',id?'#post/'+encodeURIComponent(id):'#create');
@@ -1132,7 +1133,7 @@
   }
   if(!root)return;
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
-  $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');draftRecovery.clear();location.reload()}catch(err){toast(err.message,'error')}});
+  $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');draftRecovery.clear();window.CornerCommandChat?.clearDrafts();location.reload()}catch(err){toast(err.message,'error')}});
   const allowed=$$('[data-admin-view]').map(button=>button.dataset.adminView);
   const routeStudio=()=>{
     const requested=location.hash.slice(1);

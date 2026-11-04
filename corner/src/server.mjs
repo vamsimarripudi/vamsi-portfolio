@@ -42,6 +42,8 @@ import {JournalSeries} from './journal-series.mjs';
 import {composerPreview} from './composer-preview.mjs';
 import {OwnerCommand} from './owner-command.mjs';
 import {CommandAgent} from './command-agent.mjs';
+import {CommandChatService} from './command-chat-service.mjs';
+import {commandChatRoutes} from './command-chat-routes.mjs';
 import {createCornerMcpNodeHandler} from './mcp.mjs';
 import { freshToken, passwordVerify } from './auth.mjs';
 import { openApiDocument } from './openapi.mjs';
@@ -51,6 +53,9 @@ store.bootstrap(config.adminEmail,config.adminHash);
 const journalSeries=new JournalSeries(store);
 const ownerCommand=new OwnerCommand(store);
 const commandAgent=new CommandAgent({apiKey:process.env.OPENAI_API_KEY||'',enabled:process.env.CORNER_COMMAND_AI==='1',model:process.env.CORNER_COMMAND_MODEL||'gpt-6.1-sol'});
+const commandChatEnabled=process.env.CORNER_COMMAND_CHAT!=='0';
+const commandChat=new CommandChatService({store,queue:ownerCommand,agent:commandAgent,uploads:config.uploads,imageEnabled:process.env.CORNER_COMMAND_IMAGES!=='0',maxRequests:Number(process.env.CORNER_COMMAND_DAILY_REQUESTS)||100});
+const handleCommandChat=commandChatRoutes({service:commandChat,enabled:commandChatEnabled,readJSON,readBody,ok,limit});
 const cornerMcp=createCornerMcpNodeHandler({store,journalSeries,siteUrl:config.siteUrl});
 const identity=new IdentityService(store);
 const v3=new V3Engagement(store,{sendMail:(message)=>identity.sender(message)});
@@ -189,7 +194,7 @@ async function mediaFile(req,res,key,variant=''){
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
 function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...journalSeries.publicSlugs().map(slug=>'/series/'+encodeURIComponent(slug)),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
-function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus()})}
+function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus(),commandChat:commandChatEnabled})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
 const handleMemories=memoriesRoutes({memories,readJSON,ok,limit,requireOwner});
@@ -307,6 +312,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName.startsWith('/api/admin/command')){
     if(owner.role!=='owner')throw httpError(403,'Only the owner can access the command center.','OWNER_ONLY');
+    if(await handleCommandChat(req,res,pathName,url,owner))return;
     if(pathName==='/api/admin/command/summary'&&method==='GET')return ok(res,{...ownerCommand.summary(),agent:{ready:commandAgent.ready()}});
     if(pathName==='/api/admin/command/ask'&&method==='POST'){
       limit(req,'command-ai',12,60);
@@ -482,7 +488,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/command-chat.css','/command-chat.js','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}

@@ -26,4 +26,9 @@ fs.rmSync(config.uploads,{recursive:true,force:true});fs.mkdirSync(config.upload
 for(const [name] of Object.entries(manifest.files))if(name.startsWith('uploads/')){
  const dest=path.join(config.uploads,name.slice(8));fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(path.join(folder,name),dest);
 }
+const privateDest=path.join(path.dirname(config.uploads),'command-private');
+fs.rmSync(privateDest,{recursive:true,force:true});fs.mkdirSync(privateDest,{recursive:true,mode:0o700});
+for(const name of Object.keys(manifest.files))if(name.startsWith('command-private/')){
+ const dest=path.join(privateDest,name.slice('command-private/'.length));fs.mkdirSync(path.dirname(dest),{recursive:true,mode:0o700});fs.copyFileSync(path.join(folder,name),dest);fs.chmodSync(dest,0o600);
+}
 console.log(JSON.stringify({ok:true,restoredFrom:folder,database:config.dbPath,files:Object.keys(manifest.files).length}));
