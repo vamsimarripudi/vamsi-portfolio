@@ -39,6 +39,7 @@ jobs:
         run: |
           node corner/tests/composer-browser.mjs
           node corner/tests/command-chat-browser.mjs
+          node corner/tests/command-chat-retry-browser.mjs
           node corner/tests/studio-dark-contrast-browser.mjs
       - name: Real isolated Studio and existing media acceptance
         run: |
