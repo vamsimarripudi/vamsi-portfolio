@@ -6,6 +6,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
+import {expect} from 'playwright/test';
 import sharp from 'sharp';
 import {startComposerFixture} from './composer-fixture.mjs';
 
@@ -138,11 +139,13 @@ try{
     assert.deepEqual(controls.map(control=>control.name),actionNames,'Icon tools keep their accessible action names');
     assert.deepEqual(controls.map(control=>control.tooltip),actionNames,'Icon tools explain their actions on hover');
     assert.equal(await page.locator('.command-tools .command-tool-copy').count(),0,'Tools have no text labels beneath the icons');
-    for(const control of controls){
+    for(const [index,control] of controls.entries()){
       const {box,icon}=control;
       assert.ok(box.width>=44&&box.width<=48&&box.height>=44&&box.height<=48,'Icon control has a compact 44–48px hit area '+JSON.stringify(control));
       assert.ok(icon&&icon.width>0&&icon.width<=22&&icon.height>0&&icon.height<=22,'Icon remains small inside its touch target '+JSON.stringify(control));
-      assert.equal(await page.locator('.command-tools').getByRole('button',{name:control.name,exact:true}).count(),1,'Each icon is discoverable by its accessible name');
+      // Native summary is omitted from Playwright's implicit button-role map.
+      // Verify its computed name directly while retaining native disclosure behavior.
+      await expect(page.locator('.command-tools > details > summary').nth(index)).toHaveAccessibleName(actionNames[index]);
     }
     const headingRow=await page.locator('.command-topbar').evaluate(element=>{
       const heading=element.querySelector('h2'),toolbar=element.querySelector('.command-tools');
