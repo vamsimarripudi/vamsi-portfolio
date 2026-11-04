@@ -32,12 +32,17 @@ try{
  assert.equal(started,true,'Corner fixture not ready '+errors.join('').slice(0,400));
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
  const browserErrors=[];page.on('pageerror',error=>browserErrors.push(error.message));
+ const studioNav=async(view,label=view[0].toUpperCase()+view.slice(1))=>{
+  const signal=page.getByRole('button',{name:'Open Studio navigation',exact:true});
+  if(await signal.isVisible()){const menu=page.locator('.cc-category-menu');if(!(await menu.isVisible()))await signal.click();await menu.getByRole('link',{name:label,exact:true}).click()}
+  else await page.locator('[data-admin-view=\"'+view+'\"]').click();
+ };
  await page.goto(base+'/admin',{waitUntil:'networkidle'});
  await page.locator('#admin-login input[name="email"]').fill(owner);
  await page.locator('#admin-login input[name="password"]').fill(password);
  await page.locator('#admin-login button[type="submit"]').click();
  await page.locator('.admin-shell').waitFor({state:'visible',timeout:14000});
- await page.locator('[data-admin-view="overview"]').click();
+ await studioNav('overview','Overview');
  await page.locator('#create-from-overview').click();
  // V5 derives the title automatically from the single story textarea.
  await page.locator('#post-editor textarea[name="body"]').fill('First photo-led Corner story. Two clean photographs, tested in a real mobile browser.');
@@ -188,7 +193,7 @@ try{
 
  // The Studio library must show full-width responsive cards, not tiny fixed
  // auto-fill columns that leave most of the panel empty.
- await page.locator('[data-admin-view="media"]').click();
+ await studioNav('media','Media');
  await page.locator('#admin-view .corner-media-library .corner-library-grid').waitFor({state:'visible',timeout:12000}).catch(async error=>{
    const active=await page.locator('[data-admin-view="media"]').getAttribute('aria-current').catch(()=>null);
    const view=await page.locator('#admin-view').innerText().catch(()=>'No Studio view');
@@ -330,7 +335,7 @@ try{
  await page.setViewportSize({width:390,height:844});
  await page.goto(base+'/admin',{waitUntil:'domcontentloaded'});
  await page.locator('.admin-shell').waitFor({state:'visible',timeout:10000});
- await page.locator('[data-admin-view="media"]').click();
+ await studioNav('media','Media');
  const editMedia=page.locator('#admin-view [data-media-edit]').first();
  await editMedia.waitFor({state:'visible',timeout:9000});
  await editMedia.click();
