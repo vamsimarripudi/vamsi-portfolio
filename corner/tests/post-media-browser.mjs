@@ -94,7 +94,9 @@ try{
  assert.equal(await page.locator('#media-count').textContent(),'3','Editor shows current attachment count');
  // Delete an already attached image using the red X.
  page.once('dialog',dialog=>dialog.accept());
+ const deletion=page.waitForResponse(response=>response.request().method()==='DELETE'&&/\/corner\/api\/admin\/media\/[^/?]+$/.test(new URL(response.url()).pathname));
  await page.locator('#editor-media .media-thumb').first().locator('.media-delete-x').click();
+ assert.equal((await deletion).status(),200,'Removing an attachment receives real server confirmation');
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===2);
  assert.equal(await page.locator('#media-count').textContent(),'2','Attached delete updates the story attachment count');
  // Reorder the remaining pair so the third image becomes the carousel cover.

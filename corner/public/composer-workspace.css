@@ -1,4 +1,5 @@
 /* Corner Studio: one writing surface, a real public preview, and clear actions. */
+html[data-studio-view=composer] body.corner-comfort .admin-shell .admin-top{display:none!important}
 .corner-comfort :is(.composer-workspace,.composer-success,.composer-media-jobs){
   --composer-ink:#252321;--composer-muted:#746e68;--composer-line:#e6e1da;
   --composer-paper:#fff;--composer-stage:#f1efeb;--composer-accent:#a86249;

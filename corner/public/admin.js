@@ -699,6 +699,7 @@
       $$('[data-media-edit]',host).forEach(button=>button.onclick=()=>editAttached(button.dataset.mediaEdit));
       $$('[data-media-delete]',host).forEach(button=>button.onclick=()=>removeAttached(button.dataset.mediaDelete,button));
       $$('[data-media-move]',host).forEach(button=>button.onclick=()=>moveAttached(button.dataset.mediaMove,Number(button.dataset.direction)||0,button));
+      if(uploadInFlight)$$('[data-media-edit],[data-media-delete],[data-media-move]',host).forEach(button=>button.disabled=true);
     };
     function renderAttachments(){
       if(!current())return;
@@ -728,6 +729,7 @@
           if(!confirm('Remove this failed processing job? Any previously ready video will remain.'))return;
           button.disabled=true;try{await api('/corner/api/admin/media/jobs/'+encodeURIComponent(button.dataset.mediaJobDiscard)+'?postId='+encodeURIComponent(postId),'DELETE');pending=pending.filter(entry=>{if(entry.jobId!==button.dataset.mediaJobDiscard)return true;if(entry.url)URL.revokeObjectURL(entry.url);entry.wrapper.remove();return false});await refreshRemote();toast('Failed job removed.','success')}catch(error){button.disabled=false;toast(error.message,'error')}
         });
+        if(uploadInFlight)$$('button',host).forEach(button=>button.disabled=true);
       }
       if(context.updated)context.updated(attachments,jobs);
     }
@@ -773,7 +775,7 @@
     fileInput.oninput=selectedFiles;fileInput.onchange=selectedFiles;form.dataset.mediaReady='true';
     form.onsubmit=async event=>{
       event.preventDefault();if(uploadInFlight||!pending.some(item=>!item.done))return;
-      uploadInFlight=true;context.busy?.(true);
+      uploadInFlight=true;section.dataset.uploadBusy='true';context.busy?.(true);renderAttachments();renderJobs();
       const controls=[...form.querySelectorAll('input,button')].map(control=>[control,control.disabled]);for(const [control] of controls)if(control!==submit)control.disabled=true;
       const total=pending.filter(item=>!item.done).length;
       await actionMotion({action:'media.upload',trigger:submit,targetId:postId||'new-upload-batch',visualTarget:previewList,
@@ -810,7 +812,7 @@
         onSuccess:async value=>{if(!current())return;toast(value.sent===1?'Photo or video attached.':value.sent+' files attached.','success');clearSelections();await refreshRemote()},
         onFailure:async error=>{if(!current())return;status.textContent=error.message+' Already attached files are preserved.';toast(error.message,'error');await refreshRemote().catch(()=>{})}
       });
-      uploadInFlight=false;context.busy?.(false);for(const [control,disabled] of controls)if(control.isConnected&&control!==submit)control.disabled=disabled;
+      uploadInFlight=false;section.dataset.uploadBusy='false';context.busy?.(false);renderAttachments();renderJobs();for(const [control,disabled] of controls)if(control.isConnected&&control!==submit)control.disabled=disabled;
       submit.disabled=!pending.some(item=>!item.done);submit.textContent=pending.some(item=>item.jobId&&!item.done)?'Check / retry saved video':'Attach remaining files ↑';
       if(!pending.length)submit.textContent='Attach selected media ↑';
     };

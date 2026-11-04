@@ -19,7 +19,9 @@
 }
 
 .corner-comfort .command-shell [hidden] { display: none !important; }
-html[data-studio-view=command] .admin-top { display: none; }
+/* The mobile chrome explicitly uses display:flex!important. Keep the single
+   Command heading authoritative even when that legacy rule is active. */
+html[data-studio-view=command] body.corner-comfort .admin-shell .admin-top { display: none !important; }
 
 .corner-comfort .command-overview-card,
 .corner-comfort .command-queue-card {
@@ -535,7 +537,7 @@ html[data-studio-view=command] .admin-top { display: none; }
 }
 @media(max-width:390px) {
   .corner-comfort .command-overview-card,
-  .corner-comfort .command-queue-card { padding: 13px; }
+  .corner-comfort .command-queue-card { padding: 16px; }
   .corner-comfort .command-disclosure > summary { gap: 8px; padding: 10px; }
   .corner-comfort .command-filterbar { grid-template-columns: minmax(0,1fr); }
   .corner-comfort .command-filter-panel > summary small { font-size: .6875rem; }
