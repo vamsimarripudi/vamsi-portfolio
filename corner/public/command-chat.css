@@ -190,3 +190,16 @@ html.cc-active .corner-comfort .admin-shell .admin-main{padding:16px 26px 0;min-
   html.cc-active .corner-comfort .admin-shell .admin-nav .studio-icon{width:17px!important;height:17px!important}
   html.cc-active .corner-comfort .admin-shell .admin-nav .studio-nav-label{font-size:.48rem!important}
 }
+
+/* Voice command state: explicit, compact and non-destructive. */
+.cc-root [data-action="voice"].is-listening{
+  background:#f2e2dc!important;color:#9a4c35!important;border-color:#deb9ab!important;
+  box-shadow:0 0 0 4px rgba(180,92,61,.08)!important;
+}
+@media(prefers-reduced-motion:no-preference){
+  .cc-root [data-action="voice"].is-listening svg{animation:cc-voice-pulse 1.25s ease-in-out infinite}
+}
+@keyframes cc-voice-pulse{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+html[data-studio-theme="dark"] .cc-root [data-action="voice"].is-listening{
+  background:#3a211b!important;color:#f0a68d!important;border-color:#794d3e!important;box-shadow:0 0 0 4px rgba(225,131,95,.08)!important;
+}

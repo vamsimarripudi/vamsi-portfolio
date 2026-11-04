@@ -117,7 +117,7 @@ function page(res,html,status=200,privatePage=false){if(config.basePath)html=htm
 function isBot(req){return /bot|crawler|spider|preview|curl/i.test(req.headers['user-agent']||'')}
 function safetyHeaders(res){
   res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','strict-origin-when-cross-origin');res.setHeader('x-frame-options','DENY');
-  res.setHeader('permissions-policy','camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('permissions-policy','camera=(), microphone=(self), geolocation=(), payment=()');
   res.setHeader('content-security-policy',"default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   if(config.prod)res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains');
 }

@@ -22,7 +22,7 @@ export class CommandChatService {
  }
  consent(actor){return this.store.setting('command.chat.consent:'+this.data.actor(actor),false)===true}
  setConsent(actor,accepted){if(typeof accepted!=='boolean')throw httpError(400,'Choose whether to use AI.');this.store.saveSetting('command.chat.consent:'+this.data.actor(actor),accepted);if(!accepted)for(const controller of this.running.values())if(controller.ownerId===actor.id)controller.abort();return {accepted}}
- capabilities(actor){this.data.actor(actor);return {enabled:true,aiReady:this.ai.ready(),aiConsent:this.consent(actor),model:this.agent.model,imageReady:this.imageEnabled&&this.ai.ready(),imageModel:this.imageModel,imageAllowanceUsd:this.imageAllowanceUsd,attachmentTypes:['image/png','image/jpeg','image/webp','text/plain','text/markdown'],retention:'Conversations are retained until you delete them. Archived conversations are not deleted. Provider requests use store:false; provider abuse-monitoring retention may still apply.'}}
+ capabilities(actor){this.data.actor(actor);return {enabled:true,aiReady:this.ai.ready(),aiConsent:this.consent(actor),model:this.agent.model,voiceReady:this.ai.ready(),transcriptionModel:'gpt-transcribe',imageReady:this.imageEnabled&&this.ai.ready(),imageModel:this.imageModel,imageAllowanceUsd:this.imageAllowanceUsd,attachmentTypes:['image/png','image/jpeg','image/webp','text/plain','text/markdown'],retention:'Conversations are retained until you delete them. Archived conversations are not deleted. Provider requests use store:false; provider abuse-monitoring retention may still apply.'}}
  queueItems(actor,scope){this.data.actor(actor);workspace(scope);return this.queue.list({workspace:scope}).map(itemView)}
  signals(actor,scope){
   const items=this.queueItems(actor,scope).filter(i=>['open','waiting'].includes(i.state));
@@ -50,6 +50,21 @@ export class CommandChatService {
   this.cornerPersonal(actor,scope);
   const m=this.store.metrics(),comments=this.commentSummary(actor,scope);
   return {posts:{drafts:Number(m.drafts||0),scheduled:Number(m.scheduled||0),published:Number(m.published||0)},comments,analytics7d:{pageViews:Number(m.page_view||0),storyOpens:Number(m.post_open||0),shares:Number(m.share||0)},upcoming:m.upcoming?{title:m.upcoming.title,scheduledAt:m.upcoming.scheduled_at}:null,live:m.live?{label:m.live.label,detail:m.live.detail,isActive:!!m.live.is_active}:null};
+ }
+ posts(actor,scope,{state='all',limit=12}={}){
+  this.cornerPersonal(actor,scope);if(!['all','draft','scheduled','published','archived'].includes(state))throw httpError(400,'Choose a valid post state.');
+  return this.store.allAdminPosts(state).slice(0,Math.max(1,Math.min(30,Number(limit)||12))).map(post=>({id:post.id,title:post.title,excerpt:post.excerpt,body:String(post.body||'').slice(0,4000),type:post.type,state:post.state,version:post.version,slug:post.slug,updatedAt:post.updated_at,publishedAt:post.published_at,scheduledAt:post.scheduled_at,tags:post.tags,allowComments:!!post.allow_comments,allowReactions:!!post.allow_reactions}));
+ }
+ post(actor,scope,targetId){
+  this.cornerPersonal(actor,scope);const post=this.store.adminPost(targetId);if(!post)throw httpError(404,'Post not found.');return {id:post.id,title:post.title,excerpt:post.excerpt,body:post.body,type:post.type,state:post.state,version:post.version,slug:post.slug,updatedAt:post.updated_at,publishedAt:post.published_at,scheduledAt:post.scheduled_at,tags:post.tags,allowComments:!!post.allow_comments,allowReactions:!!post.allow_reactions};
+ }
+ async transcribe(actor,scope,{bytes,mime,filename='voice-command'}={}){
+  this.data.actor(actor);workspace(scope);if(!this.consent(actor))throw httpError(403,'Review the AI privacy notice before using voice.','AI_CONSENT_REQUIRED');if(!this.ai.ready())throw httpError(503,'Voice transcription is not connected.','COMMAND_AI_DISABLED');
+  const allowed=new Set(['audio/webm','audio/mp4','video/mp4','audio/mpeg','audio/mp3','audio/wav','audio/x-wav','audio/m4a','audio/x-m4a']);mime=String(mime||'').split(';')[0].toLowerCase();if(!allowed.has(mime))throw httpError(415,'Use WebM, MP4/M4A, MP3 or WAV audio.');
+  if(!Buffer.isBuffer(bytes)||bytes.length<16)throw httpError(400,'Record a voice command first.');if(bytes.length>8*1024*1024)throw httpError(413,'Voice command is too large. Keep it under 30 seconds.');
+  const ext=mime.includes('webm')?'webm':mime.includes('wav')?'wav':mime.includes('mpeg')||mime.includes('mp3')?'mp3':'m4a',form=new FormData();form.append('file',new Blob([bytes],{type:mime}),String(filename||'voice-command').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80)+'.'+ext);form.append('model','gpt-transcribe');
+  const response=await this.agent.fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{authorization:'Bearer '+this.agent.apiKey},body:form,signal:AbortSignal.timeout(45000)});let data;try{data=await response.json()}catch{data={}}if(!response.ok)throw httpError(502,'Voice transcription could not finish. Try again.','TRANSCRIPTION_FAILED');
+  const transcript=String(data?.text||'').trim();if(!transcript)throw httpError(422,'I could not hear a clear command. Try again.','TRANSCRIPTION_EMPTY');return {text:transcript.slice(0,6000),model:'gpt-transcribe',audioStored:false};
  }
  send(actor,id,scope,payload){
   if((payload.mode||'chat')==='chat'&&!this.consent(actor))throw httpError(403,'Review the AI privacy notice before sending.','AI_CONSENT_REQUIRED');
@@ -95,16 +110,20 @@ export class CommandChatService {
     let proposed=0;
     const result=await this.ai.respond({workspace:scope,history,attachments,signal,execute:async(name,args,callId)=>{
      signal.throwIfAborted();this.data.conversation(actor,id,scope,true);
-     this.store.exec("UPDATE command_messages SET parts_json=?,updated_at=? WHERE id=? AND status='pending' AND attempt=?",JSON.stringify({...turn.assistant.parts,stage:name==='queue_list'?'Reading your queue':name==='signals_list'?'Reviewing recorded signals':name==='corner_overview'?'Reading Corner overview':name==='comments_summary'||name==='comments_list'?'Reading Corner comments':'Preparing an approval'}),this.data.stamp(),turn.assistant.id,attempt);
+     const stage=name==='queue_list'?'Reading your queue':name==='signals_list'?'Reviewing recorded signals':name==='corner_overview'?'Reading Corner overview':name==='comments_summary'||name==='comments_list'?'Reading Corner comments':name==='posts_list'||name==='post_get'?'Reading Corner posts':'Preparing an approval';
+     this.store.exec("UPDATE command_messages SET parts_json=?,updated_at=? WHERE id=? AND status='pending' AND attempt=?",JSON.stringify({...turn.assistant.parts,stage}),this.data.stamp(),turn.assistant.id,attempt);
      let value;
      if(name==='queue_list')value={items:this.queueItems(actor,scope)};
      else if(name==='signals_list')value={signals:this.signals(actor,scope)};
      else if(name==='corner_overview')value=this.cornerOverview(actor,scope);
      else if(name==='comments_summary')value=this.commentSummary(actor,scope);
      else if(name==='comments_list')value={state:args.state,comments:this.comments(actor,scope,args)};
+     else if(name==='posts_list')value={posts:this.posts(actor,scope,args)};
+     else if(name==='post_get')value=this.post(actor,scope,args.targetId);
      else{
       if(++proposed>3)throw httpError(429,'Review the current proposals before adding more.');
-      const p=this.data.propose(actor,id,scope,{messageId:turn.assistant.id,action:name==='propose_queue_create'?'queue.create':'queue.update',payload:args,targetId:args.targetId||null,targetVersion:args.version??null,requestKey:'tool_'+crypto.createHash('sha256').update(turn.turnId+':'+attempt+':'+callId).digest('hex')});
+      const action={propose_queue_create:'queue.create',propose_queue_update:'queue.update',propose_post_create:'post.create',propose_post_update:'post.update',propose_comment_moderate:'comment.moderate'}[name];if(!action)throw httpError(400,'Unknown Command action.');
+      const p=this.data.propose(actor,id,scope,{messageId:turn.assistant.id,action,payload:args,targetId:args.targetId||null,targetVersion:args.version??null,requestKey:'tool_'+crypto.createHash('sha256').update(turn.turnId+':'+attempt+':'+callId).digest('hex')});
       (parts.proposalIds||=[]).push(p.id);value={proposalId:p.id,status:'proposed',requiresOwnerConfirmation:true};
      }
      this.data.event(id,turn.assistant.id,name,'complete');return value;

@@ -7,8 +7,9 @@ const image=(await sharp({create:{width:128,height:128,channels:3,background:'#b
 const attempted=new Set();
 globalThis.fetch=async(url,options={})=>{
  if(!String(url).startsWith('https://api.openai.com/'))return original(url,options);
- const body=JSON.parse(options.body),input=JSON.stringify(body.input||[]);
  const pause=ms=>new Promise((resolve,reject)=>{const id=setTimeout(resolve,ms);options.signal?.addEventListener('abort',()=>{clearTimeout(id);reject(new DOMException('Aborted','AbortError'))},{once:true})});
+ if(String(url).endsWith('/audio/transcriptions')){assert.match(String(options.headers?.authorization||''),/^Bearer /);assert.ok(options.body instanceof FormData);assert.equal(options.body.get('model'),'gpt-transcribe');return new Response(JSON.stringify({text:'how many comments we got'}),{headers:{'content-type':'application/json'}})}
+ const body=JSON.parse(options.body),input=JSON.stringify(body.input||[]);
  if(String(url).endsWith('/images/generations')){await pause(1800);return new Response(JSON.stringify({data:[{b64_json:image}]}),{headers:{'content-type':'application/json'}})}
  assert.equal(body.store,false);assert.ok(body.instructions.includes('WORKSPACE:'));
  if(input.includes('FIXTURE_SLOW'))await pause(5000);else await pause(400);
