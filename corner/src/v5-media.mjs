@@ -65,6 +65,19 @@ const videoRange=input=>{
  if(end&&end<=start)throw httpError(400,'Trim end must be after trim start.','INVALID_TRIM');
  return {start,end};
 };
+export function normalizeVideoRecipe(input={}){
+ const readSeconds=(key)=>{
+  const value=Number(input[key]??0);
+  if(!Number.isFinite(value)||value<0||value>180)throw httpError(400,'Video times must be between 0 and 180 seconds.','INVALID_VIDEO_TIME');
+  return value;
+ };
+ const start=readSeconds('start'),end=readSeconds('end'),posterAt=readSeconds('posterAt');
+ if(end&&end<=start)throw httpError(400,'Trim end must be after trim start.','INVALID_TRIM');
+ if(end&&posterAt>=end-start)throw httpError(400,'Choose a poster frame within the trimmed video.','INVALID_POSTER_TIME');
+ if(input.muted!==undefined&&typeof input.muted!=='boolean')throw httpError(400,'Choose whether video sound is muted.','INVALID_VIDEO_MUTE');
+ return {start,end,muted:input.muted===true,posterAt};
+}
+const jobRecipe=job=>({start:Number(job.trim_start)||0,end:Number(job.trim_end)||0,muted:!!job.muted,posterAt:Number(job.poster_at)||0});
 export class CornerMediaJobs{
  constructor(store,{uploads}={}){
   this.store=store;this.uploads=uploads;
@@ -81,6 +94,10 @@ export class CornerMediaJobs{
    CREATE TABLE IF NOT EXISTS corner_v5_media_edits(
    media_id TEXT PRIMARY KEY REFERENCES media(id) ON DELETE CASCADE,
    recipe TEXT NOT NULL,output_key TEXT,updated_at TEXT NOT NULL);`);
+  const columns=new Set(store.all('PRAGMA table_info(corner_v5_media_jobs)').map(column=>column.name));
+  for(const [name,definition] of [['muted','INTEGER NOT NULL DEFAULT 0'],['poster_at','REAL NOT NULL DEFAULT 0'],['poster_key','TEXT'],['source_duration','REAL'],['applied_recipe','TEXT']]){
+   if(!columns.has(name))store.db.exec('ALTER TABLE corner_v5_media_jobs ADD COLUMN '+name+' '+definition);
+  }
   this.busy=false;
   // Restart-safe: resume interrupted queued and processing jobs without losing originals.
   this.store.exec("UPDATE corner_v5_media_jobs SET state='queued' WHERE state='processing'");
@@ -102,11 +119,76 @@ export class CornerMediaJobs{
   }catch(error){fs.rmSync(path.join(this.queueDir,file),{force:true});throw error}
   setImmediate(()=>this.drain());return {jobId:id,state:'queued',message:'Converting video for browser playback.'};
  }
- status(id,postId){
+ jobRecord(id,postId){
   if(!/^vjob_[0-9a-f-]{36}$/i.test(String(id||'')))throw httpError(404,'Job not found.');
-  const row=this.store.one('SELECT id,post_id,state,error_code,media_id,created_at,updated_at FROM corner_v5_media_jobs WHERE id=?',id);
+  const row=this.store.one('SELECT * FROM corner_v5_media_jobs WHERE id=?',id);
   if(!row||row.post_id!==postId)throw httpError(404,'Job not found.');
+  return row;
+ }
+ status(id,postId){
+  const row=this.jobRecord(id,postId);
   return {jobId:row.id,postId:row.post_id,state:row.state,errorCode:row.error_code,mediaId:row.media_id,updatedAt:row.updated_at};
+ }
+ list(postId){
+  return this.store.all('SELECT id FROM corner_v5_media_jobs WHERE post_id=? ORDER BY created_at DESC',postId).map(row=>this.status(row.id,postId));
+ }
+ retry(id,postId,actor){
+  const row=this.jobRecord(id,postId);
+  if(row.state!=='failed')throw httpError(409,'Only a failed video can be retried.','MEDIA_JOB_NOT_FAILED');
+  if(!safeFile(row.source_key)||!fs.existsSync(path.join(this.queueDir,row.source_key)))throw httpError(409,'The original video is unavailable. Remove this failed upload and attach the video again.','MEDIA_SOURCE_UNAVAILABLE');
+  this.store.transaction(()=>{
+   this.store.exec("UPDATE corner_v5_media_jobs SET state='queued',error_code=NULL,updated_at=? WHERE id=?",now(),id);
+   this.store.audit(actor,'media.processing.retried','media_job',id,{postId});
+  });
+  setImmediate(()=>this.drain());
+  return this.status(id,postId);
+ }
+ discardJob(id,postId,actor){
+  const row=this.jobRecord(id,postId);
+  if(row.state!=='failed')throw httpError(409,'Wait for video processing to finish before removing a failed upload.','MEDIA_JOB_BUSY');
+  const media=row.media_id?this.store.one('SELECT id FROM media WHERE id=? AND owner_id=?',row.media_id,postId):null;
+  this.store.transaction(()=>{
+   if(media){
+    let recipe=jobRecipe(row);
+    try{if(row.applied_recipe)recipe=normalizeVideoRecipe(JSON.parse(row.applied_recipe))}catch{}
+    // An unsuccessful edit never destroys the last working video or original.
+    this.store.exec("UPDATE corner_v5_media_jobs SET state='ready',error_code=NULL,trim_start=?,trim_end=?,muted=?,poster_at=?,updated_at=? WHERE id=?",recipe.start,recipe.end,recipe.muted?1:0,recipe.posterAt,now(),id);
+   }else this.store.exec('DELETE FROM corner_v5_media_jobs WHERE id=?',id);
+   this.store.audit(actor,'media.processing.discarded','media_job',id,{postId,mediaPreserved:!!media});
+  });
+  if(!media&&safeFile(row.source_key))fs.rmSync(path.join(this.queueDir,row.source_key),{force:true});
+  if(!media&&row.poster_key&&safeFile(row.poster_key))fs.rmSync(path.join(this.uploads,row.poster_key),{force:true});
+  return {discarded:true,jobId:id,postId,mediaPreserved:!!media};
+ }
+ videoRecipe(mediaId){
+  if(!checkMediaId(mediaId))throw httpError(404,'Video not found.');
+  const media=this.store.one('SELECT id,mime_type,duration,owner_id FROM media WHERE id=?',mediaId);
+  if(!media?.mime_type.startsWith('video/'))throw httpError(404,'Video not found.');
+  const job=this.store.one('SELECT * FROM corner_v5_media_jobs WHERE media_id=? ORDER BY created_at DESC LIMIT 1',mediaId);
+  if(!job)throw httpError(409,'This video has no retained original. Attach the source again to edit it.','MEDIA_SOURCE_UNAVAILABLE');
+  return {...jobRecipe(job),duration:media.duration,sourceDuration:job.source_duration,jobId:job.id,state:job.state,errorCode:job.error_code};
+ }
+ editVideo(mediaId,request,actor){
+  const previous=this.videoRecipe(mediaId),recipe=normalizeVideoRecipe(request);
+  if(['queued','processing'].includes(previous.state))throw httpError(409,'This video is already processing. Wait before editing it again.','MEDIA_PROCESSING');
+  const row=this.store.one('SELECT * FROM corner_v5_media_jobs WHERE id=?',previous.jobId);
+  if(!safeFile(row.source_key)||!fs.existsSync(path.join(this.queueDir,row.source_key)))throw httpError(409,'The original video is unavailable. Attach the source again to edit it.','MEDIA_SOURCE_UNAVAILABLE');
+  const sourceDuration=Number(row.source_duration);
+  if(sourceDuration>0&&(recipe.start>=sourceDuration||recipe.end>sourceDuration||recipe.posterAt>=(recipe.end||sourceDuration)-recipe.start))
+   throw httpError(400,'Choose trim and poster times within the original video.','INVALID_VIDEO_TIME');
+  this.store.transaction(()=>{
+   this.store.exec("UPDATE corner_v5_media_jobs SET trim_start=?,trim_end=?,muted=?,poster_at=?,applied_recipe=COALESCE(applied_recipe,?),state='queued',error_code=NULL,updated_at=? WHERE id=?",recipe.start,recipe.end,recipe.muted?1:0,recipe.posterAt,JSON.stringify(jobRecipe(row)),now(),row.id);
+   this.store.audit(actor,'media.video.edit.queued','media',mediaId,{recipe,jobId:row.id});
+  });
+  setImmediate(()=>this.drain());
+  return this.status(row.id,row.post_id);
+ }
+ poster(media){
+  if(!media?.mime_type?.startsWith('video/'))return null;
+  const job=this.store.one('SELECT poster_key FROM corner_v5_media_jobs WHERE media_id=? ORDER BY created_at DESC LIMIT 1',media.id);
+  if(!job?.poster_key||!safeFile(job.poster_key))return null;
+  const filename=path.join(this.uploads,job.poster_key);
+  return fs.existsSync(filename)?{filename,mime:'image/jpeg'}:null;
  }
  async editImage(mediaId,request,actor){
   if(!checkMediaId(mediaId))throw httpError(404,'Media not found.');
@@ -129,13 +211,16 @@ export class CornerMediaJobs{
  discard(mediaId){
   if(!checkMediaId(mediaId))return;
   const edit=this.store.one('SELECT output_key FROM corner_v5_media_edits WHERE media_id=?',mediaId);
-  const jobs=this.store.all('SELECT id,source_key FROM corner_v5_media_jobs WHERE media_id=?',mediaId);
+  const jobs=this.store.all('SELECT id,source_key,poster_key FROM corner_v5_media_jobs WHERE media_id=?',mediaId);
   this.store.transaction(()=>{
    this.store.exec('DELETE FROM corner_v5_media_edits WHERE media_id=?',mediaId);
    this.store.exec('DELETE FROM corner_v5_media_jobs WHERE media_id=?',mediaId);
   });
   if(edit?.output_key&&safeFile(edit.output_key))fs.rmSync(path.join(this.uploads,edit.output_key),{force:true});
-  for(const item of jobs)if(safeFile(item.source_key))fs.rmSync(path.join(this.queueDir,item.source_key),{force:true});
+  for(const item of jobs){
+   if(safeFile(item.source_key))fs.rmSync(path.join(this.queueDir,item.source_key),{force:true});
+   if(item.poster_key&&safeFile(item.poster_key))fs.rmSync(path.join(this.uploads,item.poster_key),{force:true});
+  }
  }
  resetImage(mediaId,actor){
   const row=this.store.one('SELECT output_key FROM corner_v5_media_edits WHERE media_id=?',mediaId);
@@ -158,6 +243,8 @@ export class CornerMediaJobs{
     if(!job)break;
     this.store.exec("UPDATE corner_v5_media_jobs SET state='processing',updated_at=? WHERE id=?",now(),job.id);
     const source=path.join(this.queueDir,job.source_key),outKey=crypto.randomBytes(20).toString('base64url')+'.mp4',dest=path.join(this.uploads,outKey);
+    const posterKey=crypto.randomBytes(20).toString('base64url')+'.jpg',posterPath=path.join(this.uploads,posterKey);
+    let previousVideoPath=null,rollbackPath=null,outputReplaced=false;
     try{
      if(!fs.existsSync(source))throw Error('Source unavailable');
      const {stdout}=await exec('ffprobe',['-v','error','-show_entries','format=duration:stream=width,height,codec_name,color_transfer','-select_streams','v:0','-of','json',source],{timeout:14000,maxBuffer:100000});
@@ -172,24 +259,53 @@ export class CornerMediaJobs{
      const baseFilter='scale=1920:1920:force_original_aspect_ratio=decrease,format=yuv420p';
      const hdr=['smpte2084','arib-std-b67'].includes(stream.color_transfer);
      const videoFilter=hdr?'zscale=t=linear:npl=100,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,'+baseFilter:baseFilter;
-     const args=['-y','-hide_banner','-loglevel','error','-ss',String(trim.start),'-i',source,'-t',String(len),'-map','0:v:0','-map','0:a:0?','-map_metadata','-1','-vf',videoFilter,'-c:v','libx264','-preset','veryfast','-crf','24','-pix_fmt','yuv420p','-c:a','aac','-b:a','112k','-movflags','+faststart',dest];
+     const posterAt=Number(job.poster_at)||0;
+     if(posterAt>=len)throw Error('Poster frame must be within the trimmed video');
+     const audio=job.muted?['-an']:['-map','0:a:0?','-c:a','aac','-b:a','112k'];
+     const args=['-y','-hide_banner','-loglevel','error','-ss',String(trim.start),'-i',source,'-t',String(len),'-map','0:v:0',...audio,'-map_metadata','-1','-vf',videoFilter,'-c:v','libx264','-preset','veryfast','-crf','24','-pix_fmt','yuv420p','-movflags','+faststart',dest];
      try{await exec('ffmpeg',args,{timeout:125000,maxBuffer:100000})}
      catch(error){if(!hdr)throw error;args[args.indexOf('-vf')+1]=baseFilter;await exec('ffmpeg',args,{timeout:125000,maxBuffer:100000})}
      const stat=fs.statSync(dest);if(stat.size<100||stat.size>75*1024*1024)throw Error('Unexpected output size');
-     let mediaId=job.media_id;
+     await exec('ffmpeg',['-y','-hide_banner','-loglevel','error','-ss',String(posterAt),'-i',dest,'-frames:v','1','-vf','scale=1280:1280:force_original_aspect_ratio=decrease','-q:v','3','-update','1',posterPath],{timeout:25000,maxBuffer:100000});
+     if(!fs.existsSync(posterPath)||fs.statSync(posterPath).size<50)throw Error('Could not prepare video poster');
+     const outputProbe=await exec('ffprobe',['-v','error','-show_entries','format=duration:stream=width,height','-select_streams','v:0','-of','json',dest],{timeout:14000,maxBuffer:100000});
+     const outputMeta=JSON.parse(outputProbe.stdout),outputStream=outputMeta.streams?.[0]||stream;
+     let mediaId=job.media_id,publication=null;
      this.store.transaction(()=>{
-      if(!mediaId){mediaId=uid('media');this.store.addMedia({id:mediaId,ownerId:job.post_id,storageKey:outKey,mimeType:'video/mp4',size:stat.size,width:stream.width,height:stream.height,alt:job.alt_text,caption:job.caption});}
+      // A deleted attachment must never be recreated by an in-flight encoder.
+      const current=this.store.one('SELECT state FROM corner_v5_media_jobs WHERE id=?',job.id);
+      if(current?.state!=='processing')throw Error('Video job no longer active');
+      if(!mediaId){mediaId=uid('media');this.store.addMedia({id:mediaId,ownerId:job.post_id,storageKey:outKey,mimeType:'video/mp4',size:stat.size,width:outputStream.width,height:outputStream.height,alt:job.alt_text,caption:job.caption});}
       else{
        const prior=this.store.one('SELECT storage_key FROM media WHERE id=?',mediaId);
-       this.store.exec('UPDATE media SET storage_key=?,mime_type=?,size_bytes=? WHERE id=?',outKey,'video/mp4',stat.size,mediaId);
-       if(prior?.storage_key&&safeFile(prior.storage_key))setImmediate(()=>fs.rmSync(path.join(this.uploads,prior.storage_key),{force:true}));
+       if(!prior)throw Error('Video attachment was removed');
+       if(!safeFile(prior.storage_key))throw Error('Invalid video attachment path');
+       previousVideoPath=path.join(this.uploads,prior.storage_key);
+       rollbackPath=path.join(this.queueDir,'rollback-'+crypto.randomUUID()+'.mp4');
+       // Both files live on the uploads filesystem. Atomically replace bytes at
+       // the stable URL, keeping a private rollback copy until metadata commits.
+       // Existing open streams can finish reading the earlier inode.
+       try{fs.linkSync(previousVideoPath,rollbackPath)}
+       catch{fs.copyFileSync(previousVideoPath,rollbackPath,fs.constants.COPYFILE_EXCL)}
+       fs.renameSync(dest,previousVideoPath);outputReplaced=true;
+       this.store.exec('UPDATE media SET mime_type=?,size_bytes=?,width=?,height=? WHERE id=?','video/mp4',stat.size,outputStream.width,outputStream.height,mediaId);
       }
-      this.store.exec("UPDATE corner_v5_media_jobs SET state='ready',media_id=?,error_code=NULL,updated_at=? WHERE id=?",mediaId,now(),job.id);
+      this.store.exec('UPDATE media SET duration=? WHERE id=?',Number(outputMeta.format?.duration)||len,mediaId);
+      this.store.exec("UPDATE corner_v5_media_jobs SET state='ready',media_id=?,poster_key=?,source_duration=?,applied_recipe=?,error_code=NULL,updated_at=? WHERE id=?",mediaId,posterKey,duration,JSON.stringify(jobRecipe(job)),now(),job.id);
+      publication=this.store.one('SELECT slug,version,state FROM posts WHERE id=?',job.post_id);
      });
-     const post=this.store.one('SELECT slug,version,state FROM posts WHERE id=?',job.post_id);
-     if(post?.state==='published')this.store.emit('post.updated',job.post_id,post.version,{slug:post.slug});
+     // Cleanup of an obsolete derivative must not invalidate a committed result.
+     try{if(rollbackPath)fs.rmSync(rollbackPath,{force:true})}catch{}
+     rollbackPath=null;outputReplaced=false;
+     try{if(job.poster_key&&safeFile(job.poster_key))fs.rmSync(path.join(this.uploads,job.poster_key),{force:true})}catch{}
+     if(publication?.state==='published'){
+      try{this.store.emit('post.updated',job.post_id,publication.version,{slug:publication.slug})}catch{}
+     }
     }catch(error){
+     if(outputReplaced&&rollbackPath){fs.renameSync(rollbackPath,previousVideoPath);rollbackPath=null;outputReplaced=false;}
+     if(rollbackPath)fs.rmSync(rollbackPath,{force:true});
      fs.rmSync(dest,{force:true});
+     fs.rmSync(posterPath,{force:true});
      this.store.exec("UPDATE corner_v5_media_jobs SET state='failed',error_code=?,updated_at=? WHERE id=?",errorCode(error),now(),job.id);
     }
    }

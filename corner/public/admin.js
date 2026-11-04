@@ -6,8 +6,8 @@
   const variantTypes=['wish','announcement','tech_note','journal','build','moment'];
   const typeNames={wish:'Wish',announcement:'Announcement',tech_note:'Tech Note',journal:'Journal',build:'Build Log',moment:'Moment'};
   const states=['all','draft','scheduled','published','archived'];
-  const active={view:'overview',filter:'all',post:null,saveTimer:null,previewDevice:'laptop',dirty:false,commandFilters:{workspace:'all',kind:'all',priority:'all',evidence:'all',state:'active'}};
-  const studioIcon=name=>'<svg class="v6-mobile-action-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+({"pending":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>","approved":"<path d=\"M20 6 9 17l-5-5\"/>","hidden":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","deleted":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","approve":"<path d=\"M20 6 9 17l-5-5\"/>","hide":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","delete":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","reply":"<path d=\"M9 17 4 12l5-5M4 12h10a6 6 0 0 1 6 6v1\"/>"}[name]||'')+'</svg>';
+  const active={view:'overview',filter:'all',post:null,saveTimer:null,previewTimer:null,previewMode:'feed',previewDevice:'desktop',attachments:[],mediaJobs:[],mediaBusy:false,dirty:false,commandFilters:{workspace:'all',kind:'all',priority:'all',evidence:'all',state:'active'}};
+  const studioIcon=name=>'<svg class="v6-mobile-action-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+({"plus":"<path d=\"M12 5v14M5 12h14\"/>","comments":"<path d=\"M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z\"/>","pending":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>","approved":"<path d=\"M20 6 9 17l-5-5\"/>","hidden":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","deleted":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","approve":"<path d=\"M20 6 9 17l-5-5\"/>","hide":"<path d=\"M3 3l18 18M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z\"/>","delete":"<path d=\"M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6\"/>","reply":"<path d=\"M9 17 4 12l5-5M4 12h10a6 6 0 0 1 6 6v1\"/>"}[name]||'')+'</svg>';
   const toastStack=$('#toast-stack');
   function toast(message,variant='info'){
     if(window.CornerToast?.show)return window.CornerToast.show(message,{type:variant});
@@ -15,8 +15,8 @@
     const text=document.createElement('span');text.textContent=message;
     const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Dismiss notification');close.onclick=()=>el.remove();el.append(text,close);toastStack.append(el);setTimeout(()=>el.remove(),4700);
   }
-  async function api(path,method='GET',payload){
-    const options={method,credentials:'same-origin',cache:'no-store',headers:{}};
+  async function api(path,method='GET',payload,extra={}){
+    const options={method,credentials:'same-origin',cache:'no-store',headers:{...(extra.headers||{})},signal:extra.signal};
     if(payload!==undefined){options.headers['content-type']='application/json';options.body=JSON.stringify(payload)}
     const response=await fetch(path,options);const parsed=await response.json().catch(()=>({}));
     if(!response.ok||parsed.error){const err=new Error(parsed.error?.message||'Could not complete that action');err.status=response.status;err.code=parsed.error?.code;throw err}return parsed.data;
@@ -35,7 +35,7 @@
   const tag=(state)=>`<span class="admin-tag ${esc(state)}">${esc(state)}</span>`;
   const readable=(value)=>value?new Date(value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
   function empty(title,sub='Nothing needs attention right now.') {return `<div class="admin-empty"><span class="v6-empty-icon" aria-hidden="true">${studioIcon('approved')}</span><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>`}
-  function showView(view){active.editorAbort?.abort();window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
+  function showView(view){active.editorAbort?.abort();clearTimeout(active.previewTimer);active.previewAbort?.abort();active.mediaBusy=false;active.attachments=[];active.mediaJobs=[];window.CornerAnalysis?.unmount();root.classList.remove('corner-insights-focus');root.removeAttribute('data-advanced-analytics');clearTimeout(active.saveTimer);active.view=view;active.post=null;active.dirty=false;
     const labels={command:'Command',overview:'Overview',posts:'Posts',media:'Media',comments:'Comments',guestbook:'Guestbook',analytics:'Insights',settings:'Settings'};
     history.replaceState(null,'','#'+view);
     active.view=view;document.documentElement.dataset.studioView=view;const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=view==='command';$('#admin-heading').innerHTML=(labels[view]||'Overview')+'<span>.</span>';
@@ -174,7 +174,7 @@
     const renderQueue=()=>{
       const visible=items.filter(item=>commandMatches(item,filters));
       const host=$('#command-queue-list');
-      if(host)host.innerHTML=visible.length?visible.map(commandItem).join(''):empty('Nothing matches these filters.','Change a dropdown or add a new command item.');
+      if(host)host.innerHTML=visible.length?visible.map(commandItem).join(''):items.length?empty('Nothing matches these filters.','Change a dropdown or add a new command item.'):empty('Your queue is clear.','Add the next decision, risk, or task when it needs your attention.');
       const count=$('#command-visible-count');if(count)count.textContent=visible.length+' shown';
       $$('[data-command-state-select]').forEach(select=>select.onchange=async()=>{
         const id=select.dataset.id,state=select.value,version=Number(select.dataset.version),previous=items.find(item=>item.id===id)?.state;
@@ -257,489 +257,571 @@
         onSuccess:()=>posts(),onFailure:error=>toast(error.message,'error')});
     });
   }
-  const autoTitle=body=>{
-    const lines=String(body||'').trim().split(/[\n.!?]+/).map(s=>s.trim()).filter(Boolean);
-    const first=(lines[0]||'A moment in pictures').replace(/^>\s*/,'');
-    return first.length<=95?first:first.slice(0,91).replace(/\s+\S*$/,'')+'…';
-  };
-  const autoType=body=>{
-    const text=String(body||'').toLowerCase();
-    if(/\b(birthday|congratulations|festival|celebrate|anniversary|best wishes)\b/.test(text))return 'wish';
-    if(/\b(shipped|launched|building|release|programming|developer|project|api|code|product)\b/.test(text))return 'build';
-    if(/\b(photo|picture|rain|sunset|moment|beautiful sky|video|photograph)\b/.test(text))return 'moment';
-    if(text.length>650)return 'journal';return 'tech_note';
-  };
+  const composer=window.CornerComposer;
+  const autoTitle=body=>composer?.title(body)||String(body||'').trim().split(/\r?\n/)[0].slice(0,95)||'A moment in pictures';
+  const autoSummary=body=>composer?.summary(body)||String(body||'').replace(/\s+/g,' ').trim().slice(0,280);
+  const autoType=body=>composer?.type(body,active.attachments.length)||'tech_note';
+  const composerIcon=name=>'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+({
+    photo:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m21 15-5-5L5 21"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    arrow:'<path d="m14 6-6 6 6 6"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18m-12 5h2"/>',
+    globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a16 16 0 0 1 0 18 16 16 0 0 1 0-18Z"/>',
+    drafts:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+    check:'<path d="m5 12 4 4L19 6"/>',
+    desktop:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>',
+    mobile:'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/>',
+    smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 3 4 3 4-3 4-3M8 8h.01M16 8h.01"/>',
+    sparkle:'<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>',
+    more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+  }[name]||'')+'</svg>';
   function postFields(p={},seriesList=[]){
-    const id=!!p.id,currentSeries=p.series||null;
-    const seriesChoice=currentSeries?.slug||'__new__';
+    const id=!!p.id,currentSeries=p.series||null,archived=p.state==='archived';
+    const seriesChoice=currentSeries?.slug||'__none__';
     const seriesOptions=seriesList.map(series=>`<option value="${esc(series.slug)}" data-next="${series.nextPart||''}" ${seriesChoice===series.slug?'selected':''}>${esc(series.title)} · ${Number(series.chapterCount||0)} ${Number(series.chapterCount||0)===1?'chapter':'chapters'}</option>`).join('');
     const publishedSeriesLocked=!!(currentSeries&&p.state==='published');
-    return `<div class="v5-composer"><div class="v5-editor-surface"><div class="v5-editor-top"><strong>${id?'EDIT YOUR STORY':'YOUR CORNER / NEW STORY'} ${tag(p.state||'draft')}</strong><button type="button" class="v5-editor-menu-button" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings">···</button></div>
-    <label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="9" placeholder="What’s on your mind? A thought, a memory, a build, something worth sharing…">${esc(p.body||'')}</textarea>
-    <div id="v5-editor-settings" class="v5-settings" data-v5-settings hidden><strong>Story settings</strong>
-      <label>Presentation<select name="type" ${publishedSeriesLocked?'disabled aria-describedby="v7-series-lock-note"':''}><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label>
-      <label>Symbol <input name="emoji" maxlength="8" value="${esc(p.emoji||'✳')}"></label>
-      <label>Allow comments <input type="checkbox" name="allowComments" ${p.allow_comments!==false&&p.allow_comments!==0?'checked':''}></label>
-      <label>Allow reactions <input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}></label>
-      <label>Featured <input type="checkbox" name="featured" ${p.featured?'checked':''}></label>
-      <label>Pinned <input type="checkbox" name="pinned" ${p.pinned?'checked':''}></label>
-      <label>Milestone <input type="checkbox" name="milestone" ${p.milestone?'checked':''}></label>
-      <label>Public upcoming teaser <input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}></label>
-      <div class="v7-series-settings" data-journal-series ${p.type==='journal'?'':'hidden'}>
-        <span>Journal series</span>
-        <p class="v7-series-question">Which series does this Journal belong to?</p>
-        <label for="v7-series-select">Series
-          <select id="v7-series-select" name="seriesChoice" ${currentSeries?'disabled':''}>
-            <option value="__new__" ${seriesChoice==='__new__'?'selected':''}>Start a new series from this Journal</option>
-            ${seriesOptions}
-          </select>
-        </label>
-        <p class="v7-series-context" data-series-context aria-live="polite">${currentSeries?esc(currentSeries.title)+' · Chapter '+String(currentSeries.partNumber).padStart(2,'0'):'No existing series selected. Saving starts a new series at Chapter 01 automatically.'}</p>
-        ${currentSeries&&!publishedSeriesLocked?'<button type="button" class="admin-secondary v7-series-change" data-change-series>Change series</button>':''}
-        ${publishedSeriesLocked?'<small id="v7-series-lock-note">Published chapters keep their series and chapter number stable. Start a new Journal draft for another series.</small>':'<small>Choose an existing series and the next chapter number is assigned automatically. Leave “Start a new series” selected to begin at Chapter 01.</small>'}
-      </div>
-      <p class="v5-edit-hint">Your title and summary are derived from your writing. Change the presentation only if needed.</p>
-    </div><div class="v5-editor-media-actions"><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media">＋ Attach photo or video <span class="corner-media-count" id="media-count" hidden></span></button><span id="save-indicator" class="v5-editor-status">${id?'Last saved '+esc(p.updated_at||''):'Start writing to autosave'}</span></div></div>
-    <div class="editor-actions v5-editor-actions"><button type="button" class="secondary" id="save-post">Save draft</button><button type="button" id="publish-post">Publish ↗</button><button type="button" class="secondary" id="schedule-post">Schedule</button>${p.state==='draft'&&id?'<button type="button" class="v5-editor-danger" id="delete-draft">Delete draft</button>':''}${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${p.state==='archived'?'<button type="button" id="restore-post">Restore</button>':''}</div></div>`;
+    const titleOverride=id&&p.title!==autoTitle(p.body)?p.title:'';
+    const summaryOverride=id&&p.excerpt!==autoSummary(p.body)?p.excerpt:'';
+    return `<div class="composer-editor-inner v5-composer"><div class="composer-author"><span class="composer-avatar" aria-hidden="true">VM<span>.</span></span><div><strong>${esc(initial.siteTitle||'Vamsi’s Corner')}</strong><span>${composerIcon('globe')} Public when published</span></div><span data-composer-state>${tag(p.state||'draft')}</span><button type="button" class="v5-editor-menu-button composer-more" data-v5-settings-toggle aria-expanded="false" aria-controls="v5-editor-settings" aria-label="More post settings" aria-haspopup="dialog">${composerIcon('more')}</button></div>
+    <div data-draft-recovery class="composer-recovery" role="status" hidden></div>
+    <div class="composer-writing"><label class="sr-only" for="v5-story-body">Write your story</label><textarea id="v5-story-body" class="v5-textarea" name="body" maxlength="25000" rows="10" ${archived?'readonly':''} placeholder="What’s on your mind, Vam?">${esc(p.body||'')}</textarea>
+    <div class="composer-writing-tools"><span data-writing-count>0 characters</span><button type="button" class="composer-emoji-trigger" data-composer-emoji aria-label="Add an emoji" aria-expanded="false" aria-controls="composer-emoji">${composerIcon('smile')}</button></div><div id="composer-emoji" class="composer-emoji" hidden>${['✳','✨','❤️','🌿','☀️','🎉','📖','💭','🛠️','🙏','🌧️','😊'].map(emoji=>'<button type="button" data-insert-emoji="'+emoji+'" aria-label="Insert '+emoji+'">'+emoji+'</button>').join('')}</div></div>
+    <div id="v5-editor-settings" class="v5-settings composer-settings" data-v5-settings hidden><header><div><span class="eyebrow">MAKE IT YOURS</span><strong>Post settings</strong></div><button type="button" data-settings-close aria-label="Close post settings">×</button></header>
+      <section class="composer-setting-section"><h3>Presentation</h3><label>Layout<select name="type" ${publishedSeriesLocked||archived?'disabled aria-describedby="v7-series-lock-note"':''}><option value="auto" ${!id?'selected':''}>Automatically choose</option>${variantTypes.map(t=>`<option value="${t}" ${id&&p.type===t?'selected':''}>${typeNames[t]}</option>`).join('')}</select></label><label>Symbol<input name="emoji" maxlength="8" value="${esc(p.emoji||'✳')}"></label><p>Your words stay exactly as you write them.</p></section>
+      <section class="composer-setting-section"><h3>Post details</h3><label>Title override <span>Optional</span><input name="titleOverride" maxlength="150" value="${esc(titleOverride)}" placeholder="Use the opening of your writing"></label><label>Summary override <span>Optional</span><input name="summaryOverride" maxlength="380" value="${esc(summaryOverride)}" placeholder="Use an excerpt from your writing"></label></section>
+      <section class="composer-setting-section v7-series-settings" data-journal-series ${p.type==='journal'?'':'hidden'}><h3>Journal series</h3><p class="v7-series-question">Which series does this Journal belong to?</p><label for="v7-series-select">Series<select id="v7-series-select" name="seriesChoice" ${publishedSeriesLocked?'disabled':''}><option value="__none__" ${seriesChoice==='__none__'?'selected':''}>Standalone Journal</option><option value="__new__">Start a new series from this Journal</option>${seriesOptions}</select></label><p class="v7-series-context" data-series-context aria-live="polite">${currentSeries?esc(currentSeries.title)+' · Chapter '+String(currentSeries.partNumber).padStart(2,'0'):'This Journal stands on its own.'}</p>${publishedSeriesLocked?'<small id="v7-series-lock-note">Published chapters keep their series and chapter number stable.</small>':'<small>For an existing series, the next chapter number is assigned automatically when you save.</small>'}</section>
+      <section class="composer-setting-section"><h3>Conversation</h3><label class="composer-toggle">Allow comments<input type="checkbox" name="allowComments" ${p.allow_comments!==false&&p.allow_comments!==0?'checked':''}></label><label class="composer-toggle">Allow reactions<input type="checkbox" name="allowReactions" ${p.allow_reactions!==false&&p.allow_reactions!==0?'checked':''}></label></section>
+      <section class="composer-setting-section"><h3>Placement</h3><label class="composer-toggle">Featured<input type="checkbox" name="featured" ${p.featured?'checked':''}></label><label class="composer-toggle">Pinned<input type="checkbox" name="pinned" ${p.pinned?'checked':''}></label><label class="composer-toggle">Milestone<input type="checkbox" name="milestone" ${p.milestone?'checked':''}></label><label class="composer-toggle">Public upcoming teaser<input type="checkbox" name="upcomingPublic" ${p.upcoming_public?'checked':''}></label></section>
+      ${initial.ownerRole==='owner'?'<section class="composer-setting-section"><h3>Subscriber update</h3>'+(p.state==='published'?'<a class="composer-text-link" href="/corner/admin/communications?post='+encodeURIComponent(p.id)+'">Preview subscriber email ↗</a>':'<label class="composer-toggle">Review subscriber email after publishing<input type="checkbox" name="reviewEmail"></label>')+'<p>Review the category template and opted-in audience before queuing an email.</p></section>':''}
+    </div>
+    <div class="composer-summary" data-composer-summary aria-live="polite"></div>
+    <div class="composer-dropzone" data-composer-dropzone ${archived?'hidden':''}><button type="button" class="corner-media-trigger" id="open-media-panel" aria-haspopup="dialog" aria-controls="editor-media" data-composer-add-media><span class="composer-upload-icon">${composerIcon('photo')}${composerIcon('plus')}</span><strong>Add photos or videos</strong><span>Choose files or drag and drop</span><span class="corner-media-count" id="media-count" hidden></span></button></div>
+    <div class="composer-attachments" data-composer-attachments hidden></div><div class="composer-media-jobs" data-composer-media-jobs hidden></div><p class="composer-media-state" data-composer-media-state role="status" hidden></p>
+    <p class="composer-source-note">${composerIcon('sparkle')} You write. Your Corner finds its shape.</p></div>
+    <footer class="composer-footer editor-actions v5-editor-actions"><div class="composer-save-state"><span id="save-indicator" class="v5-editor-status" role="status" aria-live="polite">${id?'Saved · '+esc(new Date(p.updated_at||Date.now()).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})):'Start writing to autosave'}</span><button type="button" data-save-retry hidden>Retry save</button></div><div class="composer-footer-actions"><button type="button" class="secondary" id="save-post" ${archived||p.state==='published'?'hidden':''}>${p.state==='scheduled'?'Save changes':'Save draft'}</button><button type="button" class="secondary composer-schedule" id="schedule-post" ${archived||p.state==='published'?'hidden':''}>${composerIcon('calendar')}<span>${p.state==='scheduled'?'Reschedule':'Schedule'}</span></button><button type="button" id="publish-post" ${archived?'hidden':''}>${p.state==='published'?'Update post':'Publish'}</button><button type="button" class="v5-editor-danger" id="delete-draft" ${p.state!=='draft'||!id?'hidden':''} aria-label="Archive draft">Delete draft</button>${p.state==='scheduled'?'<button type="button" id="cancel-schedule" class="secondary">Cancel schedule</button>':''}${p.state==='published'?'<button type="button" class="warn" id="archive-post">Archive</button>':''}${archived?'<button type="button" id="restore-post">Restore</button>':''}</div></footer>`;
   }
   function formValues(form){
     const body=form.elements.body.value,chosen=form.elements.type.value;
     const type=chosen==='auto'?autoType(body):chosen;
-    return {type,title:autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:String(body||'').replace(/\s+/g,' ').trim().slice(0,280),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked};
+    return {type,title:form.elements.titleOverride?.value.trim()||autoTitle(body),emoji:form.elements.emoji.value||'✳',excerpt:form.elements.summaryOverride?.value.trim()||autoSummary(body),body,tags:active.post?.tags||[],featured:form.elements.featured.checked,pinned:form.elements.pinned.checked,milestone:form.elements.milestone.checked,allowComments:form.elements.allowComments.checked,allowReactions:form.elements.allowReactions.checked,upcomingPublic:form.elements.upcomingPublic.checked,timezone:active.post?.timezone||initial.timezone||'Asia/Kolkata'};
   }
-  function updatePreview(form){const p=formValues(form),card=$('.preview-card');if(!card)return;
-    card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
-    $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();
-    $('.preview-title',card).textContent=p.title;
-    $('.preview-excerpt',card).textContent=p.excerpt||'A moment taking shape.';
-    const quote=$('.preview-story-quote',card);if(quote){quote.hidden=true;quote.textContent='';}
-    $('.preview-story-body',card).textContent=p.body;
-    $('.preview-symbol',card).textContent=p.emoji;
-    $('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
+  function composerSource(form){
+    const result={};
+    for(const name of ['body','type','emoji','titleOverride','summaryOverride','allowComments','allowReactions','featured','pinned','milestone','upcomingPublic','seriesChoice','reviewEmail']){
+      const field=form.elements[name];if(field)result[name]=field.type==='checkbox'?field.checked:field.value;
+    }
+    return result;
   }
-  function previewHtml(){return `<div class="preview-panel"><div class="admin-surface"><p class="eyebrow">PRIVATE PREVIEW</p><h3>Live preview</h3><div class="preview-devices">${['mobile','tablet','laptop','desktop'].map(d=>`<button data-device="${d}" class="${active.previewDevice===d?'is-active':''}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div><div class="preview-stage"><article class="preview-card story story-tech_note" data-device="${active.previewDevice}"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Just enough to invite someone in.</p><blockquote class="preview-story-quote" hidden></blockquote><div class="preview-story-body"></div><div class="story-bottom"><span class="read-meta">READ UPDATE</span><span class="read-link">Read ↗</span></div></div></article></div><p class="admin-hint">Device preview uses the public story CSS. Published cards adapt naturally in the actual feed.</p></div></div>`}
-  async function editor(id=null){clearTimeout(active.saveTimer);active.editorAbort?.abort();active.editorAbort=new AbortController();const controller=active.editorAbort,expectedView=active.view;active.post=null;
-    const [record,seriesList]=await Promise.all([id?api('/corner/api/admin/posts/'+encodeURIComponent(id)):Promise.resolve(null),api('/corner/api/admin/series')]);
-    let p=record?.post||{state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[]};
-    if(controller.signal.aborted||active.view!==expectedView)return;active.post=p;
-    root.innerHTML=`<section class="admin-table-head"><h2>${id?'Edit this story':'A new story.'}</h2><button id="back-posts" class="admin-secondary">← All posts</button></section><div class="admin-two-col"><form class="editor admin-surface" id="post-editor">${postFields(p,seriesList)}</form>${previewHtml()}</div><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
-    const form=$('#post-editor');
-    const publishButton=$('#publish-post');
-    const publishMotion=window.CornerPublishMotion?.mount(publishButton);
-    controller.signal.addEventListener('abort',()=>publishMotion?.cancel(),{once:true});
-    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
-    const hideSettings=()=>{if(menu){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}};
-    toggle?.addEventListener('click',()=>{menu.hidden=!menu.hidden;toggle.setAttribute('aria-expanded',String(!menu.hidden))});
-    document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:active.editorAbort.signal});
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu?.hidden){hideSettings();toggle.focus()}},{signal:active.editorAbort.signal});
-
-    const seriesPanel=$('[data-journal-series]',form),seriesSelect=form.elements.seriesChoice,seriesContext=$('[data-series-context]',form);
-    const syncSeriesPanel=()=>{
-      const values=formValues(form),journal=values.type==='journal';
-      if(seriesPanel)seriesPanel.hidden=!journal;
-      if(!journal||!seriesSelect||!seriesContext)return;
-      if(p.series&&seriesSelect.disabled){
-        seriesContext.textContent=p.series.title+' · Chapter '+String(p.series.partNumber).padStart(2,'0');
-        return;
-      }
-      if(seriesSelect.value==='__new__')seriesContext.textContent='No existing series selected. Saving starts a new series at Chapter 01 automatically.';
-      else{
-        const option=seriesSelect.selectedOptions[0],next=Number(option?.dataset.next||0);
-        seriesContext.textContent=next?'This will become Chapter '+String(next).padStart(2,'0')+' automatically.':'This series cannot accept another chapter.';
-      }
+  function updatePreview(form,{immediate=false}={}){
+    if(!form?.isConnected)return;
+    const p=formValues(form),card=$('.preview-card'),count=$('[data-writing-count]',form),summary=$('[data-composer-summary]',form);
+    if(count)count.textContent=Array.from(p.body).length.toLocaleString('en-IN')+' characters';
+    if(summary){
+      const parts=[(form.elements.type.value==='auto'?'Auto · ':'')+typeNames[p.type]];
+      const series=form.elements.seriesChoice;
+      if(p.type==='journal'&&series?.value&&series.value!=='__none__')parts.push(series.value==='__new__'?'New series':series.selectedOptions[0]?.textContent.split(' · ')[0]||'Journal series');
+      if(!p.allowComments)parts.push('Comments off');if(!p.allowReactions)parts.push('Reactions off');
+      if(p.featured)parts.push('Featured');if(p.pinned)parts.push('Pinned');
+      if(form.elements.reviewEmail?.checked)parts.push('Review email after publishing');
+      summary.replaceChildren(...parts.map(text=>{const span=document.createElement('span');span.textContent=text;return span}));
+    }
+    if(card){
+      card.className='preview-card story story-'+p.type;card.dataset.device=active.previewDevice;
+      $('.preview-category',card).textContent=typeNames[p.type].toUpperCase();$('.preview-title',card).textContent=p.title;
+      $('.preview-excerpt',card).textContent=p.excerpt||'Your story will appear here.';
+      $('.preview-story-body',card).textContent=p.body;$('.preview-story-body',card).hidden=active.previewMode!=='full';
+      $('.preview-symbol',card).textContent=p.emoji;$('.preview-status',card).textContent=p.featured?'FEATURED':p.pinned?'PINNED':'PREVIEW';
+    }
+    const stage=$('.preview-stage');if(stage){stage.dataset.device=active.previewDevice;stage.dataset.previewMode=active.previewMode}
+    clearTimeout(active.previewTimer);active.previewAbort?.abort();
+    const signal=active.editorAbort?.signal;
+    const refresh=async()=>{
+      if(signal?.aborted||!form.isConnected)return;
+      const controller=new AbortController();active.previewAbort=controller;
+      const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});
+      const status=$('[data-preview-status]'),frame=$('[data-composer-preview-frame]');
+      if(status)status.textContent='Updating preview…';
+      try{
+        const result=await api('/corner/api/admin/posts/preview','POST',{post:formValues(form),postId:active.post?.id||null,seriesChoice:form.elements.seriesChoice?.value||'__none__'},{signal:controller.signal});
+        if(controller.signal.aborted||signal?.aborted||!form.isConnected)return;
+        active.previewDocuments=result;
+        if(frame){frame.srcdoc=active.previewMode==='full'?result.fullHtml:result.feedHtml;frame.hidden=false}
+        if(card)card.hidden=true;
+        if(status)status.textContent='Live preview · '+(active.previewMode==='full'?'full post':'feed card');
+      }catch{
+        if(controller.signal.aborted||signal?.aborted)return;
+        if(frame)frame.hidden=true;if(card)card.hidden=false;
+        if(status)status.textContent='Preview unavailable. Your writing is safe — retry when connected.';
+      }finally{signal?.removeEventListener('abort',abort)}
     };
-    $('[data-change-series]',form)?.addEventListener('click',event=>{
-      if(!seriesSelect)return;
-      seriesSelect.disabled=false;seriesSelect.dataset.moveAllowed='true';event.currentTarget.hidden=true;seriesSelect.focus();syncSeriesPanel();
+    active.previewTimer=setTimeout(refresh,immediate?0:420);
+  }
+  function previewHtml(){return `<aside class="composer-preview preview-panel" aria-label="Live post preview"><header class="composer-preview-header"><div><p class="eyebrow">AS YOUR READERS SEE IT</p><h2>Preview</h2></div><div class="preview-devices" role="group" aria-label="Preview device">${['desktop','mobile'].map(device=>'<button type="button" data-device="'+device+'" class="'+(active.previewDevice===device?'is-active':'')+'" aria-label="'+device+' preview" aria-pressed="'+(active.previewDevice===device)+'">'+composerIcon(device)+'<span>'+device[0].toUpperCase()+device.slice(1)+'</span></button>').join('')}</div></header><div class="composer-preview-tabs" role="group" aria-label="Preview presentation"><button type="button" data-preview-mode="feed" aria-pressed="${active.previewMode==='feed'}" class="${active.previewMode==='feed'?'is-active':''}">Feed card</button><button type="button" data-preview-mode="full" aria-pressed="${active.previewMode==='full'}" class="${active.previewMode==='full'?'is-active':''}">Full post</button></div><div class="preview-stage" data-device="${active.previewDevice}" data-preview-mode="${active.previewMode}"><iframe class="composer-preview-frame" data-composer-preview-frame title="Private Corner post preview" sandbox="allow-same-origin" referrerpolicy="no-referrer" hidden></iframe><article class="preview-card story story-tech_note"><div class="story-top"><span class="meta category preview-category">TECH NOTE</span><span class="status-tag preview-status">PREVIEW</span></div><div class="preview-media" data-editor-photo-preview hidden></div><div class="story-copy"><span class="preview-symbol" aria-hidden="true">✳</span><h3 class="preview-title">Your next story.</h3><p class="preview-excerpt">Your story will appear here.</p><div class="preview-story-body" hidden></div></div></article></div><p class="composer-preview-status" data-preview-status role="status">Preparing your preview…</p><p class="composer-preview-note">A private preview. Reactions and sharing stay inactive here.</p></aside>`}
+  let recoveryStorage=null;try{recoveryStorage=window.sessionStorage}catch{ /* Server saves work when device storage is disabled. */ }
+  const draftRecovery=composer?.recovery(initial.ownerId,recoveryStorage)||{read:()=>null,write:()=>false,remove:()=>{},clear:()=>{}};
+  async function editor(id=null){
+    clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();active.editorAbort?.abort();
+    active.editorAbort=new AbortController();const controller=active.editorAbort;active.view='composer';active.post=null;active.dirty=false;active.attachments=[];active.mediaJobs=[];active.mediaBusy=false;active.previewDocuments=null;
+    document.documentElement.dataset.studioView='composer';const studioTop=$('.admin-top');if(studioTop)studioTop.hidden=true;
+    history.replaceState(null,'',id?'#post/'+encodeURIComponent(id):'#create');
+    $$('[data-admin-view]').forEach(button=>{const selected=button.dataset.adminView==='posts';button.classList.toggle('is-active',selected);if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+    const picker=$('#studio-section-select');if(picker)picker.value='view:posts';
+    root.innerHTML='<div class="admin-loading" role="status">Opening your writing space…</div>';
+    let record,seriesList,canManageSeries=true;
+    try{[record,seriesList]=await Promise.all([id?api('/corner/api/admin/posts/'+encodeURIComponent(id)):Promise.resolve(null),api('/corner/api/admin/series').catch(error=>{if(error.status===403){canManageSeries=false;return []}throw error})])}
+    catch(error){if(!controller.signal.aborted){root.innerHTML=empty('Could not open this post',error.message);toast(error.message,'error')}return}
+    if(controller.signal.aborted)return;
+    let p=record?.post||{state:'draft',type:'tech_note',allow_reactions:true,allow_comments:true,tags:[],timezone:initial.timezone||'Asia/Kolkata'};
+    active.post=p;active.attachments=record?.media||[];active.mediaJobs=record?.mediaJobs||[];
+    const recovered=draftRecovery.read(p.id||null);
+    let clientRequestId=recovered?.clientRequestId||composer?.requestId()||crypto.randomUUID();
+    root.innerHTML=`<section class="composer-workspace" data-composer-view="write"><header class="composer-header"><div><button id="back-posts" type="button" class="composer-back" aria-label="Back to posts">${composerIcon('arrow')}</button><div><p class="eyebrow">YOUR CORNER / STUDIO</p><h2>${id?'Edit post':'Create Post'}</h2></div></div><button type="button" class="composer-drafts" data-open-drafts>${composerIcon('drafts')}<span>Drafts</span></button></header><div class="composer-mobile-tabs" role="group" aria-label="Composer view"><button type="button" data-composer-view="write" aria-pressed="true" class="is-active">Write</button><button type="button" data-composer-view="preview" aria-pressed="false">Preview</button></div>${p.state==='scheduled'?'<p class="composer-scheduled-banner">'+composerIcon('calendar')+' Scheduled for '+esc(composer?.scheduledTime(p.scheduled_at,p.timezone)||p.scheduled_at)+'</p>':''}<div class="composer-grid"><form class="editor composer-editor" id="post-editor" novalidate>${postFields(p,seriesList)}</form>${previewHtml()}</div></section><dialog id="schedule-panel" class="corner-schedule-modal" aria-labelledby="corner-schedule-title"></dialog><dialog id="editor-media" class="corner-media-modal" aria-labelledby="media-editor-title" aria-describedby="media-editor-help"><p class="corner-media-loading" role="status">Loading your files…</p></dialog>`;
+    const workspace=$('.composer-workspace'),form=$('#post-editor'),textarea=form.elements.body,indicator=$('#save-indicator'),retry=$('[data-save-retry]',form);
+    form.addEventListener('submit',event=>event.preventDefault());
+    const publishButton=$('#publish-post'),publishMotion=p.state!=='published'&&p.state!=='archived'?window.CornerPublishMotion?.mount(publishButton):null;
+    let editorRevision=0,pendingSave=null,publishing=false,conflictHold=false,deviceSaved=false;
+    let lastSource=JSON.stringify(composerSource(form)),publishFailureNotice=null;
+    controller.signal.addEventListener('abort',()=>{clearTimeout(active.saveTimer);clearTimeout(active.previewTimer);active.previewAbort?.abort();publishMotion?.cancel()},{once:true});
+    const setStatus=(message,kind='saved')=>{if(controller.signal.aborted)return;indicator.textContent=message;indicator.dataset.state=kind;retry.hidden=kind!=='error'&&kind!=='conflict'};
+    const persistLocal=()=>{
+      deviceSaved=draftRecovery.write(p.id||null,{postId:p.id||null,version:p.version||0,clientRequestId,source:composerSource(form)});
+      return deviceSaved;
+    };
+    const syncActionAvailability=()=>{
+      if(controller.signal.aborted||publishing)return;
+      const blocked=active.mediaBusy||active.mediaJobs.some(job=>['queued','processing','failed'].includes(job.state));
+      if(p.state!=='archived'){publishButton.disabled=blocked;$('#schedule-post').disabled=blocked}
+      const mediaState=$('[data-composer-media-state]');
+      if(mediaState){mediaState.hidden=!blocked;mediaState.textContent=active.mediaBusy?'Uploading media. You can keep writing.':active.mediaJobs.some(job=>job.state==='failed')?'A video needs attention. Retry or remove it before publishing.':'Preparing your video for playback. You can keep writing.'}
+      $('#delete-draft').disabled=active.mediaBusy;
+    };
+    const menu=$('[data-v5-settings]'),toggle=$('[data-v5-settings-toggle]');
+    const hideSettings=()=>{if(menu){menu.hidden=true;menu.removeAttribute('aria-modal');toggle.setAttribute('aria-expanded','false')}};
+    toggle?.addEventListener('click',()=>{
+      if(!menu.hidden){hideSettings();return}
+      menu.hidden=false;menu.setAttribute('role','dialog');menu.setAttribute('aria-label','Post settings');
+      if(matchMedia('(max-width:767px)').matches)menu.setAttribute('aria-modal','true');
+      toggle.setAttribute('aria-expanded','true');menu.querySelector('button:not([disabled]),input:not([disabled]),select:not([disabled])')?.focus({preventScroll:true});
     });
-    let editorRevision=0;
-    updatePreview(form);syncSeriesPanel();form.addEventListener('change',event=>{updatePreview(form);syncSeriesPanel();if(event.target===form.elements.type&&formValues(form).type==='journal')requestAnimationFrame(()=>seriesSelect?.focus())});form.addEventListener('input',()=>{
-      editorRevision++;active.dirty=true;$('#save-indicator').textContent='Unsaved edits';
-      updatePreview(form);syncSeriesPanel();
-      if(p.state==='draft'&&form.elements.body.value.trim()){
-        clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)
+    $('[data-settings-close]',menu)?.addEventListener('click',()=>{hideSettings();toggle.focus()});
+    document.addEventListener('pointerdown',event=>{if(!menu?.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))hideSettings()},{signal:controller.signal});
+    document.addEventListener('keydown',event=>{
+      if(menu?.hidden)return;
+      if(event.key==='Escape'){event.preventDefault();hideSettings();toggle.focus();return}
+      if(event.key==='Tab'&&menu.getAttribute('aria-modal')==='true'){
+        const focusable=[...menu.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href]')].filter(node=>node.getClientRects().length);
+        const first=focusable[0],last=focusable[focusable.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}
       }
+    },{signal:controller.signal});
+    const seriesPanel=$('[data-journal-series]',form),seriesSelect=form.elements.seriesChoice,seriesContext=$('[data-series-context]',form);
+    if(!canManageSeries){seriesSelect.disabled=true;if(p.series)form.elements.type.disabled=true}
+    const syncSeriesPanel=()=>{
+      const values=formValues(form),journal=values.type==='journal';if(seriesPanel)seriesPanel.hidden=!journal;
+      if(!journal||!seriesSelect||!seriesContext)return;
+      if(!canManageSeries&&!p.series){seriesContext.textContent='This is a standalone Journal. Series management is available to the owner.';return}
+      if(p.series&&seriesSelect.value===p.series.slug){seriesContext.textContent=p.series.title+' · Chapter '+String(p.series.partNumber).padStart(2,'0');return}
+      if(seriesSelect.value==='__none__')seriesContext.textContent='This Journal stands on its own.';
+      else if(seriesSelect.value==='__new__')seriesContext.textContent='Saving starts a new series at Chapter 01.';
+      else{const next=Number(seriesSelect.selectedOptions[0]?.dataset.next||0);seriesContext.textContent=next?'This will become Chapter '+String(next).padStart(2,'0')+' automatically.':'This series cannot accept another chapter.'}
+    };
+    const fitWriting=()=>{textarea.style.height='auto';textarea.style.height=Math.min(Math.max(240,textarea.scrollHeight),Math.max(440,window.innerHeight*.68))+'px'};
+    const recordEdit=()=>{
+      const source=JSON.stringify(composerSource(form));if(source===lastSource)return;
+      lastSource=source;editorRevision++;active.dirty=true;persistLocal();
+      setStatus(navigator.onLine===false?(deviceSaved?'Offline · saved in this tab':'Offline · unsaved changes'):'Unsaved edits',navigator.onLine===false?'offline':'unsaved');
+      updatePreview(form);syncSeriesPanel();fitWriting();
+      clearTimeout(active.saveTimer);
+      if(p.state==='draft'&&!conflictHold&&navigator.onLine!==false&&(textarea.value.trim()||p.id))active.saveTimer=setTimeout(()=>save(true),1450);
+    };
+    form.addEventListener('input',recordEdit);form.addEventListener('change',recordEdit);
+    const switchComposerView=view=>{
+      workspace.dataset.composerView=view;
+      $$('.composer-mobile-tabs [data-composer-view]').forEach(button=>{const selected=button.dataset.composerView===view;button.classList.toggle('is-active',selected);button.setAttribute('aria-pressed',String(selected))});
+      if(view==='preview')updatePreview(form,{immediate:true});
+    };
+    $$('.composer-mobile-tabs [data-composer-view]').forEach(button=>button.onclick=()=>switchComposerView(button.dataset.composerView));
+    $$('button[data-device]').forEach(button=>button.onclick=()=>{
+      active.previewDevice=button.dataset.device;$$('button[data-device]').forEach(item=>{const selected=item.dataset.device===active.previewDevice;item.classList.toggle('is-active',selected);item.setAttribute('aria-pressed',String(selected))});
+      $('.preview-stage').dataset.device=active.previewDevice;
     });
-    $$('button[data-device]').forEach(b=>b.onclick=()=>{active.previewDevice=b.dataset.device;$$('button[data-device]').forEach(x=>x.classList.toggle('is-active',x.dataset.device===active.previewDevice));updatePreview(form)});
-    let pendingSave=null;
-    async function save(quiet=false){
-      if(pendingSave)return pendingSave;
-      if(!form.elements.body.value.trim()&&!p.id){if(!quiet)toast('Write something or attach media first.','error');return null;}
-      clearTimeout(active.saveTimer);$('#save-indicator').textContent='Saving…';
+    $$('button[data-preview-mode]').forEach(button=>button.onclick=()=>{
+      active.previewMode=button.dataset.previewMode;$$('button[data-preview-mode]').forEach(item=>{const selected=item.dataset.previewMode===active.previewMode;item.classList.toggle('is-active',selected);item.setAttribute('aria-pressed',String(selected))});
+      $('.preview-stage').dataset.previewMode=active.previewMode;
+      const frame=$('[data-composer-preview-frame]');if(active.previewDocuments&&frame)frame.srcdoc=active.previewMode==='full'?active.previewDocuments.fullHtml:active.previewDocuments.feedHtml;
+      updatePreview(form,{immediate:true});
+    });
+    const emojiPanel=$('#composer-emoji'),emojiButton=$('[data-composer-emoji]');
+    emojiButton?.addEventListener('click',()=>{emojiPanel.hidden=!emojiPanel.hidden;emojiButton.setAttribute('aria-expanded',String(!emojiPanel.hidden))});
+    $$('[data-insert-emoji]',emojiPanel).forEach(button=>button.onclick=()=>{
+      const start=textarea.selectionStart,end=textarea.selectionEnd;
+      if(textarea.value.length-(end-start)+button.dataset.insertEmoji.length>textarea.maxLength){toast('This post has reached its writing limit.','error');return}
+      textarea.setRangeText(button.dataset.insertEmoji,start,end,'end');emojiPanel.hidden=true;emojiButton.setAttribute('aria-expanded','false');textarea.focus({preventScroll:true});recordEdit();
+    });
+    const recoveryBanner=$('[data-draft-recovery]');
+    if(recovered&&JSON.stringify(recovered.source)!==lastSource&&p.state!=='archived'){
+      recoveryBanner.hidden=false;recoveryBanner.innerHTML='<div><strong>Unfinished writing found</strong><p>Saved in this tab on '+esc(new Date(recovered.savedAt).toLocaleString('en-IN'))+'. Review it before saving.</p></div><div><button type="button" data-recover-draft>Restore writing</button><button type="button" data-dismiss-recovery>Use saved post</button></div>';
+      $('[data-recover-draft]',recoveryBanner).onclick=()=>{
+        for(const [name,value] of Object.entries(recovered.source)){const field=form.elements[name];if(!field||field.disabled)continue;if(field.type==='checkbox')field.checked=value===true;else field.value=String(value??'')}
+        if(p.series&&p.state==='published')form.elements.type.value='journal';
+        conflictHold=!!(p.id&&Number(recovered.version)!==p.version);recordEdit();
+        recoveryBanner.hidden=true;
+        setStatus(conflictHold?'Recovered writing · review and save against the latest post':'Recovered writing · waiting to save','unsaved');textarea.focus();
+      };
+      $('[data-dismiss-recovery]',recoveryBanner).onclick=()=>{draftRecovery.remove(p.id||null);recoveryBanner.hidden=true};
+    }else if(recovered)draftRecovery.remove(p.id||null);
+    async function save(quiet=false,{allowEmpty=false,review=false}={}){
+      if(pendingSave){const result=await pendingSave;if(controller.signal.aborted)return null;if(!result)return null;if(!active.dirty)return result}
+      if(controller.signal.aborted||p.state==='archived')return null;
+      if(conflictHold&&!review){if(!quiet)toast('Review your recovered writing and choose Save draft.','error');return null}
+      if(!textarea.value.trim()&&!p.id&&!allowEmpty&&!form.elements.titleOverride.value.trim()){if(!quiet)toast('Write something or attach media first.','error');return null}
+      if(p.id&&!active.dirty)return p;
+      clearTimeout(active.saveTimer);setStatus('Saving…','saving');
+      const values=formValues(form),savedRevision=editorRevision,snapshot=composerSource(form),previousId=p.id||null;
+      persistLocal();
       pendingSave=(async()=>{try{
-        const values=formValues(form),savedRevision=editorRevision;
-        const stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',values);
-        // Journal organization is automatic: every Journal belongs to a series,
-        // and chapter numbers are assigned by the server to avoid collisions.
-        const previousSeries=p.series||null;
-        try{
-          if(values.type==='journal'){
-            const choice=String(form.elements.seriesChoice?.value||'__new__');
-            const sameSeries=previousSeries&&choice===previousSeries.slug;
-            stored.series=sameSeries?previousSeries:await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',
-              choice==='__new__'
-                ?{mode:'new',allowMove:form.elements.seriesChoice?.dataset.moveAllowed==='true'}
-                :{mode:'existing',slug:choice,allowMove:form.elements.seriesChoice?.dataset.moveAllowed==='true'});
-          }else if(previousSeries){
-            stored.series=await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',{mode:'unlink'});
-          }else stored.series=null;
-        }catch(seriesError){
-          p={...stored,series:previousSeries};active.post=p;active.dirty=true;
-          throw new Error('Story saved, but Journal series setup failed: '+seriesError.message);
+        let stored=p.id?await api('/corner/api/admin/posts/'+p.id,'PATCH',{...values,version:p.version}):await api('/corner/api/admin/posts','POST',{...values,clientRequestId});
+        // If a previous create response was lost, keep the same post and flush the
+        // latest source rather than treating the older request as a fresh save.
+        if(stored.clientRequestReplayed){
+          if(stored.state!=='draft')throw Object.assign(Error('This recovered draft has already changed state. Open the saved post before editing.'),{status:409});
+          stored=await api('/corner/api/admin/posts/'+stored.id,'PATCH',{...values,version:stored.version});
         }
-        // Persisted draft is safe, but never apply a stale response to a different Studio view.
-        if(controller.signal.aborted)return null;
-        p=stored;active.post=p;active.dirty=editorRevision!==savedRevision;
-        if(p.series&&seriesSelect){
+        const previousSeries=p.series||null,choice=String(snapshot.seriesChoice||'__none__');
+        try{
+          if(values.type==='journal'&&choice!=='__none__'){
+            const sameSeries=previousSeries&&choice===previousSeries.slug;
+            stored.series=sameSeries?previousSeries:await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',choice==='__new__'?{mode:'new',allowMove:!!previousSeries}:{mode:'existing',slug:choice,allowMove:!!previousSeries});
+          }else if(previousSeries)stored.series=await api('/corner/api/admin/posts/'+stored.id+'/series','PUT',{mode:'unlink'});
+          else stored.series=null;
+        }catch(error){p={...stored,series:previousSeries};if(!controller.signal.aborted){active.post=p;active.dirty=true}throw Object.assign(new Error('Post saved, but Journal series setup needs attention: '+error.message),{status:error.status,code:error.code})}
+        p=stored;
+        const latestBuffer=draftRecovery.read(previousId);
+        if(latestBuffer&&JSON.stringify(latestBuffer.source)===JSON.stringify(snapshot))draftRecovery.remove(previousId);
+        else if(!previousId&&latestBuffer){draftRecovery.write(p.id,{...latestBuffer,postId:p.id,version:p.version});draftRecovery.remove(null)}
+        if(controller.signal.aborted)return p;
+        active.post=p;active.dirty=editorRevision!==savedRevision;conflictHold=false;
+        if(p.series&&seriesSelect&&seriesSelect.value===choice){
           let option=[...seriesSelect.options].find(item=>item.value===p.series.slug);
           if(!option){option=new Option(p.series.title,p.series.slug);option.dataset.next=String(Number(p.series.partNumber||0)+1);seriesSelect.add(option)}
-          seriesSelect.value=p.series.slug;seriesSelect.disabled=true;delete seriesSelect.dataset.moveAllowed;syncSeriesPanel();
+          seriesSelect.value=p.series.slug;
         }
-        form.querySelector('#save-indicator').textContent=active.dirty
-          ?'Earlier edits saved · newer edits unsaved'
-          :'Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
-        if(active.dirty&&p.state==='draft'){
-          clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450);
+        lastSource=JSON.stringify(composerSource(form));syncSeriesPanel();
+        if(active.dirty)persistLocal();else{draftRecovery.remove(p.id);draftRecovery.remove(null)}
+        $('[data-composer-state]',form).innerHTML=tag(p.state);
+        $('#delete-draft').hidden=p.state!=='draft';
+        history.replaceState(null,'','#post/'+encodeURIComponent(p.id));
+        setStatus(active.dirty?'Earlier edits saved · newer edits unsaved':'Saved · '+new Date(p.updated_at||Date.now()).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}),active.dirty?'unsaved':'saved');
+        if(active.dirty&&p.state==='draft'){clearTimeout(active.saveTimer);active.saveTimer=setTimeout(()=>save(true),1450)}
+        if(!quiet)toast(p.state==='draft'?'Draft saved.':'Changes saved.','success');
+        updatePreview(form);return p;
+      }catch(error){
+        if(!controller.signal.aborted){
+          active.dirty=true;persistLocal();conflictHold=error.status===409;
+          setStatus(conflictHold?'A newer version was saved. Your writing is kept in this tab.':deviceSaved?'Couldn’t save online · kept in this tab':'Couldn’t save · retry',conflictHold?'conflict':'error');
+          retry.textContent=conflictHold?'Review saved version':'Retry save';
+          if(!quiet)toast(error.message,'error');
         }
-        if(!quiet)toast('Draft saved.','success');return p;
-      }catch(error){if(!controller.signal.aborted){
-        form.querySelector('#save-indicator').textContent=error.status===409?'Edit conflict — refresh':'Save failed';
-        if(!quiet)toast(error.message,'error');
-      }return null}
-      finally{pendingSave=null}})();return pendingSave;
+        return null;
+      }finally{pendingSave=null}})();
+      return pendingSave;
     }
+    async function saveLatest(options={}){
+      if(pendingSave){const pending=await pendingSave;if(!pending)return null}
+      if(controller.signal.aborted)return null;
+      return save(true,{...options,review:true});
+    }
+    retry.onclick=()=>{if(conflictHold){persistLocal();void editor(p.id||null)}else void save(false,{review:true})};
     $('#save-post').onclick=async()=>{
       const button=$('#save-post');
-      await actionMotion({action:'draft.save',trigger:button,targetId:p.id||'new-draft',
-        signal:controller.signal,execute:()=>save(true),
-        confirm:stored=>!!stored&&!active.dirty,
-        onSuccess:()=>toast('Draft saved.','success'),
-        onFailure:error=>toast(active.dirty?'Earlier edits saved; newer changes remain unsaved.':error.message,'error')});
+      await actionMotion({action:'draft.save',trigger:button,targetId:p.id||'new-draft',signal:controller.signal,
+        execute:()=>saveLatest(),confirm:stored=>!!stored&&!active.dirty,
+        onSuccess:()=>toast(p.state==='draft'?'Draft saved.':'Changes saved.','success'),
+        onFailure:error=>toast(active.dirty?'Your latest writing is still here. Retry saving when connected.':error.message,'error')});
     };
-    let publishing=false,publishFailureNotice=null;
     const lockedControls=new Map();
-    const lockWhilePublishing=()=>{
-      for(const control of form.querySelectorAll('button,input,textarea,select')){
-        if(control===publishButton)continue;
-        lockedControls.set(control,control.disabled);control.disabled=true;
-      }
-    };
-    const unlockAfterPublishing=()=>{
-      for(const [control,wasDisabled] of lockedControls){
-        if(control.isConnected)control.disabled=wasDisabled;
-      }
-      lockedControls.clear();
-    };
+    const lockWhilePublishing=()=>{for(const control of form.querySelectorAll('button,input,textarea,select')){if(control===publishButton)continue;lockedControls.set(control,control.disabled);control.disabled=true}};
+    const unlockAfterPublishing=()=>{for(const [control,disabled] of lockedControls){if(control.isConnected)control.disabled=disabled}lockedControls.clear()};
     publishButton.onclick=async()=>{
+      if(active.mediaBusy||active.mediaJobs.some(job=>['queued','processing','failed'].includes(job.state))){toast('Finish or remove the pending media before publishing.','error');return}
       if(publishing||publishMotion?.start()===false)return;
-      // A resolved retry must never leave an old red publish error visible behind green success.
       publishFailureNotice?.dismiss?.();publishFailureNotice=null;
-      publishing=true;lockWhilePublishing();
+      const reviewEmail=!!form.elements.reviewEmail?.checked,updating=p.state==='published';
+      publishing=true;lockWhilePublishing();if(!publishMotion){publishButton.disabled=true;publishButton.textContent='Updating…'}
       try{
-        // Save the real draft before the actual publish request; never fake success.
-        const saved=await save(true);
+        const saved=await saveLatest({allowEmpty:active.attachments.length>0});
         if(controller.signal.aborted)return;
-        if(!saved){
-          publishMotion?.failure('Could not save your story. Review your changes and retry.');
-          publishFailureNotice=toast('Could not save your story. Review your changes and retry.','error');
-          return;
-        }
+        if(!saved||active.dirty)throw Error('Could not save the latest writing. Review your changes and retry.');
         const published=await api('/corner/api/admin/posts/'+saved.id+'/publish','POST');
         if(controller.signal.aborted)return;
-        p=published;active.post=p;active.dirty=false;
+        if(published?.state!=='published')throw Error('Publication was not confirmed. Please review this post.');
+        p=published;active.post=p;active.dirty=false;draftRecovery.remove(p.id);draftRecovery.remove(null);
         await publishMotion?.success();
         if(controller.signal.aborted)return;
-        toast('Published. Your story is live.','success');
-        void editor(p.id);
-        // Old editor must not issue another publish while the new editor loads.
+        toast(updating?'Your changes are live.':'Published. Your story is live.','success');
         publishButton.disabled=true;
-      }catch(err){
-        if(!controller.signal.aborted){
-          publishMotion?.failure(err.message||'Publishing failed. Please retry.');
-          publishFailureNotice=toast(err.message||'Publishing failed. Please retry.','error');
-        }
-      }finally{
-        publishing=false;unlockAfterPublishing();
-      }
+        controller.abort();
+        root.innerHTML='<section class="composer-success"><span class="composer-success-icon">'+composerIcon('check')+'</span><p class="eyebrow">YOUR CORNER</p><h2>'+(updating?'Post updated.':'A little more of you, out in the world.')+'</h2><p>'+esc(p.title)+'</p><div class="composer-success-actions"><a class="admin-primary" href="/corner/post/'+encodeURIComponent(p.slug)+'">View post ↗</a><button type="button" class="admin-secondary" data-compose-another>Create another post</button><button type="button" class="admin-secondary" data-return-posts>All posts</button></div>'+(initial.ownerRole==='owner'?'<div class="composer-success-email"><strong>'+(reviewEmail?'Your subscriber email is ready to review.':'Share it with your subscribers.')+'</strong><p>Check the category template and opted-in audience before queuing delivery.</p><a href="/corner/admin/communications?post='+encodeURIComponent(p.id)+'">Preview subscriber email ↗</a></div>':'')+'</section>';
+        $('[data-compose-another]').onclick=()=>editor();$('[data-return-posts]').onclick=()=>showView('posts');
+        if(reviewEmail)location.assign('/corner/admin/communications?post='+encodeURIComponent(p.id));
+      }catch(error){
+        if(!controller.signal.aborted){publishMotion?.failure(error.message);publishFailureNotice=toast(error.message,'error');if(!publishMotion){publishButton.disabled=false;publishButton.textContent=updating?'Update post':'Publish'}}
+      }finally{publishing=false;unlockAfterPublishing();syncActionAvailability()}
     };
     $('#schedule-post').onclick=()=>{
-      const panel=$('#schedule-panel');
-      if(!panel)return;
-      const repeat=p.type==='wish'
-        ?'<label class="corner-schedule-repeat">Repeat<select name="recurrence"><option value="none">Only this time</option><option value="yearly">Every year</option></select></label>'
-        :'<input type="hidden" name="recurrence" value="none">';
-      const tz=esc(p.timezone||'Asia/Kolkata');
-      panel.innerHTML='<div class="corner-schedule-inner"><header><div><p class="eyebrow">ONE SIMPLE STEP</p><h2 id="corner-schedule-title">Schedule publication</h2><p>Choose the date and time. We handle the rest.</p></div><button type="button" data-schedule-cancel aria-label="Close scheduling dialog">×</button></header>'+
-        '<form id="schedule-form" class="corner-schedule-form"><label>Publish on<input type="datetime-local" name="localTime" step="60" required></label>'+
-        '<p class="corner-schedule-timezone">Time zone: '+tz+'</p><input name="timezone" type="hidden" value="'+tz+'">'+repeat+
-        '<details><summary>Advanced timing (optional)</summary><div class="corner-schedule-advanced">'+
-        '<label>Stop annual repeats after year<input type="number" name="recurrenceEndYear" min="2026" max="2200" placeholder="Keep repeating"></label>'+
-        '<label>Feature from<input type="datetime-local" name="featureStartLocal"></label>'+
-        '<label>Feature until<input type="datetime-local" name="featureEndLocal"></label>'+
-        '<label>Pin from<input type="datetime-local" name="pinStartLocal"></label>'+
-        '<label>Pin until<input type="datetime-local" name="pinEndLocal"></label></div></details>'+
-        '<p class="corner-schedule-message" role="status" aria-live="polite"></p>'+
-        '<div class="corner-schedule-actions"><button type="button" class="corner-schedule-secondary" data-schedule-cancel>Cancel</button><button type="submit">Confirm schedule ↗</button></div></form></div>';
+      if(active.mediaBusy||active.mediaJobs.some(job=>['queued','processing','failed'].includes(job.state)))return;
+      const panel=$('#schedule-panel');if(!panel)return;
+      const currentType=formValues(form).type,tz=p.timezone||initial.timezone||'Asia/Kolkata';
+      const start=composer?.localInput(p.scheduled_at||Date.now()+3600000,tz)||'';
+      const repeat=currentType==='wish'?'<label class="corner-schedule-repeat">Repeat<select name="recurrence"><option value="none">Only this time</option><option value="yearly" '+(p.recurrence==='yearly'?'selected':'')+'>Every year</option></select></label>':'<input type="hidden" name="recurrence" value="none">';
+      const localWindow=name=>esc(composer?.localInput(p[name],tz)||'');
+      panel.innerHTML='<div class="corner-schedule-inner"><header><div><p class="eyebrow">PUBLISH WHEN IT MATTERS</p><h2 id="corner-schedule-title">Schedule publication</h2><p>Your post will publish even when this browser is closed.</p></div><button type="button" data-schedule-cancel aria-label="Close scheduling dialog">×</button></header><form id="schedule-form" class="corner-schedule-form"><label>Publish on<input type="datetime-local" name="localTime" step="60" required value="'+esc(start)+'" min="'+esc(composer?.localInput(Date.now()+60000,tz)||'')+'"></label><p class="corner-schedule-timezone">Time zone: '+esc(tz)+'</p><input name="timezone" type="hidden" value="'+esc(tz)+'">'+repeat+'<p class="composer-schedule-summary" data-schedule-summary></p><details><summary>Advanced timing (optional)</summary><div class="corner-schedule-advanced"><label>Stop annual repeats after year<input type="number" name="recurrenceEndYear" min="'+new Date().getFullYear()+'" max="2200" value="'+esc(p.recurrence_end_year||'')+'" placeholder="Keep repeating"></label><label>Feature from<input type="datetime-local" name="featureStartLocal" value="'+localWindow('feature_start_at')+'"></label><label>Feature until<input type="datetime-local" name="featureEndLocal" value="'+localWindow('feature_end_at')+'"></label><label>Pin from<input type="datetime-local" name="pinStartLocal" value="'+localWindow('pin_start_at')+'"></label><label>Pin until<input type="datetime-local" name="pinEndLocal" value="'+localWindow('pin_end_at')+'"></label></div></details><p class="corner-schedule-message" role="status" aria-live="polite"></p><div class="corner-schedule-actions"><button type="button" class="corner-schedule-secondary" data-schedule-cancel>Cancel</button><button type="submit">Confirm schedule ↗</button></div></form></div>';
+      const scheduleForm=$('#schedule-form',panel),summary=$('[data-schedule-summary]',panel);
+      const refreshTime=()=>{summary.textContent='Publish on '+(composer?.selectedTime(scheduleForm.elements.localTime.value,tz)||scheduleForm.elements.localTime.value)};
+      scheduleForm.elements.localTime.addEventListener('input',refreshTime);refreshTime();
       panel.querySelectorAll('[data-schedule-cancel]').forEach(button=>button.addEventListener('click',()=>panel.close()));
-      panel.querySelector('#schedule-form').onsubmit=async event=>{
-        event.preventDefault();
-        const formSchedule=event.currentTarget,button=formSchedule.querySelector('[type=submit]');
-        const feedback=formSchedule.querySelector('[role=status]');
+      let scheduling=false;
+      scheduleForm.onsubmit=async event=>{
+        event.preventDefault();if(scheduling||!scheduleForm.reportValidity())return;
+        scheduling=true;const formSchedule=event.currentTarget,button=formSchedule.querySelector('[type=submit]'),feedback=formSchedule.querySelector('[role=status]');
         feedback.textContent='Saving the schedule…';
-        await actionMotion({action:'post.schedule',trigger:button,targetId:p.id||'new-schedule',
-          signal:controller.signal,execute:async()=>{
-            const saved=await save(true);
+        await actionMotion({action:'post.schedule',trigger:button,targetId:p.id||'new-schedule',signal:controller.signal,
+          execute:async()=>{
+            const saved=await saveLatest({allowEmpty:active.attachments.length>0});
             if(!saved||active.dirty)throw Error('Save the latest story edits before scheduling.');
             return api('/corner/api/admin/posts/'+saved.id+'/schedule','POST',{
-              localTime:formSchedule.elements.localTime.value,
-              timezone:formSchedule.elements.timezone.value,
-              recurrence:formSchedule.elements.recurrence.value,
-              recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
-              featureStartLocal:formSchedule.elements.featureStartLocal.value,
-              featureEndLocal:formSchedule.elements.featureEndLocal.value,
-              pinStartLocal:formSchedule.elements.pinStartLocal.value,
-              pinEndLocal:formSchedule.elements.pinEndLocal.value
+              version:saved.version,localTime:formSchedule.elements.localTime.value,timezone:formSchedule.elements.timezone.value,
+              recurrence:formSchedule.elements.recurrence.value,recurrenceEndYear:formSchedule.elements.recurrenceEndYear.value,
+              featureStartLocal:formSchedule.elements.featureStartLocal.value,featureEndLocal:formSchedule.elements.featureEndLocal.value,
+              pinStartLocal:formSchedule.elements.pinStartLocal.value,pinEndLocal:formSchedule.elements.pinEndLocal.value
             });
-          },
-          confirm:result=>!!result?.id&&result.state==='scheduled',
-          onSuccess:scheduled=>{
-            p=scheduled;feedback.textContent='Scheduled for '+formSchedule.elements.localTime.value;
-            if(!controller.signal.aborted){panel.close();toast('Scheduled successfully.','success');void editor(p.id)}
-          },
+          },confirm:result=>!!result?.id&&result.state==='scheduled',
+          onSuccess:scheduled=>{p=scheduled;active.post=p;draftRecovery.remove(p.id);feedback.textContent='Scheduled for '+formSchedule.elements.localTime.value;if(!controller.signal.aborted){panel.close();toast('Scheduled for '+(composer?.scheduledTime(p.scheduled_at,p.timezone)||p.scheduled_at),'success');void editor(p.id)}},
           onFailure:error=>{feedback.textContent=error.message||'Scheduling failed. Please try again.'}
-        });
+        });scheduling=false;
       };
-      panel.showModal();
-      panel.querySelector('[name=localTime]').focus();
+      panel.showModal();scheduleForm.elements.localTime.focus();
     };
+    $('#cancel-schedule')?.addEventListener('click',async event=>{
+      await actionMotion({action:'draft.save',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
+        execute:async()=>{const saved=await saveLatest();if(!saved||active.dirty)throw Error('Save the latest edits before changing the schedule.');return api('/corner/api/admin/posts/'+p.id+'/unschedule','POST',{version:saved.version})},
+        confirm:result=>result?.state==='draft',onSuccess:result=>{toast('Schedule cancelled. Your post is saved as a draft.','success');void editor(result.id)},onFailure:error=>toast(error.message,'error')});
+    });
     $('#delete-draft')?.addEventListener('click',async event=>{
       if(!p.id||p.state!=='draft'||!confirm('Move this draft to Archived? You can restore it later.'))return;
-      await actionMotion({action:'post.delete',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
-        execute:()=>api('/corner/api/admin/posts/'+p.id,'DELETE'),
-        onSuccess:()=>{toast('Draft moved to Archived.','success');showView('posts')},
-        onFailure:error=>toast(error.message,'error')});
+      await actionMotion({action:'post.delete',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,execute:()=>api('/corner/api/admin/posts/'+p.id,'DELETE'),onSuccess:()=>{draftRecovery.remove(p.id);draftRecovery.remove(null);toast('Draft moved to Archived.','success');showView('posts')},onFailure:error=>toast(error.message,'error')});
     });
     $('#archive-post')?.addEventListener('click',async event=>{
       if(!confirm('Archive this story? It will no longer be public.'))return;
-      await actionMotion({action:'post.archive',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
-        execute:()=>api('/corner/api/admin/posts/'+p.id+'/archive','POST'),
-        onSuccess:()=>{toast('Post archived.','success');showView('posts')},
-        onFailure:error=>toast(error.message,'error')});
+      await actionMotion({action:'post.archive',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,execute:()=>api('/corner/api/admin/posts/'+p.id+'/archive','POST'),onSuccess:()=>{draftRecovery.remove(p.id);toast('Post archived.','success');showView('posts')},onFailure:error=>toast(error.message,'error')});
     });
     $('#restore-post')?.addEventListener('click',async event=>{
-      await actionMotion({action:'post.restore',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,
-        execute:()=>api('/corner/api/admin/posts/'+p.id+'/restore','POST'),
-        onSuccess:()=>{toast('Post restored.','success');void editor(p.id)},
-        onFailure:error=>toast(error.message,'error')});
+      await actionMotion({action:'post.restore',trigger:event.currentTarget,targetId:p.id,signal:controller.signal,execute:()=>api('/corner/api/admin/posts/'+p.id+'/restore','POST'),onSuccess:()=>{toast('Post restored.','success');void editor(p.id)},onFailure:error=>toast(error.message,'error')});
     });
-    $('#back-posts').onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView('posts')};
+    const leave=filter=>{if(active.mediaBusy&&!confirm('An upload is running. Leave this post?'))return;if(active.dirty&&!deviceSaved&&!confirm('Leave with unsaved writing?'))return;persistLocal();active.filter=filter;showView('posts')};
+    $('#back-posts').onclick=()=>leave('all');$('[data-open-drafts]').onclick=()=>leave('draft');
     const mediaPanel=$('#editor-media');
-    $('#open-media-panel').onclick=()=>{if(mediaPanel&&!mediaPanel.open)mediaPanel.showModal()};
-    mediaPanel?.addEventListener('click',event=>{if(event.target===mediaPanel)mediaPanel.close()});
-    window.CornerMotion?.refresh();
-    mediaForPost(p.id||null,()=>save(true)).catch(err=>{mediaPanel.dataset.mediaInitError=err.message||String(err);toast(err.message,'error')});
-    form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();save(true)}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();$('.preview-stage')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
+    const mediaContext={signal:controller.signal,current:()=>!controller.signal.aborted&&form.isConnected,updated:(items,jobs)=>{if(controller.signal.aborted)return;active.attachments=items;active.mediaJobs=jobs;showEditorCover(items);updatePreview(form);syncActionAvailability()},busy:value=>{if(controller.signal.aborted)return;active.mediaBusy=value;syncActionAvailability()},save:()=>saveLatest({allowEmpty:true})};
+    const mediaReady=mediaForPost(p.id||null,()=>saveLatest({allowEmpty:true}),mediaContext).catch(error=>{if(controller.signal.aborted)return;mediaPanel.dataset.mediaInitError=error.message||String(error);toast(error.message,'error')});
+    const openMedia=async files=>{
+      if(controller.signal.aborted||p.state==='archived')return;
+      if(!mediaPanel.open)mediaPanel.showModal();await mediaReady;if(controller.signal.aborted)return;
+      const input=$('#editor-upload input[type=file]',mediaPanel);
+      if(files?.length&&input){const transfer=new DataTransfer();for(const file of files)transfer.items.add(file);input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}))}
+    };
+    $('#open-media-panel').onclick=()=>openMedia();
+    const dropzone=$('[data-composer-dropzone]');
+    dropzone.addEventListener('dragover',event=>{event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='copy';dropzone.classList.add('is-dragging')});
+    dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('is-dragging'));
+    dropzone.addEventListener('drop',event=>{event.preventDefault();dropzone.classList.remove('is-dragging');void openMedia([...(event.dataTransfer?.files||[])])});
+    mediaPanel.addEventListener('click',event=>{if(event.target===mediaPanel)mediaPanel.close()});
+    form.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();void saveLatest()}else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='p'){event.preventDefault();switchComposerView('preview');$('.composer-preview')?.scrollIntoView({behavior:'smooth',block:'nearest'})}});
+    window.addEventListener('offline',()=>{if(active.dirty){persistLocal();setStatus(deviceSaved?'Offline · saved in this tab':'Offline · unsaved changes','offline')}},{signal:controller.signal});
+    window.addEventListener('online',()=>{if(active.dirty&&p.state==='draft'&&!conflictHold)void save(true);updatePreview(form,{immediate:true})},{signal:controller.signal});
+    if(p.state==='archived'){form.querySelectorAll('input,textarea,select,[data-composer-emoji]').forEach(control=>control.disabled=true)}
+    updatePreview(form,{immediate:true});syncSeriesPanel();syncActionAvailability();fitWriting();window.CornerMotion?.refresh();
   }
   const uploadLimit=8;
   const supportedMedia=new Set(['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','video/mp4','video/quicktime','video/webm']);
+  const fileMime=file=>{
+    if(supportedMedia.has(file.type))return file.type;
+    if(file.type&&file.type!=='application/octet-stream'&&!/heic|heif|quicktime/i.test(file.type))return '';
+    return ({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',heic:'image/heic',heif:'image/heif',mp4:'video/mp4',m4v:'video/mp4',mov:'video/quicktime',webm:'video/webm'})[String(file.name||'').split('.').pop().toLowerCase()]||'';
+  };
   function showEditorCover(items){
-    const host=$('[data-editor-photo-preview]');
-    if(!host)return;
-    const cover=items.find(item=>item.mime_type?.startsWith('image/'));
-    host.replaceChildren();
-    host.hidden=!cover;
-    if(!cover)return;
-    const image=document.createElement('img');
-    image.src='/corner/media/'+encodeURIComponent(cover.storage_key);
-    image.alt=cover.alt_text||'Story cover photograph';
-    image.loading='lazy';
-    host.append(image);
+    const host=$('[data-editor-photo-preview]');if(!host)return;
+    const cover=items[0];host.replaceChildren();host.hidden=!cover;if(!cover)return;
+    const isVideo=cover.mime_type?.startsWith('video/'),element=document.createElement(isVideo?'video':'img');
+    element.src='/corner/media/'+encodeURIComponent(cover.storage_key);
+    if(isVideo){element.controls=true;element.playsInline=true;element.preload='metadata';element.muted=true;if(cover.has_poster)element.poster=element.src+'?poster=1'}
+    else{element.alt=cover.alt_text||'Story cover photograph';element.loading='lazy';element.style.objectPosition=(Number(cover.focal_x??.5)*100)+'% '+(Number(cover.focal_y??.5)*100)+'%'}
+    host.append(element);
   }
-  async function mediaForPost(postId,ensureDraft){
-    const section=$('#editor-media');
-    if(!section)return;
-    const result=postId?await api('/corner/api/admin/posts/'+encodeURIComponent(postId)):null;
-    const attachments=result?.media||[];
-    showEditorCover(attachments);
-    const badge=$('#media-count');
-    if(badge){badge.textContent=String(attachments.length);badge.hidden=!attachments.length}
-    section.innerHTML='<div class="corner-media-shell">'+
-      '<header class="corner-media-header"><div class="corner-media-heading"><p class="eyebrow">STORY / MEDIA</p><h2 id="media-editor-title">Attach files<span>.</span></h2><p id="media-editor-help">A clean space for your story photos and videos.</p></div><button type="button" class="corner-media-close" data-media-dismiss aria-label="Close media dialog">×</button></header>'+
-      '<section class="post-media-editor" aria-label="Current attachments and new uploads">'+
-      '<div class="post-media-head"><h3>Story attachments</h3><small class="corner-media-total">'+attachments.length+' '+(attachments.length===1?'file':'files')+'</small></div>'+
-      (attachments.length?'<div class="media-gallery">'+attachments.map((x,index)=>mediaCard(x,true,index,attachments.length)).join('')+'</div>':
-       '<p class="corner-media-empty">No files attached yet. Select a photo or video below to add it to this story.</p>')+
-      '<form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video">'+
-      '<label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/*,video/mp4,video/quicktime,video/webm,.heic,.heif,.mov" required></label>'+
-      '<div class="upload-preview-list" data-upload-previews aria-live="polite"></div>'+
-      '<p class="admin-hint">JPG, PNG, HEIC, WebP or GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. Clips are optimized before playback.</p>'+
-      '<p data-upload-status role="status" aria-live="polite"></p>'+
-      '<button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button>'+
-      '</form></section>'+
-      '<footer class="corner-media-footer"><span>Draft media stays private until you publish.</span><button type="button" class="corner-media-done" data-media-dismiss>Done ↗</button></footer></div>';
+  async function mediaForPost(postId,ensureDraft,context={}){
+    const section=$('#editor-media');if(!section)return;
+    const current=()=>context.current?context.current():section.isConnected;
+    const result=postId?await api('/corner/api/admin/posts/'+encodeURIComponent(postId)):null;if(!current())return;
+    let attachments=result?.media||[],jobs=result?.mediaJobs||[],pending=[],uploadInFlight=false,jobTimer=null,selectedSignature='';
+    const cleanup=()=>{for(const entry of pending)if(entry.url){URL.revokeObjectURL(entry.url);entry.url=null}};
+    context.signal?.addEventListener('abort',()=>{clearTimeout(jobTimer);cleanup()},{once:true});
+    section.innerHTML='<div class="corner-media-shell"><header class="corner-media-header"><div class="corner-media-heading"><p class="eyebrow">STORY / MEDIA</p><h2 id="media-editor-title">Photos & videos<span>.</span></h2><p id="media-editor-help">Attach, arrange, and make each frame yours.</p></div><button type="button" class="corner-media-close" data-media-dismiss aria-label="Close media dialog">×</button></header><section class="post-media-editor" aria-label="Current attachments and new uploads"><div class="post-media-head"><h3>Story attachments</h3><small class="corner-media-total" data-attached-count></small></div><div data-attached-gallery></div><div class="composer-media-jobs" data-modal-media-jobs hidden></div><form id="editor-upload" class="upload-field" aria-label="Upload photographs or a video"><label>Select up to '+uploadLimit+' files per batch<input type="file" name="files" multiple accept="image/*,video/mp4,video/quicktime,video/webm,.heic,.heif,.mov" required></label><div class="upload-preview-list" data-upload-previews aria-live="polite"></div><p class="admin-hint">JPG, PNG, HEIC, WebP or GIF up to 12 MB; MP4, MOV/HEVC or WebM up to 75 MB. Clips are optimized before playback.</p><p data-upload-status role="status" aria-live="polite"></p><button type="submit" class="admin-secondary" disabled>Attach selected media ↑</button></form></section><footer class="corner-media-footer"><span>Draft media stays private until you publish.</span><button type="button" class="corner-media-done" data-media-dismiss>Done ↗</button></footer></div>';
     section.querySelectorAll('[data-media-dismiss]').forEach(button=>button.addEventListener('click',()=>section.close()));
-    $$('[data-media-edit]',section).forEach(button=>{
-      button.onclick=()=>mediaEdit(button.dataset.mediaEdit,attachments,postId);
-    });
-    $$('[data-media-delete]',section).forEach(button=>{
-      button.onclick=async()=>{
-        const id=button.dataset.mediaDelete;
-        const item=attachments.find(media=>media.id===id);
-        if(!item||!confirm('Remove this image or video from the story?'))return;
-        await actionMotion({action:'media.delete',trigger:button,targetId:id,
-          visualTarget:button.closest('.media-thumb'),
-          execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE'),
-          onSuccess:()=>{toast('Media removed.','success');return mediaForPost(postId,ensureDraft)},
-          onFailure:error=>toast(error.message,'error')});
-      };
-    });
-    $$('[data-media-move]',section).forEach(button=>{
-      button.onclick=async()=>{
-        const id=button.dataset.mediaMove,direction=Number(button.dataset.direction)||0;
-        const index=attachments.findIndex(item=>item.id===id),next=index+direction;
-        if(index<0||next<0||next>=attachments.length)return;
-        const ids=attachments.map(item=>item.id);[ids[index],ids[next]]=[ids[next],ids[index]];
-        await actionMotion({action:'media.order',trigger:button,targetId:postId,
-          visualTarget:button.closest('.media-thumb'),
-          execute:()=>api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids}),
-          onSuccess:()=>{toast('Carousel order updated.','success');return mediaForPost(postId,ensureDraft)},
-          onFailure:error=>toast(error.message,'error')});
-      };
-    });
-    const form=$('#editor-upload',section);
-    const fileInput=form.elements.files;
-    const previewList=$('[data-upload-previews]',form);
-    const status=$('[data-upload-status]',form);
-    const submit=form.querySelector('button[type=submit]');
-    let pending=[];
-    const cleanup=()=>{for(const entry of pending)if(entry.url)URL.revokeObjectURL(entry.url)};
-    section.onclose=()=>{cleanup();pending=[];fileInput.value='';previewList.replaceChildren();status.textContent='';submit.disabled=true};
+    const form=$('#editor-upload',section),fileInput=form.elements.files,previewList=$('[data-upload-previews]',form),status=$('[data-upload-status]',form),submit=form.querySelector('button[type=submit]');
+    const queuePoll=()=>{clearTimeout(jobTimer);if(current()&&jobs.some(job=>['queued','processing'].includes(job.state)))jobTimer=setTimeout(()=>refreshRemote().catch(()=>queuePoll()),2600)};
+    async function refreshRemote(){
+      if(!postId||!current())return;
+      const record=await api('/corner/api/admin/posts/'+encodeURIComponent(postId));if(!current())return;
+      attachments=record.media||[];jobs=record.mediaJobs||[];
+      for(const entry of pending){const job=jobs.find(item=>item.jobId===entry.jobId);if(job?.state==='ready'){entry.done=true;entry.state.textContent='Attached'}else if(job?.state==='failed'){entry.failed=true;entry.state.textContent='Needs attention'}}
+      if(!uploadInFlight)submit.disabled=!pending.some(item=>!item.done);
+      renderAttachments();renderJobs();queuePoll();
+    }
+    const editAttached=async id=>{
+      if(uploadInFlight)return;
+      const saved=await (context.save?.()||ensureDraft?.());if(!current()||!saved?.id)return;
+      section.close();active.editorAbort?.abort();mediaEdit(id,attachments,saved.id);
+    };
+    const removeAttached=async(id,button)=>{
+      if(uploadInFlight||!attachments.find(media=>media.id===id)||!confirm('Remove this image or video from the story?'))return;
+      await actionMotion({action:'media.delete',trigger:button,targetId:id,visualTarget:button.closest('.media-thumb,.composer-attachment'),
+        execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id),'DELETE'),
+        onSuccess:async()=>{toast('Media removed.','success');await refreshRemote()},onFailure:error=>toast(error.message,'error')});
+    };
+    const moveAttached=async(id,direction,button)=>{
+      if(uploadInFlight)return;
+      const index=attachments.findIndex(item=>item.id===id),next=index+direction;if(index<0||next<0||next>=attachments.length)return;
+      const ids=attachments.map(item=>item.id);[ids[index],ids[next]]=[ids[next],ids[index]];
+      await actionMotion({action:'media.order',trigger:button,targetId:postId,visualTarget:button.closest('.media-thumb,.composer-attachment'),
+        execute:()=>api('/corner/api/admin/posts/'+encodeURIComponent(postId)+'/media-order','POST',{ids}),
+        onSuccess:async()=>{toast('Media order updated.','success');await refreshRemote()},onFailure:error=>toast(error.message,'error')});
+    };
+    const bindAttachmentActions=host=>{
+      $$('[data-media-edit]',host).forEach(button=>button.onclick=()=>editAttached(button.dataset.mediaEdit));
+      $$('[data-media-delete]',host).forEach(button=>button.onclick=()=>removeAttached(button.dataset.mediaDelete,button));
+      $$('[data-media-move]',host).forEach(button=>button.onclick=()=>moveAttached(button.dataset.mediaMove,Number(button.dataset.direction)||0,button));
+    };
+    function renderAttachments(){
+      if(!current())return;
+      const badge=$('#media-count');if(badge){badge.textContent=String(attachments.length);badge.hidden=!attachments.length}
+      $('[data-attached-count]',section).textContent=attachments.length+' '+(attachments.length===1?'file':'files');
+      const gallery=$('[data-attached-gallery]',section);
+      gallery.innerHTML=attachments.length?'<div class="media-gallery">'+attachments.map((item,index)=>mediaCard(item,true,index,attachments.length)).join('')+'</div>':'<p class="corner-media-empty">No files attached yet. Select a photo or video below.</p>';
+      bindAttachmentActions(gallery);
+      const inline=$('[data-composer-attachments]');
+      if(inline){inline.hidden=!attachments.length;inline.innerHTML=attachments.map((item,index)=>{
+        const src='/corner/media/'+encodeURIComponent(item.storage_key),video=item.mime_type.startsWith('video/');
+        return '<article class="composer-attachment"><div class="composer-attachment-media">'+(video?'<video src="'+src+'"'+mediaPoster(item)+' preload="metadata" playsinline muted></video><span class="composer-video-label">Video</span>':'<img src="'+src+'" alt="'+esc(item.alt_text||'Attached photograph')+'" loading="lazy">')+'<span class="composer-attachment-position">'+(index===0?'Cover':String(index+1))+'</span></div><div class="composer-attachment-actions"><button type="button" data-media-edit="'+esc(item.id)+'">Edit</button><button type="button" data-media-move="'+esc(item.id)+'" data-direction="-1" aria-label="Move media earlier" '+(index===0?'disabled':'')+'>←</button><button type="button" data-media-move="'+esc(item.id)+'" data-direction="1" aria-label="Move media later" '+(index===attachments.length-1?'disabled':'')+'>→</button><button type="button" data-media-delete="'+esc(item.id)+'" aria-label="Remove attached media">×</button></div></article>';
+      }).join('');bindAttachmentActions(inline)}
+      $('[data-composer-dropzone]')?.classList.toggle('has-media',attachments.length>0);
+      if(context.updated)context.updated(attachments,jobs);else showEditorCover(attachments);
+    }
+    function renderJobs(){
+      if(!current())return;
+      const outstanding=jobs.filter(job=>job.state!=='ready');
+      for(const host of [$('[data-modal-media-jobs]',section),$('[data-composer-media-jobs]')].filter(Boolean)){
+        host.hidden=!outstanding.length;
+        host.innerHTML=outstanding.map(job=>'<article class="composer-media-job" data-state="'+esc(job.state)+'"><div><strong>'+(job.state==='failed'?'Video needs attention':'Preparing video')+'</strong><p>'+(job.state==='failed'?(job.errorCode==='PROCESSOR_NOT_INSTALLED'?'The video processor is unavailable. Retry later or remove this upload.':'Processing did not finish. Retry using the saved source or remove this upload.'):'Your video is saved and being prepared for playback.')+'</p></div>'+(job.state==='failed'?'<div><button type="button" data-media-job-retry="'+esc(job.jobId)+'">Retry</button><button type="button" data-media-job-discard="'+esc(job.jobId)+'">Remove</button></div>':'<span role="status">'+esc(job.state==='queued'?'Queued':'Processing…')+'</span>')+'</article>').join('');
+        $$('[data-media-job-retry]',host).forEach(button=>button.onclick=async()=>{
+          button.disabled=true;try{await api('/corner/api/admin/media/jobs/'+encodeURIComponent(button.dataset.mediaJobRetry)+'/retry','POST',{postId});for(const entry of pending)if(entry.jobId===button.dataset.mediaJobRetry)entry.failed=false;await refreshRemote();toast('Video processing restarted.','success')}catch(error){button.disabled=false;toast(error.message,'error')}
+        });
+        $$('[data-media-job-discard]',host).forEach(button=>button.onclick=async()=>{
+          if(!confirm('Remove this failed processing job? Any previously ready video will remain.'))return;
+          button.disabled=true;try{await api('/corner/api/admin/media/jobs/'+encodeURIComponent(button.dataset.mediaJobDiscard)+'?postId='+encodeURIComponent(postId),'DELETE');pending=pending.filter(entry=>{if(entry.jobId!==button.dataset.mediaJobDiscard)return true;if(entry.url)URL.revokeObjectURL(entry.url);entry.wrapper.remove();return false});await refreshRemote();toast('Failed job removed.','success')}catch(error){button.disabled=false;toast(error.message,'error')}
+        });
+      }
+      if(context.updated)context.updated(attachments,jobs);
+    }
+    const clearSelections=()=>{cleanup();pending=[];fileInput.value='';previewList.replaceChildren();selectedSignature='';status.textContent='';submit.disabled=true};
+    section.onclose=()=>{cleanup();if(!uploadInFlight)clearSelections()};
     const previewEntry=entry=>{
-      const wrapper=document.createElement('div');
-      wrapper.className='upload-preview-card';
-      const figure=document.createElement('figure');
-      const remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
-      remove.onclick=()=>{if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Ready to attach.':'No files selected.';submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';};
-      figure.append(remove);
-      const picture=entry.file.type.startsWith('image/')?document.createElement('img'):document.createElement('video');
-      entry.url=URL.createObjectURL(entry.file);
-      picture.src=entry.url;
-      if(picture.tagName==='IMG')picture.alt='Local upload preview: '+entry.file.name;
-      else{picture.controls=true;picture.playsInline=true;picture.preload='metadata'}
-      figure.append(picture);
-      const filename=document.createElement('small');
-      filename.textContent=entry.file.name;
-      figure.append(filename);
+      const wrapper=document.createElement('div');wrapper.className='upload-preview-card';entry.wrapper=wrapper;
+      const figure=document.createElement('figure'),remove=document.createElement('button');remove.type='button';remove.className='upload-preview-remove';remove.setAttribute('aria-label','Remove '+entry.file.name+' from selected uploads');remove.textContent='×';
+      remove.onclick=()=>{if(uploadInFlight)return;if(entry.url)URL.revokeObjectURL(entry.url);pending=pending.filter(item=>item!==entry);wrapper.remove();status.textContent=pending.length?pending.length+' selected. Ready to attach.':'No files selected.';submit.disabled=!pending.some(item=>!item.done);submit.textContent='Attach selected media ↑'};figure.append(remove);
+      const image=entry.file.type.startsWith('image/'),picture=document.createElement(image?'img':'video');entry.url=URL.createObjectURL(entry.file);picture.src=entry.url;
+      if(image)picture.alt='Local upload preview: '+entry.file.name;else{picture.controls=true;picture.playsInline=true;picture.preload='metadata'}
+      const fallback=document.createElement('span');fallback.className='composer-media-fallback';fallback.hidden=true;fallback.textContent=image?'Photo preview is available after upload.':'Video preview is available after processing.';
+      picture.addEventListener('error',()=>{picture.hidden=true;fallback.hidden=false},{once:true});figure.append(picture,fallback);
+      const filename=document.createElement('small');filename.textContent=entry.file.name;figure.append(filename);
       const fields=document.createElement('div');
       if(entry.file.type.startsWith('video/')&&entry.file.type!=='video/webm'){
-        const videoTrim=document.createElement('div');videoTrim.className='v5-video-trim';
-        videoTrim.innerHTML='<label>Trim from (seconds)<input type="number" name="start" min="0" max="179" step="0.5" value="0"></label><label>Trim until (seconds, optional)<input type="number" name="end" min="0" max="180" step="0.5" placeholder="End of clip"></label>';
-        fields.append(videoTrim);
-        entry.start=videoTrim.querySelector('[name=start]');entry.end=videoTrim.querySelector('[name=end]');
+        const trim=document.createElement('div');trim.className='v5-video-trim';trim.innerHTML='<label>Trim from (seconds)<input type="number" name="start" min="0" max="179" step="0.5" value="0"></label><label>Trim until (seconds, optional)<input type="number" name="end" min="0" max="180" step="0.5" placeholder="End of clip"></label>';fields.append(trim);entry.start=trim.querySelector('[name=start]');entry.end=trim.querySelector('[name=end]');
       }
-
-      if(entry.file.type==='image/jpeg'||entry.file.type==='image/png'||entry.file.type==='image/webp'){
+      if(['image/jpeg','image/png','image/webp'].includes(entry.file.type)){
         const crop=document.createElement('button');crop.type='button';crop.dataset.cropUpload='';crop.className='corner-crop-trigger';crop.textContent='Crop / reframe ↗';
         crop.onclick=async()=>{
-          if(!window.CornerImageCrop)return;
-          crop.disabled=true;
-          try{
-            const adjusted=await window.CornerImageCrop.open(entry.file);
-            if(adjusted){
-              if(entry.url)URL.revokeObjectURL(entry.url);
-              entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;
-              filename.textContent=adjusted.name;
-              status.textContent='Crop applied. Ready to attach.';
-            }
-          }catch(error){status.textContent=error.message||'Could not crop this image.'}
-          finally{crop.disabled=false}
-        };
-        fields.append(crop);
+          if(!window.CornerImageCrop||uploadInFlight)return;crop.disabled=true;
+          try{const adjusted=await window.CornerImageCrop.open(entry.file);if(adjusted){if(entry.url)URL.revokeObjectURL(entry.url);entry.file=adjusted;entry.url=URL.createObjectURL(adjusted);picture.src=entry.url;picture.hidden=false;fallback.hidden=true;filename.textContent=adjusted.name;status.textContent='Crop applied. Ready to attach.'}}
+          catch(error){status.textContent=error.message||'Could not crop this image.'}finally{crop.disabled=false}
+        };fields.append(crop);
       }
-      wrapper.append(figure,fields);
-      previewList.append(wrapper);
+      const state=document.createElement('span');state.className='upload-preview-status';state.textContent='Selected';entry.state=state;fields.append(state);wrapper.append(figure,fields);previewList.append(wrapper);
     };
-    let selectedSignature='';
     const selectedFiles=()=>{
-      const files=[...fileInput.files];
-      const signature=files.map(file=>file.name+':'+file.size+':'+file.lastModified).join('|');
-      if(signature===selectedSignature&&previewList.children.length)return;
-      selectedSignature=signature;
-      cleanup();pending=[];previewList.replaceChildren();
-      if(files.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
-      if(files.some(file=>!supportedMedia.has(file.type))){status.textContent='Unsupported file type. Use JPG, PNG, HEIC, WebP, GIF, MP4, MOV or WebM.';submit.disabled=true;return}
+      if(uploadInFlight)return;
+      const raw=[...fileInput.files],signature=raw.map(file=>file.name+':'+file.size+':'+file.lastModified).join('|');if(signature===selectedSignature&&previewList.children.length)return;
+      selectedSignature=signature;cleanup();pending=[];previewList.replaceChildren();
+      if(raw.length>uploadLimit){status.textContent='Choose no more than '+uploadLimit+' files at once.';submit.disabled=true;return}
+      if(raw.some(file=>!fileMime(file))){status.textContent='Unsupported file type. Use JPG, PNG, HEIC, WebP, GIF, MP4, MOV or WebM.';submit.disabled=true;return}
+      const files=raw.map(file=>fileMime(file)===file.type?file:new File([file],file.name,{type:fileMime(file),lastModified:file.lastModified}));
+      const invalid=files.find(file=>!file.size||file.size>(file.type.startsWith('image/')?12:75)*1024*1024);
+      if(invalid){status.textContent='File is empty or too large: '+invalid.name;submit.disabled=true;return}
       status.textContent=files.length?files.length+' selected. Ready to attach.':'';
-      for(const file of files){const entry={file,done:false,url:null};pending.push(entry);previewEntry(entry)}
-      submit.disabled=!pending.length;
-      submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
-      if(files.length===1&&previewList.querySelector('[data-crop-upload]'))requestAnimationFrame(()=>previewList.querySelector('[data-crop-upload]')?.click());
+      for(const file of files){const entry={file,done:false,url:null,jobId:null};pending.push(entry);previewEntry(entry)}
+      submit.disabled=!pending.length;submit.textContent=pending.length===1?'Attach media ↑':'Attach '+pending.length+' files ↑';
+      previewList.querySelector('[data-crop-upload]')?.setAttribute('aria-label','Crop the selected photo before uploading');
     };
-    fileInput.oninput=selectedFiles;
-    fileInput.onchange=selectedFiles;
-    fileInput.addEventListener('input',selectedFiles);
-    fileInput.addEventListener('change',selectedFiles);
-    form.addEventListener('input',event=>{if(event.target===fileInput)selectedFiles()});
-    form.addEventListener('change',event=>{if(event.target===fileInput)selectedFiles()});
-    form.dataset.mediaReady='true';
+    fileInput.oninput=selectedFiles;fileInput.onchange=selectedFiles;form.dataset.mediaReady='true';
     form.onsubmit=async event=>{
-      event.preventDefault();
-      if(!pending.length)return;
+      event.preventDefault();if(uploadInFlight||!pending.some(item=>!item.done))return;
+      uploadInFlight=true;context.busy?.(true);
+      const controls=[...form.querySelectorAll('input,button')].map(control=>[control,control.disabled]);for(const [control] of controls)if(control!==submit)control.disabled=true;
       const total=pending.filter(item=>!item.done).length;
-      const result=await actionMotion({action:'media.upload',trigger:submit,targetId:postId||'new-upload-batch',
-        visualTarget:previewList,execute:async({progress})=>{
-          // The native file transfer has no byte percentage; use truthful stage text,
-          // and distinguish upload from video processing until worker reports Ready.
+      await actionMotion({action:'media.upload',trigger:submit,targetId:postId||'new-upload-batch',visualTarget:previewList,
+        execute:async({progress})=>{
+          if(!postId){const saved=await ensureDraft?.();if(!saved?.id)throw Error('Could not save the draft. Your selected files are still here.');postId=saved.id}
           let sent=0;
           for(const entry of pending.filter(item=>!item.done)){
-            const isImage=entry.file.type.startsWith('image/');
-            if(!supportedMedia.has(entry.file.type))throw Error('Unsupported file type: '+entry.file.name);
-            if(!entry.file.size||entry.file.size>(isImage?12:75)*1024*1024)throw Error('File is too large: '+entry.file.name);
-          }
-          if(!postId){
-            const saved=await ensureDraft?.();
-            if(!saved?.id)throw Error('Enter story content and save the draft before attaching media.');
-            postId=saved.id;
-          }
-          for(const entry of pending.filter(item=>!item.done)){
-            const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;
-            status.textContent=message;progress(message);
-            const stored=await upload(entry.file,postId,{start:entry.start?.value||0,end:entry.end?.value||0});
+            if(!current())throw Error('Your video continues processing in the saved draft.');
+            let stored;
+            if(entry.jobId){
+              if(entry.failed){await api('/corner/api/admin/media/jobs/'+encodeURIComponent(entry.jobId)+'/retry','POST',{postId});entry.failed=false}
+              stored={jobId:entry.jobId};
+            }else{
+              const message='Uploading '+(sent+1)+' of '+total+' · '+entry.file.name;status.textContent=message;progress(message);entry.state.textContent='Uploading…';
+              stored=await upload(entry.file,postId,{start:entry.start?.value||0,end:entry.end?.value||0});entry.jobId=stored?.jobId||null;
+              if(!entry.jobId){entry.done=true;entry.state.textContent='Attached';sent++;await refreshRemote();continue}
+            }
             if(stored?.jobId){
-              let complete=false;
+              await refreshRemote();let complete=false;
               for(let poll=0;poll<110;poll++){
-                await new Promise(resolve=>setTimeout(resolve,1600));
+                if(!current())throw Error('Video is still being processed in your saved draft.');
                 const job=await api('/corner/api/admin/media/jobs/'+encodeURIComponent(stored.jobId)+'?postId='+encodeURIComponent(postId));
-                const step='Optimizing video · '+job.state;
-                status.textContent=step;progress(step);
+                const step='Optimizing video · '+job.state;status.textContent=step;progress(step);entry.state.textContent=job.state==='ready'?'Attached':'Processing…';
                 if(job.state==='ready'){complete=true;break}
-                if(job.state==='failed')throw Error('Video optimization failed. Try a shorter clip or export H.264.');
+                if(job.state==='failed'){entry.failed=true;entry.state.textContent='Needs attention';throw Error('Video processing failed. Retry the saved source or remove the failed job.')}
+                await new Promise(resolve=>setTimeout(resolve,1600));
               }
-              if(!complete)throw Error('Video is still being processed. Reopen media in a moment.');
+              if(!complete)throw Error('Video is still being processed. You can close this panel and keep writing.');
             }
             entry.done=true;sent++;
           }
           return {sent};
-        },
-        confirm:value=>value.sent>0,
-        successLabel:total===1?'Attached':'Files attached',
-        onSuccess:async value=>{
-          toast(value.sent===1?'Photo or video attached.':value.sent+' files attached.','success');
-          cleanup();pending=[];
-          await mediaForPost(postId,ensureDraft);
-        },
-        onFailure:error=>{
-          status.textContent=error.message+' Already attached items are preserved. Retry remaining files.';
-          toast(error.message,'error');
-        }
+        },confirm:value=>value.sent>0,successLabel:total===1?'Attached':'Files attached',
+        onSuccess:async value=>{if(!current())return;toast(value.sent===1?'Photo or video attached.':value.sent+' files attached.','success');clearSelections();await refreshRemote()},
+        onFailure:async error=>{if(!current())return;status.textContent=error.message+' Already attached files are preserved.';toast(error.message,'error');await refreshRemote().catch(()=>{})}
       });
-      if(result.ok)status.textContent='';
+      uploadInFlight=false;context.busy?.(false);for(const [control,disabled] of controls)if(control.isConnected&&control!==submit)control.disabled=disabled;
+      submit.disabled=!pending.some(item=>!item.done);submit.textContent=pending.some(item=>item.jobId&&!item.done)?'Check / retry saved video':'Attach remaining files ↑';
+      if(!pending.length)submit.textContent='Attach selected media ↑';
     };
+    renderAttachments();renderJobs();queuePoll();
   }
+  function mediaPoster(item){return item.has_poster?' poster="/corner/media/'+encodeURIComponent(item.storage_key)+'?poster=1"':''}
   function mediaCard(x,quickEdit=false,index=0,total=1){
     const src='/corner/media/'+encodeURIComponent(x.storage_key);
     const isImage=x.mime_type.startsWith('image/');
     const preview=isImage?'<img loading="lazy" src="'+src+'" alt="'+esc(x.alt_text||'Image')+'">':
-      '<video src="'+src+'" controls preload="none" playsinline></video>';
+      '<video src="'+src+'"'+mediaPoster(x)+' controls preload="none" playsinline></video>';
     const controls='<div class="media-card-controls">'+
       '<button type="button" class="media-delete-x" data-media-delete="'+esc(x.id)+'" aria-label="Remove this media">×</button>'+
       (quickEdit?'<div class="media-order-controls" aria-label="Carousel position">'+
@@ -750,7 +832,7 @@
     return '<article class="media-thumb '+(quickEdit?'media-thumb--attached':'media-thumb--library')+'">'+controls+
       '<a class="media-view-link" href="'+src+'" target="_blank" rel="noopener" aria-label="View attached media">'+preview+'</a>'+
       '<small>'+esc(x.mime_type)+' · '+Math.round(x.size_bytes/1024)+' KB</small>'+
-      '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?'Adjust image ↗':'Adjust ↗')+'</button>'+
+      '<button type="button" data-media-edit="'+esc(x.id)+'">'+(quickEdit?(isImage?'Adjust image ↗':'Edit video ↗'):'Adjust ↗')+'</button>'+
       '</article>';
   }
   async function upload(file,postId,trim={}){
@@ -773,50 +855,46 @@
         onSuccess:()=>{toast('Media deleted.','success');return media()},
         onFailure:error=>toast(error.message,'error')});
     });}
-  function mediaEdit(id,list,returnPostId=null){let x=list.find(m=>m.id===id);if(!x)return;root.innerHTML=`<section class="admin-section"><header><h2>Media adjustments.</h2><button class="admin-secondary" id="back-media">← Library</button></header><form class="admin-surface admin-form" id="media-editor"><div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="${x.focal_x}"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="${x.focal_y}"></label></div>${x.mime_type.startsWith('image/')?`<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>`:''}<button type="submit">Save adjustments</button>${x.mime_type.startsWith('image/')?'<button type="button" data-v5-restore-photo>Restore original</button>':''}</form></section>`;
-    const editForm=$('#media-editor');
-    if(x.mime_type.startsWith('image/'))window.CornerPhotoCompare?.mount(editForm,x);
-    const returnToMedia=()=>{if(returnPostId)void editor(returnPostId);else void media()};
+  function mediaEdit(id,list,returnPostId=null){
+    const x=list.find(media=>media.id===id);if(!x)return;
+    active.editorAbort?.abort();const controller=new AbortController();active.editorAbort=controller;active.mediaBusy=false;
+    const photo=x.mime_type.startsWith('image/'),source='/corner/media/'+encodeURIComponent(x.storage_key);
+    const photoControls='<fieldset class="v5-media-adjust"><legend>Adjust photo · original preserved</legend><label>Filter<select name="preset"><option value="original">Original</option><option value="warm">Warm</option><option value="film">Film</option><option value="mono">Mono</option><option value="dream">Dream</option></select></label><label>Crop<select name="crop"><option value="original">Original</option><option value="square">Square</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Rotate<select name="rotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label>Brightness<input type="range" name="brightness" min="0.6" max="1.4" step="0.05" value="1"></label><label>Contrast<input type="range" name="contrast" min="0.6" max="1.4" step="0.05" value="1"></label><label>Saturation<input type="range" name="saturation" min="0" max="2" step="0.05" value="1"></label></fieldset>';
+    const videoControls='<section class="composer-video-editor"><video src="'+source+'"'+mediaPoster(x)+' controls playsinline preload="metadata" data-video-edit-preview></video><p>Current playable version. Trim times refer to your original upload.</p><fieldset class="v5-media-adjust" data-video-controls disabled><legend>Edit video · original preserved</legend><label>Start at (seconds)<input name="videoStart" type="number" min="0" max="179" step="0.1" value="0"></label><label>End at (seconds)<input name="videoEnd" type="number" min="0" max="180" step="0.1" value="0"><small>Use 0 for the end of the clip.</small></label><label>Cover frame (seconds into trimmed clip)<input name="posterAt" type="number" min="0" max="179" step="0.1" value="0"></label><label class="composer-toggle">Mute audio<input name="videoMuted" type="checkbox"></label></fieldset><p class="composer-video-recipe-state" data-video-recipe-state role="status">Loading your video settings…</p></section>';
+    root.innerHTML='<section class="admin-section composer-media-editor"><header><div><p class="eyebrow">YOUR CORNER / MEDIA</p><h2>'+(photo?'Make the photo yours.':'Shape your video.')+'</h2></div><button class="admin-secondary" type="button" id="back-media">← '+(returnPostId?'Back to post':'Library')+'</button></header><form class="admin-surface admin-form" id="media-editor">'+(photo?photoControls:videoControls)+'<div class="editor-inline"><label>Focus X (0–1)<input type="number" step=".05" min="0" max="1" name="focalX" value="'+Number(x.focal_x??.5)+'"></label><label>Focus Y (0–1)<input type="number" step=".05" min="0" max="1" name="focalY" value="'+Number(x.focal_y??.5)+'"></label></div><details class="composer-media-metadata"><summary>Caption & accessibility</summary><label>Accessibility text<input name="altText" maxlength="240" value="'+esc(x.alt_text||'')+'"></label><label>Caption <span>Optional</span><textarea name="caption" maxlength="300" rows="2">'+esc(x.caption||'')+'</textarea></label></details><button type="submit" '+(!photo?'disabled':'')+'>Save adjustments</button>'+(photo?'<button type="button" data-v5-restore-photo>Restore original</button>':'')+'</form></section>';
+    const editForm=$('#media-editor'),button=editForm.querySelector('button[type=submit]');
+    const returnToMedia=()=>{if(returnPostId)void editor(returnPostId);else{active.editorAbort?.abort();void media()}};
+    let videoRecipe=null;
+    if(photo)window.CornerPhotoCompare?.mount(editForm,x);
+    else{
+      api('/corner/api/admin/media/'+encodeURIComponent(id)+'/video-edit').then(recipe=>{
+        if(controller.signal.aborted||!editForm.isConnected)return;videoRecipe=recipe;
+        editForm.elements.videoStart.value=recipe.start||0;editForm.elements.videoEnd.value=recipe.end||0;editForm.elements.posterAt.value=recipe.posterAt||0;editForm.elements.videoMuted.checked=!!recipe.muted;
+        const busy=['queued','processing'].includes(recipe.state);$('[data-video-controls]',editForm).disabled=busy;
+        $('[data-video-recipe-state]',editForm).textContent=busy?'Your latest edit is processing. Return to the post to follow its progress.':(recipe.sourceDuration?'Original length: '+Number(recipe.sourceDuration).toFixed(1)+' seconds. ':'')+'Changes are prepared in the background after you save.';
+        const player=$('[data-video-edit-preview]',editForm);player.muted=!!recipe.muted;button.disabled=false;
+      }).catch(error=>{if(controller.signal.aborted||!editForm.isConnected)return;$('[data-video-controls]',editForm).hidden=true;$('[data-video-recipe-state]',editForm).textContent=error.message;button.disabled=false});
+      editForm.elements.videoMuted.addEventListener('change',()=>{$('[data-video-edit-preview]',editForm).muted=editForm.elements.videoMuted.checked});
+    }
     $('#back-media').onclick=returnToMedia;
     editForm.querySelector('[data-v5-restore-photo]')?.addEventListener('click',async event=>{
-      await actionMotion({action:'media.edit',trigger:event.currentTarget,targetId:id,
-        successLabel:'Original restored',visualTarget:editForm.querySelector('.corner-photo-compare'),
-        execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','DELETE'),
-        onSuccess:()=>{toast('Original restored.','success');returnToMedia()},
-        onFailure:error=>toast(error.message,'error')
-      });
+      await actionMotion({action:'media.edit',trigger:event.currentTarget,targetId:id,signal:controller.signal,successLabel:'Original restored',visualTarget:editForm.querySelector('.corner-photo-compare'),
+        execute:()=>api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','DELETE'),onSuccess:()=>{toast('Original restored.','success');returnToMedia()},onFailure:error=>toast(error.message,'error')});
     });
     editForm.onsubmit=async event=>{
-      event.preventDefault();
-      const form=event.currentTarget;
-      const trigger=form.querySelector('button[type="submit"]');
-      let detailsSaved=false;
-      await actionMotion({action:'media.edit',trigger,targetId:id,
-        visualTarget:form.querySelector('.corner-photo-compare'),
-        successLabel:'Media saved',
+      event.preventDefault();if(!editForm.reportValidity())return;
+      const form=event.currentTarget,trigger=form.querySelector('button[type="submit"]');let detailsSaved=false;
+      const recipe=!photo&&videoRecipe?{start:Number(form.elements.videoStart.value),end:Number(form.elements.videoEnd.value),posterAt:Number(form.elements.posterAt.value),muted:form.elements.videoMuted.checked}:null;
+      const changeVideo=recipe&&['start','end','posterAt','muted'].some(key=>recipe[key]!==videoRecipe[key]);
+      await actionMotion({action:'media.edit',trigger,targetId:id,signal:controller.signal,visualTarget:form.querySelector('.corner-photo-compare'),successLabel:changeVideo?'Processing':'Media saved',
         execute:async({progress})=>{
-          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{
-            focalX:form.elements.focalX.value,focalY:form.elements.focalY.value
-          });
-          detailsSaved=true;
-          if(x.mime_type.startsWith('image/')){
-            progress('Saving photo adjustments…');
-            await api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','POST',{
-              preset:form.elements.preset.value,crop:form.elements.crop.value,
-              rotation:Number(form.elements.rotation.value),
-              brightness:Number(form.elements.brightness.value),
-              contrast:Number(form.elements.contrast.value),
-              saturation:Number(form.elements.saturation.value)
-            });
-          }
+          await api('/corner/api/admin/media/'+encodeURIComponent(id),'PATCH',{focalX:form.elements.focalX.value,focalY:form.elements.focalY.value,altText:form.elements.altText.value,caption:form.elements.caption.value});detailsSaved=true;
+          if(photo){progress('Saving photo adjustments…');await api('/corner/api/admin/media/'+encodeURIComponent(id)+'/edits','POST',{preset:form.elements.preset.value,crop:form.elements.crop.value,rotation:Number(form.elements.rotation.value),brightness:Number(form.elements.brightness.value),contrast:Number(form.elements.contrast.value),saturation:Number(form.elements.saturation.value)})}
+          else if(changeVideo){progress('Preparing video edit…');const job=await api('/corner/api/admin/media/'+encodeURIComponent(id)+'/video-edit','POST',recipe);if(!job?.jobId)throw Error('The video edit was not confirmed.');return {saved:true,queued:true}}
           return {saved:true};
-        },
-        confirm:result=>result?.saved===true,
-        onSuccess:()=>{toast('Media details saved.','success');returnToMedia()},
-        onFailure:error=>{
-          toast(detailsSaved?'Image position saved, but photo adjustments did not finish. Retry to complete the edit.':error.message,'error');
-        }
-      });
+        },confirm:result=>result?.saved===true,
+        onSuccess:result=>{toast(result.queued?'Video edit queued. Follow its progress in your post.':'Media details saved.','success');returnToMedia()},
+        onFailure:error=>toast(detailsSaved?(photo?'Media details saved, but photo adjustments did not finish. ':'Media details saved; the video edit needs attention. ')+error.message:error.message,'error')});
     };
   }
   async function comments(){const list=await api('/corner/api/admin/comments?state='+encodeURIComponent(active.commentFilter||'pending'));root.innerHTML=`<section class="admin-section"><header><h2>Conversations and moderation.</h2><div class="v5-comment-filters" role="group" aria-label="Moderation filters">${['pending','approved','hidden','deleted'].map(value=>`<button type="button" data-v5-comment-filter="${value}" aria-label="${value} comments" title="${value} comments" aria-pressed="${(active.commentFilter||'pending')===value}" class="${(active.commentFilter||'pending')===value?'is-active':''}">${studioIcon(value)}<span class="v6-action-label">${value}</span></button>`).join('')}</div></header>${list.length?`<div class="admin-card-list">${list.map(c=>`<article class="admin-comment"><header><div><strong>${esc(c.author_name)}</strong> · <small>${esc(c.post_title)}</small></div><small>${readable(c.created_at)}</small></header><p>${esc(c.body)}</p><footer><button data-moderate="approve" data-comment="${c.id}" aria-label="Approve comment" title="Approve">${studioIcon('approve')}<span class="v6-action-label">Approve</span></button><button data-moderate="hide" data-comment="${c.id}" aria-label="Hide comment" title="Hide">${studioIcon('hide')}<span class="v6-action-label">Hide</span></button><button data-moderate="delete" data-comment="${c.id}" aria-label="Delete comment" title="Delete">${studioIcon('delete')}<span class="v6-action-label">Delete</span></button>${c.state==='approved'?`<button type="button" data-v5-studio-reply="${c.id}" data-v5-studio-post="${c.post_id}" aria-label="Reply to comment" title="Reply">${studioIcon('reply')}<span class="v6-action-label">Reply</span></button>`:''}</footer></article>`).join('')}</div>`:empty('All caught up.','No comments need moderation.')}</section>`;
@@ -1020,7 +1098,15 @@
     };
   }
   $$('[data-admin-view]').forEach(b=>b.onclick=()=>{if(active.dirty&&!confirm('Leave with unsaved edits?'))return;showView(b.dataset.adminView)});
-  $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');location.reload()}catch(err){toast(err.message,'error')}});
-  const requested=location.hash.slice(1);const allowed=$$('[data-admin-view]').map(b=>b.dataset.adminView);showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
-  addEventListener('hashchange',()=>{if(allowed.includes(location.hash.slice(1)))showView(location.hash.slice(1))});
+  $('#admin-logout')?.addEventListener('click',async()=>{try{await api('/corner/api/admin/logout','POST');draftRecovery.clear();location.reload()}catch(err){toast(err.message,'error')}});
+  const allowed=$$('[data-admin-view]').map(button=>button.dataset.adminView);
+  const routeStudio=()=>{
+    const requested=location.hash.slice(1);
+    if(allowed.includes('posts')&&requested==='create'){void editor();return}
+    const editing=requested.match(/^post\/(post_[0-9a-f-]{36})$/i);if(allowed.includes('posts')&&editing){void editor(editing[1]);return}
+    showView(allowed.includes(requested)?requested:initial.ownerRole==='owner'?'command':initial.ownerRole==='moderator'?'comments':initial.ownerRole==='editor'?'posts':'overview');
+  };
+  routeStudio();
+  addEventListener('hashchange',()=>{if(active.dirty&&!confirm('Your latest writing is kept in this tab. Leave this post?')){history.replaceState(null,'',active.post?.id?'#post/'+encodeURIComponent(active.post.id):'#create');return}routeStudio()});
+  addEventListener('beforeunload',event=>{if(active.dirty||active.mediaBusy){event.preventDefault();event.returnValue=''}});
 })();

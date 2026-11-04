@@ -39,6 +39,7 @@ import { legalPage, isLegalPath } from './legal-ui.mjs';
 import { startOffsiteScheduler, backupFresh } from './offsite-backup.mjs';
 import { escapeHtml, samples, feedPage, detailPage, simplePage, adminPage, journalSeriesPage } from './ui.mjs';
 import {JournalSeries} from './journal-series.mjs';
+import {composerPreview} from './composer-preview.mjs';
 import {OwnerCommand} from './owner-command.mjs';
 import {CommandAgent} from './command-agent.mjs';
 import {createCornerMcpNodeHandler} from './mcp.mjs';
@@ -107,7 +108,7 @@ async function readBody(req,max=110000){
   const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>max)throw httpError(413,'Request too large');chunks.push(chunk)}return Buffer.concat(chunks)
 }
 async function readJSON(req,max=110000){if(!(req.headers['content-type']||'').includes('application/json'))throw httpError(415,'Expected JSON');let data;try{data=JSON.parse((await readBody(req,max)).toString('utf8')||'{}')}catch{throw httpError(400,'Malformed JSON')}if(!data||typeof data!=='object'||Array.isArray(data))throw httpError(400,'Expected object');return data}
-function page(res,html,status=200,privatePage=false){if(config.basePath)html=html.replace(/(href|src|action)=(["'])\/(?!\/|website-analytics\.js)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':privatePage?'private, no-store, max-age=0':'public, max-age=0, must-revalidate','vary':'Cookie','x-content-type-options':'nosniff'})}
+function page(res,html,status=200,privatePage=false){if(config.basePath)html=html.replace(/(href|src|poster|action)=(["'])\/(?!\/|website-analytics\.js)/g,(_,attr,quote)=>`${attr}=${quote}${config.basePath}/`);end(res,status,html,{'content-type':'text/html; charset=utf-8','cache-control':privatePage?'private, no-store, max-age=0':'public, max-age=0, must-revalidate','vary':'Cookie','x-content-type-options':'nosniff'})}
 function isBot(req){return /bot|crawler|spider|preview|curl/i.test(req.headers['user-agent']||'')}
 function safetyHeaders(res){
   res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','strict-origin-when-cross-origin');res.setHeader('x-frame-options','DENY');
@@ -158,7 +159,13 @@ async function mediaFile(req,res,key,variant=''){
   if(!visible){let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}const viewer=store.session(token);if(!viewer||!privilegedRole(viewer.role)||!staffPermission(viewer.role,'/api/admin/media','GET'))throw httpError(404,'Not found')}
   const original=path.resolve(config.uploads,key);
   if(!original.startsWith(config.uploads+path.sep)||!fs.existsSync(original))throw httpError(404,'Not found');
-  const raw=new URL(req.url,config.siteUrl).searchParams.get('original')==='1';
+  const mediaQuery=new URL(req.url,config.siteUrl).searchParams;
+  if(mediaQuery.get('poster')==='1'){
+    const poster=mediaJobs.poster(media);if(!poster)throw httpError(404,'Video poster is not ready.');
+    const bytes=fs.readFileSync(poster.filename);
+    return end(res,200,req.method==='HEAD'?'':bytes,{'content-type':poster.mime,'content-length':bytes.length,'cache-control':visible?'public,max-age=0,must-revalidate':'private,no-store','x-content-type-options':'nosniff'});
+  }
+  const raw=mediaQuery.get('original')==='1';
   const adjusted=!variant&&!raw?mediaJobs.displayed(media):null;
   const filename=adjusted?.filename||original;
   const stat=fs.statSync(filename);
@@ -321,15 +328,17 @@ async function api(req,res,pathName,url){
     if(req.cornerApiV1)return created(res,post,(config.basePath||'')+'/api/v1/admin/posts/'+post.id);
     return ok(res,post);
   }
-  const adminPost=pathName.match(/^\/api\/admin\/posts\/([A-Za-z0-9_-]+)(?:\/(publish|archive|restore|schedule|duplicate|media-order|series))?$/);
+  if(pathName==='/api/admin/posts/preview'&&method==='POST')return ok(res,composerPreview(store,journalSeries,await readJSON(req)));
+  const adminPost=pathName.match(/^\/api\/admin\/posts\/([A-Za-z0-9_-]+)(?:\/(publish|archive|restore|schedule|unschedule|duplicate|media-order|series))?$/);
   if(adminPost){const [,id,action]=adminPost;
-    if(method==='GET'&&!action){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');p.series=journalSeries.assignment(id);return ok(res,{post:p,media:store.listMedia(id)})}
+    if(method==='GET'&&!action){let p=store.adminPost(id);if(!p)throw httpError(404,'Post not found');p.series=journalSeries.assignment(id);return ok(res,{post:p,media:store.listMedia(id),mediaJobs:mediaJobs.list(id)})}
     if(method==='PUT'&&action==='series'){const body=await readJSON(req,3000);return ok(res,journalSeries.organize(id,body,owner.id))}
     if(method==='PATCH'&&!action)return ok(res,store.savePost(id,await readJSON(req),owner.id));
     if(method==='DELETE'&&!action)return ok(res,{...store.archive(id,owner.id),softDeleted:true,restorable:true});
     if(method==='POST'&&action==='publish')return ok(res,store.publish(id,owner.id));
     if(method==='POST'&&action==='archive')return ok(res,store.archive(id,owner.id));
     if(method==='POST'&&action==='restore')return ok(res,store.restore(id,owner.id));
+    if(method==='POST'&&action==='unschedule')return ok(res,store.unschedule(id,await readJSON(req),owner.id));
     if(method==='POST'&&action==='schedule'){let b=await readJSON(req);
       try{
         if(b.localTime)b.scheduledAt=zoneLocalToUtc(b.localTime,b.timezone||config.timezone);
@@ -376,9 +385,21 @@ async function api(req,res,pathName,url){
     if(b.timezone!==undefined&&!isValidTimeZone(String(b.timezone)))throw httpError(400,'Invalid timezone');
     for(let k of ['title','descriptor','timezone','commentsDefault','reactionsDefault'])if(Object.hasOwn(b,k))store.saveSetting(k,['title','descriptor'].includes(k)?pureText(b[k],130):b[k]);
     store.audit(owner.id,'settings.updated','settings',null);return ok(res,{saved:true})}
-  if(pathName==='/api/admin/media'&&method==='GET')return ok(res,store.all('SELECT * FROM media ORDER BY created_at DESC LIMIT 80'));
-  const mediaJobPath=pathName.match(/^\/api\/admin\/media\/jobs\/(vjob_[0-9a-f-]{36})$/i);
-  if(mediaJobPath&&method==='GET')return ok(res,mediaJobs.status(mediaJobPath[1],url.searchParams.get('postId')));
+  if(pathName==='/api/admin/media'&&method==='GET')return ok(res,store.all('SELECT * FROM media ORDER BY created_at DESC LIMIT 80').map(item=>item.mime_type.startsWith('video/')?{...item,has_poster:!!mediaJobs.poster(item)}:item));
+  const mediaJobPath=pathName.match(/^\/api\/admin\/media\/jobs\/(vjob_[0-9a-f-]{36})(?:\/(retry))?$/i);
+  if(mediaJobPath){
+    const [,jobId,operation]=mediaJobPath;
+    if(method==='GET'&&!operation)return ok(res,mediaJobs.status(jobId,url.searchParams.get('postId')));
+    if(method==='POST'&&operation==='retry'){const body=await readJSON(req,2000);return ok(res,mediaJobs.retry(jobId,String(body.postId||''),owner.id));}
+    if(method==='DELETE'&&!operation)return ok(res,mediaJobs.discardJob(jobId,url.searchParams.get('postId'),owner.id));
+    throw httpError(405,'Video processing action not supported.');
+  }
+  const videoEdit=pathName.match(/^\/api\/admin\/media\/(media_[0-9a-f-]{36})\/video-edit$/i);
+  if(videoEdit){
+    if(method==='GET')return ok(res,mediaJobs.videoRecipe(videoEdit[1]));
+    if(method==='POST'){limit(req,'v5-video-edit',20,3600);return ok(res,mediaJobs.editVideo(videoEdit[1],await readJSON(req,3000),owner.id));}
+    throw httpError(405,'Video edit action not supported.');
+  }
   const photoEdit=pathName.match(/^\/api\/admin\/media\/(media_[0-9a-f-]{36})\/edits$/i);
   if(photoEdit){
    if(method==='POST'){limit(req,'v5-photo-edit',20,3600);return ok(res,await mediaJobs.editImage(photoEdit[1],await readJSON(req,3000),owner.id));}
@@ -461,7 +482,7 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}

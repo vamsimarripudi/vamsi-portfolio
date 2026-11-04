@@ -114,5 +114,6 @@ test('Command navigation is owner-only and Studio defaults owner into Command',(
   assert.match(css,/max-width:980px/);
   assert.match(server,/Only the owner can access the command center/);
   assert.match(server,/command-center\.css/);
-  assert.match(ui,/config\.basePath\+'\/command-center\.css\?v=2/);
+  assert.match(ui,/href="\/command-center\.css\?v=20261104"/,'The page responder adds the deployment prefix exactly once');
+  assert.doesNotMatch(ui,/config\.basePath\+'\/command-center\.css/,'A prefixed asset URL would be prefixed twice by page()');
 });

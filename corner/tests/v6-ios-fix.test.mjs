@@ -9,9 +9,15 @@ test('iPhone refinements preserve comfort stylesheet position and assets',()=>{
  const p={id:'post_11111111-1111-4111-8111-111111111111',slug:'story',title:'Story',body:'Body',type:'moment',state:'published'};
  const pages=[basePage({path:'/test',initial:{page:'memories'}}),detailPage({post:p,media:[],comments:[]})];
  for(const html of pages){
-  assert.match(html,/v6-ios-fix.css\?v=2/);
+  assert.match(html,/v6-mobile-ui\.css(?:\?[^"']+)?/);
   assert.match(html,/v6-ios-fix.js\?v=2/);
-  assert.ok(html.indexOf('v6-ios-fix.css')<html.indexOf('comfort.css'));
+  assert.doesNotMatch(html,/<link[^>]+href=["'][^"']*v6-ios-fix\.css/,'the removed iOS stylesheet does not exist');
+  assert.ok(html.indexOf('v6-mobile-ui.css')<html.indexOf('comfort.css'));
+  const assets=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(match=>match[1]);
+  for(const asset of assets){
+   const filename=asset.replace(/^\//,'').split('?')[0];
+   assert.ok(fs.existsSync(new URL('../public/'+filename,import.meta.url)),asset+' resolves to a real stylesheet');
+  }
  }
  const styles=[...pages[0].matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(m=>m[1]);
  assert.equal(styles.at(-1),'/comfort.css');
