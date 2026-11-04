@@ -593,3 +593,19 @@ body.corner-comfort:has(.account-shell) .corner-orbit-dock{display:none!importan
   .corner-comfort .account-shell--quiet .quiet-account-actions .quiet-studio-link{display:inline-flex;align-items:center;gap:7px}
   .corner-comfort .account-shell--quiet .quiet-account-actions .quiet-side-signout{display:inline-flex;align-items:center;gap:7px}
 }
+
+/* Overview mobile hierarchy: profile first, then flat navigation. */
+@media(max-width:700px){
+  .corner-comfort .account-shell--quiet .quiet-desk-grid:has([data-quiet-screen="overview"]) .quiet-desk-content{order:-1}
+  .corner-comfort .account-shell--quiet .quiet-profile-hero{
+    overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none;
+  }
+  .corner-comfort .account-shell--quiet .quiet-profile-cover{display:none}
+  .corner-comfort .account-shell--quiet .quiet-profile-person{padding:2px 0 8px;gap:12px}
+  .corner-comfort .account-shell--quiet .quiet-profile-person>.quiet-avatar{
+    width:72px;height:72px;margin:0;box-shadow:0 0 0 2px #d6ab98,0 8px 18px -14px #0009;
+  }
+  .corner-comfort .account-shell--quiet .quiet-profile-person-text{padding:0;flex-basis:145px}
+  .corner-comfort .account-shell--quiet .quiet-profile-person-text h2{font-size:1.34rem!important}
+  .corner-comfort .account-shell--quiet .quiet-edit-pill{min-height:40px;padding:9px 11px;background:transparent}
+}
