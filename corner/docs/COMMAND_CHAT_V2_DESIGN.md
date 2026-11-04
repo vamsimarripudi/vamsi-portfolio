@@ -15,16 +15,4 @@ Target: `/corner/admin#command`. Centered chat max-width 840px; retain Studio si
 
 ## Data and API
 Add SQLite conversation, message, proposal, tool-event and attachment tables, with owner/workspace isolation, foreign keys, sequence and idempotency uniqueness, retention rules, and indexes. Do not duplicate the authoritative Command queue.
-Proposed endpoints: `GET/POST /api/admin/command/conversations`, `GET/PATCH /api/admin/command/conversations/:id`, `GET/POST /api/admin/command/conversations/:id/messages`, `GET /api/admin/command/search`, `POST /api/admin/command/actions/:id/approve|reject`.
-Reuse existing auth, CSRF, audit, rate limits. Read-only tools may run; all mutations produce versioned proposals requiring explicit approval, revalidation and idempotent execution.
-
-## Implementation gates
-1. Audit route wiring and store/migration behavior.
-2. Add additive schema with migration and isolation tests.
-3. Add conversation CRUD, durable message flow and history search.
-4. Integrate existing AI agent and queue read tools; keep failures honest.
-5. Replace Command markup with centered chat and contextual proposal cards.
-6. Verify 1366x900, 1366x530, 390x844 and 320x844; keyboard, reduced motion, concurrency, retries and no data leakage.
-7. Feature flag, CI, screenshot review, migration recovery, staged deployment and production verification.
-
-Do not claim chat or image generation is live until end-to-end checks pass.
+Proposed endpoints: `GET/POST /api/admin/command/conversations`, `GET/PATCH /api/admin/command/conversations/:id`, `GET/POS¶»§q«^

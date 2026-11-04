@@ -20,10 +20,4 @@ if(fs.existsSync(config.dbPath)){
  if(guard<15000&&!process.argv.includes('--force'))throw Error('Target database changed within 15 seconds: stop the app and rerun with --force only if certain.');
 }
 fs.mkdirSync(path.dirname(config.dbPath),{recursive:true});
-for(const suffix of ['-wal','-shm'])try{fs.rmSync(config.dbPath+suffix,{force:true})}catch{}
-fs.copyFileSync(path.join(folder,'corner.sqlite'),config.dbPath);
-fs.rmSync(config.uploads,{recursive:true,force:true});fs.mkdirSync(config.uploads,{recursive:true});
-for(const [name] of Object.entries(manifest.files))if(name.startsWith('uploads/')){
- const dest=path.join(config.uploads,name.slice(8));fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(path.join(folder,name),dest);
-}
-console.log(JSON.stringify({ok:true,restoredFrom:folder,database:config.dbPath,files:Object.keys(manifest.files).length}));
+for(const suffix of ['-wal','-s¶»§q«^
