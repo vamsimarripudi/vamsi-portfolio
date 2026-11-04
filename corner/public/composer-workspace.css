@@ -249,7 +249,10 @@ html[data-studio-motion=off] .composer-workspace *{animation:none!important;tran
 .composer-editor>.composer-footer .composer-save-state{flex-basis:100%}
 .composer-editor>.composer-footer .composer-footer-actions{flex:1;width:100%;justify-content:stretch}
 .corner-comfort .composer-editor>.composer-footer .composer-footer-actions button{flex:1;min-width:0;padding-inline:10px}
-.corner-comfort .composer-editor>.composer-footer #delete-draft{flex:0 0 100%;padding:9px;min-height:44px;font-size:.8125rem}
+/* Legacy primary-action rules use !important for every non-secondary button.
+   Keep draft deletion visually quiet while retaining its full touch target. */
+.corner-comfort .composer-editor>.composer-footer #delete-draft{flex:0 0 100%;justify-content:flex-start;min-height:44px;padding:9px 0;border-color:transparent!important;background:transparent!important;color:#934b40!important;-webkit-text-fill-color:currentColor;box-shadow:none!important;font-size:.8125rem;font-weight:500;text-underline-offset:4px;transform:none}
+.corner-comfort .composer-editor>.composer-footer #delete-draft:hover{background:transparent!important;color:#73382f!important;text-decoration:underline;transform:none}
 @media(min-width:1051px){.corner-comfort .composer-editor{min-height:650px}.composer-editor-inner{flex:1}}
 @media(max-width:767px){
  .composer-editor-inner>.composer-author{padding:18px 18px 12px}

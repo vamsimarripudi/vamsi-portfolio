@@ -22,8 +22,12 @@ const getPost=async id=>{
   assert.equal(response.status,200,'Saved draft can be read');
   return (await response.json()).data;
 };
-const shot=async name=>{
+const shot=async(name,{preserveScroll=false}={})=>{
   const file='composer-'+name+'.png';
+  if(!preserveScroll){
+    await page.evaluate(()=>scrollTo(0,0));
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  }
   await page.screenshot({path:path.join(screenshots,file),fullPage:true,animations:'disabled'});
   evidence.screenshots.push(file);
 };
@@ -43,7 +47,10 @@ const preview=async mode=>{
   await page.locator('button[data-preview-mode="'+mode+'"]').click();
   await page.waitForFunction(mode=>{
     const frame=document.querySelector('[data-composer-preview-frame]');
-    return frame&&!frame.hidden&&frame.contentDocument?.body.classList.contains('composer-document--'+mode);
+    const doc=frame?.contentDocument;
+    // A srcdoc navigation briefly exposes a document without its body. Wait for
+    // the requested public renderer to finish loading before inspecting it.
+    return frame&&!frame.hidden&&doc?.readyState==='complete'&&doc.body?.classList.contains('composer-document--'+mode);
   },mode,{timeout:15000});
 };
 
@@ -220,7 +227,7 @@ try{
     await page.locator('.composer-footer').scrollIntoViewIfNeeded();
     const footer=await page.locator('.composer-footer').boundingBox();
     assert.ok(footer.y>=0&&footer.y+footer.height<=845,'Publishing footer can be reached in Preview '+width+' '+JSON.stringify(footer));
-    await shot('preview-'+width);
+    await shot('preview-'+width,{preserveScroll:true});
   }
   record('390px and 320px Write/Preview, settings focus, no overflow and reachable Save/Schedule/Publish footer');
 
