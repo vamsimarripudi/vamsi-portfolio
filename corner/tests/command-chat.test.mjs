@@ -146,3 +146,30 @@ test('backup and restore retain private chat files separately from public media'
  const {spawnSync}=await import('node:child_process');const root=fs.mkdtempSync(path.join(os.tmpdir(),'chat-backup-')),source=path.join(root,'source'),target=path.join(root,'restored'),snapshot=path.join(root,'snapshot');fs.mkdirSync(source);const db=new Store(path.join(source,'corner.sqlite'));db.close();fs.mkdirSync(path.join(source,'uploads'));fs.mkdirSync(path.join(source,'command-private'));fs.writeFileSync(path.join(source,'command-private','private.txt'),'private content');fs.writeFileSync(path.join(source,'uploads','public.txt'),'public content');
  try{const run=(script,args,dir)=>{const r=spawnSync(process.execPath,['--no-warnings',new URL('../scripts/'+script,import.meta.url).pathname,...args],{encoding:'utf8',env:{...process.env,NODE_ENV:'test',DATA_DIR:dir,DB_PATH:path.join(dir,'corner.sqlite')}});assert.equal(r.status,0,r.stderr)};run('backup.mjs',[snapshot],source);const manifest=JSON.parse(fs.readFileSync(path.join(snapshot,'manifest.json')));assert.ok(manifest.files['command-private/private.txt']);run('restore.mjs',[snapshot,'--confirm'],target);assert.equal(fs.readFileSync(path.join(target,'command-private','private.txt'),'utf8'),'private content');assert.equal(fs.readFileSync(path.join(target,'uploads','public.txt'),'utf8'),'public content');assert.ok(!fs.existsSync(path.join(target,'uploads','private.txt')))}finally{fs.rmSync(root,{recursive:true,force:true})}
 });
+
+test('owner comment and overview reads use the real Corner database and stay Personal-scoped',async t=>{
+ const {service,data,c,agent,store}=setup(t);
+ const post=store.createPost({title:'Commented story',body:'Story body',allowComments:true},owner.id),stamp=new Date().toISOString();
+ for(const [index,state] of ['pending','approved','hidden','deleted'].entries())store.exec('INSERT INTO comments(id,post_id,author_name,body,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?)','comment_'+state,post.id,'Reader '+index,'Comment '+state,state,stamp,stamp);
+ assert.deepEqual(service.commentSummary(owner,scope),{pending:1,approved:1,hidden:1,deleted:1,total:4});
+ const recent=service.comments(owner,scope,{state:'all',limit:10});assert.equal(recent.length,4);assert.equal(recent[0].authorNameSelfDeclared,true);assert.ok(recent.every(row=>row.postTitle==='Commented story'));
+ const overview=service.cornerOverview(owner,scope);assert.equal(overview.comments.total,4);assert.equal(overview.posts.drafts,1);
+ assert.throws(()=>service.commentSummary(owner,'kravia'),error=>error.status===409&&error.code==='PERSONAL_WORKSPACE_REQUIRED');
+ service.setConsent(owner,true);let providerCalls=0;agent.fetch=async()=>{providerCalls++;throw Error('Provider must not be needed for exact comment count')};
+ const turn=service.send(owner,c.id,scope,{message:'how many comments we got',mode:'chat',requestKey:key()});await until(()=>data.turn(owner,c.id,scope,turn.turnId).assistant.status==='complete');
+ const answer=data.turn(owner,c.id,scope,turn.turnId).assistant;assert.match(answer.content,/4 comments recorded/);assert.match(answer.content,/1 pending/);assert.equal(answer.parts.commentSummary.total,4);assert.equal(providerCalls,0);
+});
+
+test('AI read tools can fetch comment counts and overview facts before answering',async t=>{
+ const {service,data,c,agent,store}=setup(t);
+ const post=store.createPost({title:'Tool story',body:'Body',allowComments:true},owner.id),stamp=new Date().toISOString();
+ store.exec('INSERT INTO comments(id,post_id,author_name,body,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?)','tool_comment',post.id,'Reader','Hello','pending',stamp,stamp);
+ service.setConsent(owner,true);let calls=0;
+ agent.fetch=async(url,options)=>{
+  const body=JSON.parse(options.body);assert.ok(body.tools.some(tool=>tool.name==='comments_summary'));assert.ok(body.tools.some(tool=>tool.name==='corner_overview'));calls++;
+  if(calls===1)return {ok:true,json:async()=>({output:[{type:'function_call',call_id:'comment-read',name:'comments_summary',arguments:'{}'}],usage:{total_tokens:15}})};
+  const toolOutput=body.input.find(item=>item.type==='function_call_output');assert.match(toolOutput.output,/"total":1/);
+  return {ok:true,json:async()=>({output_text:'There is 1 comment, currently pending.',usage:{total_tokens:15}})};
+ };
+ const turn=service.send(owner,c.id,scope,{message:'Give me a factual Corner activity answer.',mode:'chat',requestKey:key()});await until(()=>data.turn(owner,c.id,scope,turn.turnId).assistant.status==='complete');assert.equal(calls,2);assert.match(data.turn(owner,c.id,scope,turn.turnId).assistant.content,/1 comment/);
+});
