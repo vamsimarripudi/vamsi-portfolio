@@ -160,10 +160,23 @@ export class Store{
   }
   uniqueSlug(base,exclude=''){let slug=slugify(base),n=2;while(this.one('SELECT id FROM posts WHERE slug=? AND id<>?',slug,exclude)){slug=slugify(base).slice(0,80)+'-'+n++;}return slug;}
   createPost(payload,actor){
-    const data=this.validatePost(payload,'draft'),stamp=now(),id=uid('post'),slug=this.uniqueSlug(payload.slug||data.title);
-    this.exec(`INSERT INTO posts(id,slug,type,title,excerpt,body,emoji,category,tags,featured,pinned,allow_comments,allow_reactions,milestone,upcoming_public,timezone,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,slug,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,stamp,stamp);
-    this.audit(actor,'post.created','post',id);return normPost(this.one('SELECT * FROM posts WHERE id=?',id));
+    const requestKey=payload.clientRequestId;
+    if(requestKey!==undefined&&(typeof requestKey!=='string'||!/^[A-Za-z0-9_-]{16,128}$/.test(requestKey)||!actor))
+      throw httpError(400,'Use a valid draft request identifier.','INVALID_REQUEST_ID');
+    const create=()=>{
+      // A retry after a lost response must recover the same draft, including
+      // after a restart. The composer patches newer writing with this version.
+      if(requestKey){
+        const previous=this.one('SELECT post_id FROM post_draft_requests WHERE actor_user_id=? AND request_key=?',String(actor),requestKey);
+        if(previous)return {...this.adminPost(previous.post_id),clientRequestReplayed:true};
+      }
+      const data=this.validatePost(payload,'draft'),stamp=now(),id=uid('post'),slug=this.uniqueSlug(payload.slug||data.title);
+      this.exec(`INSERT INTO posts(id,slug,type,title,excerpt,body,emoji,category,tags,featured,pinned,allow_comments,allow_reactions,milestone,upcoming_public,timezone,created_at,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,slug,data.type,data.title,data.excerpt,data.body,data.emoji,data.category,JSON.stringify(data.tags),data.featured,data.pinned,data.allow_comments,data.allow_reactions,data.milestone,data.upcoming_public,data.timezone,stamp,stamp);
+      if(requestKey)this.exec('INSERT INTO post_draft_requests(actor_user_id,request_key,post_id,created_at) VALUES(?,?,?,?)',String(actor),requestKey,id,stamp);
+      this.audit(actor,'post.created','post',id);return this.adminPost(id);
+    };
+    return requestKey?this.transaction(create):create();
   }
   savePost(id,payload,actor){
     const prev=this.one('SELECT * FROM posts WHERE id=?',id);if(!prev)throw httpError(404,'Post not found.');
@@ -183,9 +196,21 @@ export class Store{
     return rows.map(normPost);
   }
   adminPost(id){return normPost(this.one('SELECT * FROM posts WHERE id=?',id));}
+  mediaPublicationIssue(postId){
+    // Core Store also runs without the optional media worker in isolated tools.
+    if(!this.one("SELECT name FROM sqlite_master WHERE type='table' AND name='corner_v5_media_jobs'"))return null;
+    if(this.one("SELECT id FROM corner_v5_media_jobs WHERE post_id=? AND state IN ('queued','processing') LIMIT 1",postId))
+      return {code:'MEDIA_PROCESSING',message:'A video is still processing. Wait for it to finish before publishing or scheduling.'};
+    if(this.one("SELECT id FROM corner_v5_media_jobs WHERE post_id=? AND state='failed' LIMIT 1",postId))
+      return {code:'MEDIA_PROCESSING_FAILED',message:'A video could not be processed. Retry or remove the failed upload before publishing or scheduling.'};
+    return null;
+  }
+  requireReadyMedia(postId){const issue=this.mediaPublicationIssue(postId);if(issue)throw httpError(409,issue.message,issue.code);}
   publish(id,actor){
-    let row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');if(!row.body&&!this.one("SELECT id FROM media WHERE owner_id=? AND owner_type='post' LIMIT 1",id))throw httpError(400,'Add body or media before publishing');
+    let row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');
     if(row.state==='published')return normPost(row);
+    this.requireReadyMedia(id);
+    if(!row.body&&!this.one("SELECT id FROM media WHERE owner_id=? AND owner_type='post' LIMIT 1",id))throw httpError(400,'Add body or media before publishing');
     const stamp=now(),ver=row.version+1;
     this.exec("UPDATE posts SET state='published',published_at=?,scheduled_at=NULL,updated_at=?,version=?,archived_at=NULL WHERE id=?",stamp,stamp,ver,id);
     this.audit(actor,'post.published','post',id);this.emit('post.published',id,ver,{slug:row.slug});return this.adminPost(id);
@@ -193,8 +218,11 @@ export class Store{
   archive(id,actor){const row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');if(row.state==='archived')return normPost(row);this.exec("UPDATE posts SET state='archived',archived_at=?,updated_at=?,version=version+1 WHERE id=?",now(),now(),id);this.audit(actor,'post.archived','post',id);if(row.state==='published')this.emit('post.archived',id,row.version+1,{slug:row.slug});return this.adminPost(id)}
   restore(id,actor){let row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');if(row.state!=='archived')throw httpError(409,'Only archived posts can be restored');const state=row.published_at?'published':'draft';this.exec('UPDATE posts SET state=?,archived_at=NULL,version=version+1,updated_at=? WHERE id=?',state,now(),id);this.audit(actor,'post.restored','post',id);if(state==='published')this.emit('post.published',id,row.version+1,{slug:row.slug});return this.adminPost(id)}
   schedule(id,payload,actor){
-    const row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');if(!row.body&&!this.one("SELECT id FROM media WHERE owner_id=? AND owner_type='post' LIMIT 1",id))throw httpError(400,'Add content or media before scheduling');
+    const row=this.one('SELECT * FROM posts WHERE id=?',id);if(!row)throw httpError(404,'Post not found');
     if(row.state==='archived')throw httpError(409,'Restore the post before scheduling');
+    if(payload.version!==undefined&&Number(payload.version)!==row.version)throw httpError(409,'Another edit was saved. Reload before scheduling.','VERSION_CONFLICT');
+    this.requireReadyMedia(id);
+    if(!row.body&&!this.one("SELECT id FROM media WHERE owner_id=? AND owner_type='post' LIMIT 1",id))throw httpError(400,'Add content or media before scheduling');
     const when=String(payload.scheduledAt||'');if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(when)||!Number.isFinite(Date.parse(when))||Date.parse(when)<Date.now()+5000)throw httpError(400,'Choose a valid future schedule');
     const recurrence=payload.recurrence==='yearly'?'yearly':'none',tz=payload.timezone||config.timezone;
     if(!isValidTimeZone(tz))throw httpError(400,'Invalid scheduling timezone');
@@ -214,6 +242,16 @@ export class Store{
     if(windows.pin_start_at&&windows.pin_end_at&&windows.pin_end_at<=windows.pin_start_at)throw httpError(400,'Pin window end must be after its start');
     this.exec("UPDATE posts SET state='scheduled',scheduled_at=?,timezone=?,recurrence=?,recurrence_month=?,recurrence_day=?,recurrence_time=?,recurrence_end_year=?,feature_start_at=?,feature_end_at=?,pin_start_at=?,pin_end_at=?,updated_at=?,version=version+1 WHERE id=?",new Date(when).toISOString(),tz,recurrence,month,day,clock,recurrenceEndYear,windows.feature_start_at,windows.feature_end_at,windows.pin_start_at,windows.pin_end_at,now(),id);
     this.audit(actor,'post.scheduled','post',id,{recurrence});return this.adminPost(id);
+  }
+  unschedule(id,payload,actor){
+    const row=this.one('SELECT * FROM posts WHERE id=?',id);
+    if(!row)throw httpError(404,'Post not found');
+    if(!Number.isSafeInteger(Number(payload?.version))||Number(payload.version)!==row.version)
+      throw httpError(409,'Another edit was saved. Reload before cancelling the schedule.','VERSION_CONFLICT');
+    if(row.state!=='scheduled')throw httpError(409,'Only a scheduled story can have its schedule cancelled.','NOT_SCHEDULED');
+    this.exec("UPDATE posts SET state='draft',scheduled_at=NULL,recurrence='none',recurrence_month=NULL,recurrence_day=NULL,recurrence_time=NULL,recurrence_end_year=NULL,feature_start_at=NULL,feature_end_at=NULL,pin_start_at=NULL,pin_end_at=NULL,updated_at=?,version=version+1 WHERE id=?",now(),id);
+    this.audit(actor,'post.unscheduled','post',id);
+    return this.adminPost(id);
   }
   getFeed({category,limit=15,cursor,tag}={}){
     // Latest is singular by contract; collection/archive reads remain paginated.
@@ -286,7 +324,16 @@ export class Store{
   pendingComments(state='pending'){if(!['pending','approved','hidden','deleted'].includes(state))throw httpError(400,'Invalid moderation filter');return this.all('SELECT comments.*,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id WHERE comments.state=? ORDER BY comments.created_at DESC LIMIT 100',state)}
   moderate(id,state,actor){if(!['approved','hidden','deleted'].includes(state))throw httpError(400,'Invalid moderation state');let comment=this.one('SELECT * FROM comments WHERE id=?',id);if(!comment)throw httpError(404,'Comment not found');this.exec('UPDATE comments SET state=?,updated_at=?,deleted_at=? WHERE id=?',state,now(),state==='deleted'?now():null,id);this.audit(actor,'comment.'+state,'comment',id);this.emit(state==='approved'?'comment.created':'comment.removed',comment.post_id,1,{commentId:id});return {id,state};}
   addMedia(meta){const ownerId=meta.ownerId||null;const next=ownerId?Number(this.one('SELECT COALESCE(MAX(sort_index),0)+1 AS n FROM media WHERE owner_id=?',ownerId)?.n||1):0;this.exec('INSERT INTO media(id,owner_type,owner_id,storage_key,mime_type,size_bytes,width,height,alt_text,caption,focal_x,focal_y,sort_index,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',meta.id,'post',ownerId,meta.storageKey,meta.mimeType,meta.size,meta.width??null,meta.height??null,meta.alt||'',meta.caption||'',meta.focalX??.5,meta.focalY??.5,next,now());return this.one('SELECT * FROM media WHERE id=?',meta.id)}
-  listMedia(ownerId){const row=this.one('SELECT parent_post_id FROM posts WHERE id=?',ownerId);return this.all('SELECT id,storage_key,mime_type,size_bytes,width,height,alt_text,caption,focal_x,focal_y,sort_index,created_at FROM media WHERE owner_id=? ORDER BY CASE WHEN sort_index=0 THEN 1 ELSE 0 END,sort_index ASC,created_at ASC,id ASC',ownerId===undefined?null:(row?.parent_post_id||ownerId))}
+  listMedia(ownerId){
+    const row=this.one('SELECT parent_post_id FROM posts WHERE id=?',ownerId),sourceId=ownerId===undefined?null:(row?.parent_post_id||ownerId);
+    const media=this.all('SELECT id,storage_key,mime_type,size_bytes,width,height,duration,alt_text,caption,focal_x,focal_y,sort_index,created_at FROM media WHERE owner_id=? ORDER BY CASE WHEN sort_index=0 THEN 1 ELSE 0 END,sort_index ASC,created_at ASC,id ASC',sourceId);
+    if(!media.some(item=>item.mime_type.startsWith('video/')))return media;
+    let posters=new Set();
+    if(this.one("SELECT name FROM sqlite_master WHERE type='table' AND name='corner_v5_media_jobs'")&&this.all('PRAGMA table_info(corner_v5_media_jobs)').some(column=>column.name==='poster_key')){
+      posters=new Set(this.all('SELECT media_id FROM corner_v5_media_jobs WHERE post_id=? AND poster_key IS NOT NULL',sourceId).map(job=>job.media_id));
+    }
+    return media.map(item=>item.mime_type.startsWith('video/')?{...item,has_poster:posters.has(item.id)}:item);
+  }
   reorderMedia(ownerId,ids,actor){if(!Array.isArray(ids)||!ids.length)throw httpError(400,'Choose media to reorder');const rows=this.all('SELECT id FROM media WHERE owner_id=? ORDER BY id',ownerId),known=new Set(rows.map(r=>r.id));if(rows.length!==ids.length||new Set(ids).size!==ids.length||ids.some(id=>!known.has(String(id))))throw httpError(400,'Media order does not match this story');this.transaction(()=>ids.forEach((id,index)=>this.exec('UPDATE media SET sort_index=? WHERE id=? AND owner_id=?',index+1,String(id),ownerId)));this.audit(actor,'media.reordered','post',ownerId,{ids});const post=this.one('SELECT slug,state,version FROM posts WHERE id=?',ownerId);if(post?.state==='published')this.emit('post.updated',ownerId,post.version,{slug:post.slug});return this.listMedia(ownerId)}
   updateMedia(id,fields,actor){let row=this.one('SELECT * FROM media WHERE id=?',id);if(!row)throw httpError(404,'Media not found');const alt=pureText(fields.altText??row.alt_text,240),caption=pureText(fields.caption??row.caption,300),focalX=clamp(Number(fields.focalX??row.focal_x),0,1),focalY=clamp(Number(fields.focalY??row.focal_y),0,1);this.exec('UPDATE media SET alt_text=?,caption=?,focal_x=?,focal_y=? WHERE id=?',alt,caption,focalX,focalY,id);this.audit(actor,'media.updated','media',id);return this.one('SELECT * FROM media WHERE id=?',id)}
   deleteMedia(id,actor){const media=this.one('SELECT * FROM media WHERE id=?',id);if(!media)throw httpError(404,'Media not found');
@@ -307,6 +354,9 @@ export class Store{
     const scheduled=this.all("SELECT * FROM posts WHERE state='scheduled' AND scheduled_at<=? ORDER BY scheduled_at LIMIT 100",at);let fired=[];
     for(const post of scheduled){let out=this.transaction(()=>{
       const live=this.one('SELECT * FROM posts WHERE id=?',post.id);if(!live||live.state!=='scheduled'||live.scheduled_at!==post.scheduled_at)return null;
+      // Media may have been attached after scheduling. Keep the story private
+      // until processing completes; a failed upload remains actionable in Studio.
+      if(this.mediaPublicationIssue(live.id))return null;
       const key=live.id+':'+live.scheduled_at; if(this.one('SELECT id FROM post_occurrences WHERE execution_key=?',key))return null;
       const stamp=at,recurring=live.recurrence==='yearly';let publishedId=live.id,publishedSlug=live.slug;
       const featured=live.featured&&(!live.feature_start_at||live.feature_start_at<=stamp)&&(!live.feature_end_at||live.feature_end_at>stamp)?1:0;

@@ -9,7 +9,11 @@ test('The animated Publish controller loads in Studio before the editor and rema
  const html=adminPage({owner:{id:'owner',role:'owner'}});
  assert.match(html,/v6-publish-motion\.css\?v=1/);
  assert.match(html,/v6-publish-motion\.js\?v=1/);
- assert.ok(html.indexOf('v6-publish-motion.js')<html.indexOf('admin.js?v=20261029-icons1'));
+ const assets=[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match=>match[1].split('?')[0]);
+ assert.ok(assets.indexOf('/v6-publish-motion.js')>=0);
+ assert.ok(assets.indexOf('/admin.js')>assets.indexOf('/v6-publish-motion.js'));
+ assert.ok(assets.indexOf('/composer-workspace.js')>=0);
+ assert.ok(assets.indexOf('/admin.js')>assets.indexOf('/composer-workspace.js'));
  assert.ok(html.indexOf('v6-publish-motion.css')<html.indexOf('comfort.css'));
  const publicPage=basePage({title:'Story',path:'/',initial:{page:'feed'}});
  assert.doesNotMatch(publicPage,/v6-publish-motion\.(css|js)/);

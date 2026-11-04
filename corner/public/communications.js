@@ -9,6 +9,8 @@
  const refresh=$('[data-comm-refresh]'),preview=$('[data-comm-preview]'),queue=$('[data-comm-queue]');
  const choices=$('[data-comm-story-choices]'),showEmail=$('[data-comm-show-email]');
  const frame=$('[data-comm-iframe]'),empty=$('[data-comm-preview-empty]');
+ const requestedPost=new URLSearchParams(location.search).get('post')||'';
+ let requestedPostHandled=false;
  let snapshot=null,selected=[],previewInfo=null,pending=false;
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=String(text);if(cls)n.className=cls;return n};
  const fmt=date=>{if(!date)return 'Not recorded';const d=new Date(date);return Number.isFinite(d.getTime())?d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Unknown date'};
@@ -60,7 +62,35 @@
   });
   append(choices,...(items.length?items:[node('p','No published stories found.','comm-muted')]));
  };
- const load=async()=>{if(pending)return;pending=true;refresh.disabled=true;notice('Refreshing authenticated Corner records…');try{snapshot=await request('/status');renderStatus();drawChoices(snapshot.availableStories||[])}catch(e){notice(e.message,true)}finally{pending=false;refresh.disabled=false}};
+ const load=async()=>{
+  if(pending)return;pending=true;refresh.disabled=true;notice('Refreshing authenticated Corner records…');
+  // Recipient and publication state may have changed since the last review.
+  previewInfo=null;queue.disabled=true;frame.hidden=true;empty.hidden=false;
+  let openRequestedPreview=false;
+  try{
+   snapshot=await request('/status');
+   if(/^post_[0-9a-f-]{36}$/i.test(requestedPost)&&(!requestedPostHandled||selected.includes(requestedPost))){
+    const firstRequest=!requestedPostHandled;
+    let story=(snapshot.availableStories||[]).find(post=>post.id===requestedPost);
+    if(!story){
+     const response=await fetch(prefix+'/api/admin/posts/'+encodeURIComponent(requestedPost),{credentials:'same-origin',cache:'no-store'});
+     const result=await response.json().catch(()=>({}));const post=result.data?.post;
+     if(!response.ok&&response.status!==404)throw Error(result.error?.message||'Could not refresh the selected story.');
+     if(response.ok&&post?.state==='published'){
+      story={id:post.id,title:post.title,category:post.category,publishedAt:post.published_at};
+      snapshot.availableStories=[story,...(snapshot.availableStories||[])];
+     }
+    }
+    if(story&&firstRequest){selected=[story.id];form.elements.kind.value='story';form.elements.category.value=story.category;openRequestedPreview=true}
+    else if(!story)formStatus.textContent='Publish this story before preparing its subscriber email.';
+    requestedPostHandled=true;
+   }
+   selected=selected.filter(id=>(snapshot.availableStories||[]).some(story=>story.id===id));
+   if(selected.length&&!openRequestedPreview)formStatus.textContent='Selection refreshed. Preview again to review the current story and audience.';
+   renderStatus();drawChoices(snapshot.availableStories||[]);
+  }catch(e){notice(e.message,true)}finally{pending=false;refresh.disabled=false}
+  if(openRequestedPreview)preview.click();
+ };
  refresh.addEventListener('click',load);
  showEmail.addEventListener('change',renderStatus);
  form.elements.kind.addEventListener('change',()=>{selected=[];previewInfo=null;frame.hidden=true;empty.hidden=false;queue.disabled=true;drawChoices(snapshot?.availableStories||[])});

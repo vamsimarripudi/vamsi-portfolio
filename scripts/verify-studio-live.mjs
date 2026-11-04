@@ -99,7 +99,12 @@ try{
  }
  await page.setViewportSize({width:1366,height:625});await navigation('posts');await page.locator('#new-post').click();await page.locator('#post-editor').waitFor();
  await page.locator('#post-editor textarea[name=body]').fill('A live story\nFirst line\nSecond line');await page.locator('[data-v5-settings-toggle]').click();await page.locator('#post-editor input[name=emoji]').fill('✨');await page.locator('[data-v5-settings-toggle]').click();
- assert.equal(await page.locator('.preview-story-body').textContent(),'A live story\nFirst line\nSecond line');assert.equal(await page.locator('.preview-title').textContent(),'A live story');assert.equal(await page.locator('.preview-symbol').textContent(),'✨');
+ await page.waitForFunction(()=>document.querySelector('[data-composer-preview-frame]')?.contentDocument?.querySelector('.story h2')?.textContent==='A live story');
+ const postPreview=page.frameLocator('[data-composer-preview-frame]');
+ assert.equal(await postPreview.locator('.corner-story-visual span').textContent(),'✨','Actual feed renderer reflects the selected symbol');
+ await page.locator('button[data-preview-mode=full]').click();
+ await page.waitForFunction(()=>document.querySelector('[data-composer-preview-frame]')?.contentDocument?.querySelector('.post-body')?.innerText==='A live story\nFirst line\nSecond line');
+ assert.equal(await postPreview.locator('.post-heading h1').textContent(),'A live story','Actual full post renderer reflects writing');
  await page.locator('#save-post').click();await page.waitForFunction(()=>document.querySelector('#save-indicator').textContent.startsWith('Saved'));
  // Motion lab acceptance in an isolated authenticated test fixture. The sample
  // action does not write any data; other Studio tests exercise actual persistence.

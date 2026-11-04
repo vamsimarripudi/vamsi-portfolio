@@ -23,7 +23,7 @@ test('Studio mobile moderation has icon-only accessible controls',()=>{
  assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(css,/min-height:48px/);
  assert.match(css,/studio-nav-label/);
- assert.match(adminPage({owner:{role:'owner',id:'owner'}}),/admin\.js\?v=20261029-icons1/);
+ assert.match(adminPage({owner:{role:'owner',id:'owner'}}),/<script\b[^>]*src="\/admin\.js\?v=[^"\s]+"[^>]*defer/);
 });
 test('Focus reading remains icon-based only on phones, with accessible name',()=>{
  const reader=read('v6-reader.js'),css=read('v6-mobile-ui.css');

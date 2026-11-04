@@ -29,6 +29,12 @@ CREATE INDEX IF NOT EXISTS idx_posts_feed ON posts(state, published_at DESC, id 
 CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category, state, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_schedule ON posts(state, scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_posts_parent ON posts(parent_post_id);
+CREATE TABLE IF NOT EXISTS post_draft_requests (
+  actor_user_id TEXT NOT NULL, request_key TEXT NOT NULL,
+  post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY(actor_user_id, request_key)
+);
 CREATE TABLE IF NOT EXISTS post_occurrences (
   id TEXT PRIMARY KEY, post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   occurrence_at TEXT NOT NULL, execution_key TEXT NOT NULL UNIQUE,

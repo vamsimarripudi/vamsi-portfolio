@@ -87,7 +87,6 @@ try{
    'Image selection is final: no description or caption fields interrupt attachment');
  await page.locator('#editor-upload button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===3,null,{timeout:18000});
- assert.equal(await page.locator('[data-editor-photo-preview] img').count(),1,'Attached image appears in Studio card preview');
  assert.equal(await page.locator('#editor-media form[data-media-quick-edit]').count(),0,
    'Attached images stay clean with no inline metadata editor');
  assert.equal(await page.locator('#editor-media input[name="alt"],#editor-media input[name="caption"],#editor-media textarea[name="alt"]').count(),0,
@@ -95,7 +94,9 @@ try{
  assert.equal(await page.locator('#media-count').textContent(),'3','Editor shows current attachment count');
  // Delete an already attached image using the red X.
  page.once('dialog',dialog=>dialog.accept());
+ const deletion=page.waitForResponse(response=>response.request().method()==='DELETE'&&/\/corner\/api\/admin\/media\/[^/?]+$/.test(new URL(response.url()).pathname));
  await page.locator('#editor-media .media-thumb').first().locator('.media-delete-x').click();
+ assert.equal((await deletion).status(),200,'Removing an attachment receives real server confirmation');
  await page.waitForFunction(()=>document.querySelectorAll('#editor-media .media-thumb').length===2);
  assert.equal(await page.locator('#media-count').textContent(),'2','Attached delete updates the story attachment count');
  // Reorder the remaining pair so the third image becomes the carousel cover.
@@ -108,6 +109,16 @@ try{
  assert.equal(afterOrder[0],beforeOrder[1],'Reorder endpoint changes the public carousel order');
  await attachmentDialog.locator('[data-media-dismiss]').last().click();
  assert.equal(await attachmentDialog.evaluate(element=>element.open),false,'Done closes the attachment modal');
+ await page.locator('.composer-mobile-tabs [data-composer-view=preview]').click();
+ await page.locator('button[data-preview-mode=feed]').click();
+ await page.waitForFunction(()=>{
+  const frame=document.querySelector('[data-composer-preview-frame]');
+  const image=frame?.contentDocument?.querySelector('.card-media img');
+  return !frame?.hidden&&image?.complete&&image.naturalWidth>0;
+ },null,{timeout:15000});
+ assert.equal(await page.frameLocator('[data-composer-preview-frame]').locator('.card-media img').count(),1,'Actual private feed iframe loads the ordered cover image');
+ assert.equal(await page.locator('#publish-post').isVisible(),true,'Mobile Preview retains the publishing action');
+ await page.locator('.composer-mobile-tabs [data-composer-view=write]').click();
  await page.locator('#open-media-panel').click();
  assert.equal(await attachmentDialog.locator('.media-thumb').count(),2,'Reopening preserves deletion and order');
  await page.keyboard.press('Escape');
