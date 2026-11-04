@@ -65,6 +65,11 @@ for(const basePath of ['', '/corner']){
       .map(match=>match[1]);
     const command=styles.filter(href=>href.includes('command-center.css'));
     assert.equal(command.length,1,'Load one Command stylesheet');
+    const theme=styles.filter(href=>href.includes('studio-theme.css'));
+    assert.equal(theme.length,1,'Load one private Studio theme stylesheet');
+    assert.ok(styles.indexOf(theme[0])>styles.indexOf(command[0]),'Theme overrides load after Command presentation');
+    assert.match(html,/corner-studio-theme/,'Theme preference is resolved before private Studio paint');
+    assert.match(html,/<script src="[^"]*studio-theme\.js\?v=1" defer><\/script>/,'Private Studio loads the appearance controller');
     const stylesheet=new URL(command[0],origin);
     assert.equal(stylesheet.pathname,basePath+'/command-center.css','Use the configured deployment prefix exactly once');
     assert.ok(styles.indexOf(command[0])>styles.findIndex(href=>href.includes('/studio.css')),
@@ -73,5 +78,11 @@ for(const basePath of ['', '/corner']){
     assert.equal(css.status,200,'The asset URL in the real HTML must resolve');
     assert.match(css.headers.get('content-type'),/^text\/css/,'A successful HTML fallback is not a stylesheet');
     assert.match(await css.text(),/\.command-summary-strip/);
+    const themeCss=await fetch(new URL(theme[0],origin));
+    assert.equal(themeCss.status,200);assert.match(themeCss.headers.get('content-type'),/^text\/css/);
+    assert.match(await themeCss.text(),/data-studio-theme=\"dark\"/);
+    const publicPage=await fetch(origin+basePath+'/');
+    const publicHtml=await publicPage.text();
+    assert.doesNotMatch(publicHtml,/studio-theme\.(?:css|js)/,'Public Corner is not forced into the private Studio appearance preference');
   });
 }
