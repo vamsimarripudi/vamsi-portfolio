@@ -32,15 +32,16 @@ try{
   await page.setViewportSize({width,height});await fit(width+'x'+height);
   if(width<=390){
    const compact=await page.evaluate(()=>{
-    const composer=document.querySelector('.cc-composer').getBoundingClientRect(),chat=document.querySelector('.cc-scroll').getBoundingClientRect(),studio=document.querySelector('.admin-sidebar').getBoundingClientRect(),header=document.querySelector('.cc-header').getBoundingClientRect(),hero=getComputedStyle(document.querySelector('.cc-empty h1')),starters=getComputedStyle(document.querySelector('.cc-starters'));
-    return {composer:composer.height,chat:chat.height,studio:studio.height,header:header.height,hero:hero.display,starters:starters.display};
+    const composer=document.querySelector('.cc-composer').getBoundingClientRect(),chat=document.querySelector('.cc-scroll').getBoundingClientRect(),studio=document.querySelector('.admin-sidebar').getBoundingClientRect(),header=document.querySelector('.cc-header').getBoundingClientRect(),hero=getComputedStyle(document.querySelector('.cc-empty h1')),prompt=getComputedStyle(document.querySelector('.cc-empty p'));
+    return {composer:composer.height,chat:chat.height,studio:studio.height,header:header.height,hero:hero.display,prompt:prompt.display};
    });
    assert.ok(compact.composer<=125,'Mobile composer stays compact when focused '+JSON.stringify(compact));
    assert.ok(compact.chat>=400,'Conversation gets the majority of the viewport '+JSON.stringify(compact));
    assert.ok(compact.studio<=100,'Studio chrome is hidden in Command '+JSON.stringify(compact));
    assert.ok(compact.header<=70,'Command header is one compact row '+JSON.stringify(compact));
-   assert.equal(compact.hero,'none','Large empty-state heading is hidden on mobile');
-   assert.equal(compact.starters,'none','Large quick-action pill grid is hidden on mobile');
+   assert.notEqual(compact.hero,'none','Welcome heading remains visible on mobile');
+   assert.notEqual(compact.prompt,'none','What’s on your mind prompt remains visible on mobile');
+   assert.equal(await page.locator('.cc-starters').count(),0,'Legacy quick-action pill grid is removed');
    await page.getByRole('button',{name:'Add tools or attachments',exact:true}).click();
    await expect(page.getByRole('button',{name:'Queue',exact:true})).toBeVisible();
    await expect(page.getByRole('button',{name:'Create image',exact:true})).toBeVisible();
