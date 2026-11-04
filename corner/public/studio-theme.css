@@ -219,3 +219,133 @@ html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-bott
     background:transparent!important;border:0!important;box-shadow:none!important;
   }
 }
+
+/* Dark-mode contrast foundation: legacy Studio components use the original token set. */
+html[data-studio-theme="dark"] body.corner-comfort{
+  --bg:#0d100e;
+  --surface:#151916;
+  --surface-soft:#1c221d;
+  --ink:#f2f5f2;
+  --ink-2:#cbd4cc;
+  --muted:#9ba69d;
+  --line:rgba(237,242,237,.13);
+  --line-strong:rgba(237,242,237,.24);
+  --accent:#e1835f;
+  --accent-light:#33231d;
+  --green:#78a68a;
+  --gold:#d4ad79;
+}
+
+/* Studio typography must remain readable on every dark private surface. */
+html[data-studio-theme="dark"] .corner-comfort .admin-shell :is(h1,h2,h3,h4,strong){color:#f2f5f2!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell :is(
+  .admin-kpi p,.admin-surface p:not(.eyebrow),.admin-comment small,.admin-empty p,
+  .admin-table small,.admin-table th,.feed-updated,.admin-hint,.admin-loading
+){color:#9fa9a1!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell :is(.eyebrow,.meta){color:#d2967c!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-kpi strong{color:#f5f8f5!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-kpi{
+  background:#141915!important;border-color:#343d35!important;color:#eef2ee!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-surface{
+  background:#141915!important;border-color:#343d35!important;color:#e8ede8!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-surface :is(h2,h3,h4,strong){color:#f3f6f3!important}
+
+/* Moderation controls: no white controls with white/pale icons in dark mode. */
+html[data-studio-theme="dark"] .corner-comfort .v5-comment-filters button{
+  background:#151a16!important;color:#dbe3dc!important;border-color:#3b443c!important;
+  box-shadow:none!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .v5-comment-filters button:hover{
+  background:#202721!important;color:#fff!important;border-color:#4b574d!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .v5-comment-filters button[aria-pressed="true"]{
+  background:#2b211d!important;color:#fff!important;border-color:#b96849!important;
+  box-shadow:inset 0 -2px #e57a51!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .v5-comment-filters button :is(svg,.v6-mobile-action-icon),
+html[data-studio-theme="dark"] .corner-comfort .admin-comment footer button :is(svg,.v6-mobile-action-icon){
+  color:inherit!important;stroke:currentColor!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-comment{
+  background:#141915!important;border-color:#343d35!important;color:#e8ede8!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-comment p{color:#e5ebe5!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-comment footer button{
+  background:#171c18!important;color:#dce4dd!important;border-color:#3c463d!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-comment footer button:hover{
+  background:#222a23!important;color:#fff!important;border-color:#526055!important;
+}
+
+/* Empty states and mobile owner shortcut remain dark-mode native. */
+html[data-studio-theme="dark"] .corner-comfort .admin-empty{
+  background:#111512!important;border-color:#344037!important;color:#eef2ee!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-empty h3{color:#f3f6f3!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-empty .v6-empty-icon{
+  background:#1e2c22!important;color:#83b397!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-top .studio-owner-link{
+  background:#151a16!important;color:#e5ebe5!important;border-color:#39433a!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-top .studio-owner-link::before{color:#e5ebe5!important}
+
+/* Mobile Studio rail: muted but readable; active item stays dark rather than becoming a light tile. */
+@media(max-width:767px){
+  html[data-studio-theme="dark"] .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link){
+    color:#aab5ac!important;background:transparent!important;
+  }
+  html[data-studio-theme="dark"] .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link):hover{
+    background:#1b211c!important;color:#fff!important;
+  }
+  html[data-studio-theme="dark"] .corner-comfort .admin-shell .admin-nav :is(button,.admin-v3-link).is-active{
+    background:#28211e!important;color:#f3f6f3!important;border-color:#6b4a3d!important;
+    box-shadow:inset 0 -4px #ee6c3c!important;
+  }
+  html[data-studio-theme="dark"] .corner-comfort .admin-shell .admin-nav .is-active .studio-nav-label{color:#f3f6f3!important}
+}
+
+/* Explicit light-only Studio modules that predate the shared token system. */
+html[data-studio-theme="dark"] .corner-comfort .corner-media-library :is(h2,h3,h4,strong){color:#f2f5f2!important}
+html[data-studio-theme="dark"] .corner-comfort .corner-media-library :is(p,small,.corner-library-heading p,.corner-library-meta){color:#9fa9a1!important}
+html[data-studio-theme="dark"] .corner-comfort .corner-media-library :is(.corner-library-count,.corner-library-surface,.media-thumb--library){
+  background:#141915!important;border-color:#343d35!important;color:#e8ede8!important;box-shadow:none!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .corner-media-library :is(button,select,input){
+  background:#171c18!important;color:#dfe5de!important;border-color:#3b443c!important;
+}
+
+html[data-studio-theme="dark"] .corner-comfort .admin-shell :is(.ax-actions button,.ax-actions select,.ax-view-controls select,.ax-chart-tools select,.ax-scrub button){
+  background:#151a16!important;color:#e7ece7!important;border-color:#3b443c!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-tabs{
+  background:#0d100e!important;border-color:#303831!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-tabs button{color:#aeb8b0!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-tabs [aria-selected="true"]{
+  background:#252c26!important;color:#fff!important;border-color:#465147!important;
+}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell :is(.ax-report-meta,.ax-footnote,.ax-sample,.ax-chart-axis){color:#9fa9a1!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-sample{background:#171c18!important;border-color:#725a49!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-chart text{fill:#aeb8b0!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-gridline{stroke:#343d35!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-current{stroke:#e6ece7!important}
+html[data-studio-theme="dark"] .corner-comfort .admin-shell .ax-point{fill:#e6ece7!important}
+
+html[data-studio-theme="dark"] body.corner-comfort .v6-toast{
+  background:#151a16!important;color:#edf2ed!important;border-color:#3a433b!important;box-shadow:0 12px 35px #0008!important;
+}
+html[data-studio-theme="dark"] body.corner-comfort .v6-toast .v6-toast-close{color:#dfe6df!important}
+
+html[data-studio-theme="dark"] .corner-comfort :is(.corner-schedule-inner,.corner-crop-inner){
+  background:#151a16!important;color:#edf2ed!important;border-color:#343d35!important;
+}
+html[data-studio-theme="dark"] .corner-comfort :is(.corner-schedule-inner,.corner-crop-inner) :is(h2,h3,strong,label){color:#edf2ed!important}
+html[data-studio-theme="dark"] .corner-comfort :is(.corner-schedule-inner,.corner-crop-inner) :is(input,select,textarea){
+  background:#101411!important;color:#edf2ed!important;border-color:#465147!important;
+}
+html[data-studio-theme="dark"] .corner-comfort :is(.corner-schedule-inner,.corner-crop-inner) :is(.corner-close,[data-schedule-cancel],.corner-schedule-secondary,.corner-crop-secondary){
+  background:#171c18!important;color:#e7ece7!important;border-color:#3b443c!important;
+}
