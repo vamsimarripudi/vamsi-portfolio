@@ -104,15 +104,10 @@ const quietNavItems=[
  ['/saved','Saved stories','bookmark'],['/settings/preferences','Preferences','sliders'],
  ['/settings/security','Security','shield'],['/settings/privacy','Privacy & data','lock']
 ];
-const quietNav=(type,user)=>{
+const quietNav=(type)=>{
  const items=quietNavItems.map(([href,label,icon])=>
   '<a class="quiet-nav-link'+(type===href?' is-current':'')+'" href="'+href+'"'+(type===href?' aria-current="page"':'')+'>'+quietIcon(icon)+'<span>'+label+'</span>'+quietIcon('chevron')+'</a>').join('');
- const studio=['owner','admin','editor','moderator'].includes(user.role)
-  ?'<a class="quiet-studio-link" href="/admin">'+quietIcon('pen')+' Open Studio '+quietIcon('arrow')+'</a>':'';
- return '<aside class="quiet-sidebar" aria-label="Account navigation"><div class="quiet-sidebar-identity">'+quietPhoto(user,'small')+
-   '<div class="quiet-sidebar-identity-copy"><strong>'+h(user.displayName||'Your profile')+'</strong><small>Private account</small></div></div>'+
-   '<nav class="quiet-navigation" aria-label="My account sections">'+items+'</nav>'+studio+
-   '<button type="button" class="quiet-side-signout" data-account-logout>'+quietIcon('logout')+' Sign out</button></aside>';
+ return '<aside class="quiet-sidebar" aria-label="Account navigation"><nav class="quiet-navigation" aria-label="My account sections">'+items+'</nav></aside>';
 };
 const quietRow=(label,detail,url,icon,emphasis='')=>'<a class="quiet-link-row '+emphasis+'" href="'+url+'"><span class="quiet-row-icon">'+quietIcon(icon)+'</span>'+
  '<span class="quiet-row-content"><strong>'+label+'</strong><small>'+detail+'</small></span>'+quietIcon('chevron')+'</a>';
@@ -213,14 +208,18 @@ function quietDeskPage(type,user){
  };
  const title={ '/profile':'My Corner','/settings/profile':'Edit profile','/saved':'Saved stories',
   '/settings/preferences':'Preferences','/settings/security':'Security','/settings/privacy':'Privacy & data' }[type]||'My Corner';
- const role=['owner','admin','editor','moderator'].includes(user.role)?'<a href="/admin" class="quiet-top-studio">Studio '+quietIcon('arrow')+'</a>':'';
+ const hasStudio=['owner','admin','editor','moderator'].includes(user.role);
+ const role=hasStudio?'<a href="/admin" class="quiet-top-studio">Studio '+quietIcon('arrow')+'</a>':'';
+ const accountActions='<div class="quiet-account-actions">'+
+  (hasStudio?'<a class="quiet-studio-link" href="/admin">'+quietIcon('pen')+' Open Studio '+quietIcon('arrow')+'</a>':'')+
+  '<button type="button" class="quiet-side-signout" data-account-logout>'+quietIcon('logout')+' Sign out</button></div>';
  const top='<header class="account-top quiet-topbar"><a class="account-brand" href="/"><span class="account-brand-mark--vm" aria-hidden="true">'+
   '<img class="corner-brand-image" src="/mark.svg?v=vm-20261027" width="37" height="37" alt=""></span>'+
   '<b>Vamsi’s Corner<small>YOUR PRIVATE SPACE</small></b></a><nav aria-label="Account shortcuts">'+privateThemeToggle()+'<a class="account-back" href="/">'+quietIcon('home')+' Back to stories</a>'+role+'</nav></header>';
  const main='<main class="quiet-main" id="content"><div class="quiet-page-heading"><p class="quiet-eyebrow">VAMSI’S CORNER / MEMBERS</p>'+
   '<h1>'+h(title)+'.</h1><p>Your quiet space, neatly organized.</p>'+
   '<p class="quiet-session-note"><span aria-hidden="true">●</span> Private account · Signed in</p></div><div class="quiet-desk-grid">'+
-  quietNav(type,user)+'<div class="quiet-desk-content">'+panes[type]+'</div></div></main>';
+  quietNav(type)+'<div class="quiet-desk-content">'+panes[type]+'</div></div>'+accountActions+'</main>';
  const footer='<footer class="account-bottom quiet-bottom"><span>PRIVATE BY DEFAULT</span><a href="/policies">Legal & Trust</a><a href="/privacy">Privacy</a><a href="/cookies">Cookies</a><a href="/dpdp">DPDP rights</a><a href="/terms">Terms</a></footer>';
  const content='<div class="account-shell account-shell--quiet" data-account-page="'+h(type)+'" data-account-workspace data-signed-in="true">'+
   top+main+footer+'<script src="/account.js?v=quiet1" defer></script></div>';

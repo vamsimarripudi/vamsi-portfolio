@@ -535,3 +535,61 @@ body.corner-comfort:has(.account-shell) .corner-orbit-dock{display:none!importan
 .quiet-discard-actions [data-discard-confirm]{background:#161315;border-color:#161315;color:#fff}
 .quiet-discard-dialog button:focus-visible,.quiet-edit-exit :is(button,a):focus-visible{outline:3px solid #3565bc;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.quiet-discard-dialog,.quiet-discard-dialog *{animation:none!important;transition:none!important}}
+
+/* Minimal account navigation: navigation is navigation, not another dashboard card. */
+.corner-comfort .account-shell--quiet .quiet-sidebar{
+  padding:0;border:0;border-radius:0;background:transparent;backdrop-filter:none;
+  -webkit-backdrop-filter:none;box-shadow:none;
+}
+.corner-comfort .account-shell--quiet .quiet-sidebar-identity{display:none}
+.corner-comfort .account-shell--quiet .quiet-navigation{gap:2px}
+.corner-comfort .account-shell--quiet .quiet-nav-link{
+  min-height:45px;padding:9px 8px;border:0;border-radius:9px;background:transparent;color:#5d5658;
+  transition:color .16s,background .16s,box-shadow .16s;
+}
+.corner-comfort .account-shell--quiet .quiet-nav-link:hover{background:rgba(142,111,109,.07);color:#211e20}
+.corner-comfort .account-shell--quiet .quiet-nav-link.is-current{
+  border:0;background:transparent;color:#665596;box-shadow:inset 3px 0 #8b7ab3;
+}
+.corner-comfort .account-shell--quiet .quiet-nav-link>.quiet-icon:last-child{opacity:.26}
+.corner-comfort .account-shell--quiet .quiet-account-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:18px;padding-top:15px;
+  border-top:1px solid var(--quiet-line);
+}
+.corner-comfort .account-shell--quiet .quiet-account-actions .quiet-studio-link{
+  display:none;margin:0;padding:9px 3px;border:0;background:transparent;color:#40393b;font-size:.75rem;
+}
+.corner-comfort .account-shell--quiet .quiet-account-actions .quiet-side-signout{
+  margin:0;padding:9px 3px;border:0;background:transparent;color:#9f4939;font-size:.75rem;
+}
+.corner-comfort .account-shell--quiet .quiet-account-actions :is(.quiet-studio-link,.quiet-side-signout):hover{
+  background:transparent;text-decoration:underline;text-underline-offset:4px;
+}
+
+@media(max-width:990px){
+  .corner-comfort .account-shell--quiet .quiet-sidebar{padding:0;gap:0}
+  .corner-comfort .account-shell--quiet .quiet-navigation{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;overflow:visible;padding:0;
+  }
+  .corner-comfort .account-shell--quiet .quiet-nav-link{
+    flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    min-height:68px;padding:8px 5px;text-align:center;white-space:normal;border-radius:10px;
+  }
+  .corner-comfort .account-shell--quiet .quiet-nav-link span{
+    flex:none;max-width:100%;overflow:visible;white-space:normal;text-overflow:clip;font-size:.69rem;line-height:1.22;
+  }
+  .corner-comfort .account-shell--quiet .quiet-nav-link>.quiet-icon:first-child{width:19px;height:19px}
+  .corner-comfort .account-shell--quiet .quiet-nav-link>.quiet-icon:last-child{display:none}
+  .corner-comfort .account-shell--quiet .quiet-nav-link.is-current{
+    background:rgba(130,117,171,.08);box-shadow:inset 0 -2px #8b7ab3;color:#4f477e;
+  }
+}
+@media(max-width:700px){
+  .corner-comfort .account-shell--quiet .quiet-desk-grid{gap:16px}
+  .corner-comfort .account-shell--quiet .quiet-navigation{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+  .corner-comfort .account-shell--quiet .quiet-nav-link{min-height:70px;padding:8px 3px}
+  .corner-comfort .account-shell--quiet .quiet-nav-link span{font-size:.67rem}
+  .corner-comfort .account-shell--quiet .quiet-account-actions{justify-content:space-between;margin-top:16px;padding:13px 2px 0}
+  .corner-comfort .account-shell--quiet .quiet-account-actions .quiet-studio-link{display:inline-flex;align-items:center;gap:7px}
+  .corner-comfort .account-shell--quiet .quiet-account-actions .quiet-side-signout{display:inline-flex;align-items:center;gap:7px}
+}

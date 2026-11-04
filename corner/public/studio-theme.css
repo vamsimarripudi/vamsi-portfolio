@@ -174,13 +174,13 @@ html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-page
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-eyebrow{color:#d19272}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-session-note{color:#aeb8b0}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-session-note span{color:#44a879}
-html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-sidebar,.quiet-panel,.quiet-profile-hero,.quiet-editor-panel){
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-panel,.quiet-profile-hero,.quiet-editor-panel){
   background:rgba(21,26,22,.92)!important;border-color:#323a33!important;color:#e9eee9!important;box-shadow:0 18px 50px -38px #000!important;
 }
-html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-sidebar{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-sidebar{background:transparent!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link{color:#c9d1ca}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link:hover{background:#202721;color:#fff}
-html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link.is-current{background:#25232e;color:#dcd5fa;border-color:#47405d}
+html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-nav-link.is-current{background:rgba(170,160,209,.08);color:#dcd5fa;border-color:transparent;box-shadow:inset 0 -2px #9b8cc7}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-sidebar-identity-copy strong,
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet .quiet-profile-person-text strong{color:#f2f4f2}
 html[data-studio-theme="dark"] .corner-comfort .account-shell--quiet :is(.quiet-sidebar-identity-copy small,.quiet-profile-person-text p,.quiet-screen-heading p,.quiet-panel p,.quiet-row-content p,.quiet-bookmark-copy small,.quiet-current-email,.quiet-data-hint,.quiet-panel-footnote){color:#9fa9a1!important}

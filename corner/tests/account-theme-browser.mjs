@@ -25,13 +25,24 @@ try{
  await expect(page.locator('html')).toHaveAttribute('data-studio-theme','dark');
  await expect(page.getByRole('button',{name:'Switch to light mode',exact:true})).toBeVisible();
  assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),'#0d100e');
- const dark=await page.evaluate(()=>({
-   body:getComputedStyle(document.body).backgroundImage,
-   sidebar:getComputedStyle(document.querySelector('.quiet-sidebar')).backgroundColor,
-   text:getComputedStyle(document.querySelector('.quiet-page-heading h1')).color
- }));
+ const dark=await page.evaluate(()=>{
+   const sidebar=document.querySelector('.quiet-sidebar'),nav=document.querySelector('.quiet-navigation'),current=document.querySelector('.quiet-nav-link.is-current');
+   const sc=getComputedStyle(sidebar),nc=getComputedStyle(nav),cc=getComputedStyle(current);
+   return {
+    body:getComputedStyle(document.body).backgroundImage,sidebar:sc.backgroundColor,border:sc.borderTopWidth,
+    shadow:sc.boxShadow,navDisplay:nc.display,columns:nc.gridTemplateColumns.split(' ').filter(Boolean).length,
+    currentBackground:cc.backgroundColor,text:getComputedStyle(document.querySelector('.quiet-page-heading h1')).color,
+    actionsInsideSidebar:!!document.querySelector('.quiet-sidebar .quiet-account-actions'),
+    actionsParent:document.querySelector('.quiet-account-actions')?.parentElement?.className
+   };
+ });
  assert.match(dark.body,/rgb\(13, 16, 14\)|#0d100e|linear-gradient/i,'Dark body surface is active');
- assert.notEqual(dark.sidebar,'rgb(255, 255, 255)','Quiet Desk card is genuinely dark');
+ assert.equal(dark.sidebar,'rgba(0, 0, 0, 0)','Account navigation has no enclosing card background');
+ assert.equal(dark.border,'0px','Account navigation has no enclosing card border');
+ assert.equal(dark.shadow,'none','Account navigation has no enclosing card shadow');
+ assert.equal(dark.navDisplay,'grid');assert.equal(dark.columns,3,'Mobile account sections use a stable 3×2 grid');
+ assert.equal(dark.actionsInsideSidebar,false,'Studio and sign-out actions are outside the section navigator');
+ assert.equal(dark.actionsParent,'quiet-main');
  await fit('390 dark My Corner');
  await page.screenshot({path:path.join(output,'theme-dark-profile-390.png'),fullPage:false,animations:'disabled'});
  console.log('PASS device dark preference resolves My Corner before paint');
