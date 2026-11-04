@@ -43,7 +43,7 @@ try {
  await login.locator('#admin-login input[name=email]').fill(owner);await login.locator('#admin-login input[name=password]').fill(secret);
  await login.locator('#admin-login button[type=submit]').click();await login.locator('.admin-shell').waitFor({timeout:12000});await login.close();
  const check=async(page,label,{scale=1,fit=false}={})=>{
-  await page.locator('h1:visible,h2:visible').first().waitFor({timeout:10000});await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  if(await page.locator('.cc-root').count()){await page.locator('.cc-vm-logo').waitFor({timeout:10000});await page.locator('.cc-signal-toggle').waitFor({timeout:10000})}else await page.locator('h1:visible,h2:visible').first().waitFor({timeout:10000});await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const data=await page.evaluate(()=>{
    const visible=n=>n.getClientRects().length&&getComputedStyle(n).visibility!=='hidden';
    const headings=[...document.querySelectorAll('h1,h2,h3')].filter(visible).map(n=>({tag:n.tagName,size:parseFloat(getComputedStyle(n).fontSize),text:n.textContent.slice(0,45)}));
@@ -89,7 +89,7 @@ try {
   assert.deepEqual(errors,[],'Public browser errors '+width);await p.close();
   const a=await auth.newPage();await a.setViewportSize({width,height});
   for(const route of full?privateRoutes:['/corner/admin']){const response=await a.goto(corner+route,{waitUntil:'domcontentloaded'});assert.equal(response.status(),200,route);assert.equal(await a.locator('.signin-box').count(),0,'Owner session required '+route);await check(a,'Private '+route+' @'+width)}
-  await a.goto(corner+'/corner/admin');await a.locator('[data-admin-view="overview"]').click();await a.locator('#create-from-overview').click();await a.locator('#post-editor').waitFor();await check(a,'Studio editor @'+width);
+  await a.goto(corner+'/corner/admin');if(await a.locator('.cc-root').count()){await a.getByRole('button',{name:'Open Command navigation',exact:true}).click();await a.locator('.cc-nav-popover [data-nav-view="overview"]').click()}else await a.locator('[data-admin-view="overview"]').click();await a.locator('#create-from-overview').click();await a.locator('#post-editor').waitFor();await check(a,'Studio editor @'+width);
   if([390,1366].includes(width))await a.screenshot({path:path.join(screenshots,'editor-'+width+'.png'),animations:'disabled'});
   await a.close();console.log('PASS platform viewport '+width+'x'+height);
  }
