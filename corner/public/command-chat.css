@@ -336,8 +336,8 @@ html[data-studio-theme="dark"] .cc-root .cc-category-menu nav a{color:#fff!impor
   .cc-root .cc-empty .cc-empty-copy{transform:translateY(-2vh)}
   .cc-root .cc-empty .cc-empty-copy h1{font-size:29px!important;letter-spacing:-1px!important}
   .cc-root .cc-empty .cc-empty-copy p{font-size:15px!important;margin-top:10px!important}
-  @media(prefers-reduced-motion:no-preference){
-    .cc-root .cc-empty .cc-empty-copy{animation-name:cc-welcome-in-mobile}
-  }
+}
+@media(max-width:767px) and (prefers-reduced-motion:no-preference){
+  .cc-root .cc-empty .cc-empty-copy{animation-name:cc-welcome-in-mobile}
 }
 @keyframes cc-welcome-in-mobile{from{opacity:0;transform:translateY(calc(-2vh + 6px))}to{opacity:1;transform:translateY(-2vh)}}
