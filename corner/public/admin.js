@@ -100,26 +100,11 @@
     const activeTotal=items.filter(item=>['open','waiting'].includes(item.state)).length;
     root.innerHTML=`<section class="command-shell">
       <section class="command-overview-card">
-        <header class="command-topbar">
+        <div class="command-topbar">
           <div class="command-title-block"><p class="eyebrow">STUDIO</p><h2>Command<span>.</span></h2><p>One queue for decisions, risks and work that actually needs you.</p></div>
-        </header>
-
-        <div class="command-status-row">
-          <span class="command-ai-status ${summary.agent?.ready?'ready':'offline'}"><i aria-hidden="true"></i>${summary.agent?.ready?'AI ready':'AI offline'}</span>
-          <span class="command-boundary-inline">Personal ↔ KRAVIA boundary locked</span>
-        </div>
-
-        <div class="command-summary-strip" aria-label="Command summary">
-          <span><strong>${activeTotal}</strong><small>Active</small></span>
-          <span><strong>${Number(summary.counts.now||0)}</strong><small>Now</small></span>
-          <span><strong>${Number(summary.counts.decisions||0)}</strong><small>Decisions</small></span>
-          <span><strong>${Number(summary.counts.risks||0)}</strong><small>Risks</small></span>
-          <span><strong>${Number(summary.counts.approvals||0)}</strong><small>Approval locked</small></span>
-        </div>
-
       <section class="command-tools" aria-label="Command tools">
         <details class="command-disclosure command-add" id="command-add-panel">
-          <summary id="command-add-trigger" aria-controls="command-add-card"><span class="command-tool-icon">${studioIcon('plus')}</span><span class="command-tool-copy"><strong>Add item</strong></span></summary>
+          <summary id="command-add-trigger" aria-controls="command-add-card" aria-label="Add item" title="Add item"><span class="command-tool-icon">${studioIcon('plus')}</span></summary>
           <div class="command-tool-card" id="command-add-card" role="region" aria-labelledby="command-add-title">
           <header class="command-tool-card-heading"><div><strong id="command-add-title" tabindex="-1">Add item</strong><p>Capture once, then close it.</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Add item">×</button></header>
           <form id="command-capture" class="command-form">
@@ -146,7 +131,7 @@
         </details>
 
         <details class="command-disclosure command-ai-panel" id="command-ai-panel">
-          <summary id="command-ai-trigger" aria-controls="command-ai-card"><span class="command-tool-icon">${studioIcon('comments')}</span><span class="command-tool-copy"><strong>Ask Command</strong></span></summary>
+          <summary id="command-ai-trigger" aria-controls="command-ai-card" aria-label="Ask Command" title="Ask Command"><span class="command-tool-icon">${studioIcon('comments')}</span></summary>
           <div class="command-tool-card" id="command-ai-card" role="region" aria-labelledby="command-ai-title">
           <header class="command-tool-card-heading"><div><strong id="command-ai-title" tabindex="-1">Ask Command</strong><p><i class="command-live-dot ${summary.agent?.ready?'ready':'offline'}" aria-hidden="true"></i>${summary.agent?.ready?'Advisory AI · ready':'Advisory AI · not connected'}</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Ask Command">×</button></header>
           ${summary.agent?.ready?'<form id="command-agent-form" class="command-ai-form"><label>Shortcut<select id="command-prompt-preset">'+commandPromptOptions()+'</select></label><label for="command-agent-question">Question<textarea id="command-agent-question" name="question" maxlength="2400" rows="3" required placeholder="Ask what matters, what is blocked, or what needs your approval." data-command-tool-focus></textarea></label><div class="command-form-footer"><span>Advisory only. It cannot execute without approval.</span><button type="submit" class="admin-primary">Ask</button></div></form><div class="command-agent-answer" data-command-agent-answer hidden></div>':'<div class="command-panel-note">The command queue still works normally. AI becomes available only when the private server connection is ready.</div>'}
@@ -154,13 +139,27 @@
         </details>
 
         <details class="command-disclosure command-moments-panel" id="command-moments-panel">
-          <summary id="command-moments-trigger" aria-controls="command-moments-card"><span class="command-tool-icon command-tool-icon--accent" aria-hidden="true">✦</span><span class="command-tool-copy"><strong>Agentic moments</strong></span></summary>
+          <summary id="command-moments-trigger" aria-controls="command-moments-card" aria-label="Agentic moments" title="Agentic moments"><span class="command-tool-icon command-tool-icon--accent" aria-hidden="true">✦</span></summary>
           <div class="command-tool-card" id="command-moments-card" role="region" aria-labelledby="command-moments-title">
           <header class="command-tool-card-heading"><div><strong id="command-moments-title" tabindex="-1">Agentic moments</strong><p><i class="command-live-dot signal" aria-hidden="true"></i>${(summary.moments||[]).length} current signals</p></div><button type="button" class="command-tool-close" data-command-tool-close aria-label="Close Agentic moments">×</button></header>
           <div class="command-moment-list">${(summary.moments||[]).map(commandMoment).join('')||'<p class="command-panel-note">No agentic intervention is needed right now.</p>'}</div>
           </div>
         </details>
       </section>
+        </div>
+
+        <div class="command-status-row">
+          <span class="command-ai-status ${summary.agent?.ready?'ready':'offline'}"><i aria-hidden="true"></i>${summary.agent?.ready?'AI ready':'AI offline'}</span>
+          <span class="command-boundary-inline">Personal ↔ KRAVIA boundary locked</span>
+        </div>
+
+        <div class="command-summary-strip" aria-label="Command summary">
+          <span><strong>${activeTotal}</strong><small>Active</small></span>
+          <span><strong>${Number(summary.counts.now||0)}</strong><small>Now</small></span>
+          <span><strong>${Number(summary.counts.decisions||0)}</strong><small>Decisions</small></span>
+          <span><strong>${Number(summary.counts.risks||0)}</strong><small>Risks</small></span>
+          <span><strong>${Number(summary.counts.approvals||0)}</strong><small>Approval locked</small></span>
+        </div>
       </section>
 
       <section class="command-queue command-queue-card">
