@@ -274,3 +274,70 @@ html[data-studio-theme=dark] .cc-root .cc-composer{background:#171c18!important;
 .cc-root .cc-composer{grid-template-columns:40px minmax(0,1fr) 40px 40px!important}
 .cc-root .cc-compose-controls [data-action=voice]{grid-column:3!important;margin:0!important}
 .cc-root .cc-compose-controls .cc-send{grid-column:4!important}
+
+
+/* Command Chat v4: intentional empty state and strict theme contrast. */
+.cc-root{
+  --cc-ink:#090a09;
+  --cc-muted:#666d67;
+  --cc-line:#d9ded9;
+  --cc-paper:#fff;
+}
+.cc-root .cc-empty{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:100%!important;
+  margin:0!important;
+  padding:24px 18px 64px!important;
+  text-align:center;
+}
+.cc-root .cc-empty::after{content:none!important;display:none!important;animation:none!important}
+.cc-root .cc-empty .cc-empty-copy{
+  display:block!important;
+  width:min(100%,560px);
+  transform:translateY(-3vh);
+}
+.cc-root .cc-empty .cc-empty-copy h1{
+  display:block!important;
+  margin:0!important;
+  color:var(--cc-ink)!important;
+  font:600 clamp(27px,4vw,42px)/1.14 var(--sans,system-ui,sans-serif)!important;
+  letter-spacing:-1.35px!important;
+}
+.cc-root .cc-empty .cc-empty-copy p{
+  display:block!important;
+  margin:12px 0 0!important;
+  color:var(--cc-muted)!important;
+  font:450 clamp(14px,1.7vw,17px)/1.5 var(--sans,system-ui,sans-serif)!important;
+}
+.cc-root #cc-input{color:#090a09!important}
+.cc-root #cc-input::placeholder{color:#6e746f!important;opacity:1}
+.cc-root button.cc-signal{color:#090a09!important}
+.cc-root .cc-vm-logo img{display:block!important;width:40px!important;height:40px!important;object-fit:contain!important}
+@media(prefers-reduced-motion:no-preference){
+  .cc-root .cc-empty .cc-empty-copy{animation:cc-welcome-in .28s ease-out both}
+}
+@keyframes cc-welcome-in{from{opacity:0;transform:translateY(calc(-3vh + 6px))}to{opacity:1;transform:translateY(-3vh)}}
+html[data-studio-theme="dark"] .cc-root{
+  --cc-ink:#fff;
+  --cc-muted:#aab2ac;
+  --cc-line:#3a433c;
+  --cc-paper:#141815;
+}
+html[data-studio-theme="dark"] .cc-root .cc-empty .cc-empty-copy h1{color:#fff!important}
+html[data-studio-theme="dark"] .cc-root .cc-empty .cc-empty-copy p{color:#c8d0ca!important}
+html[data-studio-theme="dark"] .cc-root #cc-input{color:#fff!important}
+html[data-studio-theme="dark"] .cc-root #cc-input::placeholder{color:#9ca59e!important;opacity:1}
+html[data-studio-theme="dark"] .cc-root button.cc-signal{color:#fff!important}
+html[data-studio-theme="dark"] .cc-root .cc-category-menu nav a{color:#fff!important}
+@media(max-width:767px){
+  .cc-root .cc-empty{padding:18px 20px 52px!important}
+  .cc-root .cc-empty .cc-empty-copy{transform:translateY(-2vh)}
+  .cc-root .cc-empty .cc-empty-copy h1{font-size:29px!important;letter-spacing:-1px!important}
+  .cc-root .cc-empty .cc-empty-copy p{font-size:15px!important;margin-top:10px!important}
+  @media(prefers-reduced-motion:no-preference){
+    .cc-root .cc-empty .cc-empty-copy{animation-name:cc-welcome-in-mobile}
+  }
+}
+@keyframes cc-welcome-in-mobile{from{opacity:0;transform:translateY(calc(-2vh + 6px))}to{opacity:1;transform:translateY(-2vh)}}
