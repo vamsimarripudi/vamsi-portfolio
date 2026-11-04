@@ -180,6 +180,15 @@ export class CommandChatStore {
   const input={workspace:scope,title:text(payload.title,160),detail:typeof payload.detail==='string'?payload.detail:'',kind:payload.kind||'task',priority:payload.priority||'next',dueAt:payload.dueAt||null,authority:'read',evidenceStatus:'unverified',needsApproval:true};
   if(input.detail.length>1800)fail(400,'Task detail is too long.');return this.queue.validate(input);
  }
+ privateCorner(scope){if(scope!=='personal')fail(409,'Vamsi’s Corner content actions require Personal workspace.','PERSONAL_WORKSPACE_REQUIRED')}
+ normalizePost(scope,payload,current=null){
+  this.privateCorner(scope);
+  const changes=Object.fromEntries(Object.entries(payload||{}).filter(([,value])=>value!==null&&value!==undefined));
+  const merged={...(current||{}),...changes};
+  if(!merged.title)fail(400,'A post title is required.');
+  const data=this.store.validatePost({...merged,allowComments:changes.allowComments??current?.allow_comments??current?.allowComments??true,allowReactions:changes.allowReactions??current?.allow_reactions??current?.allowReactions??true,upcomingPublic:changes.upcomingPublic??current?.upcoming_public??false},'draft');
+  return {type:data.type,title:data.title,excerpt:data.excerpt,body:data.body,emoji:data.emoji,tags:data.tags,featured:!!data.featured,pinned:!!data.pinned,allowComments:!!data.allow_comments,allowReactions:!!data.allow_reactions,milestone:!!data.milestone,upcomingPublic:!!data.upcoming_public,timezone:data.timezone};
+ }
  propose(actor,id,scope,{messageId=null,action,payload={},requestKey,targetId=null,targetVersion=null}={}){
   this.conversation(actor,id,scope,true);key(requestKey);
   if(messageId){const m=this.store.one("SELECT * FROM command_messages WHERE id=? AND conversation_id=? AND role='assistant' AND status='pending'",messageId,id);if(!m)fail(409,'This response is no longer active.');}
@@ -188,6 +197,15 @@ export class CommandChatStore {
    const target=this.queue.get(targetId);if(!target||target.workspace!==scope)fail(404,'Queue item not found in this workspace.');
    if(targetVersion!==target.version)fail(409,'Queue item changed. Request a fresh proposal.');
    if(!states.has(payload.state))fail(400,'Invalid state.');payload={state:payload.state,before:target.state,title:target.title};
+  }else if(action==='post.create')payload=this.normalizePost(scope,payload);
+  else if(action==='post.update'){
+   this.privateCorner(scope);const target=this.store.adminPost(targetId);if(!target)fail(404,'Post not found.');if(target.state==='archived')fail(409,'Restore the post before editing.');
+   if(targetVersion!==target.version)fail(409,'Post changed. Read the current version and request a fresh edit.','STALE_PROPOSAL');
+   payload={...this.normalizePost(scope,payload,target),beforeTitle:target.title,beforeState:target.state};
+  }else if(action==='comment.moderate'){
+   this.privateCorner(scope);if(!['approved','hidden','deleted'].includes(payload.state))fail(400,'Choose approve, hide or delete.');
+   const target=this.store.one('SELECT comments.*,posts.title AS post_title FROM comments JOIN posts ON posts.id=comments.post_id WHERE comments.id=?',targetId);if(!target)fail(404,'Comment not found.');
+   payload={state:payload.state,before:target.state,beforeUpdatedAt:target.updated_at,title:target.post_title,authorName:target.author_name,excerpt:String(target.body||'').slice(0,240)};targetVersion=null;
   }else if(action==='image.generate'){payload={...payload,prompt:text(payload.prompt,2000)}}
   else fail(400,'This action is not executable from Command Chat.');
   return this.store.transaction(()=>{
@@ -216,12 +234,22 @@ export class CommandChatStore {
    if(p.action_type==='image.generate')fail(400,'Use the image approval flow.');
    let result;
    if(p.action_type==='queue.create')result=this.queue.create({...p.payload,workspace:scope},actor.id);
-   else{
+   else if(p.action_type==='queue.update'){
     const item=this.queue.get(p.target_id);if(!item||item.workspace!==scope)fail(404,'Queue item not found.');
     if(item.version!==p.target_version)fail(409,'The queue item changed. Request a new proposal.','STALE_PROPOSAL');
     result=this.queue.update(item.id,{state:p.payload.state,version:p.target_version},actor.id);
-   }
-   this.store.exec("UPDATE command_action_proposals SET status='executed',approved_at=?,executed_at=?,result_json=?,version=version+1 WHERE id=?",this.stamp(),this.stamp(),json({id:result.id,title:result.title,state:result.state,version:result.version}),proposalId);
+   }else if(p.action_type==='post.create'){
+    this.privateCorner(scope);result=this.store.createPost(p.payload,actor.id);
+   }else if(p.action_type==='post.update'){
+    this.privateCorner(scope);const current=this.store.adminPost(p.target_id);if(!current)fail(404,'Post not found.');if(current.version!==p.target_version)fail(409,'The post changed. Request a fresh edit.','STALE_PROPOSAL');
+    result=this.store.savePost(p.target_id,{...p.payload,version:p.target_version},actor.id);
+   }else if(p.action_type==='comment.moderate'){
+    this.privateCorner(scope);const current=this.store.one('SELECT state,updated_at FROM comments WHERE id=?',p.target_id);if(!current)fail(404,'Comment not found.');
+    if(current.state!==p.payload.before||current.updated_at!==p.payload.beforeUpdatedAt)fail(409,'The comment changed. Request a fresh moderation action.','STALE_PROPOSAL');
+    result=this.store.moderate(p.target_id,p.payload.state,actor.id);
+   }else fail(400,'This proposal cannot be executed.');
+   const resultView={id:result.id,title:result.title||p.payload.title||p.payload.beforeTitle||null,state:result.state||null,slug:result.slug||null,version:result.version??null};
+   this.store.exec("UPDATE command_action_proposals SET status='executed',approved_at=?,executed_at=?,result_json=?,version=version+1 WHERE id=?",this.stamp(),this.stamp(),json(resultView),proposalId);
    this.store.audit(actor.id,'command.chat.executed','command_proposal',proposalId,{workspace:scope,action:p.action_type,targetId:result.id});return this.getProposal(actor,id,scope,proposalId);
   });
  }
@@ -229,8 +257,11 @@ export class CommandChatStore {
   this.conversation(actor,id,scope,true);return this.store.transaction(()=>{
    const p=this.getProposal(actor,id,scope,proposalId);if(p.status!=='proposed'||version!==p.version)fail(409,'Proposal changed or expired.');
    if(p.action_type==='queue.create')payload=this.normalizeCreate(scope,payload||{});
-   else if(p.action_type==='image.generate')payload={...p.payload,prompt:text(payload?.prompt,2000)};
-   else fail(400,'Request a new status proposal instead.');
+   else if(p.action_type==='post.create')payload=this.normalizePost(scope,payload||{});
+   else if(p.action_type==='post.update'){
+    const current=this.store.adminPost(p.target_id);if(!current||current.version!==p.target_version)fail(409,'Post changed. Request a fresh edit.');payload={...this.normalizePost(scope,payload||{},current),beforeTitle:current.title,beforeState:current.state};
+   }else if(p.action_type==='image.generate')payload={...p.payload,prompt:text(payload?.prompt,2000)};
+   else fail(400,'Request a new proposal instead.');
    this.store.exec('UPDATE command_action_proposals SET payload_json=?,version=version+1 WHERE id=?',json(payload),proposalId);return this.getProposal(actor,id,scope,proposalId);
   });
  }

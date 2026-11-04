@@ -5,7 +5,7 @@ import {httpError} from './domain.mjs';
 export function commandChatRoutes({service,enabled,readJSON,readBody,ok,limit}){
  return async(req,res,pathname,url,actor)=>{
   const prefix='/api/admin/command/',sub=pathname.slice(prefix.length),method=req.method;
-  if(!pathname.startsWith(prefix)||!(/^(capabilities|consent|conversations|search)(\/|$)/.test(sub)))return false;
+  if(!pathname.startsWith(prefix)||!(/^(capabilities|consent|transcribe|conversations|search)(\/|$)/.test(sub)))return false;
   if(!enabled)throw httpError(404,'Command Chat is disabled.','FEATURE_DISABLED');
   service.data.actor(actor);
   if(!['GET','POST','PATCH','DELETE'].includes(method))throw httpError(405,'Method not allowed.');
@@ -13,6 +13,10 @@ export function commandChatRoutes({service,enabled,readJSON,readBody,ok,limit}){
   const scope=url.searchParams.get('workspace');
   if(sub==='capabilities'&&method==='GET'){ok(res,service.capabilities(actor));return true}
   if(sub==='consent'&&method==='POST'){ok(res,service.setConsent(actor,(await readJSON(req,200)).accepted));return true}
+  if(sub==='transcribe'&&method==='POST'){
+   limit(req,'command-voice',20,60);const mime=(req.headers['content-type']||'').split(';')[0],filename=url.searchParams.get('name')||'voice-command';
+   ok(res,await service.transcribe(actor,scope,{bytes:await readBody(req,8*1024*1024),mime,filename}));return true;
+  }
   if((sub==='conversations'||sub==='search')&&method==='GET'){
    ok(res,service.data.list(actor,{workspace:scope,status:url.searchParams.get('status')||'active',query:url.searchParams.get('q')||'',before:url.searchParams.get('before')||'',limit:url.searchParams.get('limit')||30}));return true;
   }

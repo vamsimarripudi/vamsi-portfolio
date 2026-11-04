@@ -173,3 +173,32 @@ test('AI read tools can fetch comment counts and overview facts before answering
  };
  const turn=service.send(owner,c.id,scope,{message:'Give me a factual Corner activity answer.',mode:'chat',requestKey:key()});await until(()=>data.turn(owner,c.id,scope,turn.turnId).assistant.status==='complete');assert.equal(calls,2);assert.match(data.turn(owner,c.id,scope,turn.turnId).assistant.content,/1 comment/);
 });
+
+test('post create/edit and comment moderation are explicit versioned proposals',t=>{
+ const {service,data,c,store}=setup(t);
+ const create=data.propose(owner,c.id,scope,{action:'post.create',payload:{title:'Jarvis draft',body:'Created by a reviewed Command proposal.',excerpt:'Reviewed draft',type:'tech_note',tags:['jarvis'],allowComments:true,allowReactions:true},requestKey:key()});
+ assert.equal(store.allAdminPosts('draft').length,0);
+ const created=data.decide(owner,c.id,scope,create.id,{confirm:true,version:create.version});
+ assert.equal(created.status,'executed');const post=store.allAdminPosts('draft')[0];assert.equal(post.title,'Jarvis draft');
+ const update=data.propose(owner,c.id,scope,{action:'post.update',targetId:post.id,targetVersion:post.version,payload:{title:'Jarvis draft updated',body:null,excerpt:'Edited through Command',type:null,tags:null,allowComments:null,allowReactions:null},requestKey:key()});
+ const updated=data.decide(owner,c.id,scope,update.id,{confirm:true,version:update.version});assert.equal(updated.status,'executed');const saved=store.adminPost(post.id);assert.equal(saved.title,'Jarvis draft updated');assert.equal(saved.body,'Created by a reviewed Command proposal.');
+ const stale=data.propose(owner,c.id,scope,{action:'post.update',targetId:saved.id,targetVersion:saved.version,payload:{title:'Stale title'},requestKey:key()});store.savePost(saved.id,{version:saved.version,title:'Changed elsewhere'},owner.id);assert.throws(()=>data.decide(owner,c.id,scope,stale.id,{confirm:true,version:stale.version}),e=>e.status===409&&e.code==='STALE_PROPOSAL');
+ const current=store.adminPost(post.id),stamp=new Date().toISOString();store.exec('INSERT INTO comments(id,post_id,author_name,body,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?)','jarvis_comment',post.id,'Reader','Please review me','pending',stamp,stamp);
+ const moderation=data.propose(owner,c.id,scope,{action:'comment.moderate',targetId:'jarvis_comment',payload:{state:'approved'},requestKey:key()});assert.equal(store.one('SELECT state FROM comments WHERE id=?','jarvis_comment').state,'pending');data.decide(owner,c.id,scope,moderation.id,{confirm:true,version:moderation.version});assert.equal(store.one('SELECT state FROM comments WHERE id=?','jarvis_comment').state,'approved');
+ const kravia=data.create(owner,{workspace:'kravia',requestKey:key()});assert.throws(()=>data.propose(owner,kravia.id,'kravia',{action:'post.create',payload:{title:'No leak',body:'x'},requestKey:key()}),e=>e.status===409&&e.code==='PERSONAL_WORKSPACE_REQUIRED');
+});
+
+test('voice transcription is owner-only, consent-gated, bounded and not stored',async t=>{
+ const {service,agent}=setup(t);let calls=0;agent.fetch=async(url,options)=>{calls++;assert.ok(String(url).endsWith('/audio/transcriptions'));assert.ok(options.body instanceof FormData);assert.equal(options.body.get('model'),'gpt-transcribe');return {ok:true,json:async()=>({text:'Create a journal draft about today'})}};
+ await assert.rejects(()=>service.transcribe(owner,scope,{bytes:Buffer.alloc(64,1),mime:'audio/webm'}),e=>e.status===403);
+ service.setConsent(owner,true);const out=await service.transcribe(owner,scope,{bytes:Buffer.alloc(64,1),mime:'audio/webm'});assert.equal(out.text,'Create a journal draft about today');assert.equal(out.audioStored,false);assert.equal(calls,1);
+ await assert.rejects(()=>service.transcribe(owner,scope,{bytes:Buffer.alloc(64,1),mime:'audio/ogg'}),e=>e.status===415);
+ await assert.rejects(()=>service.transcribe(owner,scope,{bytes:Buffer.alloc(8,1),mime:'audio/webm'}),e=>e.status===400);
+});
+
+test('HTTP voice endpoint transcribes a bounded owner recording without persisting audio',async t=>{
+ const f=await startComposerFixture({chat:true,mockChat:true});t.after(()=>f.close());
+ let response=await f.send('/api/admin/command/consent?workspace=personal',{method:'POST',json:{accepted:true}});assert.equal(response.status,200);
+ response=await f.send('/api/admin/command/transcribe?workspace=personal&name=voice',{method:'POST',raw:Buffer.alloc(96,7),headers:{'content-type':'audio/webm'}});assert.equal(response.status,200);const body=await response.json();assert.equal(body.data.text,'how many comments we got');assert.equal(body.data.audioStored,false);
+ response=await f.send('/api/admin/command/transcribe?workspace=personal',{method:'POST',raw:Buffer.alloc(96,7),headers:{'content-type':'audio/ogg'}});assert.equal(response.status,415);
+});
