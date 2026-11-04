@@ -41,7 +41,13 @@ try{
  page.on('dialog',dialog=>dialog.accept());
  await page.goto(corner+'/corner/admin');await page.locator('#admin-login input[name=email]').fill(owner);await page.locator('#admin-login input[name=password]').fill(secret);await page.locator('#admin-login button[type=submit]').click();await page.locator('.admin-shell').waitFor();console.log('SIGNED IN');
  const navigation=async(view,p=page)=>{console.log('NAV',view,p.viewportSize().width);
-  await p.locator('[data-admin-view="'+view+'"]').click();
+  const legacy=p.locator('[data-admin-view="'+view+'"]');
+  if(await legacy.isVisible())await legacy.click();
+  else{
+   const label=view==='analytics'?'Insights':view[0].toUpperCase()+view.slice(1);
+   const menu=p.locator('.cc-category-menu');if(!(await menu.isVisible()))await p.getByRole('button',{name:'Open Studio navigation'}).click();
+   await menu.getByRole('link',{name:label,exact:true}).click();
+  }
   await p.waitForFunction(view=>document.querySelector('#admin-heading')?.textContent.startsWith(view==='analytics'?'Insights':view[0].toUpperCase()+view.slice(1))&&!document.querySelector('.admin-loading'),view);
  };
  const geometry=async(p,label)=>{
