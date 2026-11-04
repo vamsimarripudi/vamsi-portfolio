@@ -94,7 +94,7 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   }
   .corner-comfort .studio-brand-row{
     min-height:42px;
-    padding-right:96px;
+    padding-right:150px;
   }
   .corner-comfort .admin-brand{
     gap:8px;
@@ -110,9 +110,9 @@ html[data-studio-motion=off] .admin-shell :is(button,a,input,select,textarea){tr
   .corner-comfort .admin-shell .admin-sidebar-footer{
     position:absolute;
     inset:7px 10px auto auto;
-    width:90px;
-    min-width:90px;
-    max-width:90px;
+    width:144px;
+    min-width:144px;
+    max-width:144px;
     display:flex;
     justify-content:flex-end;
     gap:6px;
