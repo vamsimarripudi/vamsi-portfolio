@@ -21,7 +21,27 @@ try{
  await page.goto(f.base+'/admin#command');await expect(input()).toBeVisible();await expect(page.locator('.cc-network')).toHaveText('Private workspace · you approve every action');
  await expect(page.locator('.command-counts')).toHaveCount(0);await fit('1366x900');await shot('empty-desktop');record('Centered chat replaces the dashboard without removing Studio navigation');
  await expect(page.locator('html')).toHaveAttribute('data-studio-theme','light');await expect(page.getByRole('button',{name:'Switch to dark mode',exact:true})).toBeVisible();record('Studio begins in the resolved light appearance');
- for(const [width,height] of [[1366,530],[390,844],[320,844]]){await page.setViewportSize({width,height});await fit(width+'x'+height);await shot('empty-'+width+'x'+height)}
+ for(const [width,height] of [[1366,530],[390,844],[320,844]]){
+  await page.setViewportSize({width,height});await fit(width+'x'+height);
+  if(width<=390){
+   const compact=await page.evaluate(()=>{
+    const composer=document.querySelector('.cc-composer').getBoundingClientRect(),chat=document.querySelector('.cc-scroll').getBoundingClientRect(),studio=document.querySelector('.admin-sidebar').getBoundingClientRect(),header=document.querySelector('.cc-header').getBoundingClientRect(),hero=getComputedStyle(document.querySelector('.cc-empty h1')),starters=getComputedStyle(document.querySelector('.cc-starters'));
+    return {composer:composer.height,chat:chat.height,studio:studio.height,header:header.height,hero:hero.display,starters:starters.display};
+   });
+   assert.ok(compact.composer<=100,'Mobile composer stays compact '+JSON.stringify(compact));
+   assert.ok(compact.chat>=400,'Conversation gets the majority of the viewport '+JSON.stringify(compact));
+   assert.ok(compact.studio<=100,'Studio chrome is compact in Command '+JSON.stringify(compact));
+   assert.ok(compact.header<=50,'Command header is one compact row '+JSON.stringify(compact));
+   assert.equal(compact.hero,'none','Large empty-state heading is hidden on mobile');
+   assert.equal(compact.starters,'none','Large quick-action pill grid is hidden on mobile');
+   await page.getByRole('button',{name:'Add tools or attachments',exact:true}).click();
+   await expect(page.getByRole('button',{name:'Show queue',exact:true})).toBeVisible();
+   await expect(page.getByRole('button',{name:'Image generation',exact:true})).toBeVisible();
+   await page.keyboard.press('Escape');
+   record(width+'x'+height+' prioritizes chat and keeps quick actions under +');
+  }
+  await shot('empty-'+width+'x'+height);
+ }
  await page.setViewportSize({width:1366,height:900});
  await page.getByRole('button',{name:'Switch to dark mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-studio-theme','dark');assert.equal(await page.evaluate(()=>localStorage.getItem('corner-studio-theme')),'dark');await fit('dark 1366x900');await shot('theme-dark-command-desktop');
  await page.setViewportSize({width:390,height:844});await fit('dark 390x844');await shot('theme-dark-command-mobile');await page.reload();await expect(page.locator('html')).toHaveAttribute('data-studio-theme','dark');await expect(page.getByRole('button',{name:'Switch to light mode',exact:true})).toBeVisible();record('Dark mode persists across reload and mobile layout');
