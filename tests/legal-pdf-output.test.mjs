@@ -10,8 +10,8 @@ import {cookieInformationSections} from '../src/cookies.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 function streams(pdf){
  const bin=pdf.toString('latin1'),out=[];let pos=0;
- while((pos=bin.indexOf('stream\\n',pos))!==-1){
-   const start=pos+7,end=bin.indexOf('\\nendstream',start);
+ while((pos=bin.indexOf('stream\n',pos))!==-1){
+   const start=pos+7,end=bin.indexOf('\nendstream',start);
    if(end<0)break;
    out.push(inflateSync(pdf.subarray(start,end)).toString('utf8'));pos=end+10;
  }
