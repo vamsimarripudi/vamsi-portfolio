@@ -84,24 +84,8 @@
       "destination": "https://corner-web-production-2600.up.railway.app/corner/:path*"
     },
     {
-      "source": "/api/ev-survey",
-      "destination": "/api/track/metrics?view=ev-public"
-    },
-    {
-      "source": "/api/track/ev-surveys",
-      "destination": "/api/track/metrics?view=ev-surveys"
-    },
-    {
-      "source": "/api/website/events",
-      "destination": "/api/track/metrics?view=site-events"
-    },
-    {
-      "source": "/api/birthday",
-      "destination": "/api/contact?birthday=1"
-    },
-    {
-      "source": "/api/track/analytics",
-      "destination": "/api/track/metrics?view=analytics"
+      "source": "/api/:path*",
+      "destination": "https://corner-web-production-2600.up.railway.app/api/:path*"
     },
     {
       "source": "/track/analytics",

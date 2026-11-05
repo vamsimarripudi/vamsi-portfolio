@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 
 test('public interview and owner-only research routes are wired without exposing Track', () => {
@@ -12,8 +12,8 @@ test('public interview and owner-only research routes are wired without exposing
   assert.match(track, /to="\/track\/ev-surveys"/);
   assert.ok(config.rewrites.some(x => x.source === '/track/ev-surveys' && x.destination === '/track/index.html'));
   assert.ok(config.headers.some(x => x.source === '/ev-survey' && x.headers.some(y => y.key === 'X-Robots-Tag')));
-  assert.ok(config.rewrites.some(x => x.source === '/api/ev-survey' && x.destination.endsWith('view=ev-public')));
-  assert.ok(config.rewrites.some(x => x.source === '/api/track/ev-surveys' && x.destination.endsWith('view=ev-surveys')));
+  assert.ok(config.rewrites.some(x => x.source === '/api/:path*' && x.destination.endsWith('/api/:path*')));
+  assert.match(read('server/railway/dispatch.mjs'), /'\/api\/track\/ev-surveys'/);
 });
 test('survey owner API checks authentication before reading/exporting/deleting', () => {
   const route = read('server/ev-survey-private-handler.js');
@@ -23,13 +23,13 @@ test('survey owner API checks authentication before reading/exporting/deleting',
   assert.match(route, /assertSameOrigin\(req\)/);
   assert.match(publicRoute, /assertSameOrigin\(req\)/);
   assert.match(publicRoute, /submitSurvey\(req, req\.body\)/);
-  const router = read('api/track/metrics.js');
+  const router = read('railway-api/track/metrics.js');
   assert.match(router, /view === 'ev-public'/);
   assert.match(router, /view === 'ev-surveys'/);
 });
 test('survey uses separate tables, durable rate limiting and scheduled retention', () => {
   const db = read('server/ev-survey-store.js');
-  const cron = read('api/track/cron/followups.js');
+  const cron = read('railway-api/track/cron/followups.js');
   assert.match(db, /ev_survey_responses/);
   assert.match(db, /ev_survey_throttle/);
   assert.match(db, /ON CONFLICT \(submission_id\) DO NOTHING/);
@@ -39,18 +39,8 @@ test('survey uses separate tables, durable rate limiting and scheduled retention
   assert.match(privacy, /Electric vehicle research interviews/);
 });
 
-test('survey uses existing serverless function budget without new api entrypoints', () => {
-  const stack = ['api'];
-  const endpoints = [];
-  while (stack.length) {
-    const dir = stack.pop();
-    for (const item of readdirSync(new URL('../' + dir + '/', import.meta.url), { withFileTypes: true })) {
-      const filename = dir + '/' + item.name;
-      if (item.isDirectory()) stack.push(filename);
-      else if (item.name.endsWith('.js') && !filename.startsWith('api/lib/')) endpoints.push(filename);
-    }
-  }
-  assert.ok(endpoints.length <= 12, 'Vercel Hobby permits at most 12 independent serverless functions; found ' + endpoints.length);
-  assert.equal(endpoints.includes('api/ev-survey.js'), false);
-  assert.equal(endpoints.includes('api/track/ev-surveys.js'), false);
+test('source handlers are retained for Railway but Vercel has no filesystem API functions',()=>{
+  assert.equal(existsSync(new URL('../api/', import.meta.url)),false,'No root /api serverless source');
+  assert.equal(existsSync(new URL('../railway-api/track/metrics.js', import.meta.url)),true);
+  assert.equal(existsSync(new URL('../railway-api/track/cron/followups.js', import.meta.url)),true);
 });
