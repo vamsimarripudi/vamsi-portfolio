@@ -5,6 +5,7 @@ import {
 } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import './LegalDocument.css';
+import './LegalPrint.css';
 
 const sectionSlug = (title) => title.toLowerCase().normalize('NFKD')
   .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
@@ -80,6 +81,8 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
 
   return (
     <article className={'legal-document legal-document--' + kind} aria-label={config.sectionLabel}>
+      <div className="legal-print-watermark" aria-hidden="true"><img src="/vm-mark.svg" alt=""/></div>
+      <div className="legal-print-page-footer" aria-hidden="true"><span><img src="/vm-mark.svg" alt=""/> Vamsi Marripudi</span><span>{config.sectionLabel} · vamsimarripudi.me</span></div>
       <div className="legal-document-bar">
         <div className="legal-document-breadcrumb">
           <Link to="/legal">Legal center</Link>
@@ -173,6 +176,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
             ))}
           </div>
 
+          <div className="legal-print-closing" aria-hidden="true"><strong>Vamsi Marripudi</strong><span>Personal portfolio · vamsimarripudi.me · connect@vamsimarripudi.me</span></div>
           <aside className="legal-endnote" aria-label={footerTitle}>
             <div className="legal-endnote-icon"><FiMail aria-hidden="true" /></div>
             <div>
