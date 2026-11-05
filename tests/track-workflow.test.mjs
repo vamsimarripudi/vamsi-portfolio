@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TRACK_OWNER_EMAIL, availableTransitions, canTransition, cleanHeader, emailIsValid } from '../api/lib/track.js';
+import { TRACK_OWNER_EMAIL, availableTransitions, canTransition, cleanHeader, emailIsValid } from '../railway-api/lib/track.js';
 
 test('the private tracker has one fixed authorized owner', () => {
   assert.equal(TRACK_OWNER_EMAIL, 'connect@vamsimarripudi.me');

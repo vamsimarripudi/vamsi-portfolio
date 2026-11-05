@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('PakkaFollow lives inside owner-only Track, not public analytics',()=>{
- const shell=read('src/Track.jsx'),api=read('api/lib/track.js'),route=read('vercel.json');
+ const shell=read('src/Track.jsx'),api=read('railway-api/lib/track.js'),route=read('vercel.json');
  assert.match(shell,/<Link to="\/track\/pakkafollow"/);
  assert.match(shell,/<Route path="pakkafollow"/);
  assert.match(api,/source = ''/);
@@ -26,7 +26,7 @@ test('public customer contact form exposes product categories and preserves orig
  assert.match(robots,/Sitemap: https:\/\/vamsimarripudi\.me\/sitemap\.xml/);
 });
 test('existing email reply remains server-authorized and sends without Gmail UI',()=>{
- const reply=read('api/track/enquiries/[referenceId]/reply.js');
+ const reply=read('railway-api/track/enquiries/[referenceId]/reply.js');
  assert.match(reply,/requireOwner/);
  assert.match(reply,/assertSameOrigin/);
  assert.match(reply,/sendResend/);

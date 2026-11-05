@@ -15,7 +15,7 @@ const routes = [
   ['enquiries/[referenceId]/reply', 'POST'],
   ['cron/followups', 'GET'],
 ];
-const load = route => import(new URL('../api/track/' + route + '.js', import.meta.url));
+const load = route => import(new URL('../railway-api/track/' + route + '.js', import.meta.url));
 const response = () => ({
   statusCode:0, payload:null, headers:{},
   status(value){this.statusCode=value;return this;},

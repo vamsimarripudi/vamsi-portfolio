@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {emailShell} from '../api/lib/track.js';
+import {emailShell} from '../railway-api/lib/track.js';
 
 test('reply email brand uses two email-safe columns with role aligned under sender name',()=>{
  const html=emailShell({preheader:'Message received.',body:'<tr><td>Reply body.</td></tr>'});
@@ -13,7 +13,7 @@ test('reply email brand uses two email-safe columns with role aligned under send
  assert.match(html,/Reply body\./,'Original user-authored reply body is preserved');
 });
 test('reply template visually labels and escapes the enquiry reference',()=>{
- const source=readFileSync(new URL('../api/track/enquiries/[referenceId]/reply.js',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../railway-api/track/enquiries/[referenceId]/reply.js',import.meta.url),'utf8');
  assert.match(source,/Enquiry reference&nbsp;/);
  assert.match(source,/escapeHtml\(enquiry\.reference_id\)/,'Never render reference without HTML escaping');
  assert.match(source,/overflow-wrap:anywhere/,'Long references wrap without overflow');
