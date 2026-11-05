@@ -1,4 +1,5 @@
 import {ReadingAnalytics} from './reading-analytics.mjs';
+import { dispatchPortfolioRequest } from '../../server/railway/dispatch.mjs';
 import {readingRoutes} from './reading-routes.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -456,6 +457,10 @@ async function route(req,res){
   try{
     if(!req.headers.host)throw httpError(400,'Host header required');
     const url=new URL(req.url||'/',`http://${req.headers.host}`);
+    // Unified Railway runtime: same listener, separate route/auth/data boundaries.
+    // Disabled by default. Corner paths are never dispatched to portfolio handlers.
+    if (await dispatchPortfolioRequest(req,res,url)) return;
+
     if(config.basePath){if(url.pathname===config.basePath)url.pathname='/';else if(url.pathname.startsWith(config.basePath+'/'))url.pathname=url.pathname.slice(config.basePath.length);else throw httpError(404,'Route not found');}
     pathname=url.pathname;
     if(pathname==='/mcp'){
