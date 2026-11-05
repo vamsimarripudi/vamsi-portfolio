@@ -1,4 +1,4 @@
-import {json,TrackError} from '../api/lib/track.js';
+import {json,TrackError} from '../railway-api/lib/track.js';
 import {CONSENT_COOKIE,validateWebsiteSignal} from '../public/site-analytics-contract.mjs';
 import {websiteDatabase,websiteSecret,websiteHash,ensureWebsiteSchema,limitWebsite,collectWebsite,revokeWebsite} from './site-analytics-store.js';
 export const siteCookies=header=>Object.fromEntries(String(header||'').split(';').flatMap(p=>{const i=p.indexOf('=');return i<0?[]:[[p.slice(0,i).trim(),p.slice(i+1).trim()]]}));

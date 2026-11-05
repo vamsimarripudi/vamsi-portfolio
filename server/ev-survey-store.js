@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { query, TrackError } from '../api/lib/track.js';
+import { query, TrackError } from '../railway-api/lib/track.js';
 import { SURVEY_VERSION, validateSurveyAnswers, responseRowsToCsv } from '../shared/ev-survey.mjs';
 
 // Lazy, idempotent schema bootstrap removes a separate database-provider setup
