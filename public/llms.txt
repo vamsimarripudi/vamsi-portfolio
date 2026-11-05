@@ -16,7 +16,7 @@ Vamsi Marripudi shares work involving product engineering, full-stack developmen
 
 ## Official primary pages
 - [Home](https://vamsimarripudi.me/): Identity and current professional focus
-- [Journey](https://vamsimarripudi.me/journey): Professional direction and experience narrative
+- [About](https://vamsimarripudi.me/about): Personal profile of Vamsi Marripudi as a full-stack developer, including engineering approach, stack and current learning
 - [Work](https://vamsimarripudi.me/work): Listed projects and case studies
 - [Engineering](https://vamsimarripudi.me/engineering): Engineering approach and areas of practice
 - [Writing](https://vamsimarripudi.me/writing): Published engineering notes
