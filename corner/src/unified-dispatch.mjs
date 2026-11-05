@@ -85,7 +85,30 @@ function adaptResponse(res){
     return res;
   };
 }
-const currentOrigin = () => 'https://vamsimarripudi.me';
+// Readiness requires both an operator-controlled release gate and real DB connectivity.
+export async function checkUnifiedReadiness({environment=process.env,probe}={}) {
+  const required=['DATABASE_URL','TRACK_SESSION_SECRET','RESEND_API_KEY','CONTACT_FROM_EMAIL','CRON_SECRET'];
+  const missingCount=required.filter(key=>!String(environment[key]||'').trim()).length;
+  const approved=environment.UNIFIED_BACKEND_CUTOVER_VERIFIED==='1';
+  const baseline={component:'configuration',missingConfigurationCount:missingCount,databaseConnectivityVerified:false,cutoverApprovalPresent:approved};
+  if(missingCount||!approved)return {status:503,body:{ok:false,...baseline}};
+  const query=probe||async()=>{
+    const {neon}=await import('@neondatabase/serverless');
+    const sql=neon(environment.DATABASE_URL);
+    const rows=await sql.query('SELECT 1 AS alive',[]);
+    return Number(rows?.[0]?.alive)===1;
+  };
+  let timer;
+  try {
+    const ok=await Promise.race([
+      Promise.resolve().then(()=>query()),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('DB_TIMEOUT')),5000);timer.unref?.();})
+    ]);
+    if(ok===true)return {status:200,body:{ok:true,...baseline,databaseConnectivityVerified:true}};
+  }catch{/* Never send connection details or query errors to the public. */}
+  finally{clearTimeout(timer);}
+  return {status:503,body:{ok:false,...baseline}};
+}
 export async function dispatchPortfolioRequest(req,res,url,{
   enabled=process.env.UNIFIED_PORTFOLIO_API==='1',
   loadHandler=async route=> (await import(route.module)).default
@@ -99,9 +122,8 @@ export async function dispatchPortfolioRequest(req,res,url,{
     if(req.method!=='GET'&&req.method!=='HEAD')responseJson(res,405,{ok:false,code:'METHOD_NOT_ALLOWED'});
     else if(route.internal==='health')responseJson(res,200,{ok:true,service:'unified-personal-backend',component:'gateway',storageVerified:false});
     else{
-      const required=['DATABASE_URL','TRACK_SESSION_SECRET','RESEND_API_KEY','CRON_SECRET'];
-      const missing=required.filter(name=>!process.env[name]);
-      responseJson(res,missing.length?503:200,{ok:missing.length===0,component:'configuration',databaseConnectivityVerified:false,missingConfigurationCount:missing.length});
+      const result=await checkUnifiedReadiness();
+      responseJson(res,result.status,result.body);
     }
     return true;
   }
