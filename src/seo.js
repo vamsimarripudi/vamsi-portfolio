@@ -41,6 +41,7 @@ export const staticRouteMeta = {
   '/engineering': { title: 'Vamsi Marripudi — Engineering', description: pageDescriptions['/engineering'] },
   '/lab': { title: 'Vamsi Marripudi — Lab', description: pageDescriptions['/lab'] },
   '/writing': { title: 'Vamsi Marripudi — Writing', description: pageDescriptions['/writing'] },
+  '/about': { title: 'Vamsi Marripudi — About · Full-stack Developer', description: pageDescriptions['/about'] },
   '/about': { title: 'Vamsi Marripudi — About', description: pageDescriptions['/about'] },
   '/writing/building-for-changing-context': { title: 'Vamsi Marripudi — Building for changing context', description: 'Notes on building interfaces and systems that remain clear as operational context changes.' },
   '/writing/auth-as-product-infrastructure': { title: 'Vamsi Marripudi — Auth as product infrastructure', description: 'Notes on authentication as a deliberate product and system boundary.' },
@@ -80,8 +81,8 @@ export function siteStructuredDataForRoute(route = '/') {
     alternateName: 'Vamsi',
     url: SITE_URL + '/',
     description: SITE_IDENTITY.homeDescription,
-    jobTitle: 'Founder Engineer',
-    knowsAbout: ['Product engineering', 'Full-stack development', 'Backend systems', 'APIs', 'Cloud infrastructure'],
+    jobTitle: 'Full-stack Developer',
+    knowsAbout: ['Full-stack development', 'Frontend engineering', 'Backend systems', 'APIs', 'PostgreSQL', 'MongoDB', 'Cloud infrastructure', 'AI application development'],
     sameAs: [
       'https://github.com/vamsimarripudi',
       'https://www.linkedin.com/in/vamsimarripudi/'
