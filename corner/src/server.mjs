@@ -1,4 +1,6 @@
 import {ReadingAnalytics} from './reading-analytics.mjs';
+import { dispatchPortfolioRequest } from './unified-dispatch.mjs';
+import { startUnifiedMaintenance } from './unified-maintenance.mjs';
 import {readingRoutes} from './reading-routes.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -456,6 +458,10 @@ async function route(req,res){
   try{
     if(!req.headers.host)throw httpError(400,'Host header required');
     const url=new URL(req.url||'/',`http://${req.headers.host}`);
+    // Unified Railway runtime: same listener, separate route/auth/data boundaries.
+    // Disabled by default. Corner paths are never dispatched to portfolio handlers.
+    if (await dispatchPortfolioRequest(req,res,url)) return;
+
     if(config.basePath){if(url.pathname===config.basePath)url.pathname='/';else if(url.pathname.startsWith(config.basePath+'/'))url.pathname=url.pathname.slice(config.basePath.length);else throw httpError(404,'Route not found');}
     pathname=url.pathname;
     if(pathname==='/mcp'){
@@ -584,6 +590,12 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));
    void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
+  const unifiedMaintenance=startUnifiedMaintenance({
+    enabled:process.env.UNIFIED_PORTFOLIO_API==='1'&&process.env.PORTFOLIO_DAILY_MAINTENANCE==='1',
+    port:config.port,
+    lastCompleted:()=>store.setting('portfolio.unifiedMaintenance.lastUtcDay',null),
+    markCompleted:day=>store.saveSetting('portfolio.unifiedMaintenance.lastUtcDay',day)
+  });
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.
   let shuttingDown=false;
@@ -608,6 +620,6 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
       });
     },25000):null;
 
-  const shutdown=async()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);await cornerMcp.close().catch(()=>{});server.close(()=>{store.close();process.exit(0)})};
+  const shutdown=async()=>{shuttingDown=true;unifiedMaintenance.stop();if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);await cornerMcp.close().catch(()=>{});server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }
