@@ -279,3 +279,10 @@ main .hero.hero-identity h1.hero-title{font-size:clamp(2.55rem,4.2vw,4rem)!impor
  .visitor-route-options button,.hero-secondary-action,.work-lead,.work-supporting-item,.now-ledger-list article,.upcoming-product,.work-lead-mark:after{transition:none!important;transform:none!important}
  .mobile-quick-nav{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
+
+/* Preserve original brand colors while using AA-contrast ink for small accent labels. */
+:root{--portfolio-accent-text:#ad3821}
+:root[data-theme=dark]{--portfolio-accent-text:var(--accent)}
+.hero-focus-status,.hero-focus-orbit span,.visitor-routes-heading .eyebrow,.visitor-route-outcome .eyebrow,.now-item-label span,.now-item-link,.now-ledger-link{color:var(--portfolio-accent-text)}
+.visitor-route-primary{background:var(--lime);color:#171816}
+.visitor-route-primary:hover{background:var(--ink);color:var(--bg)}

@@ -153,10 +153,10 @@ function Home(){
       <ScrollCue/>
     </section>
     <VisitorRoutes/>
+    <EditorialIntro/>
     <SelectedWork/>
     <EngineeringIndex/>
     <NowLedger/>
-    <EditorialIntro/>
     <JourneyStrip/>
     <ContactBlock/>
   </main>;
