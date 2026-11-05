@@ -1,0 +1,39 @@
+/* Uses PakkaFollow's approved, unmodified icon.svg. Portfolio VM identity stays separate. */
+.hero-focus-orbit .pakkafollow-brand-mark{
+  display:block;width:52px;height:52px;max-width:100%;object-fit:contain;border-radius:11px;
+}
+.pakkafollow-project-title{display:flex;align-items:center;gap:.78rem;min-width:0}
+.pakkafollow-project-title h3{min-width:0}
+.pakkafollow-brand-project{width:46px;height:46px;display:block;flex:none;border-radius:10px;object-fit:contain}
+.work-lead-mark.has-pakkafollow-brand{
+  background:color-mix(in srgb,var(--surface) 80%,var(--bg));
+  border:1px solid var(--line);color:var(--ink);
+  min-height:210px;
+}
+.work-lead-mark.has-pakkafollow-brand::before,
+.work-lead-mark.has-pakkafollow-brand::after{display:none}
+.work-lead-mark.has-pakkafollow-brand>span{color:var(--muted)}
+.work-lead-mark.has-pakkafollow-brand>b{
+  font-size:1rem;line-height:1.2;letter-spacing:0;color:var(--muted);
+}
+.pakkafollow-brand-work{
+  display:block;align-self:center;width:clamp(82px,9.5vw,120px);height:auto;
+  aspect-ratio:1;object-fit:contain;box-shadow:0 14px 30px -24px #244c42a1;
+}
+.case-art.pakkafollow-case-art{
+  display:grid;place-items:center;max-width:640px;min-height:240px;
+  margin:clamp(1.25rem,3vw,2.5rem) 0;background:color-mix(in srgb,var(--surface) 76%,var(--bg));
+  border:1px solid var(--line);border-radius:12px;
+}
+.case-art .pakkafollow-brand-case{
+  display:block;width:clamp(92px,14vw,150px);height:auto;aspect-ratio:1;
+  border-radius:20%;object-fit:contain;
+}
+@media(max-width:720px){
+  .pakkafollow-brand-project{width:40px;height:40px;border-radius:9px}
+  .pakkafollow-project-title{gap:.65rem}
+  .case-art.pakkafollow-case-art{min-height:180px;margin:1.3rem 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .pakkafollow-brand-project,.pakkafollow-brand-work,.pakkafollow-brand-case{animation:none!important;transform:none!important}
+}
