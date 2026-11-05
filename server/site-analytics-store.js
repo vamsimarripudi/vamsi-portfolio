@@ -1,5 +1,5 @@
 import {createHmac} from 'node:crypto';
-import {query,TrackError} from '../api/lib/track.js';
+import {query,TrackError} from '../railway-api/lib/track.js';
 import {validateWebsiteSignal} from '../public/site-analytics-contract.mjs';
 export const WEBSITE_SCHEMA = [
  `CREATE TABLE IF NOT EXISTS site_analytics_views (

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('PakkaFollow inbox is authenticated, filtered and not indexed',()=>{
- const track=source('src/Track.jsx'),api=source('api/lib/track.js'),config=JSON.parse(source('vercel.json'));
+ const track=source('src/Track.jsx'),api=source('railway-api/lib/track.js'),config=JSON.parse(source('vercel.json'));
  assert.match(track,/<Route path="pakkafollow"/);
  assert.match(track,/session === 'guest'/);
  assert.match(api,/onlyPakkaFollow = source === 'pakkafollow'/);
@@ -13,7 +13,7 @@ test('PakkaFollow inbox is authenticated, filtered and not indexed',()=>{
  assert.doesNotMatch(source('public/sitemap.xml'),/\/track/);
 });
 test('email-only support has full states and replies stored in the private conversation',()=>{
- const ui=source('src/PakkaFollowTrack.jsx'),css=source('src/PakkaFollowTrack.css'),track=source('src/Track.jsx'),reply=source('api/track/enquiries/[referenceId]/reply.js');
+ const ui=source('src/PakkaFollowTrack.jsx'),css=source('src/PakkaFollowTrack.css'),track=source('src/Track.jsx'),reply=source('railway-api/track/enquiries/[referenceId]/reply.js');
  for(const v of ['loading','error','ready','No matching messages','Open & reply',"source:'pakkafollow'",'connect@vamsimarripudi.me'])assert.ok(ui.includes(v),v);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(track,/ProductThread/);
