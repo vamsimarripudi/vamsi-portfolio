@@ -1,0 +1,67 @@
+name: Verify consolidated Railway backend
+on:
+  pull_request:
+    paths:
+      - 'corner/src/unified-*.mjs'
+      - 'corner/src/server.mjs'
+      - 'Dockerfile.unified'
+      - 'railway.unified.json'
+      - 'tests/unified-railway-*.test.mjs'
+      - '.github/workflows/verify-unified-railway.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  railway-unified:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: API router and daily maintenance contract tests
+        run: |
+          npm ci
+          node --test tests/unified-railway-router.test.mjs tests/unified-railway-maintenance.test.mjs
+          npm run lint
+          npm test
+          npm run build
+      - name: Install FFmpeg used by Corner native media tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+      - name: Full Corner compatibility verification
+        run: |
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm --prefix corner run check
+      - name: Build actual unified Railway Docker image
+        run: docker build -f Dockerfile.unified -t vamsi-unified-backend:ci .
+      - name: Start isolated disposable container (no real secrets/customer data)
+        run: |
+          docker run -d --rm --name vamsi-unified-ci -p 127.0.0.1:44141:4141 \
+            -e SESSION_SECRET="$(openssl rand -hex 32)" \
+            -e UNIFIED_PORTFOLIO_API=1 -e PORTFOLIO_DAILY_MAINTENANCE=0 \
+            -e CORNER_BACKUP_ENABLED=0 -e DATA_DIR=/tmp/unified-data \
+            vamsi-unified-backend:ci
+          for i in $(seq 1 35); do
+            if curl --fail --silent http://127.0.0.1:44141/corner/api/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs vamsi-unified-ci
+          exit 1
+      - name: Verify actual single-service routing and fail-closed defaults
+        run: |
+          curl --fail --silent http://127.0.0.1:44141/corner/api/health | grep -q '"data"'
+          curl --fail --silent http://127.0.0.1:44141/api/unified/health | grep -q '"storageVerified":false'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:44141/api/unified/ready)" = "503"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://attacker.example' -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:44141/api/contact)" = "403"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://vamsimarripudi.me' -H 'Content-Type: application/json' -d '{not-json' http://127.0.0.1:44141/api/contact)" = "400"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:44141/corner/api/admin/settings)" = "401"
+      - name: Retain log evidence without secrets
+        if: always()
+        run: |
+          docker logs --tail 80 vamsi-unified-ci 2>&1 || true
+          docker stop vamsi-unified-ci >/dev/null 2>&1 || true
