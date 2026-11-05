@@ -591,10 +591,11 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
    void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
   const stopOffsiteBackups=startOffsiteScheduler(store);
   const unifiedMaintenance=startUnifiedMaintenance({
-    enabled:process.env.UNIFIED_PORTFOLIO_API==='1'&&process.env.PORTFOLIO_DAILY_MAINTENANCE==='1',
+    enabled:process.env.UNIFIED_PORTFOLIO_API==='1'&&(
+      process.env.PORTFOLIO_DAILY_MAINTENANCE==='1'||process.env.UNIFIED_MAINTENANCE_ENABLED==='1'),
     port:config.port,
-    lastCompleted:()=>store.setting('portfolio.unifiedMaintenance.lastUtcDay',null),
-    markCompleted:day=>store.saveSetting('portfolio.unifiedMaintenance.lastUtcDay',day)
+    lastCompleted:()=>store.setting('portfolio.dailyMaintenance.lastUtcDate',null),
+    markCompleted:day=>store.saveSetting('portfolio.dailyMaintenance.lastUtcDate',day)
   });
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.

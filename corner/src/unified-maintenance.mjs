@@ -31,7 +31,7 @@ export function createUnifiedMaintenance({
     inFlight=true;
     try{
       const result=await task();
-      if(result?.ok && result.analyticsCleanup!=='failed' && result.surveyCleanup!=='failed'){
+      if(result?.ok && result.analyticsCleanup==='complete' && result.surveyCleanup==='complete'){
         await markCompleted(day);
         completedOn=day;
         logger({state:'success',day});
@@ -60,8 +60,9 @@ export function startUnifiedMaintenance({enabled=false,port,lastCompleted,markCo
         method:'GET',headers:{authorization:'Bearer '+secret},
         signal:AbortSignal.timeout(120000)
       });
-      const payload=response.ok?await response.json().catch(()=>null):null;
-      return {ok:response.ok && payload?.ok===true,analyticsCleanup:payload?.analyticsCleanup,surveyCleanup:payload?.surveyCleanup};
+      if(!response.ok)return {ok:false};
+      const payload=await response.json().catch(()=>null);
+      return {ok:payload?.ok===true,analyticsCleanup:payload?.analyticsCleanup,surveyCleanup:payload?.surveyCleanup};
     },
     logger:({state,day})=>console[state==='success'?'info':'error'](JSON.stringify({
       app:'unified-personal-backend',event:'portfolio.daily_maintenance',state,day

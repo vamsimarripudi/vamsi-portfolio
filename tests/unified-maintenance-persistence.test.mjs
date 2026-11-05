@@ -15,6 +15,6 @@ assert.equal((await task.tick()).status,'retryable-failure');assert.equal(stored
 now=new Date('2026-11-05T08:16:00Z');assert.equal((await task.tick()).status,'retryable-failure');assert.equal(stored,'');assert.equal(calls,2);task.stop();
 });
 test('failed persistence never pretends cron work completed',async()=>{
-const task=createUnifiedMaintenance({enabled:true,startTimer:false,clock:()=>new Date('2026-11-05T10:00:00Z'),markCompleted:()=>{throw Error('database unavailable');},task:async()=>({ok:true})});
+const task=createUnifiedMaintenance({enabled:true,startTimer:false,clock:()=>new Date('2026-11-05T10:00:00Z'),markCompleted:()=>{throw Error('database unavailable');},task:async()=>({ok:true,analyticsCleanup:'complete',surveyCleanup:'complete'})});
 assert.equal((await task.tick()).status,'retryable-failure');task.stop();
 });
