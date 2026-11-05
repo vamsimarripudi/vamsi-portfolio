@@ -35,7 +35,7 @@ function choicePrompt(){
   '<h2>Help improve this website?</h2>'+
   '<p>Allow optional first-party page and reading signals. No personal profiles, typed text, advertising trackers or Google transmission.</p>'+
   '<div class="site-consent-actions"><button type="button" data-consent-allow>Allow analytics</button><button type="button" data-consent-deny>Keep off</button></div>'+
-  '<div class="site-consent-foot"><a href="/privacy">Read privacy details</a><button type="button" data-consent-later>Not now</button></div>';
+  '<div class="site-consent-foot"><a href="/cookies">Cookie details</a><a href="/privacy">Privacy notice</a><a href="/track" aria-label="Private owner analytics dashboard">Owner /track</a><button type="button" data-consent-later>Not now</button></div>';
  const end=()=>{card.remove();if(consentCard===card)consentCard=null};
  card.querySelector('[data-consent-allow]').addEventListener('click',()=>{end();void choose('allow')});
  card.querySelector('[data-consent-deny]').addEventListener('click',()=>{end();void choose('deny')});
@@ -60,7 +60,7 @@ export function route(){
  const slot=document.querySelector('[data-website-preferences]');
  if(slot&&(!panel||!panel.isConnected)){
   panel=document.createElement('details');panel.className='website-preferences';panel.id='website-analytics-preferences';
-  panel.innerHTML='<summary>Website analytics <span data-site-choice>Off</span></summary><p>Allow optional analytics for vamsimarripudi.me: public pages, broad source/device groups, reading depth, active time and contact-flow success or failure. No names, form text, full URLs, advertising or Google transmission.</p><p>Short-lived tab IDs group visits across public pages. Records expire after 90 days. Turning this off also requests deletion of the current tab journey. Corner reading preferences are separate.</p><div><button type="button" data-site-allow>Allow website analytics</button><button type="button" data-site-deny>Keep website analytics off</button></div><p role="status"></p>';
+  panel.innerHTML='<summary>Website analytics <span data-site-choice>Off</span></summary><p>Allow optional analytics for vamsimarripudi.me: public pages, broad source/device groups, reading depth, active time and contact-flow success or failure. No names, form text, full URLs, advertising or Google transmission.</p><p>Short-lived tab IDs group visits across public pages. Records expire after 90 days. Turning this off also requests deletion of the current tab journey. Corner reading preferences are separate.</p><p><a href="/cookies">Cookie information</a> · <a href="/privacy">Privacy notice</a> · <a href="/track">Private owner /track</a></p><div><button type="button" data-site-allow>Allow website analytics</button><button type="button" data-site-deny>Keep website analytics off</button></div><p role="status"></p>';
   slot.append(panel);panel.querySelector('[data-site-allow]').onclick=()=>choose('allow');panel.querySelector('[data-site-deny]').onclick=()=>choose('deny');
   if(!document.querySelector('link[data-site-preferences-style]')){const css=document.createElement('link');css.rel='stylesheet';css.href='/website-analytics.css';css.dataset.sitePreferencesStyle='';document.head.append(css)}
  }

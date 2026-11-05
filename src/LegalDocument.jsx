@@ -5,6 +5,7 @@ import {
 } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import './LegalDocument.css';
+import './LegalPrint.css';
 
 const sectionSlug = (title) => title.toLowerCase().normalize('NFKD')
   .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
@@ -15,6 +16,12 @@ const documentDetails = {
     heading: 'Your privacy, explained clearly.',
     description: 'A structured guide to the information handled by this site, its purpose, and how to get in touch about your data.',
     sectionLabel: 'Privacy notice',
+  },
+  cookies: {
+    kicker: 'Browser storage and your choices',
+    heading: 'Cookies and analytics, in practical terms.',
+    description: 'A factual account of local preferences, the optional first-party analytics choice and how to withdraw consent. It does not publish a new product contract.',
+    sectionLabel: 'Cookie information',
   },
   terms: {
     kicker: 'Website use and expectations',
@@ -80,6 +87,8 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
 
   return (
     <article className={'legal-document legal-document--' + kind} aria-label={config.sectionLabel}>
+      <div className="legal-print-watermark" aria-hidden="true"><img src="/vm-mark.svg" alt=""/></div>
+      <div className="legal-print-page-footer" aria-hidden="true"><span><img src="/vm-mark.svg" alt=""/> Vamsi Marripudi</span><span>{config.sectionLabel} · vamsimarripudi.me</span></div>
       <div className="legal-document-bar">
         <div className="legal-document-breadcrumb">
           <Link to="/legal">Legal center</Link>
@@ -91,7 +100,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
         </button>
       </div>
       <div className="legal-document-meta">
-        <span><FiFileText aria-hidden="true"/> Existing portfolio notice</span>
+        <span><FiFileText aria-hidden="true"/> {kind === 'cookies' ? 'Website information · review pending' : 'Existing portfolio notice'}</span>
         {lastUpdated && <span>Last updated: <strong>{lastUpdated}</strong></span>}
         {version && <span>Version: <strong>{version}</strong></span>}
         <span>{entries.length} sections</span>
@@ -173,6 +182,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
             ))}
           </div>
 
+          <div className="legal-print-closing" aria-hidden="true"><strong>Vamsi Marripudi</strong><span>Personal portfolio · vamsimarripudi.me · connect@vamsimarripudi.me</span></div>
           <aside className="legal-endnote" aria-label={footerTitle}>
             <div className="legal-endnote-icon"><FiMail aria-hidden="true" /></div>
             <div>

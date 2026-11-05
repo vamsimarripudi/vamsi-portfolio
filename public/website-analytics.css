@@ -14,3 +14,38 @@
 .website-analytics-consent :is(button,a):focus-visible{outline:3px solid #335db6;outline-offset:3px}
 @media(max-width:600px){.website-analytics-consent{left:12px;right:12px;top:max(76px,env(safe-area-inset-top));bottom:auto;width:auto;max-width:none;padding:15px;border-radius:15px}.website-analytics-consent h2{font-size:1.03rem}.site-consent-actions{margin:12px 0 9px}}
 @media(prefers-reduced-motion:reduce){.website-analytics-consent *{transition:none!important;animation:none!important}}
+
+/* Portfolio 4.0 optional-consent surface: original palette, compact, no modal obstruction. */
+.website-analytics-consent{
+ top:auto;left:auto;right:max(14px,env(safe-area-inset-right));
+ bottom:max(20px,env(safe-area-inset-bottom));width:min(355px,calc(100vw - 28px));
+ padding:clamp(13px,2vw,17px);background:color-mix(in srgb,var(--bg,#f7f6f2) 97%,transparent);
+ color:var(--ink,#171816);border-color:var(--line,#cfcec5);border-radius:12px;
+ box-shadow:0 16px 42px -29px #0009;z-index:80
+}
+.website-analytics-consent h2{font-size:1.03rem;line-height:1.25;color:var(--ink,#171816)}
+.website-analytics-consent .site-consent-kicker{color:var(--portfolio-accent-text,#ad3821)}
+.website-analytics-consent>p:not(.site-consent-kicker){color:var(--muted,#686a63);font-size:.77rem}
+.website-analytics-consent .site-consent-actions{gap:.55rem;margin:.85rem 0 .5rem}
+.website-analytics-consent .site-consent-actions button{
+ min-height:44px;background:var(--ink,#171816);color:var(--bg,#f7f6f2);
+ border:1px solid var(--ink,#171816);border-radius:7px
+}
+.website-analytics-consent .site-consent-actions button[data-consent-deny]{
+ background:transparent;color:var(--ink,#171816);border-color:var(--line,#cfcec5)
+}
+.website-analytics-consent .site-consent-foot{flex-wrap:wrap;justify-content:flex-start;gap:1px 12px}
+.website-analytics-consent .site-consent-foot a,
+.website-analytics-consent .site-consent-foot button{font-size:.71rem;color:var(--muted,#686a63);padding:5px 0}
+.website-analytics-consent .site-consent-foot button{margin-left:auto}
+.website-analytics-consent :is(button,a):focus-visible{outline:3px solid var(--accent,#db4c2f)}
+.website-preferences{background:var(--bg,#f7f6f2);border-color:var(--line,#cfcec5);color:var(--ink,#171816)}
+.website-preferences p,.website-preferences summary{color:var(--ink,#171816)!important}
+.website-preferences a{font-weight:650;text-underline-offset:3px}
+.website-preferences button{background:var(--bg,#f7f6f2);color:var(--ink,#171816);border-color:var(--line,#cfcec5)}
+@media(max-width:720px){
+ .website-analytics-consent{top:auto;bottom:max(88px,env(safe-area-inset-bottom));left:12px;right:12px;width:auto;max-width:none;padding:12px;border-radius:11px}
+ .website-analytics-consent h2{font-size:.98rem}
+ .website-analytics-consent>p:not(.site-consent-kicker){font-size:.74rem;line-height:1.4}
+}
+@media print{.website-analytics-consent,.website-preferences{display:none!important}}

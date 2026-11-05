@@ -6,7 +6,7 @@ import { staticRouteMeta } from '../src/seo.js';
 const read = p => readFileSync(new URL('../' + p, import.meta.url),'utf8');
 
 test('only existing portfolio documents appear in legal index before policy review',()=>{
-  assert.deepEqual(legacyPublicLegalDocuments.map(d=>d.href),['/privacy','/terms']);
+  assert.deepEqual(legacyPublicLegalDocuments.map(d=>d.href),['/privacy','/terms','/cookies']);
   assert.equal(new Set(legacyPublicLegalDocuments.map(d=>d.id)).size,legacyPublicLegalDocuments.length);
   assert.ok(legacyPublicLegalDocuments.every(d=>d.description&&d.category));
   assert.equal(staticRouteMeta['/legal'].noindex,true);
