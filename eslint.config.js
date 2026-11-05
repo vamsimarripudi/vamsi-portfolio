@@ -27,7 +27,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['api/**/*.js', 'server/**/*.js', 'scripts/**/*.mjs'],
+    files: ['api/**/*.js', 'railway-api/**/*.js', 'server/**/*.js', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
