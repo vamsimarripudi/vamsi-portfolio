@@ -9,6 +9,8 @@ export function createUnifiedMaintenance({
   clock=()=>new Date(),
   task=async()=>({ok:false}),
   logger=()=>{},
+  lastCompleted=()=>null,
+  markCompleted=()=>{},
   startTimer=true
 }={}){
   let completedOn=null;
@@ -21,7 +23,7 @@ export function createUnifiedMaintenance({
     const current=clock();
     const day=utcDay(current);
     if(current.getUTCHours()<8)return {status:'not-due'};
-    if(completedOn===day)return {status:'completed'};
+    if(completedOn===day||lastCompleted()===day)return {status:'completed'};
     if(inFlight)return {status:'in-flight'};
     const epoch=current.getTime();
     if(lastAttempt&&epoch-lastAttempt<retryMs)return {status:'retry-delayed'};
@@ -30,6 +32,7 @@ export function createUnifiedMaintenance({
     try{
       const result=await task();
       if(result?.ok){
+        await markCompleted(day);
         completedOn=day;
         logger({state:'success',day});
         return {status:'completed'};
@@ -47,18 +50,22 @@ export function createUnifiedMaintenance({
   return {tick,stop(){stopped=true;if(timer)clearInterval(timer);},status(){return {enabled,completedOn,inFlight};}};
 }
 
-export function startUnifiedMaintenance({enabled=false,port}={}){
+export function startUnifiedMaintenance({enabled=false,port,lastCompleted=()=>null,markCompleted=()=>{}}={}){
   const secret=String(process.env.CRON_SECRET||'').trim();
   if(enabled&&!secret)throw new Error('CRON_SECRET required for Railway unified maintenance.');
   return createUnifiedMaintenance({
     enabled,
+    lastCompleted,
+    markCompleted,
     task:async()=>{
       const response=await fetch('http://127.0.0.1:'+Number(port||4141)+'/api/track/cron/followups',{
         method:'GET',headers:{authorization:'Bearer '+secret},
         signal:AbortSignal.timeout(120000)
       });
-      await response.arrayBuffer().catch(()=>{});
-      return {ok:response.ok};
+      if(!response.ok)return {ok:false};
+      // A 2xx response alone does not prove retention cleanup succeeded.
+      const payload=await response.json();
+      return {ok:payload?.ok===true&&payload?.analyticsCleanup==='complete'&&payload?.surveyCleanup==='complete'};
     },
     logger:({state,day})=>console[state==='success'?'info':'error'](JSON.stringify({
       app:'unified-personal-backend',event:'portfolio.daily_maintenance',state,day
