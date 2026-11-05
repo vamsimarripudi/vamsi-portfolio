@@ -32,6 +32,11 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Install FFmpeg required by real Corner media tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
       - name: Verify source and installed Corner modules
         run: |
           npm ci
