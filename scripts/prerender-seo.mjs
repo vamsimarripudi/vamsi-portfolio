@@ -14,14 +14,15 @@ const replaceMeta = (html, attribute, value) => html.replace(
 // descriptions and FAQ answers that normal React visitors see. This also
 // provides factual HTML text to accessibility tools and static HTTP readers.
 const publicNav = [
-  ['Home', '/'], ['Journey', '/journey'], ['Work', '/work'],
+  ['Home', '/'], ['About', '/about'], ['Work', '/work'],
   ['Engineering', '/engineering'], ['FAQ', '/faq'], ['Contact', '/contact']
 ];
 function noScriptContent(route, meta) {
   if (meta.noindex) return '';
   const contentByRoute = {
     '/': '<p>Vamsi Marripudi is a Founder Engineer working across product engineering, full-stack development, backend systems, APIs and scalable digital products.</p>',
-    '/journey': '<p>The professional direction is shaped by learning foundations, shipping projects, and moving toward connected product systems.</p>',
+    '/about': '<p>Vamsi Marripudi is a full-stack developer working across frontend interfaces, backend systems, APIs, databases, infrastructure and AI-assisted application workflows.</p>',
+    '/journey': '<p>Vamsi Marripudi is a full-stack developer working across frontend interfaces, backend systems, APIs, databases, infrastructure and AI-assisted application workflows.</p>',
     '/engineering': '<p>Engineering work includes product flow, frontend behavior, backend APIs, identity, data, cloud infrastructure and practical integration decisions.</p>',
     '/now': '<p>PakkaFollow is in development and undergoing pre-launch verification. A separate new product is in the planning stage; its details have not been announced.</p>',
     '/work': '<p>Current independent product PakkaFollow (https://pakkafollow.vamsimarripudi.me/) is in development and undergoing release verification. A separate product concept is in early planning. Earlier projects include Event Management, Nxtwatch, Jobby App, Backend Twitter Clone DB, Multistep Form and Quiz Game.</p>'

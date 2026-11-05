@@ -66,7 +66,7 @@ try {
   if(fit){assert.ok(data.login&&data.login.backBottom<=data.height+.5,label+' login back link outside viewport');assert.ok(data.login.submitBottom<=data.height+.5,label+' submit outside viewport');assert.ok(data.scrollHeight<=data.height+1,label+' login unnecessarily scrolls '+JSON.stringify(data))}
   evidence.routes.add(label.split(' @')[0]);evidence.checks++;return data;
  };
- const publicRoutes=['/','/now','/work','/engineering','/lab','/writing','/journey','/resume','/uses','/contact','/privacy','/terms','/faq','/changelog','/birthday','/not-found','/offline','/error','/maintenance','/rate-limited','/track'];
+ const publicRoutes=['/','/now','/work','/engineering','/lab','/writing','/about','/journey','/resume','/uses','/contact','/privacy','/terms','/faq','/changelog','/birthday','/not-found','/offline','/error','/maintenance','/rate-limited','/track'];
  const cornerRoutes=['/corner','/corner/about','/corner/admin','/corner/login','/corner/register','/corner/forgot-password','/corner/reset-password','/corner/verify-email','/corner/resend-verification','/corner/admin/register'];
  const privateRoutes=['/corner/admin','/corner/profile','/corner/settings/profile','/corner/settings/security','/corner/admin/v3/memories','/corner/admin/v3/wishes','/corner/admin/v3/insights','/corner/admin/v3/languages'];
  for(const [width,height] of sizes){

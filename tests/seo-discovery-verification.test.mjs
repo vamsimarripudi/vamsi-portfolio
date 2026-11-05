@@ -26,7 +26,7 @@ test('public creator identity is consistent and uses only explicit official sour
  assert.doesNotMatch(JSON.stringify(graph),/vamsimarripudi\.tech/);
 });
 test('creator ProfilePage and FAQ answers correspond to the published visible pages',()=>{
- const profile=siteStructuredDataForRoute('/journey')['@graph'].find(n=>n['@type']==='ProfilePage');
+ const profile=siteStructuredDataForRoute('/about')['@graph'].find(n=>n['@type']==='ProfilePage');
  assert.equal(profile.mainEntity['@id'],SITE_URL+'/#person');
  const faq=siteStructuredDataForRoute('/faq')['@graph'].find(n=>n['@type']==='FAQPage');
  assert.equal(faq.mainEntity.length,faqItems.length);

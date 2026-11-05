@@ -13,8 +13,9 @@ export const pageDescriptions = {
   '/work': 'PakkaFollow, an independent client follow-up product in development, an upcoming concept in planning, and earlier engineering work.',
   '/engineering': 'Engineering approach across product, frontend, backend systems, infrastructure, and integrations.',
   '/lab': 'Practical engineering experiments by Vamsi Marripudi.',
-  '/writing': 'Notes on product systems, engineering decisions, and technical work.',
-  '/journey': 'The professional direction and engineering journey of Vamsi Marripudi.',
+  '/writing': 'Developer notes by Vamsi Marripudi on full-stack engineering, frontend architecture, backend systems, databases, APIs, AI workflows, and lessons learned while building.',
+  '/about': 'About Vamsi Marripudi, a full-stack developer building end-to-end web systems across frontend, backend, databases, infrastructure, and AI workflows.',
+  '/journey': 'About Vamsi Marripudi, a full-stack developer building end-to-end web systems across frontend, backend, databases, infrastructure, and AI workflows.',
   '/resume': 'Web résumé for Vamsi Marripudi, Founder Engineer.',
   '/uses': 'Tools Vamsi Marripudi uses for product engineering.',
   '/contact': 'Contact Vamsi Marripudi for engineering opportunities and collaboration.',
@@ -40,6 +41,7 @@ export const staticRouteMeta = {
   '/engineering': { title: 'Vamsi Marripudi — Engineering', description: pageDescriptions['/engineering'] },
   '/lab': { title: 'Vamsi Marripudi — Lab', description: pageDescriptions['/lab'] },
   '/writing': { title: 'Vamsi Marripudi — Writing', description: pageDescriptions['/writing'] },
+  '/about': { title: 'Vamsi Marripudi — About', description: pageDescriptions['/about'] },
   '/writing/building-for-changing-context': { title: 'Vamsi Marripudi — Building for changing context', description: 'Notes on building interfaces and systems that remain clear as operational context changes.' },
   '/writing/auth-as-product-infrastructure': { title: 'Vamsi Marripudi — Auth as product infrastructure', description: 'Notes on authentication as a deliberate product and system boundary.' },
   '/journey': { title: 'Vamsi Marripudi — Journey', description: pageDescriptions['/journey'] },
@@ -94,7 +96,7 @@ export function siteStructuredDataForRoute(route = '/') {
     publisher: {'@id': PERSON_ID}
   };
   const page = {
-    '@type': path === '/journey' ? 'ProfilePage' : path === '/faq' ? 'FAQPage' : 'WebPage',
+    '@type': path === '/about' || path === '/journey' ? 'ProfilePage' : path === '/faq' ? 'FAQPage' : 'WebPage',
     '@id': url + '#webpage',
     url,
     name: meta.title,
@@ -103,7 +105,7 @@ export function siteStructuredDataForRoute(route = '/') {
     isPartOf: {'@id': WEBSITE_ID},
     author: {'@id': PERSON_ID}
   };
-  if (path === '/' || path === '/journey') page.mainEntity = {'@id': PERSON_ID};
+  if (path === '/' || path === '/about' || path === '/journey') page.mainEntity = {'@id': PERSON_ID};
   if (path === '/faq') {
     page.mainEntity = faqItems.map(([question, answer]) => ({
       '@type': 'Question',

@@ -2,7 +2,7 @@
 export const WEBSITE = 'vamsimarripudi.me';
 export const CONSENT_COOKIE = 'vm_site_analytics';
 export const SITE_PAGES = Object.freeze({
- '/':'Home','/now':'Now','/work':'Work','/engineering':'Engineering','/lab':'Lab','/writing':'Writing','/journey':'About','/resume':'Resume','/uses':'Uses','/contact':'Contact','/faq':'FAQ','/changelog':'Changelog','/privacy':'Privacy','/terms':'Terms',
+ '/':'Home','/now':'Now','/work':'Work','/engineering':'Engineering','/lab':'Lab','/writing':'Writing','/about':'About','/journey':'About','/resume':'Resume','/uses':'Uses','/contact':'Contact','/faq':'FAQ','/changelog':'Changelog','/privacy':'Privacy','/terms':'Terms',
  '/work/event-management':'Event Management','/work/nxtwatch':'Nxtwatch','/work/jobby-app':'Jobby App','/work/backend-twitter-clone-db':'Backend Twitter Clone DB','/work/multistep-form':'Multistep Form','/work/quiz-game':'Quiz Game',
  '/writing/building-for-changing-context':'Building for changing context','/writing/auth-as-product-infrastructure':'Authentication as product infrastructure',
  '/corner':'Corner','/corner/post/:story':'Corner stories','/corner/category/:category':'Corner categories','/corner/memories':'Corner memories','/corner/wishes':'Corner wishes'
