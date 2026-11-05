@@ -49,3 +49,9 @@
 @media(max-width:900px){.legal-hub-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.legal-hub-product-grid{grid-template-columns:1fr}.legal-hub-product-card{min-height:0}}
 @media(prefers-reduced-motion:reduce){.legal-hub-product-filters button{transition:none}}
+
+/* Cohesive document-paper styling shared with the policy reader. */
+.legal-hub-heading{border:1px solid var(--line);border-radius:9px;padding:clamp(1.3rem,3vw,2.2rem);background:var(--bg)}
+.legal-hub-heading h1{font-size:clamp(2rem,4vw,3.1rem)}
+.legal-hub-product-card,.legal-hub-document,.legal-hub-help>div{border-radius:8px}
+.legal-hub-document-icon{border-radius:6px}
