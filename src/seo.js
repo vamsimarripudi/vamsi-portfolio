@@ -9,8 +9,8 @@ export const SITE_IDENTITY = {
 
 export const pageDescriptions = {
   '/': SITE_IDENTITY.homeDescription,
-  '/now': 'What Vamsi Marripudi is building, learning, and exploring now.',
-  '/work': 'Selected product work and earlier engineering projects by Vamsi Marripudi.',
+  '/now': 'Vamsi Marripudi is building PakkaFollow and planning a separate new product.',
+  '/work': 'PakkaFollow, an independent client follow-up product in development, an upcoming concept in planning, and earlier engineering work.',
   '/engineering': 'Engineering approach across product, frontend, backend systems, infrastructure, and integrations.',
   '/lab': 'Practical engineering experiments by Vamsi Marripudi.',
   '/writing': 'Notes on product systems, engineering decisions, and technical work.',

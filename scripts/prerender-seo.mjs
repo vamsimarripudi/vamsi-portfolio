@@ -23,7 +23,8 @@ function noScriptContent(route, meta) {
     '/': '<p>Vamsi Marripudi is a Founder Engineer working across product engineering, full-stack development, backend systems, APIs and scalable digital products.</p>',
     '/journey': '<p>The professional direction is shaped by learning foundations, shipping projects, and moving toward connected product systems.</p>',
     '/engineering': '<p>Engineering work includes product flow, frontend behavior, backend APIs, identity, data, cloud infrastructure and practical integration decisions.</p>',
-    '/work': '<p>Current independent product PakkaFollow (https://pakkafollow.vamsimarripudi.me/) is being prepared for a verified payment launch. Earlier projects include Event Management, Nxtwatch, Jobby App, Backend Twitter Clone DB, Multistep Form and Quiz Game.</p>'
+    '/now': '<p>PakkaFollow is in development and undergoing pre-launch verification. A separate new product is in the planning stage; its details have not been announced.</p>',
+    '/work': '<p>Current independent product PakkaFollow (https://pakkafollow.vamsimarripudi.me/) is in development and undergoing release verification. A separate product concept is in early planning. Earlier projects include Event Management, Nxtwatch, Jobby App, Backend Twitter Clone DB, Multistep Form and Quiz Game.</p>'
   };
   const faq = route === '/faq' ?
     '<section aria-label="Frequently asked questions">' +
