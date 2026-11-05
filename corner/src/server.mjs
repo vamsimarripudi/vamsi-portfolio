@@ -1,5 +1,6 @@
 import {ReadingAnalytics} from './reading-analytics.mjs';
 import { dispatchPortfolioRequest } from '../../server/railway/dispatch.mjs';
+import { createUnifiedMaintenance } from '../../server/railway/maintenance.mjs';
 import {readingRoutes} from './reading-routes.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -588,6 +589,16 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const server=createServer();server.listen(config.port,config.host,()=>{const address=server.address();const boundPort=typeof address==='object'&&address?address.port:config.port;console.log(`Vamsi's Corner running at http://${config.host}:${boundPort}`)});
   const worker=setInterval(()=>{try{store.tick();store.cleanup();store.saveSetting('scheduler.lastSuccess',date());store.saveSetting('scheduler.lastError',null);void wishDelivery.drain({limit:8}).catch(e=>log('error',{where:'wish-delivery',code:e?.code||'ERROR'}));
    void communications.drain({limit:6}).catch(e=>log('error',{where:'communications',code:e?.code||'ERROR'}));}catch(err){store.saveSetting('scheduler.lastError',String(err?.code||err?.message||'ERROR').slice(0,100));log('error',{where:'worker',code:err?.code||'ERROR'})}},15000);
+  const unifiedMaintenance = createUnifiedMaintenance({
+    lastCompleted:()=>store.setting('portfolio.dailyMaintenance.lastUtcDate',''),
+    markCompleted:(utcDate)=>store.saveSetting('portfolio.dailyMaintenance.lastUtcDate',utcDate),
+    onFailure:(code)=>log('error',{where:'portfolio.dailyMaintenance',code}),
+    port:()=>config.port
+  });
+  // The maintenance gate is independent from Corner's existing scheduler.
+  // Default-off until migrated cron, Neon and transactional email pass verification.
+  const unifiedMaintenanceTick=setInterval(()=>{void unifiedMaintenance();},15000);
+  void unifiedMaintenance();
   const stopOffsiteBackups=startOffsiteScheduler(store);
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.
@@ -613,6 +624,6 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
       });
     },25000):null;
 
-  const shutdown=async()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);await cornerMcp.close().catch(()=>{});server.close(()=>{store.close();process.exit(0)})};
+  const shutdown=async()=>{shuttingDown=true;if(restoreAuditTimer)clearTimeout(restoreAuditTimer);stopOffsiteBackups();clearInterval(worker);clearInterval(unifiedMaintenanceTick);await cornerMcp.close().catch(()=>{});server.close(()=>{store.close();process.exit(0)})};
   process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
 }
