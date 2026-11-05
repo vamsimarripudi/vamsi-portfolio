@@ -1,0 +1,13 @@
+/* Portfolio 4.0 adaptive, decorative SVG hero. All information remains in semantic HTML. */
+.hero.hero-motion::after{display:none}
+.living-engineering-canvas{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;contain:paint;opacity:.64}
+.living-engineering-canvas svg{display:block;width:100%;height:100%;transform:translate3d(var(--canvas-x,0px),var(--canvas-y,0px),0);transition:transform 260ms cubic-bezier(.16,1,.3,1)}
+.living-engineering-canvas::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,var(--bg),transparent 60%);opacity:.72}
+.canvas-engineering-paths{animation:vm-canvas-soft-in 850ms ease-out both}
+.canvas-engineering-orbits{transform-origin:605px 247px;animation:vm-canvas-breathe 11s ease-in-out infinite}
+.canvas-engineering-pulses{transform-origin:605px 247px;animation:vm-canvas-breathe 7.5s ease-in-out infinite alternate}
+@keyframes vm-canvas-soft-in{from{opacity:0}to{opacity:1}}
+@keyframes vm-canvas-breathe{0%,100%{opacity:.16}50%{opacity:.42}}
+@media(max-width:940px){.living-engineering-canvas{opacity:.33}.living-engineering-canvas::before{opacity:.83}}
+@media(max-width:720px),(pointer:coarse){.living-engineering-canvas svg{transform:none!important;transition:none}.living-engineering-canvas .canvas-engineering-orbits,.living-engineering-canvas .canvas-engineering-pulses,.living-engineering-canvas .canvas-engineering-paths{animation:none}}
+@media(prefers-reduced-motion:reduce){.living-engineering-canvas *{animation:none!important;transition:none!important;transform:none!important}}
