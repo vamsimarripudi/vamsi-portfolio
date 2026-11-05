@@ -1,0 +1,56 @@
+name: Verify unified Railway backend
+on:
+  pull_request:
+    paths:
+      - 'server/railway/**'
+      - 'corner/src/server.mjs'
+      - 'corner/tests/unified-backend-process.test.mjs'
+      - 'Dockerfile.unified'
+      - 'railway.unified.json'
+      - '.dockerignore'
+      - '.github/workflows/verify-unified-railway.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify source and installed Corner modules
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
+          npm --prefix corner run check
+      - name: Build real root Railway image
+        run: docker build --file Dockerfile.unified --tag unified-personal-backend:test .
+      - name: Run nonproduction HTTP smoke test
+        run: |
+          docker run --detach --name unified-personal-backend-smoke -p 127.0.0.1:41419:4141 \
+            -e SESSION_SECRET=ci-only-secret-not-for-production-41419 \
+            -e UNIFIED_PORTFOLIO_API=1 -e UNIFIED_MAINTENANCE_ENABLED=0 \
+            -e CORNER_BACKUP_ENABLED=0 -e CORNER_AUTH_REGISTRATION_ENABLED=0 \
+            unified-personal-backend:test
+          trap 'docker logs unified-personal-backend-smoke --tail 90; docker stop unified-personal-backend-smoke >/dev/null 2>&1 || true' EXIT
+          ready=0
+          for i in $(seq 1 65); do
+            if curl -fsS --max-time 3 http://127.0.0.1:41419/corner/api/health >/dev/null 2>&1; then ready=1; break; fi
+            sleep 2
+          done
+          test "$ready" = 1 || { echo 'Backend did not become ready'; exit 1; }
+          curl -fsS http://127.0.0.1:41419/api/unified/health | grep '"storageVerified":false'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:41419/api/unified/ready)" = 503
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:41419/corner/api/admin/overview)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://unrelated.example' -H 'Content-Type: application/json' -d '{"message":"probe"}' http://127.0.0.1:41419/api/contact)" = 403
+      - name: Ensure no new feature is live by default
+        run: |
+          grep -q 'UNIFIED_PORTFOLIO_API=0' Dockerfile.unified
+          ! grep -q 'UNIFIED_MAINTENANCE_ENABLED=1' Dockerfile.unified
