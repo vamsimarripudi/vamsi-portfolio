@@ -8,7 +8,7 @@ test('persisted completion prevents duplicate work across simulated process rest
    clock:()=>new Date('2026-11-05T08:30:00Z'),
    lastCompleted:()=>db.get('last')||null,
    markCompleted:day=>db.set('last',day),
-   task:async()=>{calls++;return {ok:true};}
+   task:async()=>{calls++;return {ok:true,analyticsCleanup:'complete',surveyCleanup:'complete'};}
  });
  const first=make();
  assert.equal((await first.tick()).status,'completed');
@@ -21,7 +21,7 @@ test('failed persistence is a failure, not an acknowledged completion',async()=>
  const runner=createUnifiedMaintenance({
    enabled:true,startTimer:false,
    clock:()=>new Date('2026-11-05T09:00:00Z'),
-   task:async()=>({ok:true}),
+   task:async()=>({ok:true,analyticsCleanup:'complete',surveyCleanup:'complete'}),
    markCompleted:()=>{throw Error('storage unavailable');}
  });
  assert.equal((await runner.tick()).status,'retryable-failure');
@@ -38,4 +38,9 @@ test('service rejects partial completion despite successful HTTP status',async()
  const source=readFileSync(new URL('../corner/src/server.mjs',import.meta.url),'utf8');
  assert.match(source,/portfolio\.dailyMaintenance\.lastUtcDate/);
  assert.match(source,/UNIFIED_PORTFOLIO_API==='1'/);
+});
+
+test('missing cleanup confirmation cannot mark work completed',async()=>{
+ const task=createUnifiedMaintenance({enabled:true,startTimer:false,clock:()=>new Date('2026-11-05T10:00:00Z'),task:async()=>({ok:true})});
+ assert.equal((await task.tick()).status,'retryable-failure');assert.equal(task.status().completedOn,null);task.stop();
 });
