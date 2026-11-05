@@ -85,3 +85,18 @@
  .legal-print-closing span{font:8pt/1.4 system-ui,Arial,sans-serif!important;color:#777!important;text-align:center}
  .legal-page .legal-document{isolation:auto!important}
 }
+
+/* Native print is independent of reveal animation, in-app overlays and body:has(). */
+@media print{
+ .legal-page>.page-hero,.legal-page>div,.legal-page [data-reveal]{
+   opacity:1!important;visibility:visible!important;transform:none!important;
+   overflow:visible!important;contain:none!important;
+ }
+ .legal-page .legal-document-actions,.legal-page .legal-mobile-print-help,
+ .site-header,.mobile-menu,.mobile-quick-nav,.site-footer,
+ .splash,.cursor-aura,.command-backdrop,.command-palette,
+ .website-analytics-consent,.toast-viewport{display:none!important}
+ .legal-gradient-signature{display:block!important;width:min(100%,175mm)!important;height:auto!important;margin-inline:auto}
+ .legal-print-closing{min-height:0!important;margin:0!important;padding:6mm 0 2mm!important;break-before:auto!important;page-break-before:auto!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ .legal-print-closing span{font-size:8pt!important}
+}

@@ -179,3 +179,25 @@
  .legal-clause>p{margin:0!important;color:#222!important;font-size:10pt!important}
  body{background:#fff!important;color:#111!important}
 }
+
+/* Legal content must be visible even when in-app webviews pause IntersectionObserver. */
+.legal-page.page{overflow:visible!important}
+.legal-page>.page-hero,.legal-page>div{opacity:1!important;transform:none!important;visibility:visible!important}
+.legal-document-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.55rem}
+.legal-pdf-action{display:inline-flex;align-items:center;gap:.4rem;min-height:42px;padding:.55rem .8rem;border:1px solid var(--line);border-radius:8px;font-size:.8rem;font-weight:700}
+.legal-pdf-action:hover{border-color:var(--accent)}
+.legal-pdf-action svg{width:14px;height:14px}
+.legal-pdf-action:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.legal-mobile-print-help{font-size:.78rem;line-height:1.55;color:var(--muted);margin:.45rem 0 0}
+@media(min-width:761px){.legal-mobile-print-help{display:none}}
+@media(max-width:760px){
+ .legal-page.page{padding-top:1.2rem!important}
+ .legal-page>.page-hero{padding-bottom:1.3rem!important}
+ .legal-page>.page-hero h1{font-size:clamp(2rem,7.4vw,2.7rem)!important;line-height:1.15!important}
+ .legal-page>.page-hero>p:not(.eyebrow){margin-top:.85rem!important;font-size:.94rem!important}
+ .legal-document-actions{justify-content:stretch;width:100%}
+ .legal-document-actions>:is(a,button){flex:1;justify-content:center;min-width:132px}
+ .legal-document-bar{align-items:stretch;gap:.8rem}
+ .legal-document-breadcrumb{min-height:32px}
+ .legal-reader{padding-top:.5rem}
+}
