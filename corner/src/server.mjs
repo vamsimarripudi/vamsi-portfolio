@@ -597,8 +597,9 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   });
   // The maintenance gate is independent from Corner's existing scheduler.
   // Default-off until migrated cron, Neon and transactional email pass verification.
-  const unifiedMaintenanceTick=setInterval(()=>{void unifiedMaintenance();},15000);
-  void unifiedMaintenance();
+  const runUnifiedMaintenance=()=>{void unifiedMaintenance().catch(error=>log('error',{where:'portfolio.dailyMaintenance',code:error?.code||'UNEXPECTED_FAILURE'}));};
+  const unifiedMaintenanceTick=setInterval(runUnifiedMaintenance,15000);
+  runUnifiedMaintenance();
   const stopOffsiteBackups=startOffsiteScheduler(store);
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.
