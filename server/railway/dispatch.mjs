@@ -3,19 +3,19 @@ import { randomUUID } from 'node:crypto';
 const maxBodyBytes = 256 * 1024;
 const allowedMethods = new Set(['POST','PATCH','PUT','DELETE']);
 const exact = Object.freeze({
-  '/api/contact': { module: '../../api/contact.js' },
-  '/api/birthday': { module: '../../api/contact.js', forcedQuery: { birthday: '1' } },
-  '/api/track/auth/request': { module: '../../api/track/auth/request.js' },
-  '/api/track/auth/verify': { module: '../../api/track/auth/verify.js' },
-  '/api/track/auth/session': { module: '../../api/track/auth/session.js' },
-  '/api/track/auth/logout': { module: '../../api/track/auth/logout.js' },
-  '/api/track/enquiries': { module: '../../api/track/enquiries/index.js' },
-  '/api/track/metrics': { module: '../../api/track/metrics.js' },
-  '/api/track/analytics': { module: '../../api/track/metrics.js', forcedQuery: { view: 'analytics' } },
-  '/api/track/ev-surveys': { module: '../../api/track/metrics.js', forcedQuery: { view: 'ev-surveys' } },
-  '/api/track/cron/followups': { module: '../../api/track/cron/followups.js' },
-  '/api/ev-survey': { module: '../../api/track/metrics.js', forcedQuery: { view: 'ev-public' } },
-  '/api/website/events': { module: '../../api/track/metrics.js', forcedQuery: { view: 'site-events' } },
+  '/api/contact': { module: '../../railway-api/contact.js' },
+  '/api/birthday': { module: '../../railway-api/contact.js', forcedQuery: { birthday: '1' } },
+  '/api/track/auth/request': { module: '../../railway-api/track/auth/request.js' },
+  '/api/track/auth/verify': { module: '../../railway-api/track/auth/verify.js' },
+  '/api/track/auth/session': { module: '../../railway-api/track/auth/session.js' },
+  '/api/track/auth/logout': { module: '../../railway-api/track/auth/logout.js' },
+  '/api/track/enquiries': { module: '../../railway-api/track/enquiries/index.js' },
+  '/api/track/metrics': { module: '../../railway-api/track/metrics.js' },
+  '/api/track/analytics': { module: '../../railway-api/track/metrics.js', forcedQuery: { view: 'analytics' } },
+  '/api/track/ev-surveys': { module: '../../railway-api/track/metrics.js', forcedQuery: { view: 'ev-surveys' } },
+  '/api/track/cron/followups': { module: '../../railway-api/track/cron/followups.js' },
+  '/api/ev-survey': { module: '../../railway-api/track/metrics.js', forcedQuery: { view: 'ev-public' } },
+  '/api/website/events': { module: '../../railway-api/track/metrics.js', forcedQuery: { view: 'site-events' } },
 });
 
 export function resolvePortfolioRoute(pathname) {
@@ -26,7 +26,7 @@ export function resolvePortfolioRoute(pathname) {
   if (match) {
     const segment = match[2] ? '/' + match[2] : '';
     return {
-      module: '../../api/track/enquiries/[referenceId]' + segment + '.js',
+      module: '../../railway-api/track/enquiries/[referenceId]' + segment + '.js',
       params: { referenceId: match[1] }
     };
   }
