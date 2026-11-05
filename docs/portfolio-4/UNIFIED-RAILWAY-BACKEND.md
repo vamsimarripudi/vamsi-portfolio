@@ -44,3 +44,9 @@ New portfolio environment names: `DATABASE_URL` (existing tracker Neon only), `T
 7. Remove original Vercel functions and redundant proxy routes **only after** one full regression cycle, backed-up data, tested rollback, and owner-approved cutover. Retain history in Git; never destroy customer records or backups as housekeeping.
 
 **Do not call this complete before real HTTP, DB/RLS, backup and owner identity tests pass.** Unrelated personally operated products remain independent and company products are excluded.
+
+## Replacement for Vercel cron (code available, opt-in)
+
+The same Node process now contains a UTC 08:00 maintenance scheduler using the authenticated existing `/api/track/cron/followups` handler. It is disabled unless **both** `UNIFIED_PORTFOLIO_API=1` and `PORTFOLIO_DAILY_MAINTENANCE=1`. Attempts retry at least 15 minutes apart and do not claim success until the handler responds successfully; PostgreSQL due-state transitions remain the durable idempotency boundary. It does not automatically delete or disable the existing Vercel cron, avoiding duplicate sends before owner-approved cutover.
+
+A dedicated GitHub Action builds the root-context Railway image and exercises Corner/portfolio routes in an isolated ephemeral container. This is a development test, not a live production restore or deployment.
