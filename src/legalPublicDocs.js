@@ -14,5 +14,12 @@ export const legacyPublicLegalDocuments = Object.freeze([
     href: '/terms',
     description: 'Existing website terms covering this portfolio and its public contact channels.',
     category: 'Website terms'
+  }),
+  Object.freeze({
+    id: 'portfolio-cookies',
+    title: 'Cookies & analytics information',
+    href: '/cookies',
+    description: 'Factual information about optional first-party analytics, consent storage, and browser preferences. Not a newly approved contractual policy.',
+    category: 'Browser preferences'
   })
 ]);

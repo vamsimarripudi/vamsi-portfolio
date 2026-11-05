@@ -17,6 +17,12 @@ const documentDetails = {
     description: 'A structured guide to the information handled by this site, its purpose, and how to get in touch about your data.',
     sectionLabel: 'Privacy notice',
   },
+  cookies: {
+    kicker: 'Browser storage and your choices',
+    heading: 'Cookies and analytics, in practical terms.',
+    description: 'A factual account of local preferences, the optional first-party analytics choice and how to withdraw consent. It does not publish a new product contract.',
+    sectionLabel: 'Cookie information',
+  },
   terms: {
     kicker: 'Website use and expectations',
     heading: 'The ground rules, made readable.',
@@ -94,7 +100,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
         </button>
       </div>
       <div className="legal-document-meta">
-        <span><FiFileText aria-hidden="true"/> Existing portfolio notice</span>
+        <span><FiFileText aria-hidden="true"/> {kind === 'cookies' ? 'Website information · review pending' : 'Existing portfolio notice'}</span>
         {lastUpdated && <span>Last updated: <strong>{lastUpdated}</strong></span>}
         {version && <span>Version: <strong>{version}</strong></span>}
         <span>{entries.length} sections</span>
