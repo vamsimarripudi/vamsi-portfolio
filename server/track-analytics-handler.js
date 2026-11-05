@@ -1,5 +1,5 @@
 import {loadWebsiteAnalytics} from './site-analytics-report.js';
-import { json, requireOwner } from '../api/lib/track.js';
+import { json, requireOwner } from './portfolio-api/lib/track.js';
 import { loadEnquiryAnalytics, loadGa4, safeAnalyticsError } from './track-analytics.js';
 
 // Dependency injection allows testing authorization and upstream failures without production credentials.
