@@ -592,7 +592,9 @@ if(process.argv[1]===fileURLToPath(import.meta.url)){
   const stopOffsiteBackups=startOffsiteScheduler(store);
   const unifiedMaintenance=startUnifiedMaintenance({
     enabled:process.env.UNIFIED_PORTFOLIO_API==='1'&&process.env.PORTFOLIO_DAILY_MAINTENANCE==='1',
-    port:config.port
+    port:config.port,
+    lastCompleted:()=>store.setting('portfolio.unifiedMaintenance.lastUtcDay',null),
+    markCompleted:day=>store.saveSetting('portfolio.unifiedMaintenance.lastUtcDay',day)
   });
   // Read-only rehearsal of the REAL latest offsite snapshot, using a disposable
   // isolated restore. Never enable Phase 2 automatically.
