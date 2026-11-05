@@ -15,7 +15,9 @@ test('legal reader has real accessible ToC filtering, print, overview and mobile
  assert.match(doc,/TABLE OF CONTENTS/);
  assert.match(doc,/filteredHeadings\.map/);
  assert.match(doc,/aria-valuenow=\{currentPosition\}/);
- assert.match(doc,/window\.print\(\)/);
+ assert.match(doc,/printLegalDocument\(kind\)/);
+ assert.match(read('src/legalPrintActions.js'),/host\.print\(\)/);
+ assert.match(doc,/href=\{'\/legal-pdf\/'.*kind/);
  assert.match(doc,/to="\/legal"/);
  assert.match(css,/@media print/);
  assert.match(css,/prefers-reduced-motion:reduce/);

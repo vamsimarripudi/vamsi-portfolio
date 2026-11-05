@@ -4,6 +4,7 @@ import {
   FiFileText, FiHash, FiList, FiMail, FiShield, FiSearch, FiPrinter,
 } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import { printLegalDocument } from './legalPrintActions.js';
 import './LegalDocument.css';
 import './LegalPrint.css';
 
@@ -95,10 +96,14 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
           <FiChevronRight aria-hidden="true"/>
           <span aria-current="page">{config.sectionLabel}</span>
         </div>
-        <button type="button" className="legal-print-action" onClick={() => window.print()}>
-          <FiPrinter aria-hidden="true"/> Print notice
-        </button>
+        <div className="legal-document-actions">
+          <a className="legal-pdf-action" href={'/legal-pdf/' + kind + '.pdf'} target="_blank" rel="noopener noreferrer" aria-label={'Open or save printable PDF of ' + config.sectionLabel}>Open PDF <FiArrowUpRight aria-hidden="true"/></a>
+          <button type="button" className="legal-print-action" onClick={() => printLegalDocument(kind)} aria-label={'Print or save PDF of ' + config.sectionLabel}>
+            <FiPrinter aria-hidden="true"/> Print / Save
+          </button>
+        </div>
       </div>
+      <p className="legal-mobile-print-help">On mobile or inside an app, Print / Save opens the PDF. Use Share to print or save to Files.</p>
       <div className="legal-document-meta">
         <span><FiFileText aria-hidden="true"/> {kind === 'cookies' ? 'Website information · review pending' : 'Existing portfolio notice'}</span>
         {lastUpdated && <span>Last updated: <strong>{lastUpdated}</strong></span>}
@@ -182,7 +187,15 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
             ))}
           </div>
 
-          <div className="legal-print-closing" aria-hidden="true"><strong>Vamsi Marripudi</strong><span>Personal portfolio · vamsimarripudi.me · connect@vamsimarripudi.me</span></div>
+          <div className="legal-print-closing" aria-hidden="true">
+            <svg className="legal-gradient-signature" viewBox="0 0 930 142" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id={'legal-signature-' + kind} x1="0%" x2="100%" y1="0%" y2="0%">
+                <stop offset="0%" stopColor="#d5462d"/><stop offset="27%" stopColor="#e99539"/><stop offset="49%" stopColor="#bccc4b"/><stop offset="75%" stopColor="#338491"/><stop offset="100%" stopColor="#45558f"/>
+              </linearGradient></defs>
+              <text x="465" y="100" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="83" fontWeight="800" letterSpacing="-4" fill={'url(#legal-signature-' + kind + ')'}>Vamsi Marripudi</text>
+            </svg>
+            <span>Personal portfolio · vamsimarripudi.me · connect@vamsimarripudi.me</span>
+          </div>
           <aside className="legal-endnote" aria-label={footerTitle}>
             <div className="legal-endnote-icon"><FiMail aria-hidden="true" /></div>
             <div>
