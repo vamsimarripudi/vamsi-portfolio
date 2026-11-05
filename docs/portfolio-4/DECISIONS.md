@@ -1,8 +1,8 @@
 # Portfolio 4.0 + Personal Legal System — Decision Register
 
-Status: **63 user-approved design decisions; not 63 implemented features**. Last accepted: 2026-11-05. Scope: Vamsi Marripudi's personal portfolio, Vamsi's Corner, PakkaFollow, FileBloom, Avenfolio Press and Living Calendar. Company-owned products are excluded.
+Status: **63 user-approved design decisions; not 63 implemented features**. Last accepted: 2026-11-05. Scope: Vamsi Marripudi's personal portfolio and separately approved personal ventures. The identity and lifecycle details of nonpublic ventures are confined to the private registry. Company-owned products are excluded.
 
-Q1 was corrected by the owner after its initial selection: no corporate products or ownership, including KRAVIA or VidyaLuma. Later decisions preserve this boundary.
+Q1 was corrected by the owner after its initial selection: company-operated products are fully excluded. Later decisions preserve this boundary.
 
 | # | Choice | Binding decision / scope |
 |---|---|---|

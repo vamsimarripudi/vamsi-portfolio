@@ -10,7 +10,7 @@ Version: development draft 0.1. All new legal service details are proposed, **no
 - Vercel custom domains include vamsimarripudi.me; last verified production deployment was on an older SHA. Prior daily deployment limit remains a release blocker until independently rechecked.
 - Existing /corner is routed to its independent backend and must not be modified by this project.
 - Open PR #101 changes Corner command-chat files and a visual test script; no overlap allowed.
-- PakkaFollow is a private separate repository and pre-launch per project documentation. FileBloom has a private separate repository. Remaining personal project repositories have not been verified.
+- Separate personal-product repositories exist, but private codebase identities, legal registers and unannounced venture details are not appropriate for this public repository. Their lifecycle and release claims require independent verification.
 
 ## Deployment and trust boundaries
 

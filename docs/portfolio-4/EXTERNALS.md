@@ -11,6 +11,6 @@ Status as checked 2026-11-05. This file contains **no credentials**. All configu
 | Personal email | connect@vamsimarripudi.me referenced in current portfolio | receive and send mail, SPF/DKIM/DMARC, bounce/alert path | no unverified alias publication |
 | Evidence storage and malware scanning | No approved provider established | processing terms, pricing, scanning fail-closed, deletion | uploads remain disabled |
 | Legal counsel / CA | No personal-project appointment verified | credentials, conflicts, written scope, quotes, exact-version signoff | no professional signoff claim without evidence |
-| Additional personal products | PakkaFollow and FileBloom repositories observed; other repo locations unconfirmed | verify operational ownership and actual active features | no policy publication or unapproved product changes |
+| Additional personal products | Product-specific repository and provider information is retained only in the private audit register | verify operational ownership and actual active features | no policy publication or unapproved product changes |
 
 Planning ceiling for **new recurring** expenses: ₹5,000/month (₹2,500 and ₹4,000 alerts). This is not spending authority; provider billing caps are not assumed to be hard stops.
