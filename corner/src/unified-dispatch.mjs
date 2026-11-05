@@ -92,12 +92,12 @@ export async function checkUnifiedReadiness({environment=process.env,probe}={}) 
   const approved=environment.UNIFIED_BACKEND_CUTOVER_VERIFIED==='1';
   const baseline={component:'configuration',missingConfigurationCount:missingCount,databaseConnectivityVerified:false,cutoverApprovalPresent:approved};
   if(missingCount||!approved)return {status:503,body:{ok:false,...baseline}};
-  const query=probe||async()=>{
+  const query=probe || (async()=>{
     const {neon}=await import('@neondatabase/serverless');
     const sql=neon(environment.DATABASE_URL);
     const rows=await sql.query('SELECT 1 AS alive',[]);
     return Number(rows?.[0]?.alive)===1;
-  };
+  });
   let timer;
   try {
     const ok=await Promise.race([
