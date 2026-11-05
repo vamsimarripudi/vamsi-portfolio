@@ -1,0 +1,43 @@
+
+/* Portfolio 4.0 page-wide visual system. Original identity & UX conventions retained. */
+:root{--p4-paper:color-mix(in srgb,var(--bg) 87%,white);--p4-elevated:color-mix(in srgb,var(--surface) 68%,var(--bg));--p4-duration:220ms;--p4-radius:12px;--p4-section:clamp(2.4rem,6vw,5rem)}
+:root[data-theme=dark]{--p4-paper:var(--surface);--p4-elevated:color-mix(in srgb,var(--surface) 85%,var(--bg))}
+.page:not(.legal-page){padding-block:clamp(2.8rem,6vw,5rem) clamp(4rem,8vw,7rem)}
+.page:not(.legal-page)>.page-hero{max-width:980px;padding:0 0 clamp(2rem,5vw,4rem)}
+.page:not(.legal-page)>.page-hero .eyebrow{display:inline-flex;align-items:center;gap:.55rem;padding:.43rem .75rem;border:1px solid var(--line);border-radius:100px;background:var(--p4-paper);letter-spacing:.09em;font-size:.68rem}
+.page:not(.legal-page)>.page-hero .eyebrow::before{content:'';flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.page:not(.legal-page)>.page-hero h1{max-width:940px;font-size:clamp(2.2rem,4.35vw,4.25rem)!important;line-height:1.12!important;letter-spacing:-.055em!important}
+.page:not(.legal-page)>.page-hero>p:not(.eyebrow){max-width:760px;margin-top:1.1rem;color:var(--muted);font-size:clamp(.96rem,1.15vw,1.13rem);line-height:1.75}
+.page:not(.legal-page)>section{scroll-margin-top:110px}
+.page:not(.legal-page) .archive-section{margin-top:var(--p4-section)}
+.page:not(.legal-page) .project-card{border:1px solid var(--line);border-radius:var(--p4-radius);background:var(--p4-paper);transition:transform var(--p4-duration) var(--ease),box-shadow var(--p4-duration),border-color var(--p4-duration)}
+.page:not(.legal-page) .project-card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 15px 40px -32px var(--ink);transform:translateY(-3px)}
+.page:not(.legal-page) .project-art{margin-block:clamp(1.5rem,3vw,2.75rem) clamp(1.2rem,2vw,2rem);border-radius:7px}
+.page:not(.legal-page) .work-group{margin-bottom:clamp(3rem,6vw,4.7rem)}
+.page:not(.legal-page) .now-item{border-bottom:1px solid var(--line);padding-block:clamp(1.25rem,3vw,2rem)}
+.page:not(.legal-page) .now-item h2{font-size:clamp(1.13rem,2.3vw,1.75rem);line-height:1.35;letter-spacing:-.025em}
+.page:not(.legal-page) .uses-grid article,.page:not(.legal-page) .resume-layout section{border:1px solid var(--line);border-radius:var(--p4-radius);background:var(--p4-paper);padding:clamp(1.1rem,2vw,1.7rem)}
+.page:not(.legal-page) .resume-layout h2,.page:not(.legal-page) .uses-grid h2{font-size:clamp(1.2rem,2vw,1.55rem);line-height:1.32}
+.page:not(.legal-page) .writing-list article{padding-block:clamp(1.5rem,3vw,2.25rem);border-bottom:1px solid var(--line)}
+.page:not(.legal-page) .writing-list h2{line-height:1.23;letter-spacing:-.04em;font-size:clamp(1.3rem,2.4vw,2rem)}
+.page:not(.legal-page) .faq-list details{border-radius:8px;border:1px solid var(--line);padding:1.1rem 1.2rem;margin-bottom:.65rem}
+.page:not(.legal-page) .faq-list summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:650}
+.page:not(.legal-page) .faq-list details[open]{background:var(--p4-paper);border-color:color-mix(in srgb,var(--accent) 28%,var(--line))}
+.page:not(.legal-page) .contact-layout input,.page:not(.legal-page) .contact-layout textarea,.page:not(.legal-page) .contact-layout select{border-radius:7px;min-height:44px}
+.page:not(.legal-page) .lab-notebook article{border:1px solid var(--line);border-radius:10px;background:var(--p4-paper)}
+.p4-work-explorer{margin-top:1.5rem}
+.p4-explorer-toolbar{display:flex;align-items:stretch;flex-wrap:wrap;gap:.75rem}
+.p4-explorer-search{display:flex;align-items:center;gap:.75rem;flex:1 1 250px;max-width:540px;padding:.65rem .85rem;border:1px solid var(--line);border-radius:9px;background:var(--p4-paper)}
+.p4-explorer-search svg{width:17px;height:17px;flex:none;color:var(--muted)}
+.p4-explorer-search input{width:100%;min-width:0;min-height:30px;border:0;outline:0;background:transparent;color:var(--ink);font-size:.88rem}
+.p4-explorer-order{display:flex;align-items:center;gap:.6rem;padding:.45rem .7rem;border:1px solid var(--line);border-radius:9px;background:var(--p4-paper);color:var(--muted);font-size:.8rem}
+.p4-explorer-order select{min-width:110px;min-height:34px;border:0;background:transparent;color:var(--ink);font-size:.85rem}
+.p4-explorer-search:focus-within,.p4-explorer-order:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.p4-explorer-count{margin:.9rem 0 .2rem;color:var(--muted);font-size:.77rem}
+.p4-explorer-empty{padding:1.6rem;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.page:not(.legal-page) .p4-work-explorer .archive-grid{margin-top:1rem}
+:where(.page,.hero) :where(a,button,input,select,textarea):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+@media(max-width:840px){.page:not(.legal-page)>.page-hero h1{font-size:clamp(2rem,6vw,3rem)!important}.page:not(.legal-page) .now-item{grid-template-columns:1fr;gap:.7rem}.p4-explorer-order{flex:1 1 120px;justify-content:space-between}}
+@media(max-width:480px){.page:not(.legal-page){padding-top:2rem}.page:not(.legal-page)>.page-hero h1{font-size:clamp(1.9rem,8vw,2.55rem)!important}.page:not(.legal-page)>.page-hero{padding-bottom:2.3rem}.page:not(.legal-page) .resume-layout,.page:not(.legal-page) .uses-grid{grid-template-columns:1fr}.page:not(.legal-page) .faq-list details{padding:.85rem 1rem}.p4-explorer-search{flex-basis:100%;max-width:none}}
+@media(hover:none){.page:not(.legal-page) .project-card:hover{transform:none;box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.page:not(.legal-page) .project-card{transition:none!important}.p4-work-explorer *{scroll-behavior:auto!important}}

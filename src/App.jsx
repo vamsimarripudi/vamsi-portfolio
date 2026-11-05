@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowRight as ArrowRight, FiArrowUpRight as ArrowUpRight, FiCheck as Check, FiCommand as Command, FiCopy as Copy, FiGithub as Github, FiLinkedin as Linkedin, FiMail as Mail, FiMenu as Menu, FiMoon as Moon, FiSearch as Search, FiSun as Sun, FiX as X } from 'react-icons/fi';
 import './App.css';
+import './PortfolioFour.css';
 import { AppErrorBoundary, NetworkWatcher, normalizeAppError, ToastProvider, useToast, UtilityPage } from './Resilience.jsx';
 import { SITE_IDENTITY, SITE_URL, pageDescriptions, faqItems } from './seo.js';
 import { PRIVACY, privacySections } from './privacy.js';
@@ -163,7 +164,33 @@ function Home(){
     <ContactBlock/>
   </main>;
 }
-function Page({label,title,intro,metaTitle,children,className=''}){const {pathname}=useLocation();useReveal();usePageMeta(metaTitle||title,pageDescriptions[pathname]||intro);return <><StructuredData data={{'@context':'https://schema.org','@type':'WebPage',name:title,description:pageDescriptions[pathname]||intro,url:`https://vamsimarripudi.me${pathname}`}}/><main id="main" className={className ? "page " + className : "page"}><header className="page-hero" data-reveal><p className="eyebrow">{label}</p><h1>{title}</h1><p>{intro}</p></header><div data-reveal>{children}</div></main></>}function Now(){return <Page label="Now" title="What I’m working on." intro="A concise snapshot of the current build, the next idea, and ongoing engineering work."><div className="now-page now-page-refined">{nowSnapshot.items.map(([label,text],index)=><article key={label} className={index===0?'now-item is-highlighted':'now-item'}><div className="now-item-label"><span>0{index+1}</span><p>{label}</p></div><div><h2>{text}</h2>{index===0&&<Link className="now-item-link" to="/work/pakkafollow">Explore PakkaFollow <ArrowUpRight aria-hidden="true"/></Link>}{index===1&&<Link className="now-item-link" to="/work">See product work <ArrowRight aria-hidden="true"/></Link>}</div></article>)}<p className="last-updated">Last updated: {nowSnapshot.lastUpdated}</p></div></Page>}function Work(){
+function Page({label,title,intro,metaTitle,children,className=''}){const {pathname}=useLocation();useReveal();usePageMeta(metaTitle||title,pageDescriptions[pathname]||intro);return <><StructuredData data={{'@context':'https://schema.org','@type':'WebPage',name:title,description:pageDescriptions[pathname]||intro,url:`https://vamsimarripudi.me${pathname}`}}/><main id="main" className={className ? "page " + className : "page"}><header className="page-hero" data-reveal><p className="eyebrow">{label}</p><h1>{title}</h1><p>{intro}</p></header><div data-reveal>{children}</div></main></>}function Now(){return <Page label="Now" title="What I’m working on." intro="A concise snapshot of the current build, the next idea, and ongoing engineering work."><div className="now-page now-page-refined">{nowSnapshot.items.map(([label,text],index)=><article key={label} className={index===0?'now-item is-highlighted':'now-item'}><div className="now-item-label"><span>0{index+1}</span><p>{label}</p></div><div><h2>{text}</h2>{index===0&&<Link className="now-item-link" to="/work/pakkafollow">Explore PakkaFollow <ArrowUpRight aria-hidden="true"/></Link>}{index===1&&<Link className="now-item-link" to="/work">See product work <ArrowRight aria-hidden="true"/></Link>}</div></article>)}<p className="last-updated">Last updated: {nowSnapshot.lastUpdated}</p></div></Page>}function WorkArchive({records}){
+  const [query,setQuery]=useState('');
+  const [order,setOrder]=useState('recent');
+  const visible=useMemo(()=>{
+    const needle=query.trim().toLowerCase();
+    const matching=records.filter(p=>!needle||[p.title,p.summary,p.slug,...(p.tech||[])].some(text=>String(text).toLowerCase().includes(needle)));
+    return order==='title'?[...matching].sort((a,b)=>a.title.localeCompare(b.title)):matching;
+  },[records,query,order]);
+  return <section className="p4-work-explorer" aria-label="Explore earlier verified project records">
+    <div className="p4-explorer-toolbar">
+      <label className="p4-explorer-search">
+        <Search aria-hidden="true"/>
+        <span className="sr-only">Find a project by name or technology</span>
+        <input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search earlier projects" autoComplete="off"/>
+      </label>
+      <label className="p4-explorer-order"><span>Sort</span>
+        <select value={order} onChange={e=>setOrder(e.target.value)}>
+          <option value="recent">Portfolio order</option><option value="title">Project name</option>
+        </select>
+      </label>
+    </div>
+    <p className="p4-explorer-count" role="status" aria-live="polite">{visible.length} {visible.length===1?'project':'projects'} shown</p>
+    <div className="project-grid archive-grid">{visible.map((p,i)=><ProjectCard key={p.slug} project={p} number={String(i+2).padStart(2,'0')}/>)}</div>
+    {visible.length===0&&<p className="p4-explorer-empty">No matching projects. Try another name or technology.</p>}
+  </section>;
+}
+function Work(){
   const featured=projects.slice(0,1),archive=projects.slice(1);
   return <Page label="Work" title="Products, systems, and the choices behind them." intro="Current independent product work, an early-stage concept, and selected engineering projects. Launch status is stated where relevant.">
     <section className="work-group">
@@ -185,7 +212,7 @@ function Page({label,title,intro,metaTitle,children,className=''}){const {pathna
       <p className="eyebrow">Earlier work</p>
       <h2>Useful context, without inflated weight.</h2>
       <p>These projects remain part of the record. Technical details are shown only when supporting information is available.</p>
-      <div className="project-grid archive-grid">{archive.map((p,i)=><ProjectCard key={p.slug} project={p} number={`0${i+2}`}/>)}</div>
+      <WorkArchive records={archive}/>
     </section>
   </Page>
 }
