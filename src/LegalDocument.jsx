@@ -110,7 +110,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
         <aside className="legal-reader-sidebar">
           <div className="legal-sidebar-sticky">
             <div className="legal-sidebar-heading">
-              <p className="legal-sidebar-kicker">DOCUMENT GUIDE</p>
+              <p className="legal-sidebar-kicker">TABLE OF CONTENTS</p>
               <span className="legal-navigation-progress">{String(currentPosition).padStart(2, '0')} <span>/ {String(entries.length).padStart(2, '0')}</span></span>
             </div>
             <label className="legal-toc-search">
