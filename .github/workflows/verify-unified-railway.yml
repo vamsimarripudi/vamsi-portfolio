@@ -28,6 +28,11 @@ jobs:
           npm run lint
           npm test
           npm run build
+      - name: Install FFmpeg used by Corner native media tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
       - name: Full Corner compatibility verification
         run: |
           npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
