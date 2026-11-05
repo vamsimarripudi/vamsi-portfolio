@@ -2,7 +2,7 @@ name: Verify consolidated Railway backend
 on:
   pull_request:
     paths:
-      - 'server/railway/**'
+      - 'corner/src/unified-*.mjs'
       - 'corner/src/server.mjs'
       - 'Dockerfile.unified'
       - 'railway.unified.json'

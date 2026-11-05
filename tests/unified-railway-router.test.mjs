@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { once } from 'node:events';
-import { dispatchPortfolioRequest,resolvePortfolioRoute } from '../server/railway/dispatch.mjs';
+import { dispatchPortfolioRequest,resolvePortfolioRoute } from '../corner/src/unified-dispatch.mjs';
 
 const apiRoutes=['/api/contact','/api/birthday','/api/track/auth/request','/api/track/auth/verify','/api/track/auth/session','/api/track/auth/logout','/api/track/enquiries','/api/track/metrics','/api/track/analytics','/api/track/ev-surveys','/api/track/cron/followups','/api/ev-survey','/api/website/events','/api/track/enquiries/VM-ENQ-2026-ABC123','/api/track/enquiries/VM-ENQ-2026-ABC123/actions','/api/track/enquiries/VM-ENQ-2026-ABC123/reply'];
 test('all existing portfolio, Tracker and EV API routes map to audited handlers',()=>{

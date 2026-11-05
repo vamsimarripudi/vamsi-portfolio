@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createUnifiedMaintenance } from '../server/railway/daily-maintenance.mjs';
+import { createUnifiedMaintenance } from '../corner/src/unified-maintenance.mjs';
 
 test('daily maintenance cannot run by accident',async()=>{
  let count=0;

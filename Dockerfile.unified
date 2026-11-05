@@ -6,7 +6,7 @@ RUN npm ci --omit=dev --no-audit --no-fund
 COPY corner/package.json corner/package.json
 RUN npm --prefix corner install --omit=dev --no-audit --no-fund --package-lock=false
 COPY . .
-RUN node --check server/railway/dispatch.mjs && node --check corner/src/server.mjs
+RUN node --check corner/src/unified-dispatch.mjs && node --check corner/src/unified-maintenance.mjs && node --check corner/src/server.mjs
 RUN mkdir -p /data && chown -R node:node /srv/portfolio /data
 ENV NODE_ENV=production
 ENV PORT=4141
