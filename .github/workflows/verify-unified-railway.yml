@@ -1,5 +1,15 @@
 name: Verify unified Railway backend
 on:
+  push:
+    branches: [feat/portfolio4-railway-hardening-20261105]
+    paths:
+      - 'server/railway/**'
+      - 'corner/src/server.mjs'
+      - 'corner/tests/unified-backend-process.test.mjs'
+      - 'Dockerfile.unified'
+      - 'railway.unified.json'
+      - '.dockerignore'
+      - '.github/workflows/verify-unified-railway.yml'
   pull_request:
     paths:
       - 'server/railway/**'
