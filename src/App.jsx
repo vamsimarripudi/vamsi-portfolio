@@ -1,8 +1,11 @@
 import SiteMeasurement from './SiteMeasurement.jsx';
+import LivingEngineeringCanvas from './components/LivingEngineeringCanvas.jsx';
+import LegalCenter from './LegalCenter.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowRight as ArrowRight, FiArrowUpRight as ArrowUpRight, FiCheck as Check, FiCommand as Command, FiCopy as Copy, FiGithub as Github, FiLinkedin as Linkedin, FiMail as Mail, FiMenu as Menu, FiMoon as Moon, FiSearch as Search, FiSun as Sun, FiX as X } from 'react-icons/fi';
 import './App.css';
+import './PortfolioFour.css';
 import './PersonalPages.css';
 import { AppErrorBoundary, NetworkWatcher, normalizeAppError, ToastProvider, useToast, UtilityPage } from './Resilience.jsx';
 import { SITE_IDENTITY, SITE_URL, pageDescriptions, faqItems } from './seo.js';
@@ -142,7 +145,7 @@ function Home(){
   usePageMeta('Founder Engineer',pageDescriptions['/']);
   return <main id="main">
     <section className="hero hero-motion hero-identity">
-      <div className="hero-grid-motion" aria-hidden="true"/>
+      <LivingEngineeringCanvas/>
       <div className="hero-copy" data-reveal>
         <p className="eyebrow hero-name">Vamsi Marripudi <span className="availability"><i/> Founder Engineer</span></p>
         <h1 className="hero-title"><span className="hero-line">I build useful products</span><span className="hero-line">and <em>dependable systems.</em></span></h1>
@@ -162,7 +165,33 @@ function Home(){
     <ContactBlock/>
   </main>;
 }
-function Page({label,title,intro,metaTitle,children,className=''}){const {pathname}=useLocation();useReveal();usePageMeta(metaTitle||title,pageDescriptions[pathname]||intro);return <><StructuredData data={{'@context':'https://schema.org','@type':'WebPage',name:title,description:pageDescriptions[pathname]||intro,url:`https://vamsimarripudi.me${pathname}`}}/><main id="main" className={className ? "page " + className : "page"}><header className="page-hero" data-reveal><p className="eyebrow">{label}</p><h1>{title}</h1><p>{intro}</p></header><div data-reveal>{children}</div></main></>}function Now(){return <Page label="Now" title="What I’m working on." intro="A concise snapshot of the current build, the next idea, and ongoing engineering work."><div className="now-page now-page-refined">{nowSnapshot.items.map(([label,text],index)=><article key={label} className={index===0?'now-item is-highlighted':'now-item'}><div className="now-item-label"><span>0{index+1}</span><p>{label}</p></div><div><h2>{text}</h2>{index===0&&<Link className="now-item-link" to="/work/pakkafollow">Explore PakkaFollow <ArrowUpRight aria-hidden="true"/></Link>}{index===1&&<Link className="now-item-link" to="/work">See product work <ArrowRight aria-hidden="true"/></Link>}</div></article>)}<p className="last-updated">Last updated: {nowSnapshot.lastUpdated}</p></div></Page>}function Work(){
+function Page({label,title,intro,metaTitle,children,className=''}){const {pathname}=useLocation();useReveal();usePageMeta(metaTitle||title,pageDescriptions[pathname]||intro);return <><StructuredData data={{'@context':'https://schema.org','@type':'WebPage',name:title,description:pageDescriptions[pathname]||intro,url:`https://vamsimarripudi.me${pathname}`}}/><main id="main" className={className ? "page " + className : "page"}><header className="page-hero" data-reveal><p className="eyebrow">{label}</p><h1>{title}</h1><p>{intro}</p></header><div data-reveal>{children}</div></main></>}function Now(){return <Page label="Now" title="What I’m working on." intro="A concise snapshot of the current build, the next idea, and ongoing engineering work."><div className="now-page now-page-refined">{nowSnapshot.items.map(([label,text],index)=><article key={label} className={index===0?'now-item is-highlighted':'now-item'}><div className="now-item-label"><span>0{index+1}</span><p>{label}</p></div><div><h2>{text}</h2>{index===0&&<Link className="now-item-link" to="/work/pakkafollow">Explore PakkaFollow <ArrowUpRight aria-hidden="true"/></Link>}{index===1&&<Link className="now-item-link" to="/work">See product work <ArrowRight aria-hidden="true"/></Link>}</div></article>)}<p className="last-updated">Last updated: {nowSnapshot.lastUpdated}</p></div></Page>}function WorkArchive({records}){
+  const [query,setQuery]=useState('');
+  const [order,setOrder]=useState('recent');
+  const visible=useMemo(()=>{
+    const needle=query.trim().toLowerCase();
+    const matching=records.filter(p=>!needle||[p.title,p.summary,p.slug,...(p.tech||[])].some(text=>String(text).toLowerCase().includes(needle)));
+    return order==='title'?[...matching].sort((a,b)=>a.title.localeCompare(b.title)):matching;
+  },[records,query,order]);
+  return <section className="p4-work-explorer" aria-label="Explore earlier verified project records">
+    <div className="p4-explorer-toolbar">
+      <label className="p4-explorer-search">
+        <Search aria-hidden="true"/>
+        <span className="sr-only">Find a project by name or technology</span>
+        <input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search earlier projects" autoComplete="off"/>
+      </label>
+      <label className="p4-explorer-order"><span>Sort</span>
+        <select value={order} onChange={e=>setOrder(e.target.value)}>
+          <option value="recent">Portfolio order</option><option value="title">Project name</option>
+        </select>
+      </label>
+    </div>
+    <p className="p4-explorer-count" role="status" aria-live="polite">{visible.length} {visible.length===1?'project':'projects'} shown</p>
+    <div className="project-grid archive-grid">{visible.map((p,i)=><ProjectCard key={p.slug} project={p} number={String(i+2).padStart(2,'0')}/>)}</div>
+    {visible.length===0&&<p className="p4-explorer-empty">No matching projects. Try another name or technology.</p>}
+  </section>;
+}
+function Work(){
   const featured=projects.slice(0,1),archive=projects.slice(1);
   return <Page label="Work" title="Products, systems, and the choices behind them." intro="Current independent product work, an early-stage concept, and selected engineering projects. Launch status is stated where relevant.">
     <section className="work-group">
@@ -184,7 +213,7 @@ function Page({label,title,intro,metaTitle,children,className=''}){const {pathna
       <p className="eyebrow">Earlier work</p>
       <h2>Useful context, without inflated weight.</h2>
       <p>These projects remain part of the record. Technical details are shown only when supporting information is available.</p>
-      <div className="project-grid archive-grid">{archive.map((p,i)=><ProjectCard key={p.slug} project={p} number={`0${i+2}`}/>)}</div>
+      <WorkArchive records={archive}/>
     </section>
   </Page>
 }
@@ -359,24 +388,24 @@ function Contact(){
   return <Page label="Contact" title="Start a focused conversation." intro="Choose a reason, share a little context, and I’ll have the essentials to reply."><div className="contact-layout"><div><p className="eyebrow">Public channels</p><a href={`mailto:${profile.email}`}>{profile.email}<ArrowUpRight/></a><a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn<ArrowUpRight/></a><a href={profile.github} target="_blank" rel="noreferrer">GitHub<ArrowUpRight/></a><p className="contact-privacy">Every accepted form request is delivered to the enquiry mailbox. This form does not request a phone number, address, or budget. Read the <Link to="/privacy">Privacy Notice</Link>.</p></div><form data-site-contact data-site-section="contact" onSubmit={submit} noValidate><label>Name<input value={form.name} onChange={event=>update('name',event.target.value)} autoComplete="name" maxLength="100" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name?'contact-name-error':undefined}/>{errors.name&&<span id="contact-name-error" className="field-error">{errors.name}</span>}</label><label>Email<input type="email" value={form.email} onChange={event=>update('email',event.target.value)} autoComplete="email" maxLength="254" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email?'contact-email-error':undefined}/>{errors.email&&<span id="contact-email-error" className="field-error">{errors.email}</span>}</label><label>Reason<select value={form.reason} onChange={event=>update('reason',event.target.value)}>{Object.keys(intentCopy).map(intent=><option key={intent}>{intent}</option>)}</select></label><p className="contact-intent" aria-live="polite">{intentCopy[form.reason]}</p><label className="honeypot">Company<input value={form.company} onChange={event=>update('company',event.target.value)} tabIndex="-1" autoComplete="off"/></label><label>Message<textarea value={form.message} onChange={event=>update('message',event.target.value)} placeholder="A little context about what you'd like to discuss." maxLength="2000" aria-invalid={Boolean(errors.message)} aria-describedby={errors.message?'contact-message-error':undefined}/>{errors.message&&<span id="contact-message-error" className="field-error">{errors.message}</span>}</label><p className="contact-submit-notice">By submitting, you provide your name, email, enquiry type, and message so Vamsi can respond. <Link to="/privacy">Privacy Notice</Link> and <Link to="/terms">Terms of Use</Link></p><button className="button-link" type="submit" disabled={status.state==='submitting'}>{status.state==='submitting'?'Sending…':'Send message'} <ArrowRight/></button>{status.message&&<div className={`form-status is-${status.state}`} role={status.state==='error'?'alert':'status'}><p>{status.message}</p>{status.referenceId&&<p className="enquiry-reference"><span>Reference</span>{status.referenceId}</p>}</div>}</form></div></Page>;
 }
 function Privacy(){
-  return <Page className="legal-page" label="Privacy" title="Privacy, in plain language." metaTitle="Privacy Notice" intro="A clear account of what this personal site collects, why it is used, and how to ask a privacy question.">
+  return <Page className="legal-page" label="Legal document" title="Privacy notice" metaTitle="Privacy Notice" intro="A clear account of what this personal site collects, why it is used, and how to ask a privacy question.">
     <LegalDocument kind="privacy" sections={privacySections} version={PRIVACY.version} lastUpdated={PRIVACY.lastUpdated} operator={PRIVACY.operator} site={PRIVACY.siteUrl.replace('https://','')} footerTitle="Privacy contact" footer={<p>For a privacy question or request, email <a href={'mailto:' + PRIVACY.contactEmail + '?subject=' + encodeURIComponent('Privacy request')}>{PRIVACY.contactEmail}</a> with <strong>Privacy request</strong> in the subject.</p>}/>
   </Page>;
 }
 function Terms(){
   const entries=termsSections.map(([title,body])=>({title,body}));
-  return <Page className="legal-page" label="Terms" title="Simple terms for using this site." metaTitle="Terms of Use" intro="Clear expectations for using this public portfolio and its contact paths.">
+  return <Page className="legal-page" label="Legal document" title="Terms of use" metaTitle="Terms of Use" intro="Clear expectations for using this public portfolio and its contact paths.">
     <LegalDocument kind="terms" sections={entries} footerTitle="Related information" footer={<p>Read the <Link to="/privacy">Privacy Notice</Link> for contact-form and browser-preference details, or <Link to="/contact">start a conversation</Link> when you have a professional enquiry.</p>}/>
   </Page>;
 }
 function FAQ(){return <Page label="FAQ" title="A few useful answers, without the filler." metaTitle="FAQ" intro="Practical information about Vamsi Marripudi, this portfolio, and the public contact path."><section className="faq-list" aria-label="Frequently asked questions">{faqItems.map(([question,answer],index)=><details key={question} open={index===0}><summary>{question}</summary><p>{answer}</p></details>)}</section></Page>}
-function NotFound(){return <UtilityPage kind="not-found"/>}function Footer(){return <footer className="site-footer" data-site-section="footer"><Link className="wordmark" to="/">VM<span>.</span></Link><p>Founder Engineer · Product Engineering · Full-Stack Development · Backend Systems</p><div><a href={profile.github} target="_blank" rel="noreferrer" aria-label="GitHub"><Github/></a><a href={profile.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin/></a><a href={`mailto:${profile.email}`} aria-label="Email"><Mail/></a></div><nav aria-label="Footer"><a href="/corner">Corner</a><Link to="/faq">FAQ</Link><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></nav><small>&copy; {new Date().getFullYear()} Vamsi Marripudi <span aria-hidden="true">·</span> Designed and engineered in public.</small><div className="site-preferences-slot" data-website-preferences/></footer>}function MobileQuickNav(){const {pathname}=useLocation();const enabled=['/','/work','/now','/resume','/engineering','/writing','/about','/journey','/lab'].includes(pathname)||pathname.startsWith('/work/')||pathname.startsWith('/writing/');if(!enabled)return null;return <nav className="mobile-quick-nav" aria-label="Quick navigation"><NavLink to="/work"><span aria-hidden="true">01</span>Work</NavLink><NavLink to="/now"><span aria-hidden="true">02</span>Now</NavLink><NavLink to="/resume"><span aria-hidden="true">03</span>Résumé</NavLink><NavLink to="/contact"><span aria-hidden="true">04</span>Contact</NavLink></nav>}
+function NotFound(){return <UtilityPage kind="not-found"/>}function Footer(){return <footer className="site-footer" data-site-section="footer"><Link className="wordmark" to="/">VM<span>.</span></Link><p>Founder Engineer · Product Engineering · Full-Stack Development · Backend Systems</p><div><a href={profile.github} target="_blank" rel="noreferrer" aria-label="GitHub"><Github/></a><a href={profile.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin/></a><a href={`mailto:${profile.email}`} aria-label="Email"><Mail/></a></div><nav aria-label="Footer"><a href="/corner">Corner</a><Link to="/faq">FAQ</Link><Link to="/legal">Legal center</Link><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></nav><small>&copy; {new Date().getFullYear()} Vamsi Marripudi <span aria-hidden="true">·</span> Designed and engineered in public.</small><div className="site-preferences-slot" data-website-preferences/></footer>}function MobileQuickNav(){const {pathname}=useLocation();const enabled=['/','/work','/now','/resume','/engineering','/writing','/about','/journey','/lab'].includes(pathname)||pathname.startsWith('/work/')||pathname.startsWith('/writing/');if(!enabled)return null;return <nav className="mobile-quick-nav" aria-label="Quick navigation"><NavLink to="/work"><span aria-hidden="true">01</span>Work</NavLink><NavLink to="/now"><span aria-hidden="true">02</span>Now</NavLink><NavLink to="/resume"><span aria-hidden="true">03</span>Résumé</NavLink><NavLink to="/contact"><span aria-hidden="true">04</span>Contact</NavLink></nav>}
 function AppShell(){
   const {pathname}=useLocation();
   const utilityPaths=['/not-found','/offline','/error','/maintenance','/rate-limited'];
-  const knownPaths=['/','/now','/work','/engineering','/lab','/writing','/about','/journey','/resume','/uses','/contact','/privacy','/terms','/faq','/changelog','/ev-survey'];
+  const knownPaths=['/','/now','/work','/engineering','/lab','/writing','/about','/journey','/resume','/uses','/contact','/legal','/privacy','/terms','/faq','/changelog','/ev-survey'];
   const knownDynamic=projects.some(project=>pathname===`/work/${project.slug}`)||posts.some(post=>pathname===`/writing/${post.slug}`);
   const utility=utilityPaths.includes(pathname)||(!knownPaths.includes(pathname)&&!knownDynamic);
-  return <>{!utility&&<><SiteMeasurement/><Splash/><ScrollTop/><ScrollProgress/><CursorAura/><Header/><MobileQuickNav/></>}<Routes><Route path="/" element={<Home/>}/><Route path="/now" element={<Now/>}/><Route path="/work" element={<Work/>}/><Route path="/work/:slug" element={<Case/>}/><Route path="/engineering" element={<Engineering/>}/><Route path="/lab" element={<Lab/>}/><Route path="/writing" element={<Writing/>}/><Route path="/writing/:slug" element={<Post/>}/><Route path="/about" element={<About/>}/><Route path="/journey" element={<Journey/>}/><Route path="/resume" element={<Resume/>}/><Route path="/uses" element={<Uses/>}/><Route path="/contact" element={<Contact/>}/><Route path="/privacy" element={<Privacy/>}/><Route path="/terms" element={<Terms/>}/><Route path="/faq" element={<FAQ/>}/><Route path="/changelog" element={<Changelog/>}/><Route path="/birthday" element={<BirthdayPage/>}/><Route path="/birthday/:shareId" element={<BirthdayPage/>}/><Route path="/ev-survey" element={<EVSurvey/>}/><Route path="/track/*" element={<TrackApp/>}/><Route path="/not-found" element={<UtilityPage kind="not-found"/>}/><Route path="/offline" element={<UtilityPage kind="offline"/>}/><Route path="/error" element={<UtilityPage kind="error"/>}/><Route path="/maintenance" element={<UtilityPage kind="maintenance"/>}/><Route path="/rate-limited" element={<UtilityPage kind="rate-limited"/>}/><Route path="*" element={<NotFound/>}/></Routes>{!utility&&<Footer/>}</>;
+  return <>{!utility&&<><SiteMeasurement/><Splash/><ScrollTop/><ScrollProgress/><CursorAura/><Header/><MobileQuickNav/></>}<Routes><Route path="/" element={<Home/>}/><Route path="/now" element={<Now/>}/><Route path="/work" element={<Work/>}/><Route path="/work/:slug" element={<Case/>}/><Route path="/engineering" element={<Engineering/>}/><Route path="/lab" element={<Lab/>}/><Route path="/writing" element={<Writing/>}/><Route path="/writing/:slug" element={<Post/>}/><Route path="/about" element={<About/>}/><Route path="/journey" element={<Journey/>}/><Route path="/resume" element={<Resume/>}/><Route path="/uses" element={<Uses/>}/><Route path="/contact" element={<Contact/>}/><Route path="/legal" element={<LegalCenter/>}/><Route path="/privacy" element={<Privacy/>}/><Route path="/terms" element={<Terms/>}/><Route path="/faq" element={<FAQ/>}/><Route path="/changelog" element={<Changelog/>}/><Route path="/birthday" element={<BirthdayPage/>}/><Route path="/birthday/:shareId" element={<BirthdayPage/>}/><Route path="/ev-survey" element={<EVSurvey/>}/><Route path="/track/*" element={<TrackApp/>}/><Route path="/not-found" element={<UtilityPage kind="not-found"/>}/><Route path="/offline" element={<UtilityPage kind="offline"/>}/><Route path="/error" element={<UtilityPage kind="error"/>}/><Route path="/maintenance" element={<UtilityPage kind="maintenance"/>}/><Route path="/rate-limited" element={<UtilityPage kind="rate-limited"/>}/><Route path="*" element={<NotFound/>}/></Routes>{!utility&&<Footer/>}</>;
 }
 export default function App(){return <ToastProvider><AppErrorBoundary><NetworkWatcher/><AppShell/></AppErrorBoundary></ToastProvider>}

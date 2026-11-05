@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiArrowUp, FiArrowUpRight, FiBookOpen, FiChevronDown, FiChevronRight,
-  FiFileText, FiHash, FiList, FiMail, FiShield,
+  FiFileText, FiHash, FiList, FiMail, FiShield, FiSearch, FiPrinter,
 } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import './LegalDocument.css';
 
 const sectionSlug = (title) => title.toLowerCase().normalize('NFKD')
@@ -26,12 +27,18 @@ const documentDetails = {
 export default function LegalDocument({ kind, sections, version, lastUpdated, operator, site, footerTitle, footer }) {
   const mobileContents = useRef(null);
   const [active, setActive] = useState(null);
+  const [sectionQuery, setSectionQuery] = useState('');
   const config = documentDetails[kind] || documentDetails.terms;
   const entries = useMemo(() => sections.map((section, index) => ({
     ...section,
     id: kind + '-' + sectionSlug(section.title) + '-' + (index + 1),
     number: String(index + 1).padStart(2, '0'),
   })), [kind, sections]);
+
+  const filteredHeadings = useMemo(() => {
+    const needle = sectionQuery.trim().toLowerCase();
+    return needle ? entries.filter(entry => entry.title.toLowerCase().includes(needle)) : entries;
+  }, [entries, sectionQuery]);
 
   useEffect(() => {
     setActive(entries[0]?.id || null);
@@ -54,20 +61,18 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
   };
 
   const contents = (mobile = false) => (
-    <nav className="legal-toc" aria-label={mobile ? 'Mobile document contents' : 'Document contents'}>
-      {entries.map((entry) => (
-        <a
-          key={entry.id}
-          href={'#' + entry.id}
+    <nav className="legal-toc" aria-label={mobile ? 'Mobile table of contents' : 'Document table of contents'}>
+      {filteredHeadings.map(entry => (
+        <a key={entry.id} href={'#' + entry.id}
           className={active === entry.id ? 'is-active' : undefined}
           aria-current={active === entry.id ? 'location' : undefined}
-          onClick={() => jumpTo(entry.id)}
-        >
+          onClick={() => jumpTo(entry.id)}>
           <span className="legal-toc-number">{entry.number}</span>
           <span className="legal-toc-title">{entry.title}</span>
-          <FiChevronRight className="legal-toc-chevron" aria-hidden="true" />
+          <FiChevronRight className="legal-toc-chevron" aria-hidden="true"/>
         </a>
       ))}
+      {filteredHeadings.length === 0 && <p role="status" className="legal-toc-empty">No matching headings. Full notice remains visible below.</p>}
     </nav>
   );
 
@@ -76,21 +81,28 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
   return (
     <article className={'legal-document legal-document--' + kind} aria-label={config.sectionLabel}>
       <div className="legal-document-bar">
-        <span className="legal-document-identity"><FiFileText aria-hidden="true" /> {config.sectionLabel}</span>
-        <div className="legal-document-tags">
-          {version && <span>Version {version}</span>}
-          {lastUpdated && <span>Updated {lastUpdated}</span>}
-          <span>{entries.length} sections</span>
+        <div className="legal-document-breadcrumb">
+          <Link to="/legal">Legal center</Link>
+          <FiChevronRight aria-hidden="true"/>
+          <span aria-current="page">{config.sectionLabel}</span>
         </div>
+        <button type="button" className="legal-print-action" onClick={() => window.print()}>
+          <FiPrinter aria-hidden="true"/> Print notice
+        </button>
       </div>
-
+      <div className="legal-document-meta">
+        <span><FiFileText aria-hidden="true"/> Existing portfolio notice</span>
+        {lastUpdated && <span>Last updated: <strong>{lastUpdated}</strong></span>}
+        {version && <span>Version: <strong>{version}</strong></span>}
+        <span>{entries.length} sections</span>
+      </div>
       <details ref={mobileContents} className="legal-mobile-contents">
-        <summary>
-          <FiList aria-hidden="true" />
-          <span>On this page</span>
-          <small>{entries.length} sections</small>
-          <FiChevronDown className="legal-mobile-caret" aria-hidden="true" />
-        </summary>
+        <summary><FiList aria-hidden="true"/><span>Table of contents</span><small>{entries.length} sections</small><FiChevronDown className="legal-mobile-caret" aria-hidden="true"/></summary>
+        <label className="legal-toc-search">
+          <FiSearch aria-hidden="true"/>
+          <span className="sr-only">Find section headings</span>
+          <input type="search" value={sectionQuery} onChange={event => setSectionQuery(event.target.value)} placeholder="Find a section" autoComplete="off"/>
+        </label>
         {contents(true)}
       </details>
 
@@ -98,10 +110,18 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
         <aside className="legal-reader-sidebar">
           <div className="legal-sidebar-sticky">
             <div className="legal-sidebar-heading">
-              <p className="legal-sidebar-kicker">DOCUMENT GUIDE</p>
+              <p className="legal-sidebar-kicker">TABLE OF CONTENTS</p>
               <span className="legal-navigation-progress">{String(currentPosition).padStart(2, '0')} <span>/ {String(entries.length).padStart(2, '0')}</span></span>
             </div>
+            <label className="legal-toc-search">
+              <FiSearch aria-hidden="true"/>
+              <span className="sr-only">Find section headings</span>
+              <input type="search" value={sectionQuery} onChange={event => setSectionQuery(event.target.value)} placeholder="Find a section" autoComplete="off"/>
+            </label>
             {contents()}
+            <div className="legal-reading-progress" role="progressbar" aria-label="Section reading position" aria-valuemin={0} aria-valuemax={entries.length} aria-valuenow={currentPosition}>
+              <span style={{width: (currentPosition / Math.max(entries.length, 1) * 100) + '%'}}/>
+            </div>
             <div className="legal-sidebar-support">
               <span className="legal-sidebar-support-icon"><FiMail aria-hidden="true" /></span>
               <strong>Need clarification?</strong>
@@ -118,12 +138,21 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
             </div>
             <div className="legal-overview-copy">
               <p className="legal-overview-kicker">{config.kicker}</p>
-              <h2 id="legal-overview-title">{config.heading}</h2>
-              <p>{config.description}</p>
+              <h2 id="legal-overview-title">Summary of key topics</h2>
+              <p>{config.description} Use the table of contents to navigate; the complete original text appears below.</p>
               {operator && site && <div className="legal-operator">This notice is for {site}, operated by {operator}.</div>}
+              <div className="legal-topic-shortcuts" aria-label="Key document sections">
+                {entries.slice(0,4).map(entry =>
+                  <a href={'#' + entry.id} key={entry.id}><span>{entry.number}</span>{entry.title}<FiArrowUpRight aria-hidden="true"/></a>
+                )}
+              </div>
             </div>
           </section>
 
+          <div className="legal-full-text-heading">
+            <div><p className="legal-overview-kicker">COMPLETE POLICY TEXT</p><h2>Document details</h2></div>
+            <span>{entries.length} sections</span>
+          </div>
           <div className="legal-sections" aria-label="Document text">
             {entries.map((entry) => (
               <section
@@ -155,7 +184,7 @@ export default function LegalDocument({ kind, sections, version, lastUpdated, op
 
           <div className="legal-end-actions">
             <span>{config.sectionLabel} <span aria-hidden="true">·</span> {entries.length} sections</span>
-            <a href="#main">Back to top <FiArrowUp aria-hidden="true" /></a>
+            <div className="legal-end-links"><Link to="/legal">All legal documents <FiArrowUpRight aria-hidden="true"/></Link><a href="#main">Back to top <FiArrowUp aria-hidden="true" /></a></div>
           </div>
         </div>
       </div>
