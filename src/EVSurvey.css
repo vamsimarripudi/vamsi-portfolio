@@ -84,7 +84,7 @@ body.ev-survey-active .mobile-menu{z-index:60}
 .evs-question h1,.evs-review h1,.evs-complete h1{max-width:840px;margin:0;font-size:clamp(1.72rem,2.35vw,2.55rem);line-height:1.1;letter-spacing:-.05em;font-weight:740;color:#f5f2eb}
 .evs-subcopy{max-width:760px;margin:.72rem 0 0;color:var(--evs-muted);font-size:.86rem;line-height:1.52}
 .evs-optional,.evs-inline-help{margin:.55rem 0 0;color:var(--evs-faint);font-size:.72rem}
-.evs-answer{flex:1 1 auto;min-height:0;overflow:auto;margin-top:1rem;padding:2px 5px 4px 0;scrollbar-width:thin;scrollbar-color:rgba(255,117,84,.45) transparent}
+.evs-question{height:100%;min-height:0;overflow:hidden}\n.evs-answer{flex:1 1 0;min-height:0;overflow:auto;margin-top:1rem;padding:2px 5px 4px 0;scroll-padding-block:12px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,117,84,.45) transparent}
 .evs-answer::-webkit-scrollbar,.evs-review-list::-webkit-scrollbar{width:7px}.evs-answer::-webkit-scrollbar-thumb,.evs-review-list::-webkit-scrollbar-thumb{background:rgba(255,117,84,.38);border-radius:99px}
 .evs-answer-label{display:block;margin:0 0 .55rem;color:#ddd9d1;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .evs-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
@@ -177,11 +177,11 @@ body.ev-survey-active .mobile-menu{z-index:60}
   .evs-progress-top{font-size:.6rem;letter-spacing:.07em;margin-bottom:.5rem}.evs-progress{height:4px}
   .evs-mobile-stage{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:.7rem 0 0}.evs-mobile-stage span{font-size:.61rem;font-weight:800;letter-spacing:.07em;color:var(--evs-faint)}.evs-mobile-stage strong{font-size:.72rem;color:var(--evs-accent);text-align:right}
   .evs-card{padding-top:10px}.evs-question h1,.evs-review h1,.evs-complete h1{font-size:clamp(1.42rem,6vw,1.9rem);line-height:1.15}.evs-kicker{font-size:.62rem;margin-bottom:.6rem}.evs-subcopy{font-size:.82rem;line-height:1.48;margin-top:.55rem}
-  .evs-answer{margin-top:.75rem;padding-right:2px}.evs-answer-label{font-size:.65rem}.evs-options{grid-template-columns:1fr;gap:7px}
+  .evs-answer{margin-top:.75rem;padding:2px 2px calc(108px + env(safe-area-inset-bottom)) 0;scroll-padding-top:18px;scroll-padding-bottom:calc(108px + env(safe-area-inset-bottom))}.evs-choice,.evs-textfield,.evs-no-contact{scroll-margin-top:88px;scroll-margin-bottom:116px}.evs-answer-label{font-size:.65rem}.evs-options{grid-template-columns:1fr;gap:7px}
   .evs-choice{min-height:60px;grid-template-columns:26px minmax(0,1fr);padding:.85rem .9rem;font-size:16px;line-height:1.35}.evs-choice-chevron{display:none}.evs-choice-mark{width:24px;height:24px}
   .evs-textfield{min-height:56px;border-radius:11px;font-size:16px;padding:.9rem 1rem}.evs-textarea{min-height:130px;max-height:220px}
-  .evs-actions{position:fixed;z-index:70;left:9px;right:9px;bottom:7px;gap:.6rem;margin:0;padding:.7rem max(10px,env(safe-area-inset-right)) calc(.7rem + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));border:1px solid rgba(255,255,255,.11);border-radius:14px;background:rgba(14,16,14,.96);box-shadow:0 -10px 35px rgba(0,0,0,.3);backdrop-filter:blur(18px)}
-  .evs-actions .evs-secondary,.evs-actions .evs-primary{min-height:54px;font-size:.86rem;padding:.55rem .75rem}.evs-actions .evs-secondary{flex:0 0 34%}.evs-actions .evs-primary{flex:1;min-width:0}.evs-auto-save{display:none}
+  .evs-actions{position:fixed;z-index:70;pointer-events:none;left:9px;right:9px;bottom:7px;gap:.6rem;margin:0;padding:.7rem max(10px,env(safe-area-inset-right)) calc(.7rem + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));border:1px solid rgba(255,255,255,.11);border-radius:14px;background:rgba(14,16,14,.96);box-shadow:0 -10px 35px rgba(0,0,0,.3);backdrop-filter:blur(18px)}
+  .evs-actions .evs-secondary,.evs-actions .evs-primary{pointer-events:auto;min-height:54px;font-size:.86rem;padding:.55rem .75rem}.evs-actions .evs-secondary{flex:0 0 34%}.evs-actions .evs-primary{flex:1;min-width:0}.evs-auto-save{display:none}
   .evs-under-card{display:none}.evs-review-list{margin-top:.75rem}.evs-review-row{padding:.75rem 0}.evs-review-row button{min-height:44px}
   .evs-complete{padding:8px}.evs-success-icon{width:54px;height:54px}.evs-reference{margin:1rem 0}.evs-complete .evs-primary{min-height:52px}
 }
