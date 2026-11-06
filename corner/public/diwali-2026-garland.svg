@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 72" fill="none" aria-hidden="true">
+ <defs>
+  <linearGradient id="rope" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b57f3c"/><stop offset=".5" stop-color="#e2ac60"/><stop offset="1" stop-color="#a56b31"/></linearGradient>
+  <linearGradient id="petal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1b849"/><stop offset="1" stop-color="#d57d31"/></linearGradient>
+  <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7b9361"/><stop offset="1" stop-color="#496c52"/></linearGradient>
+ </defs>
+ <path d="M0 4Q90 51 180 4Q270 51 360 4" stroke="url(#rope)" stroke-width="2.5" stroke-linecap="round"/>
+ <path d="M0 9Q90 56 180 9Q270 56 360 9" stroke="#f5d8a1" stroke-width=".9" opacity=".7"/>
+ <g transform="translate(90 27)">
+  <path d="M-12-5Q-30-13-25 1Q-12 8-2 3Z" fill="url(#leaf)"/>
+  <path d="M12-5Q30-13 25 1Q12 8 2 3Z" fill="url(#leaf)"/>
+  <g fill="url(#petal)">
+   <ellipse cx="0" cy="-12" rx="8" ry="11"/><ellipse cx="12" cy="-5" rx="9" ry="9" transform="rotate(40 12 -5)"/>
+   <ellipse cx="13" cy="8" rx="8" ry="10" transform="rotate(-25 13 8)"/><ellipse cx="0" cy="12" rx="9" ry="10"/>
+   <ellipse cx="-13" cy="8" rx="8" ry="10" transform="rotate(25 -13 8)"/>
+   <ellipse cx="-12" cy="-5" rx="9" ry="9" transform="rotate(-40 -12 -5)"/>
+  </g>
+  <circle r="7" fill="#9b5d2e"/><circle r="4" fill="#f4d08b"/>
+ </g>
+ <g transform="translate(270 27)">
+  <path d="M-12-5Q-30-13-25 1Q-12 8-2 3Z" fill="url(#leaf)"/>
+  <path d="M12-5Q30-13 25 1Q12 8 2 3Z" fill="url(#leaf)"/>
+  <g fill="url(#petal)">
+   <ellipse cx="0" cy="-12" rx="8" ry="11"/><ellipse cx="12" cy="-5" rx="9" ry="9" transform="rotate(40 12 -5)"/>
+   <ellipse cx="13" cy="8" rx="8" ry="10" transform="rotate(-25 13 8)"/><ellipse cx="0" cy="12" rx="9" ry="10"/>
+   <ellipse cx="-13" cy="8" rx="8" ry="10" transform="rotate(25 -13 8)"/>
+   <ellipse cx="-12" cy="-5" rx="9" ry="9" transform="rotate(-40 -12 -5)"/>
+  </g>
+  <circle r="7" fill="#9b5d2e"/><circle r="4" fill="#f4d08b"/>
+ </g>
+ <path d="M0 8L-7 27M180 8L173 27M360 8L353 27" stroke="#bd8645" stroke-width="1"/>
+ </svg>
