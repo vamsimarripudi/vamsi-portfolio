@@ -194,3 +194,132 @@ body.ev-survey-active .mobile-menu{z-index:60}
 }
 
 @media(prefers-reduced-motion:reduce){.evs-page *,body.ev-survey-active .site-header{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Compact, accessible EV interview layout — viewport-aware without clipping controls. */
+body.ev-survey-active .site-header{
+  height:56px!important;
+  min-height:56px!important;
+  margin:8px 14px 0!important;
+  padding:0 clamp(12px,1.2vw,20px)!important;
+  border-radius:16px!important;
+  gap:clamp(8px,1.4vw,22px);
+}
+body.ev-survey-active .site-header .wordmark{font-size:1.18rem}
+body.ev-survey-active .site-header .desktop-nav{
+  min-width:0;
+  gap:clamp(10px,1.55vw,25px);
+  font-size:clamp(.76rem,.86vw,.86rem);
+}
+body.ev-survey-active .site-header .desktop-nav a{
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  white-space:nowrap;
+}
+body.ev-survey-active .site-header .header-actions{gap:8px}
+body.ev-survey-active .site-header .header-contact{
+  min-height:44px;
+  padding:.54rem .87rem;
+  border-radius:12px!important;
+  white-space:nowrap;
+}
+body.ev-survey-active .site-header .menu-button{min-width:44px;min-height:44px}
+body.ev-survey-active .mobile-menu{
+  top:70px;
+  right:12px;
+  left:12px;
+  max-height:calc(100dvh - 82px);
+  overflow-y:auto;
+  border-color:rgba(255,255,255,.15);
+  background:#171a17;
+  color:#f5f3ed;
+}
+body.ev-survey-active .mobile-menu a{border-color:rgba(255,255,255,.12)}
+
+/* The consent, privacy notice and primary action must remain reachable even
+   when browser chrome, landscape orientation or text zoom reduces the height. */
+.evs-workspace-body.is-intro{
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,117,84,.48) transparent;
+}
+.evs-workspace-body.is-intro::-webkit-scrollbar{width:6px}
+.evs-workspace-body.is-intro::-webkit-scrollbar-thumb{
+  border-radius:10px;
+  background:rgba(255,117,84,.4);
+}
+.evs-workspace-body.is-intro .evs-start{
+  height:auto;
+  min-height:100%;
+}
+.evs-start-footer{flex-wrap:wrap}
+
+@media(min-width:981px){
+  .evs-frame{grid-template-rows:38px minmax(0,1fr)}
+  .evs-topline{padding-inline:8px}
+  .evs-shell{gap:clamp(14px,1.45vw,24px);padding:9px 4px 12px}
+  .evs-intro{padding:15px 10px 116px 14px}
+  .evs-intro h1{font-size:clamp(2.55rem,3.65vw,3.95rem)}
+  .evs-lede{margin-top:1rem;font-size:.94rem;line-height:1.48}
+  .evs-trust-grid{gap:10px;margin-top:1.15rem}
+  .evs-trust-grid>span{gap:.5rem}
+  .evs-trust-grid b{width:36px;height:36px;flex-basis:36px}
+  .evs-intro-meta{margin-top:1.1rem}
+  .evs-intro-meta span{padding:10px}
+  .evs-intro-meta strong{font-size:1.27rem}
+  .evs-workspace{grid-template-rows:64px minmax(0,1fr)}
+  .evs-phase-stepper{padding-inline:20px}
+  .evs-phase-item{gap:.5rem;padding:10px 7px 8px;font-size:.71rem}
+  .evs-phase-number{width:29px;height:29px;flex-basis:29px}
+  .evs-workspace-body{padding:16px 24px 14px}
+  .evs-panel-no{margin-bottom:.58rem}
+  .evs-start h2{font-size:clamp(1.9rem,2.28vw,2.3rem)}
+  .evs-start-lede{margin-top:.5rem;font-size:.88rem;line-height:1.46}
+  .evs-brief-grid{gap:9px;margin-top:.82rem}
+  .evs-brief-grid>div{padding:9px 10px}
+  .evs-start-note{margin-top:.72rem;padding:10px 13px}
+  .evs-start-note p{margin-top:.25rem;line-height:1.42}
+  .evs-consent{margin-top:.72rem;padding:11px 13px}
+  .evs-start-footer{padding-top:.68rem}
+  .evs-primary,.evs-secondary{min-height:44px}
+}
+@media(min-width:1181px){
+  .evs-shell{grid-template-columns:minmax(320px,.78fr) minmax(0,1.42fr)}
+}
+@media(min-width:981px) and (max-width:1180px){
+  .evs-shell{grid-template-columns:minmax(300px,.68fr) minmax(590px,1.32fr);gap:16px}
+}
+@media(max-width:760px) and (min-width:651px){
+  .evs-frame{grid-template-rows:36px minmax(0,1fr)}
+  .evs-shell{gap:6px;padding:5px 0 8px}
+  .evs-workspace{grid-template-rows:62px minmax(0,1fr)}
+  .evs-workspace-body.is-intro{padding:15px 19px 13px}
+}
+@media(max-width:650px){
+  body.ev-survey-active .site-header{
+    height:52px!important;
+    min-height:52px!important;
+    margin:6px 8px 0!important;
+    padding:0 10px!important;
+    border-radius:14px!important;
+  }
+  body.ev-survey-active .mobile-menu{top:64px;left:8px;right:8px;max-height:calc(100dvh - 72px)}
+  .evs-workspace-body.is-intro{padding:12px 13px 16px}
+  .evs-workspace-body.is-intro .evs-start h2{font-size:clamp(1.55rem,5.5vw,1.8rem)}
+  .evs-workspace-body.is-intro .evs-brief-grid small{display:block}
+  .evs-workspace-body.is-intro .evs-start-footer{padding-top:.75rem}
+  .evs-legal-links{display:flex;margin-top:.38rem;font-size:.66rem}
+}
+@media(max-width:380px){
+  .evs-workspace-body.is-intro .evs-start-note{display:block}
+  .evs-workspace-body.is-intro .evs-brief-grid>div{padding:9px 10px}
+}
+@media(max-height:620px) and (min-width:651px){
+  .evs-frame{grid-template-rows:32px minmax(0,1fr)}
+  .evs-shell{padding-top:4px;padding-bottom:7px}
+  .evs-workspace{grid-template-rows:54px minmax(0,1fr)}
+  .evs-phase-item{padding-block:6px}
+  .evs-workspace-body.is-intro{padding-top:11px;padding-bottom:11px}
+}
