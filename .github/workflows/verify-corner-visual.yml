@@ -179,6 +179,8 @@ jobs:
           node corner/tests/navigation-companion-browser.mjs
       - name: Verify Marginalia Journal Series chapter layouts on phone and desktop
         run: node corner/tests/journal-series-browser.mjs
+      - name: Diwali 2026 — first-party decorations, exact expiry, UHD and reduced-motion browser acceptance
+        run: node corner/tests/diwali-2026-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4
