@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Glowing clay diya">
+ <defs>
+  <radialGradient id="halo"><stop stop-color="#ffcc70" stop-opacity=".55"/><stop offset=".5" stop-color="#ffc879" stop-opacity=".18"/><stop offset="1" stop-color="#ffcb88" stop-opacity="0"/></radialGradient>
+  <linearGradient id="flame" x1=".25" y1="1" x2=".75" y2="0"><stop stop-color="#ef8b21"/><stop offset=".42" stop-color="#ffb835"/><stop offset="1" stop-color="#ffe6a1"/></linearGradient>
+  <linearGradient id="clay" x1=".12" y1="0" x2=".87" y2="1"><stop stop-color="#d78647"/><stop offset=".42" stop-color="#af582d"/><stop offset="1" stop-color="#793e29"/></linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#f4bc76"/><stop offset=".55" stop-color="#e1984c"/><stop offset="1" stop-color="#bd6936"/></linearGradient>
+  <filter id="aura" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+ </defs>
+ <circle cx="128" cy="112" r="118" fill="url(#halo)"/>
+ <ellipse cx="128" cy="205" rx="85" ry="13" fill="#714327" opacity=".16"/>
+ <path d="M128 24C135 54 160 68 154 101C151 123 140 140 128 142C113 137 103 118 105 101C107 78 121 60 128 24Z" fill="#f5a63d" opacity=".5" filter="url(#aura)"/>
+ <path d="M128 30C135 59 150 70 150 94C150 117 141 132 128 137C113 129 106 114 107 96C107 79 121 59 128 30Z" fill="url(#flame)"/>
+ <path d="M129 72C133 89 138 99 134 111C132 120 129 123 126 124C119 118 118 110 121 100C123 90 127 82 129 72Z" fill="#fff3c5"/>
+ <path d="M119 136H137L142 157H113Z" fill="#683b26"/>
+ <path d="M32 159C36 182 56 205 84 209H174C201 204 222 183 224 159C194 173 65 173 32 159Z" fill="url(#clay)" stroke="#814127" stroke-width="3"/>
+ <path d="M31 158Q128 175 225 158Q215 151 199 150H56Q41 152 31 158Z" fill="url(#rim)" stroke="#9c4d28" stroke-width="2"/>
+ <path d="M52 179C92 194 170 198 204 178" fill="none" stroke="#f3bb75" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+ <path d="M78 196Q96 209 128 211Q161 209 179 196" fill="none" stroke="#ffce82" stroke-opacity=".4" stroke-width="2"/>
+ <circle cx="128" cy="192" r="5" fill="#f1bc76" opacity=".85"/>
+ <path d="M113 192h-13m43 0h13M128 180v-6m0 36v-7" fill="none" stroke="#f1b674" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+ </svg>
