@@ -88,8 +88,10 @@
   const toggle=ribbon.querySelector('[data-corner-diwali-mode]');
   toggle.textContent=hidden?'Diwali mode: off':'Diwali mode: on';
   toggle.setAttribute('aria-pressed',String(!hidden));
+  toggle.setAttribute('aria-label',hidden?'Enable Diwali decorations':'Disable Diwali decorations');
   const celebrate=ribbon.querySelector('[data-corner-diwali-celebrate]');
   celebrate.hidden=hidden||reduce();
+  celebrate.setAttribute('aria-label','Celebrate with a small sparkle burst');
   if(canMove())startCanvas();
   else stopCanvas();
  }
