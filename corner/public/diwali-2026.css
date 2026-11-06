@@ -139,3 +139,48 @@ html[data-corner-motion-level="minimal"] .corner-diwali-canvas{display:none!impo
  .corner-diwali-sub,.corner-diwali-kicker{color:#33251b}
  .corner-diwali-actions button{border-width:2px}
 }
+
+
+/* Festival polish: keep the mobile greeting on a single quiet row,
+   with 44px accessible actions and no garland behind the text. */
+html[data-corner-diwali="on"] .corner-diwali-ribbon:before{
+ height:13px;opacity:.21;background-position:center -8px;
+}
+@media(max-width:720px){
+ .corner-diwali-ribbon__inner{
+  width:calc(100% - 24px);min-height:62px;padding:9px 0;
+  gap:8px;flex-wrap:nowrap;
+ }
+ .corner-diwali-lamp{width:38px;height:38px;border-radius:12px}
+ .corner-diwali-copy{flex:1 1 auto;min-width:0}
+ .corner-diwali-kicker,.corner-diwali-sub{display:none}
+ .corner-diwali-copy strong{
+  font-size:clamp(11px,3.6vw,13px);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;
+ }
+ .corner-diwali-actions{
+  display:flex;flex:none;flex-wrap:nowrap;gap:5px;
+  width:auto;margin:0;justify-content:flex-end;
+ }
+ .corner-diwali-actions button{
+  position:relative;display:grid;place-items:center;flex:none;
+  width:44px;min-width:44px;height:44px;min-height:44px;
+  padding:0;font-size:0;line-height:1;border-radius:15px;
+ }
+ .corner-diwali-actions button:after{
+  content:"✦";font:700 19px/1 system-ui,sans-serif;
+ }
+ .corner-diwali-actions button[data-corner-diwali-mode]:after{
+  content:"◐";font-size:22px;
+ }
+ .corner-diwali-ribbon.is-muted .corner-diwali-actions button[data-corner-diwali-mode]:after{
+  content:"☼";
+ }
+}
+@media(max-width:359px){
+ .corner-diwali-ribbon__inner{width:calc(100% - 18px);gap:6px}
+ .corner-diwali-lamp{width:34px;height:34px;border-radius:10px}
+ .corner-diwali-copy strong{font-size:11px}
+ .corner-diwali-actions button{width:40px;min-width:40px;height:44px}
+}
