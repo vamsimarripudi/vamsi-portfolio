@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiArrowRight, FiCheck, FiCheckCircle, FiChevronRight, FiClock, FiLock, FiRotateCcw, FiShield, FiUsers, FiWifiOff, FiZap } from 'react-icons/fi';
 import { SURVEY_QUESTIONS, SURVEY_SECTIONS, SURVEY_VERSION, validateSurveyAnswers } from '../shared/ev-survey.mjs';
@@ -47,6 +47,22 @@ function Option({ selected, children, onClick, multiple = false }) {
 }
 
 function QuestionInput({ question, answer, onChange, onAdvance }) {
+  const textareaRef = useRef(null);
+  useLayoutEffect(() => {
+    if (question.type !== 'long' || !textareaRef.current) return;
+    const field = textareaRef.current;
+    const resize = () => {
+      field.style.height = 'auto';
+      // Keep a short initial field; grow with multiline answers, then scroll inside.
+      const cap = Math.max(94, Math.min(240, Math.floor(window.innerHeight * .32)));
+      const natural = field.scrollHeight + 2;
+      field.style.height = Math.min(Math.max(96, natural), cap) + 'px';
+      field.style.overflowY = natural > cap ? 'auto' : 'hidden';
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [question.id, question.type, answer]);
   if (question.type === 'single') return <div className="evs-options" role="group" aria-label={question.title}>{question.options.map((option) =>
     <Option key={option} selected={answer === option} onClick={() => onChange(option)}>{option}</Option>
   )}</div>;
@@ -60,7 +76,7 @@ function QuestionInput({ question, answer, onChange, onAdvance }) {
     }}>{option}</Option>
   )}</div></>;
   return question.type === 'long'
-    ? <textarea id={'evs-'+question.id} className="evs-textfield evs-textarea" rows={5} maxLength={1500} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>
+    ? <textarea id={'evs-'+question.id} className="evs-textfield evs-textarea" ref={textareaRef} rows={3} maxLength={1500} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>
     : <input id={'evs-'+question.id} className="evs-textfield" type={question.type === 'phone' ? 'tel' : 'text'} inputMode={question.type === 'phone' ? 'tel' : undefined} autoComplete={question.type === 'phone' ? 'tel-national' : 'off'} enterKeyHint="next" onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); onAdvance(); } }} maxLength={question.type === 'phone' ? 20 : 120} placeholder={question.placeholder || 'Your answer'} value={answer || ''} onChange={event => onChange(event.target.value)}/>;
 }
 
@@ -234,7 +250,8 @@ export default function EVSurvey() {
                 {error && <div className="evs-error" role="alert">{error}</div>}
                 <div className="evs-actions"><button className="evs-secondary" type="button" onClick={back}><FiArrowLeft/> Back</button><button className="evs-primary" type="button" onClick={submit} disabled={busy}>{busy ? 'Submitting securely…' : 'Submit interview'} <FiCheck/></button></div>
               </div> : <div className="evs-card evs-question" key={current.id}>
-                <div className="evs-question-heading">
+                <div className="evs-question-scroll">
+                  <div className="evs-question-heading">
                   <p className="evs-kicker">{current.section.toUpperCase()} <span>/</span> {String(index+1).padStart(2,'0')}</p>
                   <h1 tabIndex={-1} ref={headingRef}>{current.title}</h1>
                   {current.help && <p className="evs-subcopy">{current.help}</p>}
@@ -245,6 +262,7 @@ export default function EVSurvey() {
                   {current.id === 'participant_phone' && draft.answers.follow_up_permission !== 'Yes, contact me once about this EV research' ? <p className="evs-no-contact">The owner declined follow-up, so no mobile number is requested. Continue to the next question.</p> : <QuestionInput question={current} answer={draft.answers[current.id]} onChange={answer} onAdvance={next}/>}
                 </div>
                 {error && <div role="alert" className="evs-error">{error}</div>}
+                </div>
                 <div className="evs-actions"><button className="evs-secondary" type="button" onClick={back}><FiArrowLeft/> Back</button><span className="evs-auto-save">Draft saved on this device</span><button type="button" className="evs-primary" onClick={next}>{index === SURVEY_QUESTIONS.length - 1 ? 'Review answers' : 'Next question'} <FiArrowRight/></button></div>
               </div>}
 
