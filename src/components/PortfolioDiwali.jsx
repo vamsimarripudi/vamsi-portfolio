@@ -175,7 +175,7 @@ export default function PortfolioDiwali() {
     <div className="portfolio-diwali" aria-hidden="true" data-portfolio-diwali="2026">
       <div className="portfolio-diwali__gold-frame"/>
       <div className="portfolio-diwali__wire" aria-hidden="true">
-        {Array.from({ length: 22 }, (_, index) => <span key={index} style={{ '--diwali-bulb': index }}/>) }
+        {Array.from({ length: 22 }, (_, index) => <span key={index} style={{ '--bulb-delay': `${index * 105}ms` }}/>) }
       </div>
       <div className="portfolio-diwali__garland"/>
       <img className="portfolio-diwali__lantern portfolio-diwali__lantern--left"
