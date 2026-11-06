@@ -175,6 +175,17 @@ main#main:has(> .portfolio-diwali) > section.hero.hero-identity {
   .portfolio-diwali{height:calc(100svh + 70px)}
 }
 
+/* Keep the full diya bowl and the fine gold perimeter line visible inside
+   the first screen, rather than clipped beneath the viewport fold. */
+.portfolio-diwali__gold-frame{bottom:82px}
+.portfolio-diwali__lower-wire{bottom:82px}
+.portfolio-diwali__diya{bottom:calc(2% + 82px)}
+.portfolio-diwali__rangoli{bottom:calc(4% + 82px)}
+@media(max-width:620px){
+  .portfolio-diwali__gold-frame{bottom:70px}
+  .portfolio-diwali__lower-wire{bottom:70px}
+}
+
 /* Thin gilded frame: decorates the edges but never changes colour tokens,
    overlays buttons, or creates an additional page-wide background. */
 .portfolio-diwali__gold-frame{
