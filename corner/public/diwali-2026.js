@@ -13,6 +13,7 @@
  try{hidden=localStorage.getItem(KEY)==='off'}catch{/* Storage may be unavailable in restricted browsers. */}
  let ribbon=null,canvas=null,ctx=null,tickTimer=0,burstTimer=0,raf=0,lastFrame=0;
  let particles=[];
+ let quicklinks=null,alteredHeadings=[];
  function validTime(){const now=Date.now();return now>=START&&now<END}
  function reduce(){return pref.matches||!!network?.saveData||window.CornerMotionPolicy?.isReduced?.()===true}
  function canMove(){return validTime()&&!hidden&&!reduce()&&!document.hidden&&root.dataset.v6Reading!=='focus'}
@@ -79,12 +80,44 @@
    if(canMove())burst(innerWidth*(Math.random()<.5?.16:.84),Math.max(80,innerHeight*.18));
   },12500);
  }
+
+ // Match the approved editorial mock while showing the visitor's ACTUAL posts.
+ // Keep every change reversible: opt-out and deadline both restore old text.
+ const basePath=new URL('.',document.currentScript?.src||location.href).pathname.replace(/\/$/,'');
+ function decorateHome(enabled){
+  if(!document.querySelector('.corner-home-shell'))return;
+  if(!enabled){
+   if(quicklinks){quicklinks.remove();quicklinks=null}
+   for(const [element,previous] of alteredHeadings)element.textContent=previous;
+   alteredHeadings=[];
+   return;
+  }
+  if(quicklinks)return;
+  const right=document.querySelector('.corner-public-header .header-right');
+  if(right){
+   quicklinks=document.createElement('nav');
+   quicklinks.className='corner-diwali-quicklinks';
+   quicklinks.setAttribute('aria-label','Explore Corner collections');
+   for(const [name,to] of [['Latest','/'],['Builds','/category/builds'],['Notes','/category/notes']]){
+    const a=document.createElement('a');
+    a.href=basePath+(to==='/'?'/':to);
+    a.textContent=name;
+    quicklinks.appendChild(a);
+   }
+   right.insertBefore(quicklinks,right.querySelector('[data-search-open]'));
+  }
+  for(const [selector,label] of [['#corner-explore-title','A place for everything.'],['#feed-heading','Recent stories.']]){
+   const element=document.querySelector(selector);
+   if(element){alteredHeadings.push([element,element.textContent]);element.textContent=label}
+  }
+ }
  function refresh(){
   if(!ribbon)return;
   if(!validTime()){cleanup();return}
   root.dataset.cornerDiwali=hidden?'off':'on';
   root.dataset.cornerDiwaliMotion=canMove()?'on':'off';
   ribbon.classList.toggle('is-muted',hidden);
+  decorateHome(!hidden);
   const toggle=ribbon.querySelector('[data-corner-diwali-mode]');
   toggle.textContent=hidden?'Diwali mode: off':'Diwali mode: on';
   toggle.setAttribute('aria-pressed',String(!hidden));
@@ -96,6 +129,7 @@
   else stopCanvas();
  }
  function cleanup(){
+  decorateHome(false);
   if(tickTimer){clearTimeout(tickTimer);tickTimer=0}
   stopCanvas();
   if(ribbon){ribbon.remove();ribbon=null}
