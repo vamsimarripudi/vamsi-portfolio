@@ -40,10 +40,18 @@ try {
         controlHeight: control?.getBoundingClientRect().height ?? 0,
         controlFont: control ? parseFloat(getComputedStyle(control).fontSize) : 0,
         stageDisplay: getComputedStyle(stage).display,
+        viewportHeight: window.innerHeight,
+        workspaceRect: document.querySelector('.evs-workspace').getBoundingClientRect().toJSON(),
       };
     });
     assert.ok(layout.scrollWidth <= layout.width + 1, profile.name + ' question must not overflow horizontally');
     assert.ok(layout.buttonHeight >= 44, profile.name + ' primary button has touch target');
+    assert.ok(layout.dockRect.top >= -1 && layout.dockRect.bottom <= layout.viewportHeight + 1,
+      profile.name + ' navigation actions must remain visible in the viewport');
+    if (!phone) {
+      assert.ok(layout.dockRect.bottom <= layout.workspaceRect.bottom + 1,
+        profile.name + ' navigation actions must stay inside the interview card');
+    }
     if (phone) {
       assert.equal(layout.dock, 'fixed', profile.name + ' next action should remain visible');
       assert.equal(layout.stageDisplay, 'flex', profile.name + ' compact stage indicator should show');
@@ -66,7 +74,20 @@ try {
       } else {
         const input = page.locator('#evs-' + question.id);
         await input.fill(question.id === 'city' ? 'Hyderabad' : question.id === 'ev_model' ? 'Tata Nexon EV' : question.id === 'participant_phone' ? '9876543210' : 'Sample interview answer for testing the form.');
+        if (question.type === 'long') {
+          const initialHeight = await input.evaluate(el => el.getBoundingClientRect().height);
+          await input.fill('Detailed owner experience during a recent trip. '.repeat(22));
+          const expandedHeight = await input.evaluate(el => el.getBoundingClientRect().height);
+          assert.ok(expandedHeight > initialHeight + 8, profile.name + ' textarea should auto-grow with a longer answer');
+          assert.ok(expandedHeight <= 241, profile.name + ' textarea should cap its height');
+        }
       }
+      const nextButtonPosition = await page.locator('.evs-actions .evs-primary').evaluate(el => {
+        const bounds = el.getBoundingClientRect();
+        return { top: bounds.top, bottom: bounds.bottom, viewportHeight: window.innerHeight };
+      });
+      assert.ok(nextButtonPosition.top >= -1 && nextButtonPosition.bottom <= nextButtonPosition.viewportHeight + 1,
+        profile.name + ' Next/Review action must stay visible on question ' + question.id);
       if (question.id === 'ev_model' && profile.name === 'mobile-small') {
         await page.locator('#evs-ev_model').press('Enter');
       } else {
