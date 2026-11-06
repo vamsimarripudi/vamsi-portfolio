@@ -152,3 +152,246 @@
 @media print {
   .portfolio-diwali{display:none!important}
 }
+
+
+/* Approved final Diwali design: the existing homepage hero fills the complete
+   first viewport together with its unchanged header. Limited to 24h DOM. */
+main#main:has(> .portfolio-diwali) > section.hero.hero-identity {
+  min-height:100svh!important;
+  align-content:center;
+}
+@media(max-width:620px){
+  main#main:has(> .portfolio-diwali) > section.hero.hero-identity{
+    min-height:100svh!important;
+  }
+}
+
+/* The overlay itself spans the header plus the full hero. This ensures
+   the bottom gold wire stays on the hero edge instead of floating mid-hero. */
+.portfolio-diwali{
+  height:calc(100svh + 82px);
+}
+@media(max-width:620px){
+  .portfolio-diwali{height:calc(100svh + 70px)}
+}
+
+/* Keep the full diya bowl and the fine gold perimeter line visible inside
+   the first screen, rather than clipped beneath the viewport fold. */
+.portfolio-diwali__gold-frame{bottom:82px}
+.portfolio-diwali__lower-wire{bottom:82px}
+.portfolio-diwali__diya{bottom:calc(2% + 82px)}
+.portfolio-diwali__rangoli{bottom:calc(4% + 82px)}
+@media(max-width:620px){
+  .portfolio-diwali__gold-frame{bottom:70px}
+  .portfolio-diwali__lower-wire{bottom:70px}
+}
+
+/* Thin gilded frame: decorates the edges but never changes colour tokens,
+   overlays buttons, or creates an additional page-wide background. */
+.portfolio-diwali__gold-frame{
+  position:absolute;
+  inset:0 clamp(6px,.75vw,22px) 0;
+  opacity:.52;
+  border-left:1px solid rgba(204,151,71,.37);
+  border-right:1px solid rgba(204,151,71,.37);
+  border-bottom:1px solid rgba(204,151,71,.55);
+  border-radius:0 0 9px 9px;
+}
+.portfolio-diwali__gold-frame::after{
+  content:"";
+  position:absolute;
+  inset:auto 16% -1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(244,196,110,.73),transparent);
+  opacity:.65;
+}
+.portfolio-diwali__wire{
+  position:absolute;
+  inset:0 0 auto;
+  z-index:4;
+  height:33px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding:0 clamp(13px,2vw,58px);
+  overflow:hidden;
+}
+.portfolio-diwali__wire::before{
+  content:"";
+  position:absolute;
+  inset:0 2px auto;
+  height:21px;
+  border-bottom:1px solid rgba(178,119,46,.59);
+  border-radius:0 0 50% 50%;
+}
+.portfolio-diwali__wire span{
+  position:relative;
+  display:block;
+  flex:none;
+  width:4px;height:7px;
+  top:17px;
+  border-radius:55% 55% 60% 60%;
+  background:#ffd68d;
+  opacity:.55;
+  box-shadow:0 0 7px 2px rgba(252,203,108,.23);
+}
+.portfolio-diwali__wire span::before{
+  content:"";
+  position:absolute;
+  top:-3px;left:1px;
+  width:2px;height:3px;
+  border-radius:1px;
+  background:#b87c39;
+}
+.portfolio-diwali__lower-wire{
+  position:absolute;
+  left:clamp(7px,.95vw,27px);
+  right:clamp(7px,.95vw,27px);
+  bottom:0;
+  height:2px;
+  background:linear-gradient(90deg,
+    transparent,rgba(226,164,78,.24) 15%,rgba(248,210,145,.63) 50%,
+    rgba(226,164,78,.24) 85%,transparent);
+  opacity:.65;
+  overflow:hidden;
+}
+.portfolio-diwali__lower-wire::after{
+  content:"";
+  position:absolute;
+  left:-12%;
+  top:0;
+  width:12%;
+  height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,240,200,.8),transparent);
+  opacity:.5;
+  transform:translateX(0);
+}
+
+/* Refinement: soft lights and no heavy festival billboard. */
+.portfolio-diwali__garland{
+  opacity:.55;
+  filter:none;
+}
+.portfolio-diwali__lantern{
+  opacity:.76;
+  filter:drop-shadow(0 6px 12px rgba(182,121,44,.12));
+}
+.portfolio-diwali__diya{
+  filter:drop-shadow(0 8px 12px rgba(184,112,40,.15));
+  opacity:.84;
+}
+.portfolio-diwali__rangoli{
+  opacity:.33;
+  filter:none;
+}
+.portfolio-diwali__sparks{opacity:.5;}
+
+/* A choreographed entrance, then an unobtrusive living ambience.
+   Repeated motion is compositor-friendly opacity/transform only. */
+@keyframes vm-diwali-wire-arrive{
+  0%{opacity:0;transform:translateY(-4px)}
+  100%{opacity:.85;transform:translateY(0)}
+}
+@keyframes vm-diwali-garland-arrive{
+  0%{opacity:0;transform:translateY(-5px)}
+  100%{opacity:.55;transform:translateY(0)}
+}
+@keyframes vm-diwali-lantern-arrive{
+  0%{opacity:0;transform:translateY(-8px)}
+  100%{opacity:.76;transform:translateY(0)}
+}
+@keyframes vm-diwali-diya-arrive{
+  0%{opacity:0;transform:translateY(8px) scale(.96)}
+  100%{opacity:.84;transform:translateY(0) scale(1)}
+}
+@keyframes vm-diwali-rangoli-arrive{
+  0%{opacity:0;transform:rotate(-12deg) scale(.91)}
+  100%{opacity:.33;transform:rotate(-12deg) scale(1)}
+}
+@keyframes vm-diwali-bulb-breathe{
+  0%,100%{opacity:.48;transform:scale(.86)}
+  50%{opacity:.86;transform:scale(1)}
+}
+@keyframes vm-diwali-bottom-glide{
+  0%{transform:translateX(0);opacity:0}
+  12%{opacity:.45}
+  85%{opacity:.45}
+  100%{transform:translateX(950%);opacity:0}
+}
+@keyframes vm-diwali-diya-sway{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-1.5px)}
+}
+@keyframes vm-diwali-rangoli-breathe{
+  0%,100%{opacity:.27;transform:rotate(-12deg) scale(.992)}
+  50%{opacity:.38;transform:rotate(-12deg) scale(1.008)}
+}
+@media(prefers-reduced-motion:no-preference){
+  .portfolio-diwali__wire{
+    animation:vm-diwali-wire-arrive .8s ease-out both;
+  }
+  .portfolio-diwali__wire span{
+    animation:vm-diwali-bulb-breathe 5.4s ease-in-out infinite;
+    animation-delay:var(--bulb-delay,0ms);
+  }
+  .portfolio-diwali__garland{
+    animation:vm-diwali-garland-arrive 1.2s .15s ease-out both;
+  }
+  .portfolio-diwali__lantern--left{
+    animation:vm-diwali-lantern-arrive 1.15s .48s ease-out both,
+      vm-diwali-lantern-sway 7.3s 1.65s ease-in-out infinite;
+  }
+  .portfolio-diwali__lantern--right{
+    animation:vm-diwali-lantern-arrive 1.2s .75s ease-out both,
+      vm-diwali-lantern-sway 8.6s 1.95s ease-in-out infinite reverse;
+  }
+  .portfolio-diwali__diya--left{
+    animation:vm-diwali-diya-arrive .9s 1.08s ease-out both,
+      vm-diwali-diya-sway 3.8s 2s ease-in-out infinite;
+  }
+  .portfolio-diwali__diya--right{
+    animation:vm-diwali-diya-arrive .9s 1.25s ease-out both,
+      vm-diwali-diya-sway 4.2s 2.1s ease-in-out infinite reverse;
+  }
+  .portfolio-diwali__rangoli{
+    animation:vm-diwali-rangoli-arrive 1.4s 1.45s ease-out both,
+      vm-diwali-rangoli-breathe 8s 3s ease-in-out infinite;
+  }
+  .portfolio-diwali__lower-wire::after{
+    animation:vm-diwali-bottom-glide 14s 2.8s linear infinite;
+  }
+}
+@media(max-width:1500px){
+  /* Protect the unchanged header brand and CTAs from decorative overlap. */
+  .portfolio-diwali__lantern{top:80px;width:clamp(50px,4.3vw,64px);opacity:.62}
+}
+@media(max-width:900px){
+  .portfolio-diwali__wire{height:28px;padding-inline:9px}
+  .portfolio-diwali__wire span:nth-child(n+17){display:none}
+  .portfolio-diwali__lantern{top:85px;width:48px}
+  .portfolio-diwali__garland{opacity:.4}
+  .portfolio-diwali__gold-frame{opacity:.32}
+}
+@media(max-width:620px){
+  .portfolio-diwali__wire{height:22px}
+  .portfolio-diwali__wire span{top:12px;width:3px;height:5px}
+  .portfolio-diwali__wire span:nth-child(n+15){display:none}
+  .portfolio-diwali__gold-frame{opacity:.21}
+  .portfolio-diwali__lower-wire{opacity:.33}
+}
+@media(prefers-reduced-motion:reduce), (forced-colors:active){
+  .portfolio-diwali__wire span,
+  .portfolio-diwali__lower-wire::after{
+    animation:none!important;transition:none!important;
+  }
+}
+@media(prefers-contrast:more),(forced-colors:active){
+  .portfolio-diwali__gold-frame,
+  .portfolio-diwali__wire,
+  .portfolio-diwali__lower-wire{display:none!important}
+}
+@media print {
+  main#main:has(> .portfolio-diwali) > section.hero.hero-identity{
+    min-height:auto!important;
+  }
+}

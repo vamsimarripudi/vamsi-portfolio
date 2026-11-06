@@ -71,18 +71,45 @@ try {
     const during=await geometry(active.page);
     assert.equal(during.bg,before.bg,'background token preserved '+size.width);
     assert.equal(during.accent,before.accent,'accent token preserved '+size.width);
-    for(const section of ['header','hero']){
-      for(const dim of ['x','y','w','h']){
-        assert.ok(Math.abs(during[section][dim]-before[section][dim])<=1,
-          'Portfolio layout changed '+size.width+' '+section+' '+dim+
-          ' before='+JSON.stringify(before[section])+' after='+JSON.stringify(during[section]));
-      }
+    // The new full-screen hero height is the ONLY approved layout change.
+    // Header and hero position/width remain byte-for-byte in the visual layout.
+    for(const dim of ['x','y','w','h']){
+      assert.ok(Math.abs(during.header[dim]-before.header[dim])<=1,
+        'Header moved '+size.width+' '+dim+
+        ' before='+JSON.stringify(before.header)+' after='+JSON.stringify(during.header));
     }
+    for(const dim of ['x','y','w']){
+      assert.ok(Math.abs(during.hero[dim]-before.hero[dim])<=1,
+        'Hero content changed horizontal geometry or start position '+size.width+' '+dim);
+    }
+    const minHero = size.height;
+    assert.ok(during.hero.h+1>=minHero,
+      'Full-viewport hero does not reach the viewport fold '+size.width+': '+JSON.stringify(during));
+    assert.ok(during.hero.h+1>=before.hero.h,
+      'Festival cannot shorten the original hero at '+size.width);
+    assert.ok(during.hero.y+during.hero.h+1>=size.height,
+      'Hero plus header must cover one first screen at '+size.width);
     assert.ok(during.scroll<=during.viewport+1,'horizontal overflow '+size.width+': '+during.scroll);
     assert.equal(await active.page.locator('.portfolio-diwali').evaluate(e=>getComputedStyle(e).pointerEvents),'none');
     assert.equal(await active.page.locator('.portfolio-diwali__garland').count(),1);
     assert.equal(await active.page.locator('.portfolio-diwali__lantern').count(),2);
     assert.equal(await active.page.locator('.portfolio-diwali__diya').count(),2);
+    assert.equal(await active.page.locator('.portfolio-diwali__wire span').count(),22);
+    assert.equal(await active.page.locator('.portfolio-diwali__gold-frame').count(),1);
+    assert.equal(await active.page.locator('.portfolio-diwali__lower-wire').count(),1);
+    if(size.width>=1000){
+      const diya=await active.page.locator('.portfolio-diwali__diya--left').boundingBox();
+      assert.ok(diya && diya.y+diya.height<=size.height-7,
+        'Entire diya must appear above first-screen fold '+size.width+': '+JSON.stringify(diya));
+    }
+    if(size.width>=1000){
+      const lanternAnimation=await active.page.locator('.portfolio-diwali__lantern--left')
+        .evaluate(el=>getComputedStyle(el).animationName);
+      assert.match(lanternAnimation,/vm-diwali-lantern-arrive/);
+      const bulbAnimation=await active.page.locator('.portfolio-diwali__wire span').first()
+        .evaluate(el=>getComputedStyle(el).animationName);
+      assert.match(bulbAnimation,/vm-diwali-bulb-breathe/);
+    }
     assert.doesNotMatch(await active.page.locator('body').innerText(),/Happy Diwali|Diwali greetings/i);
     if([390,1920,3840].includes(size.width)) {
       await active.page.screenshot({path:'screenshots/portfolio-diwali/home-'+size.width+'.png',
@@ -109,6 +136,8 @@ try {
   const reduced=await open('2026-11-08T07:30:00.000Z',{width:390,height:844},{reduced:true});
   await reduced.page.locator('.portfolio-diwali').waitFor();
   assert.equal(await reduced.page.locator('.portfolio-diwali__sparks').evaluate(e=>getComputedStyle(e).display),'none');
+  assert.equal(await reduced.page.locator('.portfolio-diwali__wire span').first().evaluate(e=>getComputedStyle(e).animationName),'none');
+  assert.equal(await reduced.page.locator('.portfolio-diwali__lower-wire').evaluate(e=>getComputedStyle(e,'::after').animationName),'none');
   assert.equal(await reduced.page.locator('.portfolio-diwali__lantern').first().evaluate(e=>getComputedStyle(e).animationName),'none');
   await reduced.context.close();
 
