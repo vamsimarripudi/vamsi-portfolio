@@ -145,6 +145,10 @@
  document.addEventListener('corner:motion-preference-change',refresh);
  window.addEventListener('pageshow',checkWindow);
  window.addEventListener('resize',sizeCanvas,{passive:true});
+ // V6 Focus Reading can be toggled without navigation. Stop visual work
+ // immediately while long-form reading is in focus.
+ const readingObserver=new MutationObserver(refresh);
+ readingObserver.observe(root,{attributes:true,attributeFilter:['data-v6-reading']});
  pref.addEventListener?.('change',refresh);
  network?.addEventListener?.('change',refresh);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',checkWindow,{once:true});
