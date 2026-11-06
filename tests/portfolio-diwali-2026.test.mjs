@@ -37,8 +37,8 @@ test('portfolio identity, layout and palette remain unchanged; the festival exis
   assert.doesNotMatch(styles, /:root\s*\{|#root\s*\{|\.site-header\s*\{|\.hero\s*\{|html\s*\{|body\s*\{/);
   assert.match(styles, /#main:has\(> \.portfolio-diwali\)/);
   assert.match(styles, /main#main:has\(> \.portfolio-diwali\) > section\.hero\.hero-identity/);
-  assert.match(styles, /min-height:calc\(100svh - 82px\)/);
-  assert.match(styles, /min-height:calc\(100svh - 70px\)/);
+  assert.match(styles, /min-height:100svh!important/);
+  assert.match(styles, /height:calc\(100svh \+ 70px\)/);
   assert.match(styles, /portfolio-diwali__gold-frame/);
   assert.match(styles, /portfolio-diwali__wire/);
   assert.match(styles, /portfolio-diwali__lower-wire/);
