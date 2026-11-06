@@ -181,6 +181,8 @@ jobs:
         run: node corner/tests/journal-series-browser.mjs
       - name: Diwali 2026 — first-party decorations, exact expiry, UHD and reduced-motion browser acceptance
         run: node corner/tests/diwali-2026-browser.mjs
+      - name: Verify mock-fidelity real Corner homepage at phone, desktop and 4K
+        run: node corner/tests/diwali-2026-home-browser.mjs
       - name: Upload responsive screenshots
         if: always()
         uses: actions/upload-artifact@v4
