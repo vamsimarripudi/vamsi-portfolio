@@ -36,6 +36,17 @@ test('portfolio identity, layout and palette remain unchanged; the festival exis
   assert.match(palette, /:root\{--bg:#f7f6f2;--surface:#efeee9;--ink:#171816;--muted:#686a63;--line:#cfcec5;--accent:#db4c2f;--lime:#bedb57/);
   assert.doesNotMatch(styles, /:root\s*\{|#root\s*\{|\.site-header\s*\{|\.hero\s*\{|html\s*\{|body\s*\{/);
   assert.match(styles, /#main:has\(> \.portfolio-diwali\)/);
+  assert.match(styles, /main#main:has\(> \.portfolio-diwali\) > section\.hero\.hero-identity/);
+  assert.match(styles, /min-height:calc\(100svh - 82px\)/);
+  assert.match(styles, /min-height:calc\(100svh - 70px\)/);
+  assert.match(styles, /portfolio-diwali__gold-frame/);
+  assert.match(styles, /portfolio-diwali__wire/);
+  assert.match(styles, /portfolio-diwali__lower-wire/);
+  assert.match(styles, /vm-diwali-wire-arrive/);
+  assert.match(styles, /vm-diwali-lantern-arrive/);
+  assert.match(styles, /vm-diwali-rangoli-arrive/);
+  assert.match(styles, /vm-diwali-bulb-breathe/);
+  assert.match(decoration, /length: 22/);
   assert.match(styles, /pointer-events:none/);
   assert.match(styles, /prefers-reduced-motion:reduce/);
   assert.match(styles, /max-width:620px/);
