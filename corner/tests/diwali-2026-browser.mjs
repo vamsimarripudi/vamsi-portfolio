@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdirSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
@@ -49,6 +49,10 @@ try{
   assert.equal(await page.locator('article').innerText(),'Original article stays readable.');
   const w=await page.evaluate(()=>[document.documentElement.scrollWidth,innerWidth]);
   assert.ok(w[0]<=w[1]+1,'overflow at '+viewport.width+': '+w);
+  if([390,3840].includes(viewport.width)){
+   mkdirSync('screenshots',{recursive:true});
+   await page.screenshot({path:'screenshots/diwali-isolated-'+viewport.width+'.png',fullPage:true,animations:'disabled'});
+  }
   await context.close();
   console.log('PASS '+viewport.width+'x'+viewport.height);
  }
