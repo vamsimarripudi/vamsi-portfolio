@@ -157,13 +157,22 @@
 /* Approved final Diwali design: the existing homepage hero fills the complete
    first viewport together with its unchanged header. Limited to 24h DOM. */
 main#main:has(> .portfolio-diwali) > section.hero.hero-identity {
-  min-height:calc(100svh - 82px)!important;
+  min-height:100svh!important;
   align-content:center;
 }
 @media(max-width:620px){
   main#main:has(> .portfolio-diwali) > section.hero.hero-identity{
-    min-height:calc(100svh - 70px)!important;
+    min-height:100svh!important;
   }
+}
+
+/* The overlay itself spans the header plus the full hero. This ensures
+   the bottom gold wire stays on the hero edge instead of floating mid-hero. */
+.portfolio-diwali{
+  height:calc(100svh + 82px);
+}
+@media(max-width:620px){
+  .portfolio-diwali{height:calc(100svh + 70px)}
 }
 
 /* Thin gilded frame: decorates the edges but never changes colour tokens,
