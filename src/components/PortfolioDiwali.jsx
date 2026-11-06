@@ -89,7 +89,7 @@ function FestivalSparks() {
 
     const burst = () => {
       if (!allowed()) return;
-      const count = width < 650 ? 10 : 18;
+      const count = width < 650 ? 8 : 16;
       const x = width * (.77 + Math.random() * .15);
       const y = Math.min(height * .24, 185 + Math.random() * 120);
       const palette = ['#ebad53', '#f5cf80', '#ffdca2', '#e3a057', '#b99076'];
@@ -115,8 +115,8 @@ function FestivalSparks() {
       if (!allowed()) return;
       resize();
       // Sparse, gentle sparks rather than a high-frequency screen-wide show.
-      initial = window.setTimeout(burst, 2400);
-      interval = window.setInterval(burst, 10_500);
+      initial = window.setTimeout(burst, 3100);
+      interval = window.setInterval(burst, 14_500);
     };
 
     resize();
@@ -173,6 +173,10 @@ export default function PortfolioDiwali() {
   if (!active) return null;
   return (
     <div className="portfolio-diwali" aria-hidden="true" data-portfolio-diwali="2026">
+      <div className="portfolio-diwali__gold-frame"/>
+      <div className="portfolio-diwali__wire" aria-hidden="true">
+        {Array.from({ length: 22 }, (_, index) => <span key={index} style={{ '--diwali-bulb': index }}/>) }
+      </div>
       <div className="portfolio-diwali__garland"/>
       <img className="portfolio-diwali__lantern portfolio-diwali__lantern--left"
         src={rootAsset + 'lantern.svg'} alt="" decoding="async" draggable="false"/>
@@ -186,6 +190,7 @@ export default function PortfolioDiwali() {
         src={rootAsset + 'diya.svg'} alt="" decoding="async" draggable="false"/>
       <img className="portfolio-diwali__rangoli"
         src={rootAsset + 'rangoli.svg'} alt="" decoding="async" draggable="false"/>
+      <div className="portfolio-diwali__lower-wire"/>
       <FestivalSparks/>
     </div>
   );
