@@ -5,6 +5,7 @@
  const START=Date.parse('2026-11-07T18:30:00.000Z');
  const END=Date.parse('2026-11-08T18:30:00.000Z');
  const KEY='corner-diwali-2026-mode';
+ const iconSrc=new URL('diwali-2026-diya.svg',document.currentScript?.src||location.href).href;
  const root=document.documentElement;
  const pref=window.matchMedia('(prefers-reduced-motion: reduce)');
  const network=navigator.connection;
@@ -23,7 +24,8 @@
  }
  function sizeCanvas(){
   if(!canvas||!ctx)return;
-  const scale=Math.min(window.devicePixelRatio||1,1.5);
+  const maxPixels=10_000_000; // Native 4K backing canvas without runaway HiDPI allocation.
+  const scale=Math.min(window.devicePixelRatio||1,1.5,Math.sqrt(maxPixels/Math.max(1,innerWidth*innerHeight)));
   canvas.width=Math.round(innerWidth*scale);
   canvas.height=Math.round(innerHeight*scale);
   ctx.setTransform(scale,0,0,scale,0,0);
@@ -105,7 +107,7 @@
   ribbon.setAttribute('aria-label','Diwali celebration');
   ribbon.innerHTML=
    '<div class="corner-diwali-ribbon__inner">'+
-    '<span class="corner-diwali-lamp" aria-hidden="true">🪔</span>'+
+    '<span class="corner-diwali-lamp" aria-hidden="true"><img src="'+iconSrc+'" width="49" height="49" alt="" decoding="async"></span>'+
     '<div class="corner-diwali-copy">'+
      '<span class="corner-diwali-kicker">వెలుగుల పండుగ · 8 NOVEMBER</span>'+
      '<strong>Happy Diwali from Vamsi’s Corner</strong>'+
