@@ -187,7 +187,7 @@ export default function EVSurvey() {
 
         <section className="evs-workspace" aria-label="EV owner interview form">
           <PhaseStepper active={phaseIndex}/>
-          <div className="evs-workspace-body">
+          <div className={`evs-workspace-body${!started && !complete ? ' is-intro' : ''}`}>
             {complete ? <section className="evs-card evs-complete" aria-live="polite">
               <span className="evs-success-icon"><FiCheckCircle/></span>
               <p className="evs-kicker">INTERVIEW SUBMITTED</p>
