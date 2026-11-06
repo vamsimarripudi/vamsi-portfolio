@@ -1,0 +1,154 @@
+/* Portfolio — Diwali 2026 ephemeral ornament layer.
+   Only the homepage mounts this DOM. No :root variables, site colours,
+   existing layout widths, typography, navigation or component styles change.
+   All decoration is pointer-events:none, aria-hidden and first-party SVG. */
+#main:has(> .portfolio-diwali) { position:relative; }
+
+.portfolio-diwali {
+  position:absolute;
+  inset:-82px 0 auto;
+  height:clamp(570px, 100svh, 2160px);
+  z-index:9;
+  pointer-events:none;
+  overflow:clip;
+  isolation:isolate;
+  contain:layout paint;
+}
+.portfolio-diwali *,
+.portfolio-diwali *::before,
+.portfolio-diwali *::after {
+  pointer-events:none!important;
+  user-select:none!important;
+}
+.portfolio-diwali__garland {
+  position:absolute;
+  top:0;left:0;right:0;
+  height:60px;
+  background:url('/diwali-2026/garland.svg') repeat-x center -13px / 800px 82px;
+  opacity:.86;
+  filter:drop-shadow(0 1px 7px rgba(231,172,75,.21));
+}
+.portfolio-diwali__lantern {
+  position:absolute;
+  top:36px;
+  width:clamp(65px,5.5vw,110px);
+  height:auto;
+  max-width:none;
+  opacity:.88;
+  filter:drop-shadow(0 7px 16px rgba(214,127,45,.2));
+  transform-origin:50% 5%;
+}
+.portfolio-diwali__lantern--left{left:max(5px,env(safe-area-inset-left,0px));}
+.portfolio-diwali__lantern--right{right:max(5px,env(safe-area-inset-right,0px));}
+.portfolio-diwali__light-trail{
+  position:absolute;
+  width:18px;
+  top:172px;
+  bottom:82px;
+  opacity:.49;
+  background:
+   radial-gradient(ellipse 5px 6px at 50% 22px,rgba(255,215,136,.86),transparent 98%) 0 0/100% 76px repeat-y,
+   radial-gradient(ellipse 2px 3px at 50% 22px,#fff4c8,transparent 98%) 0 0/100% 76px repeat-y;
+  mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 82%,transparent);
+}
+.portfolio-diwali__light-trail--left{left:8px;}
+.portfolio-diwali__light-trail--right{right:8px;}
+.portfolio-diwali__diya{
+  position:absolute;
+  width:clamp(96px,12vw,175px);
+  height:auto;
+  bottom:2%;
+  opacity:.92;
+  filter:drop-shadow(0 9px 15px rgba(209,146,62,.2));
+  transform-origin:50% 75%;
+}
+.portfolio-diwali__diya--left{left:max(0px,env(safe-area-inset-left,0px));}
+.portfolio-diwali__diya--right{right:max(0px,env(safe-area-inset-right,0px));}
+.portfolio-diwali__rangoli{
+  position:absolute;
+  width:clamp(92px,8.5vw,145px);
+  height:auto;
+  right:clamp(145px,11vw,260px);
+  bottom:4%;
+  opacity:.55;
+  transform:rotate(-12deg);
+  filter:drop-shadow(0 4px 12px rgba(159,108,67,.16));
+}
+.portfolio-diwali__sparks {
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  opacity:.75;
+  pointer-events:none!important;
+}
+
+/* Gentle lighting, no full-screen explosions or persistent canvas redraws. */
+@keyframes vm-diwali-lantern-sway {
+  0%,100%{transform:rotate(-1.5deg)}
+  50%{transform:rotate(1.5deg)}
+}
+@keyframes vm-diwali-flame {
+  0%,100%{filter:drop-shadow(0 3px 10px rgba(247,177,63,.15));opacity:.89}
+  50%{filter:drop-shadow(0 2px 19px rgba(255,200,93,.32));opacity:1}
+}
+@keyframes vm-diwali-lights {
+  0%,100%{opacity:.47}
+  50%{opacity:.75}
+}
+@media(prefers-reduced-motion:no-preference) {
+  .portfolio-diwali__lantern--left{animation:vm-diwali-lantern-sway 6s ease-in-out infinite}
+  .portfolio-diwali__lantern--right{animation:vm-diwali-lantern-sway 7.5s ease-in-out infinite reverse}
+  .portfolio-diwali__diya{animation:vm-diwali-flame 3.4s ease-in-out infinite}
+  .portfolio-diwali__diya--right{animation-delay:-1.65s}
+  .portfolio-diwali__light-trail{animation:vm-diwali-lights 4.5s ease-in-out infinite}
+  .portfolio-diwali__light-trail--right{animation-delay:-2s}
+}
+@media(min-width:2400px){
+  .portfolio-diwali__garland{height:94px;background-size:1300px 134px;background-position:center -23px}
+  .portfolio-diwali__lantern{width:clamp(105px,3.7vw,165px);top:58px}
+  .portfolio-diwali__diya{width:clamp(175px,6.6vw,235px)}
+  .portfolio-diwali__rangoli{width:190px;right:clamp(225px,11vw,450px)}
+  .portfolio-diwali__light-trail{top:255px;width:24px}
+}
+@media(max-width:900px){
+  .portfolio-diwali{inset-block-start:-82px;height:clamp(570px,100svh,1180px)}
+  .portfolio-diwali__lantern{width:58px;top:50px;opacity:.58}
+  .portfolio-diwali__light-trail{opacity:.3;width:12px;top:160px}
+  .portfolio-diwali__diya{width:99px;opacity:.75}
+  .portfolio-diwali__rangoli{display:none}
+}
+@media(max-width:620px){
+  /* The mobile hero occupies the whole width. Nothing overlaps its copy, CTA,
+     navigation, or compact bottom quick-nav. */
+  .portfolio-diwali{inset-block-start:-70px;height:clamp(510px,100svh,960px)}
+  .portfolio-diwali__garland{height:44px;background-size:610px 62px;background-position:center -8px;opacity:.82}
+  .portfolio-diwali__lantern,
+  .portfolio-diwali__diya,
+  .portfolio-diwali__rangoli{display:none}
+  .portfolio-diwali__light-trail{top:65px;bottom:20%;opacity:.32}
+  .portfolio-diwali__light-trail--left{left:0}
+  .portfolio-diwali__light-trail--right{right:0}
+  .portfolio-diwali__sparks{opacity:.52}
+}
+@media(prefers-reduced-motion:reduce){
+  .portfolio-diwali *,
+  .portfolio-diwali *::before,
+  .portfolio-diwali *::after{
+    animation:none!important;transition:none!important;transform:none!important
+  }
+  .portfolio-diwali__rangoli{transform:rotate(-12deg)!important}
+  .portfolio-diwali__sparks{display:none!important}
+}
+@media(prefers-contrast:more),(forced-colors:active){
+  .portfolio-diwali__garland{opacity:.4}
+  .portfolio-diwali__lantern,
+  .portfolio-diwali__light-trail,
+  .portfolio-diwali__diya,
+  .portfolio-diwali__rangoli,
+  .portfolio-diwali__sparks{display:none!important}
+}
+@media print {
+  .portfolio-diwali{display:none!important}
+}
