@@ -10,7 +10,7 @@
  const pref=window.matchMedia('(prefers-reduced-motion: reduce)');
  const network=navigator.connection;
  let hidden=false;
- try{hidden=localStorage.getItem(KEY)==='off'}catch{}
+ try{hidden=localStorage.getItem(KEY)==='off'}catch{/* Storage may be unavailable in restricted browsers. */}
  let ribbon=null,canvas=null,ctx=null,tickTimer=0,burstTimer=0,raf=0,lastFrame=0;
  let particles=[];
  function validTime(){const now=Date.now();return now>=START&&now<END}
@@ -122,7 +122,7 @@
   ribbon.addEventListener('click',event=>{
    if(event.target.closest('[data-corner-diwali-mode]')){
     hidden=!hidden;
-    try{localStorage.setItem(KEY,hidden?'off':'on')}catch{}
+    try{localStorage.setItem(KEY,hidden?'off':'on')}catch{/* The in-memory preference still works. */}
     refresh();
    }else if(event.target.closest('[data-corner-diwali-celebrate]')){
     burst(innerWidth*.8,Math.max(85,innerHeight*.23));
