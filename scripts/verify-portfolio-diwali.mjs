@@ -98,6 +98,11 @@ try {
     assert.equal(await active.page.locator('.portfolio-diwali__gold-frame').count(),1);
     assert.equal(await active.page.locator('.portfolio-diwali__lower-wire').count(),1);
     if(size.width>=1000){
+      const diya=await active.page.locator('.portfolio-diwali__diya--left').boundingBox();
+      assert.ok(diya && diya.y+diya.height<=size.height-7,
+        'Entire diya must appear above first-screen fold '+size.width+': '+JSON.stringify(diya));
+    }
+    if(size.width>=1000){
       const lanternAnimation=await active.page.locator('.portfolio-diwali__lantern--left')
         .evaluate(el=>getComputedStyle(el).animationName);
       assert.match(lanternAnimation,/vm-diwali-lantern-arrive/);
