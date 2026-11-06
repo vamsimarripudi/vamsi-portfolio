@@ -13,8 +13,10 @@
 .corner-diwali-lamp{
  display:grid;place-items:center;flex:none;width:49px;height:49px;
  border-radius:17px;border:1px solid #dcae60;background:#fff2d5;
- font-size:25px;line-height:1;box-shadow:0 0 0 5px #ffe8be55;
+ box-shadow:0 0 0 5px #ffe8be55;
+ overflow:hidden;
 }
+.corner-diwali-lamp img{display:block;width:100%;height:100%;object-fit:contain}
 .corner-diwali-copy{display:flex;flex:1;flex-direction:column;gap:2px;min-width:0}
 .corner-diwali-kicker{font-size:10px;letter-spacing:.13em;color:#7d5328;font-weight:750;text-transform:uppercase}
 .corner-diwali-copy strong{font-size:clamp(15px,1.6vw,20px);letter-spacing:-.025em;line-height:1.2;color:#40271b}
@@ -33,12 +35,13 @@
 .corner-diwali-actions button:focus-visible{outline:3px solid #2b5e93;outline-offset:3px}
 .corner-diwali-actions button:active{transform:scale(.98)}
 .corner-diwali-ribbon.is-muted{background:#fbfaf8;border-bottom-color:#ded8d0}
-.corner-diwali-ribbon.is-muted .corner-diwali-lamp{box-shadow:none;filter:grayscale(.7)}
+.corner-diwali-ribbon.is-muted .corner-diwali-lamp{box-shadow:none;filter:grayscale(.3)}
 .corner-diwali-ribbon.is-muted .corner-diwali-kicker{color:#6a6059}
 .corner-diwali-ribbon.is-muted .corner-diwali-copy strong{color:#373330}
 .corner-diwali-ribbon.is-muted .corner-diwali-sub{color:#605b56}
 .corner-diwali-actions button[hidden]{display:none!important}
 
+/* 256px and 360px SVG assets are vectors and remain sharp at 3840×2160 and above. */
 /* Lighting only applies within the approved UTC window while user has mode on. */
 html[data-corner-diwali="on"] body.corner-comfort:has(.corner-public-header){
  background-image:radial-gradient(circle at 5% 13%,#f1c17618,transparent 30%),
@@ -49,9 +52,10 @@ html[data-corner-diwali="on"] .corner-diwali-ribbon{
  background:linear-gradient(110deg,#fff7e4 0%,#fffaf1 48%,#fff2db 100%);
 }
 html[data-corner-diwali="on"] .corner-diwali-ribbon:before{
- content:"";pointer-events:none;position:absolute;inset:0 0 auto;height:9px;
- background:repeating-radial-gradient(circle at 8px 2px,#cc8f38 0 3px,transparent 4px 20px);
- opacity:.75;
+ content:"";pointer-events:none;position:absolute;inset:0 0 auto;height:24px;
+ background-image:url('./diwali-2026-garland.svg');background-size:360px 72px;
+ background-position:center top;background-repeat:repeat-x;
+ opacity:.33;
 }
 html[data-corner-diwali="on"] body.corner-comfort .corner-public-header{
  border-bottom-color:#e9c892;
@@ -66,11 +70,11 @@ html[data-corner-diwali="on"] body.corner-comfort .hero-intro{
  background-image:radial-gradient(ellipse at 82% 20%,#e5ac5330,transparent 48%);
 }
 html[data-corner-diwali="on"] body.corner-comfort .story{
- border-color:#e7d9bd;
+ border-color:#e8dcc8;
  box-shadow:0 6px 28px -25px #9b6b31aa;
 }
 html[data-corner-diwali="on"] body.corner-comfort .story:is(:hover,:focus-within){
- border-color:#d4ad6d;
+ border-color:#d0a96e;
 }
 /* The effect canvas never captures clicks, changes focus or adds scroll width. */
 .corner-diwali-canvas{
@@ -93,7 +97,7 @@ html[data-corner-diwali-motion="on"] .corner-diwali-lamp{
 }
 @media(max-width:720px){
  .corner-diwali-ribbon__inner{width:calc(100% - 32px);gap:11px;flex-wrap:wrap;min-height:0;padding:13px 0 14px}
- .corner-diwali-lamp{width:42px;height:42px;border-radius:13px;font-size:22px}
+ .corner-diwali-lamp{width:42px;height:42px;border-radius:13px}
  .corner-diwali-copy{flex:1 1 calc(100% - 55px)}
  .corner-diwali-actions{width:100%;justify-content:flex-start;margin-left:53px;flex-wrap:wrap;gap:8px}
  .corner-diwali-actions button{min-height:44px;padding:9px 12px}
@@ -118,3 +122,20 @@ html[data-corner-motion-level="minimal"] .corner-diwali-actions button{
  transition:none!important;transform:none!important;
 }
 html[data-corner-motion-level="minimal"] .corner-diwali-canvas{display:none!important}
+
+/* Spacious 4K Ultra HD presentation: content stays centered, ornaments stay subtle. */
+@media(min-width:2400px){
+ .corner-diwali-ribbon__inner{width:min(calc(100% - 120px),1510px);min-height:108px;gap:21px}
+ .corner-diwali-lamp{width:60px;height:60px;border-radius:19px}
+ .corner-diwali-copy strong{font-size:22px}
+ .corner-diwali-sub{font-size:14px}
+ .corner-diwali-actions button{font-size:14px}
+}
+@media(max-width:900px){
+ html[data-corner-diwali="on"] body.corner-comfort:has(.corner-public-header){background-attachment:scroll}
+}
+@media(prefers-contrast:more){
+ .corner-diwali-ribbon{background:#fff;color:#24170f;border-color:#684724}
+ .corner-diwali-sub,.corner-diwali-kicker{color:#33251b}
+ .corner-diwali-actions button{border-width:2px}
+}
