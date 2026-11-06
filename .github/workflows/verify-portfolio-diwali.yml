@@ -1,0 +1,56 @@
+name: Verify portfolio 24-hour Diwali decorations
+on:
+  pull_request:
+    paths:
+      - "src/App.jsx"
+      - "src/festivals/diwali2026.js"
+      - "src/components/PortfolioDiwali.*"
+      - "public/diwali-2026/**"
+      - "tests/portfolio-diwali-2026.test.mjs"
+      - "scripts/verify-portfolio-diwali.mjs"
+      - ".github/workflows/verify-portfolio-diwali.yml"
+  push:
+    branches: [master]
+    paths:
+      - "src/App.jsx"
+      - "src/festivals/diwali2026.js"
+      - "src/components/PortfolioDiwali.*"
+      - "public/diwali-2026/**"
+      - "tests/portfolio-diwali-2026.test.mjs"
+      - "scripts/verify-portfolio-diwali.mjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  festival:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Verify untouched design tokens and exact IST window
+        run: |
+          npm ci --no-audit --no-fund
+          npm run lint
+          node --test tests/portfolio-diwali-2026.test.mjs
+      - name: Build the real portfolio
+        run: npm run build
+      - name: Install Chromium for visual and temporal verification
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.0
+          npx playwright install chromium
+      - name: Verify real homepage at 320 to 3840 and auto-expiry
+        run: node scripts/verify-portfolio-diwali.mjs
+      - name: Archive source-backed screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-diwali-home-screenshots
+          path: screenshots/portfolio-diwali/
+          if-no-files-found: ignore
+          retention-days: 7
