@@ -82,7 +82,7 @@ try {
       assert.ok(Math.abs(during.hero[dim]-before.hero[dim])<=1,
         'Hero content changed horizontal geometry or start position '+size.width+' '+dim);
     }
-    const minHero = size.height - (size.width<=620?70:82);
+    const minHero = size.height;
     assert.ok(during.hero.h+1>=minHero,
       'Full-viewport hero does not reach the viewport fold '+size.width+': '+JSON.stringify(during));
     assert.ok(during.hero.h+1>=before.hero.h,
