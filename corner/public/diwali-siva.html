@@ -104,9 +104,55 @@ button,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration
 .closing .create-link-wrap{margin:24px auto 0;font:normal 13px/1.6 ui-sans-serif,system-ui,sans-serif}
 .create-link{display:inline-flex;align-items:center;gap:12px;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(217,184,118,.6);padding:8px 2px;transition:color .18s ease}
 .create-link:hover{color:var(--bright)}
+
+/* Desktop-only viewport-fit refinement. All existing mobile/tablet hero rules are intact. */
+@media (min-width: 901px) {
+  .hero { min-height:100svh; padding:clamp(30px,5svh,55px) 35px clamp(22px,4svh,44px); }
+  .hero-initial { top:clamp(4px,1.4svh,16px); }
+  .hero-initial svg { width:clamp(41px,6svh,57px); height:clamp(41px,6svh,57px); }
+  .hero-copy { margin-top:clamp(9px,1.8svh,18px); }
+  .hero .top-micro { margin:0 0 clamp(7px,1.5svh,16px);font-size:clamp(10px,1.35svh,13px); }
+  .ornamental-bar { margin-bottom:clamp(8px,1.3svh,15px); }
+  .hero h1 .happy {font-size:clamp(40px,7.5svh,75px);line-height:1.01}
+  .hero h1 .diwali {font-size:clamp(76px,12.6svh,128px);line-height:1; padding-bottom:.045em}
+  .diya-stage {width:clamp(155px,24svh,226px); min-height:clamp(123px,22svh,196px); height:clamp(123px,22svh,196px); margin:clamp(-16px,-1.2svh,-7px) auto 2px}
+  .diya-stage svg {width:100%; height:100%}
+  .diya-glow {width:100%;height:100%;top:0;left:0}
+  .hero p.wish-message {font-size:clamp(16px,2.2svh,20px);line-height:1.48;margin:3px auto 0}
+  .sender-mini {gap:3px;margin-top:clamp(10px,1.7svh,18px)}
+  .sender-mini small {font-size:clamp(11px,1.55svh,13px)}
+  .sender-mini strong {font-size:clamp(20px,3.1svh,27px)}
+  .hero-hint {margin-top:clamp(14px,2.8svh,30px);font-size:10px}
+}
+/* Nonblocking canvas over every section, including tap-to-rocket on mobile. */
+#diwali-fireworks-layer {position:fixed;z-index:60;inset:0;width:100%;height:100%;pointer-events:none;display:block;contain:strict}
+#diwali-sound-toggle {position:fixed;z-index:62;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:8px 12px;color:#ffdf99;background:rgba(9,19,44,.85);border:1px solid rgba(217,184,118,.73);border-radius:24px;backdrop-filter:blur(12px);font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 5px 24px rgba(0,0,0,.18)}
+#diwali-sound-toggle svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#diwali-sound-toggle[aria-pressed="false"] {color:#e1e0e6;border-color:rgba(220,216,220,.4)}
+#diwali-sound-toggle:hover {background:rgba(21,38,74,.95)}
+#diwali-sound-toggle:focus-visible {outline:2px solid #ffe0a2;outline-offset:4px}
+@media(max-width:600px) {#diwali-sound-toggle {padding:9px;width:44px;height:44px;border-radius:50%}#diwali-sound-toggle .diwali-sound-label {display:none}}
+/* Calm, deliberate living-dog movement. No layout changes. */
+.dog-body-motion {transform-box:fill-box;transform-origin:50% 72%;animation:dogBreathing 4.6s ease-in-out infinite alternate}
+.dog-tail-motion {transform-box:fill-box;transform-origin:8% 95%;animation:dogTail 6.2s ease-in-out infinite}
+.dog-eye-motion {transform-box:fill-box;transform-origin:center;animation:dogBlink 7.8s ease-in-out infinite}
+.dog-diya-flame {transform-box:fill-box;transform-origin:50% 100%;animation:dogCandle 2.3s ease-in-out infinite alternate}
+.dog-art:before {animation:dogBorderShimmer 9s ease-in-out infinite alternate}
+@keyframes dogBreathing {from{transform:scale(1)}to{transform:scale(1.025,.985)}}
+@keyframes dogTail {0%,84%,100%{transform:rotate(0)}88%{transform:rotate(5deg)}92%{transform:rotate(-4deg)}96%{transform:rotate(3deg)}}
+@keyframes dogBlink {0%,93%,96%,100%{transform:scaleY(1)}94.5%{transform:scaleY(.25)}}
+@keyframes dogCandle {from{transform:rotate(-2deg) scaleX(.94)}to{transform:rotate(3deg) scaleX(1.07)}}
+@keyframes dogBorderShimmer {from{opacity:.4}to{opacity:.9}}
+@media(prefers-reduced-motion:reduce){.dog-body-motion,.dog-tail-motion,.dog-eye-motion,.dog-diya-flame,.dog-art:before {animation:none!important}}
+
 </style>
 </head>
 <body>
+<canvas id="diwali-fireworks-layer" aria-hidden="true"></canvas>
+<button type="button" id="diwali-sound-toggle" aria-label="Mute firework sounds" aria-pressed="true" title="Mute firework sounds">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path class="sound-wave-icon" d="M4 9v6h4l5 4V5L8 9H4Zm12-.5c1.8 1.7 1.8 5.3 0 7m2.3-9.8c3 2.8 3 8 0 10.8"/></svg>
+  <span class="diwali-sound-label">Sound on</span>
+</button>
 <a class="skip" href="#compassion">Skip to the kindness message</a>
 <div id="intro-cover" aria-hidden="true"><div class="intro-ring">✦</div></div>
 <main class="card-page">
@@ -146,16 +192,16 @@ button,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration
     <div class="dog-art" aria-hidden="true"><svg viewBox="0 0 500 480" fill="none"><defs><radialGradient id="dogmoon"><stop stop-color="#f8e4bb" stop-opacity=".38"/><stop offset="1" stop-color="#f8e4bb" stop-opacity="0"/></radialGradient></defs>
       <circle cx="360" cy="116" r="94" fill="url(#dogmoon)"/><path d="M360 69c-50 31-36 103 16 105 25 0 48-16 54-36-47 16-88-20-70-69Z" fill="#d8c39a" opacity=".8"/>
       <path d="M50 365Q252 307 451 359" stroke="currentColor" stroke-opacity=".18"/><path d="M45 374Q250 333 455 376" stroke="currentColor" stroke-opacity=".2"/>
-      <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <g class="dog-body-motion" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
        <path d="M117 319c0-70 64-99 145-90 51 5 79 38 79 81-4 49-46 77-112 78-63-3-111-28-112-69Z" fill="#795944" stroke-opacity=".75"/>
        <path d="M175 278c-43-48-96-13-96 25-1 42 47 53 85 46l31-14" fill="#9e704d"/>
        <path d="M100 279 85 238q39 13 52 34M151 258l26-34q18 29 14 55" fill="#795944"/>
-       <path d="M102 322q26 14 46 0" stroke="#241a24" stroke-width="5"/>
+       <path class="dog-eye-motion" d="M102 322q26 14 46 0" stroke="#241a24" stroke-width="5"/>
        <path d="M78 311q10-11 19 0-6 13-19 0Z" fill="#241a24" stroke="#241a24"/>
        <path d="M190 359c37 27 104 29 137 0M310 353c32 25 58 21 83 0" stroke="#c89c70" stroke-width="12"/>
-       <path d="M322 264q52 34 35 78" stroke="#b58a63" stroke-width="13"/>
+       <path class="dog-tail-motion" d="M322 264q52 34 35 78" stroke="#b58a63" stroke-width="13"/>
       </g>
-      <g transform="translate(368 360)"><ellipse cx="0" cy="35" rx="77" ry="11" fill="#e7b872" opacity=".11"/><path d="M-35 18Q0 28 35 18Q28 55 0 57Q-28 55-35 18Z" fill="#9b5a3c" stroke="#d9b876" stroke-width="3"/><path d="M0 15C-12 0-7-16 0-27 11-15 12-1 0 15Z" fill="#ffcf81"/><path d="M0 10c-5-6-3-12 0-15 5 5 5 10 0 15Z" fill="#fff3d8"/></g>
+      <g transform="translate(368 360)"><ellipse cx="0" cy="35" rx="77" ry="11" fill="#e7b872" opacity=".11"/><path d="M-35 18Q0 28 35 18Q28 55 0 57Q-28 55-35 18Z" fill="#9b5a3c" stroke="#d9b876" stroke-width="3"/><path class="dog-diya-flame" d="M0 15C-12 0-7-16 0-27 11-15 12-1 0 15Z" fill="#ffcf81"/><path d="M0 10c-5-6-3-12 0-15 5 5 5 10 0 15Z" fill="#fff3d8"/></g>
     </svg><div class="dog-art-mark">EVERY LIFE DESERVES PEACE</div></div>
     <div class="dog-copy"><div class="dog-label">A MESSAGE FROM THE HEART</div><h2 id="dogs-title">Let the streets shine.<br><em>Not tremble.</em></h2><p>Diwali celebrates happiness. Animals who share our streets deserve a peaceful festival, too.</p><p>As diyas brighten our homes, may gentleness and compassion help every street dog feel safe.</p><blockquote>Your celebration should never become their fear.</blockquote></div>
   </section>
@@ -187,5 +233,264 @@ var sparks=document.getElementById("sparks");var reduced=window.matchMedia&&wind
 if(sparks&&!reduced){for(var i=0;i<33;i++){var p=document.createElement("i");p.style.setProperty("--x",((i*71+13)%95)+"%");p.style.setProperty("--y",((i*41+23)%91)+"%");p.style.setProperty("--t",(4+(i%7))+"s");p.style.setProperty("--delay",(-i*.34)+"s");sparks.appendChild(p)}}
 })();
 </script>
+
+<script>
+/* Interactive fireworks are original Canvas 2D art with gesture-unlocked Web Audio.
+   Overlay does not capture touch, resize mobile layout, or require external audio. */
+(function(){
+"use strict";
+const canvas=document.getElementById("diwali-fireworks-layer");
+const toggle=document.getElementById("diwali-sound-toggle");
+const hero=document.querySelector(".hero");
+if(!canvas||!toggle||!hero)return;
+const pen=canvas.getContext("2d",{alpha:true,desynchronized:true});
+if(!pen)return;
+const motion=window.matchMedia("(prefers-reduced-motion: reduce)");
+let width=1,height=1,pixelRatio=1,muted=false,raf=0,lastTime=0,lastLaunch=0;
+let lastSky=0,lastFountain=0,audio=null,noiseBuffer=null;
+const starts=new Map(),rockets=[],sparks=[];
+const colors=[[255,211,130],[246,174,126],[245,155,205],[133,214,228],[200,165,246],[255,245,201]];
+let colorStep=0;
+function resize(){
+  width=Math.max(320,window.innerWidth||320);
+  height=Math.max(240,window.innerHeight||240);
+  pixelRatio=Math.min(2,window.devicePixelRatio||1);
+  canvas.width=Math.round(width*pixelRatio);
+  canvas.height=Math.round(height*pixelRatio);
+  pen.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+}
+function rgb(c,a=1){return "rgba("+c[0]+","+c[1]+","+c[2]+","+a+")"}
+function addSpark(x,y,vx,vy,life,size,color,kind="trail"){
+  const max=width<=600?180:390;
+  if(sparks.length>=max)sparks.splice(0,Math.min(12,sparks.length));
+  sparks.push({x,y,vx,vy,life,maxLife:life,size,color,kind});
+}
+function bloom(x,y,count,color){
+  const n=motion.matches?8:count;
+  for(let i=0;i<n;i++){
+    const angle=Math.PI*2*(i/n)+(Math.random()-.5)*.09;
+    const speed=(width<=600?88:135)*(.55+Math.random()*.88);
+    const shade=i%5===0?colors[(colorStep+3)%colors.length]:color;
+    addSpark(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,.67+Math.random()*.55,
+      1.1+Math.random()*2.4,shade,"burst");
+  }
+  if(!motion.matches){
+    for(let i=0;i<12;i++){
+      const angle=Math.random()*Math.PI*2;
+      addSpark(x,y,Math.cos(angle)*35,Math.sin(angle)*35,.35+Math.random()*.4,1.1,colors[5],"glitter");
+    }
+  }
+}
+function launch(toX,toY,interactive){
+  const now=performance.now();
+  if(interactive && now-lastLaunch<210)return;
+  if(interactive)lastLaunch=now;
+  toX=Math.max(35,Math.min(width-35,toX));
+  toY=Math.max(65,Math.min(height*.43,toY));
+  const duration=motion.matches ? 0.2 : (width<=600 ? 0.56 : 0.68)+Math.random()*0.15;
+  const color=colors[colorStep++%colors.length];
+  if(motion.matches){
+    bloom(toX,toY,8,color);
+    if(interactive)playSound(.08,true);
+  } else {
+    if(rockets.length>=6)rockets.shift();
+    rockets.push({
+      x:toX,y:height+25,targetX:toX,targetY:toY,
+      startX:Math.max(25,Math.min(width-25,toX+(Math.random()-.5)*Math.min(135,width*.24))),
+      duration,elapsed:0,color
+    });
+    if(interactive)playSound(duration,false);
+  }
+  start();
+}
+function getAudio(){
+  if(muted)return null;
+  const Audio=window.AudioContext||window.webkitAudioContext;
+  if(!Audio)return null;
+  try {
+    if(!audio)audio=new Audio();
+    if(audio.state==="suspended")void audio.resume().catch(()=>{});
+    return audio;
+  }catch{return null}
+}
+function soundNoise(ac){
+  if(noiseBuffer)return noiseBuffer;
+  const size=Math.ceil(ac.sampleRate*.32);
+  noiseBuffer=ac.createBuffer(1,size,ac.sampleRate);
+  const data=noiseBuffer.getChannelData(0);
+  for(let i=0;i<size;i++)data[i]=Math.random()*2-1;
+  return noiseBuffer;
+}
+function playSound(seconds,quiet){
+  const ac=getAudio();
+  if(!ac)return;
+  const t=ac.currentTime+.025;
+  const master=ac.createGain();
+  master.gain.setValueAtTime(.32,t);
+  master.connect(ac.destination);
+  if(!quiet){
+    const whistle=ac.createOscillator(),wind=ac.createGain();
+    whistle.type="triangle";
+    whistle.frequency.setValueAtTime(340,t);
+    whistle.frequency.exponentialRampToValueAtTime(980,t+seconds);
+    wind.gain.setValueAtTime(.0001,t);
+    wind.gain.exponentialRampToValueAtTime(.065,t+.09);
+    wind.gain.exponentialRampToValueAtTime(.0001,t+seconds);
+    whistle.connect(wind).connect(master);
+    whistle.start(t);whistle.stop(t+seconds+.03);
+  }
+  const hit=t+seconds;
+  const hiss=ac.createBufferSource(),filter=ac.createBiquadFilter(),gain=ac.createGain();
+  hiss.buffer=soundNoise(ac);
+  filter.type="highpass";filter.frequency.setValueAtTime(460,hit);
+  gain.gain.setValueAtTime(.0001,hit);
+  gain.gain.linearRampToValueAtTime(quiet?.09:.18,hit+.009);
+  gain.gain.exponentialRampToValueAtTime(.0001,hit+.3);
+  hiss.connect(filter).connect(gain).connect(master);
+  hiss.start(hit);hiss.stop(hit+.315);
+  const low=ac.createOscillator(),boom=ac.createGain();
+  low.type="sine";
+  low.frequency.setValueAtTime(125,hit);
+  low.frequency.exponentialRampToValueAtTime(48,hit+.2);
+  boom.gain.setValueAtTime(.0001,hit);
+  boom.gain.linearRampToValueAtTime(quiet?.035:.09,hit+.018);
+  boom.gain.exponentialRampToValueAtTime(.0001,hit+.24);
+  low.connect(boom).connect(master);low.start(hit);low.stop(hit+.27);
+  low.onended=()=>{try{master.disconnect()}catch{}};
+}
+function getHeroVisible(){
+  const r=hero.getBoundingClientRect();
+  return r.top<height*.55 && r.bottom>height*.52;
+}
+function fountain(now){
+  const baseY=Math.min(height-16,Math.max(height*.67,hero.getBoundingClientRect().bottom-35));
+  for(const side of [-1,1]){
+    const posX=side<0?Math.max(24,width*.055):Math.min(width-24,width*.945);
+    const curve=Math.sin(now*.003+(side<0?0:2))*Math.min(24,width*.035);
+    const x=posX+curve;
+    const initial=(-Math.PI/2)+(Math.random()-.5)*.7;
+    const speed=120+Math.random()*92;
+    addSpark(x,baseY,Math.cos(initial)*speed,Math.sin(initial)*speed,.68+Math.random()*.44,
+      .9+Math.random()*2.2,Math.random()>.24?colors[0]:colors[5],"fountain");
+  }
+}
+function handheldSparklers(now){
+  for(const side of [-1,1]){
+    const x=side<0?Math.max(18,width*.078):Math.min(width-18,width*.922);
+    const y=height*(.44+Math.sin(now*.0012+(side<0?0:1.5))*.05);
+    const angle=now*.0035+(side<0?0:Math.PI);
+    const pointX=x+Math.cos(angle)*12,pointY=y+Math.sin(angle)*12;
+    const direction=Math.random()*Math.PI*2;
+    const speed=25+Math.random()*75;
+    addSpark(pointX,pointY,Math.cos(direction)*speed,Math.sin(direction)*speed,.18+Math.random()*.30,
+      .7+Math.random()*1.35,Math.random()>.40?colors[5]:colors[0],"glitter");
+  }
+}
+function drawOne(s,dt){
+  s.life-=dt;
+  s.x+=s.vx*dt;s.y+=s.vy*dt;
+  const d=s.kind==="burst" ? .985 : .976;
+  s.vx*=Math.pow(d,dt*60);
+  s.vy=s.vy*Math.pow(d,dt*60)+(s.kind==="fountain"?76:63)*dt;
+  const alpha=Math.max(0,Math.min(1,s.life/s.maxLife));
+  pen.strokeStyle=rgb(s.color,alpha*.7);
+  pen.lineWidth=s.size;
+  pen.beginPath();pen.moveTo(s.x,s.y);pen.lineTo(s.x-s.vx*.019,s.y-s.vy*.019);pen.stroke();
+  pen.fillStyle=rgb(s.color,Math.min(.97,alpha));
+  pen.beginPath();pen.arc(s.x,s.y,s.size*.75,0,Math.PI*2);pen.fill();
+}
+function frame(now){
+  raf=0;
+  if(document.hidden)return;
+  const dt=Math.min(.045,Math.max(.001,(now-(lastTime||now))/1000));
+  lastTime=now;
+  pen.clearRect(0,0,width,height);
+  const isHero=getHeroVisible();
+  if(isHero && !motion.matches){
+    if(now-lastFountain>(width<=600?90:46)){
+      fountain(now);
+      handheldSparklers(now);
+      lastFountain=now;
+    }
+    if(now-lastSky>5800){
+      // Ambient bursts stay along the outer upper edge, away from hero copy.
+      const side=Math.random()<.5 ? .16 : .84;
+      launch(width*side,Math.max(78,height*(.14+Math.random()*.17)),false);
+      lastSky=now;
+    }
+  }
+  pen.save();pen.globalCompositeOperation="lighter";
+  for(let i=rockets.length-1;i>=0;i--){
+    const r=rockets[i];r.elapsed+=dt;
+    const p=Math.min(1,r.elapsed/r.duration),ease=1-Math.pow(1-p,2);
+    r.x=r.startX+(r.targetX-r.startX)*ease+Math.sin(p*Math.PI)*12;
+    r.y=height+25+(r.targetY-(height+25))*ease;
+    if(p<1){
+      if(Math.random()<.95)addSpark(r.x,r.y,Math.random()*34-17,45+Math.random()*38,.23+Math.random()*.27,1.5+Math.random(),r.color);
+      pen.fillStyle=rgb(r.color,1);pen.beginPath();pen.arc(r.x,r.y,2.1,0,Math.PI*2);pen.fill();
+    }else{
+      bloom(r.targetX,r.targetY,width<=600?40:78,r.color);
+      rockets.splice(i,1);
+    }
+  }
+  for(let i=sparks.length-1;i>=0;i--){
+    const p=sparks[i];
+    drawOne(p,dt);
+    if(p.life<=0)sparks.splice(i,1);
+  }
+  pen.restore();
+  // Stop when there is no visible hero and no active user-generated effect.
+  if(((isHero && !motion.matches) || rockets.length || sparks.length) && !raf){raf=requestAnimationFrame(frame);}
+}
+function start(){
+  if(!document.hidden&&!raf){
+    lastTime=performance.now();
+    raf=requestAnimationFrame(frame);
+  }
+}
+function stop(){if(raf)cancelAnimationFrame(raf);raf=0;lastTime=0;}
+let previousTap=0;
+function isToggleTarget(target){return target instanceof Element && !!target.closest("#diwali-sound-toggle")}
+window.addEventListener("pointerdown",e=>{
+  if(e.button!==0||isToggleTarget(e.target))return;
+  starts.set(e.pointerId,{x:e.clientX,y:e.clientY,at:performance.now()});
+  // Audio may only be unlocked by a direct user gesture (not by autoplay).
+  if(!muted)void getAudio();
+},{passive:true});
+window.addEventListener("pointerup",e=>{
+  const old=starts.get(e.pointerId);
+  starts.delete(e.pointerId);
+  if(!old||e.button!==0)return;
+  const distance=Math.hypot(e.clientX-old.x,e.clientY-old.y);
+  if(distance>24||performance.now()-old.at>1300)return; // do not launch on scrolling
+  if(performance.now()-previousTap<190)return;
+  previousTap=performance.now();
+  launch(e.clientX,e.clientY,true);
+},{passive:true});
+window.addEventListener("pointercancel",e=>starts.delete(e.pointerId),{passive:true});
+toggle.addEventListener("click",()=>{
+  muted=!muted;
+  toggle.setAttribute("aria-pressed",String(!muted));
+  toggle.setAttribute("aria-label",muted?"Enable firework sounds":"Mute firework sounds");
+  toggle.setAttribute("title",muted?"Enable firework sounds":"Mute firework sounds");
+  const label=toggle.querySelector(".diwali-sound-label");
+  if(label)label.textContent=muted?"Sound off":"Sound on";
+  const wave=toggle.querySelector(".sound-wave-icon");
+  if(wave)wave.setAttribute("d",muted?
+    "M4 9v6h4l5 4V5L8 9H4Zm12 0 6 6m0-6-6 6":
+    "M4 9v6h4l5 4V5L8 9H4Zm12-.5c1.8 1.7 1.8 5.3 0 7m2.3-9.8c3 2.8 3 8 0 10.8");
+});
+window.addEventListener("resize",()=>{resize();start()},{passive:true});
+window.addEventListener("scroll",start,{passive:true});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stop();else start()});
+window.addEventListener("pagehide",()=>{stop();starts.clear()});
+window.addEventListener("pageshow",start);
+if(motion.addEventListener)motion.addEventListener("change",()=>{rockets.length=0;sparks.length=0;start()});
+resize();
+lastSky=performance.now()-3900;
+start();
+})();
+</script>
+
 </body>
 </html>
