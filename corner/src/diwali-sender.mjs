@@ -10,6 +10,7 @@ const GENERIC_PREVIEW = CUSTOM_URL + "/preview.png";
 
 export function normalizeDiwaliSender(raw) {
   if (typeof raw !== "string") return null;
+  if (/[\u0000-\u001F\u007F]/u.test(raw)) return null;
   const name = raw.normalize("NFC").trim().replace(/\s+/gu, " ");
   const size = [...name].length;
   if (size < 2 || size > 48) return null;
