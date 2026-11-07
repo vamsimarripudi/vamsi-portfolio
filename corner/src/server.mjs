@@ -2,6 +2,8 @@ import {ReadingAnalytics} from './reading-analytics.mjs';
 import { dispatchPortfolioRequest } from './unified-dispatch.mjs';
 import { startUnifiedMaintenance } from './unified-maintenance.mjs';
 import {readingRoutes} from './reading-routes.mjs';
+import {createStoriesService} from './stories-service.mjs';
+import {createStoriesStudio} from './stories-studio.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -73,9 +75,11 @@ if(config.prod&&!config.sessionSecret)throw Error('SESSION_SECRET is required in
 const DEV_SECRET=crypto.randomBytes(32).toString('hex');
 const signKey=config.sessionSecret||DEV_SECRET;
 const reading=new ReadingAnalytics(store,{secret:signKey});
+const storyBooks=createStoriesService({store,journalSeries,siteUrl:config.siteUrl,basePath:config.basePath});
+const storyStudio=createStoriesStudio({store,journalSeries,siteUrl:config.siteUrl,basePath:config.basePath,timezone:config.timezone});
 const staticRoot=path.join(ROOT,'public');
 const eventCursor=()=>store.one('SELECT COALESCE(MAX(seq),0) AS n FROM realtime_events').n;
-const mimeTypes={'.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.mp4':'video/mp4','.webm':'video/webm'};
+const mimeTypes={'.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.mp4':'video/mp4','.webm':'video/webm','.mp3':'audio/mpeg','.mjs':'text/javascript; charset=utf-8'};
 const jsonType='application/json; charset=utf-8';
 const date=()=>new Date().toISOString();
 const duration=(start)=>Date.now()-start;
@@ -195,7 +199,7 @@ async function mediaFile(req,res,key,variant=''){
   res.writeHead(200,{...headers,'content-length':stat.size});
   if(req.method==='HEAD')return res.end();fs.createReadStream(filename).pipe(res);
 }
-function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/privacy','/terms',...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...journalSeries.publicSlugs().map(slug=>'/series/'+encodeURIComponent(slug)),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
+function sitemap(){let posts=store.all("SELECT slug,published_at FROM posts WHERE state='published' ORDER BY published_at DESC LIMIT 10000");let urls=['/','/about','/stories','/privacy','/terms',...storyBooks.books().map(b=>'/stories/book/'+encodeURIComponent(b.slug)),...(memories.enabled()?['/timeline','/moments','/collections']:[]),...CATEGORIES.filter(c=>c!=='Latest').map(c=>'/category/'+c.toLowerCase()),...journalSeries.publicSlugs().map(slug=>'/series/'+encodeURIComponent(slug)),...posts.map(p=>'/post/'+encodeURIComponent(p.slug))];return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+urls.map(u=>`<url><loc>${config.siteUrl+u}</loc></url>`).join('')+'</urlset>';}
 function adminRouteState(owner){return adminPage({owner:owner&&privilegedRole(owner.role)?owner:null,status:store.currentStatus(),commandChat:commandChatEnabled})}
 const handleIdentity=identityRoutes({identity,store,config,readJSON,readBody,ok,json,limit,sourceIp,cookieHeader});
 const handleV3=v3Routes({v3,store,identity,readJSON,ok,limit});
@@ -219,6 +223,14 @@ async function api(req,res,pathName,url){
    // Both consumers receive only a signed, verified provider event.
    const verifiedEvent=verifyResendWebhook(raw,req.headers,String(process.env.CORNER_V3_RESEND_WEBHOOK_SECRET||''));
    return ok(res,{...wishResult,communications:communications.reconcileVerifiedProviderEvent(verifiedEvent)});
+  }
+  if(pathName.startsWith('/api/stories/')){
+    if(method!=='GET'){res.setHeader('Allow','GET');throw httpError(405,'Method not allowed.');}
+    limit(req,'stories-read',120,60);
+    res.setHeader('Cache-Control','private,no-store');
+    const result=storyBooks.api(pathName);
+    if(!result||result.status!==200)throw httpError(404,'Chapter not found.','NOT_FOUND');
+    return ok(res,result.data);
   }
   if(await handleReading(req,res,pathName,url))return;
   if(await handleV3(req,res,pathName,url))return;
@@ -311,6 +323,7 @@ async function api(req,res,pathName,url){
   if(pathName==='/api/admin/logout'&&method==='POST'){let token=decodeURIComponent(cookieHeader(req).corner_session||'');if(token)store.revokeSession(token);res.setHeader('set-cookie',adminCookie('',0));return ok(res,{authenticated:false})}
   if(!pathName.startsWith('/api/admin/'))throw httpError(404,'API route not found','NOT_FOUND');
   const owner=requireOwner(req,pathName,method);if(method!=='GET')limit(req,'admin',130,60);
+  if(pathName==='/api/admin/posts/stories'||pathName.startsWith('/api/admin/posts/stories/'))return storyStudio.handleApi({req,res,pathName,url,owner,method,readJSON,ok});
   if(pathName==='/api/admin/overview'&&method==='GET')return ok(res,store.metrics());
   if(pathName.startsWith('/api/admin/command')){
     if(owner.role!=='owner')throw httpError(403,'Only the owner can access the command center.','OWNER_ONLY');
@@ -494,8 +507,14 @@ async function route(req,res){
     }
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
-    if(['/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/command-chat.css','/command-chat.js','/studio-theme.css','/studio-theme.js','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    if(['/stories-studio.css','/stories-studio.js','/stories.css','/stories-library.js','/stories-reader.css','/stories-reader.js','/stories-motion.mjs','/stories-paper.mp3','/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/command-chat.css','/command-chat.js','/studio-theme.css','/studio-theme.js','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
     if(req.method!=='GET'&&req.method!=='HEAD')throw httpError(405,'Method not allowed');
+    if(pathname==='/admin/stories'){
+      let actor;try{actor=requireOwner(req,'/api/admin/posts','GET')}catch(error){
+        if(error?.status===401)return page(res,adminRouteState(null),401,true);throw error;
+      }
+      return page(res,storyStudio.html(actor),200,true);
+    }
     if(pathname==='/admin'){
       let token='';try{token=decodeURIComponent(cookieHeader(req).corner_session||'')}catch{}
       const session=store.session(token);
@@ -567,6 +586,11 @@ async function route(req,res){
     if(pathname==='/follow'&&v3.enabled('FOLLOW'))return page(res,followPage());
     if(pathname==='/follow/confirm'&&v3.enabled('FOLLOW'))return page(res,followConfirmPage());
     if(pathname==='/follow/unsubscribe'&&v3.enabled('FOLLOW'))return page(res,unsubscribePage());
+    if(pathname==='/stories'||pathname.startsWith('/stories/book/')||pathname.startsWith('/stories/read/')){
+      const html=storyBooks.html(pathname,url.search);
+      if(!html)throw httpError(404,'Story not found.','NOT_FOUND');
+      return page(res,html);
+    }
     if(pathname==='/archive'&&v3.enabled('SEARCH'))return page(res,archivePage(v3,url.searchParams.get('year')||'',url.searchParams.get('cursor')||''));
     if(pathname==='/search'&&v3.enabled('SEARCH'))return page(res,searchPage(v3,{q:url.searchParams.get('q')||'',category:url.searchParams.get('category')||'',year:url.searchParams.get('year')||'',tag:url.searchParams.get('tag')||'',offset:url.searchParams.get('offset')||0,cursor:url.searchParams.get('cursor')||''}));
     if(/^\/series\/[a-z0-9-]+$/.test(pathname)){const record=journalSeries.published(pathname.slice(8));if(!record)throw httpError(404,'Series not found');return page(res,journalSeriesPage({series:record}));}

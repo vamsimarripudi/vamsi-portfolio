@@ -1,0 +1,144 @@
+/* Vamsi's Corner Stories Studio. Only authenticated server APIs can publish.
+   All author input is escaped before HTML insertion; public fiction is never fabricated. */
+(()=>{
+ 'use strict';
+ const $=(sel,root=document)=>root.querySelector(sel), $$=(sel,root=document)=>[...root.querySelectorAll(sel)];
+ const boot=JSON.parse($('#ssBootstrap')?.textContent||'{}');
+ const prefix=String(boot.basePath||'').replace(/\/$/,'');
+ const url=p=>prefix+p;
+ const base='/api/admin/posts/stories';
+ const genres=['Literary','Mystery','Thriller','Romance','Fantasy','Science Fiction','Horror','Historical','Adventure','Slice of Life'];
+ const state={books:[],filter:'all',search:'',selected:null,current:null,currentBook:null,editing:false,pending:false,dirty:false,saveTimer:0,autosave:false,tab:'write',newMode:false};
+ const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const statusText=s=>({published:'Published',draft:'Draft',scheduled:'Scheduled',archived:'Archived'}[s]||'Draft');
+ const chapterCount=n=>n===1?'1 chapter':n+' chapters';
+ const readingTime=n=>Math.max(1,Math.ceil(Number(n||0)/210));
+ let toastTimer=0;
+ const requestId=()=>window.crypto?.randomUUID?.()||('story-'+Date.now()+'-'+Math.random().toString(36).slice(2,14));
+ const notify=(message,type='info')=>{const el=$('#ssToast');el.hidden=false;el.dataset.type=type;el.textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,4000)};
+ async function request(path,method='GET',body,extra={}){
+  const headers={Accept:'application/json',...(body instanceof File?{'Content-Type':body.type}:{'Content-Type':'application/json'})};
+  const resp=await fetch(url(path),{method,credentials:'same-origin',headers,body:body===undefined?undefined:body instanceof File?body:JSON.stringify(body),cache:'no-store',...extra});
+  let data;try{data=await resp.json()}catch{throw Error('Studio received an unexpected response. Sign in again if your session expired.')}
+  if(!resp.ok){const err=new Error(data?.error?.message||'Unable to complete this action.');err.code=data?.error?.code;err.status=resp.status;throw err;}
+  return data?.data;
+ }
+ const setCount=(name,value)=>{const el=$('#ssCount'+name);if(el)el.textContent=String(value||0)};
+ function markBusy(value){state.pending=Boolean(value);$$('#ssDesk button').forEach(b=>{if(b.dataset.neverDisable)return;b.disabled=Boolean(value)});}
+ function renderBooks(){
+  const target=$('#ssBooks');const visible=state.books.filter(b=>(state.filter==='all'||b.state===state.filter)&&(!state.search||[b.title,b.description,b.genre,...b.chapters.map(c=>c.title)].join(' ').toLowerCase().includes(state.search)));
+  if(!visible.length){target.innerHTML=`<div class="ss-empty-list">${state.search?'No matches on this shelf.':'No '+(state.filter==='all'?'stories':'stories in this state')+' yet.'}<br><button type="button" class="ss-quiet" id="emptyNew">Start writing</button></div>`;$('#emptyNew').onclick=()=>showCreate();return;}
+  target.innerHTML=visible.map(b=>`<button type="button" class="ss-book-card${state.selected===b.id?' is-selected':''}" data-book="${escape(b.id)}" aria-pressed="${state.selected===b.id}"><span class="ss-book-thumb ss-book-tone-${Number(b.coverTone||0)}">${b.cover?.storage_key?`<img src="${url('/media/'+encodeURIComponent(b.cover.storage_key))}" alt="">`:'✦'}</span><span class="ss-book-copy"><small>${escape(b.kind==='series'?'SERIAL NOVEL':'SHORT STORY')} · ${escape(b.genre)}</small><strong>${escape(b.title)}</strong><span>${chapterCount(b.chapterCount)} · <span class="ss-tag ${escape(b.state)}">${statusText(b.state)}</span></span></span></button>`).join('');
+  $$('[data-book]',target).forEach(button=>button.addEventListener('click',()=>selectBook(button.dataset.book)));
+ }
+ async function loadBooks({keep=true}={}){
+  try{const result=await request(base);state.books=result.books||[];Object.entries({All:result.counts?.all,Draft:result.counts?.draft,Scheduled:result.counts?.scheduled,Published:result.counts?.published}).forEach(([name,value])=>setCount(name,value));
+   if(result.truncated)notify('Showing the most recent 5,000 journal entries. Older records need an archival search.');
+   if(keep&&state.selected&&!state.books.some(b=>b.id===state.selected)){state.selected=null;state.current=null;renderWelcome();}renderBooks();
+  }catch(error){notify(error.message,'error');$('#ssBooks').textContent='Unable to load Stories. Refresh or sign in again.';}
+ }
+ function renderWelcome(){state.newMode=false;$('#ssDesk').innerHTML=`<div class="ss-welcome"><div class="ss-welcome-paper"><span class="ss-eyebrow">YOUR WRITER’S DESK</span><span class="ss-welcome-glyph" aria-hidden="true">“</span><h2>A story begins<br><em>with one line.</em></h2><p>Create a new book, or select an existing story to return to its world.</p><button type="button" class="ss-primary" id="welcomeNew">Write a story →</button></div></div>`;$('#welcomeNew').onclick=showCreate;}
+ function selectedKind(){return $('input[name="storyKind"]:checked')?.value||'standalone';}
+ function showCreate(){if(state.dirty&&!confirm('Leave your unsaved changes?'))return;clearTimeout(state.saveTimer);state.selected=null;state.current=null;state.currentBook=null;state.dirty=false;state.newMode=true;renderBooks();
+  $('#ssDesk').innerHTML=`<form id="ssCreateForm" class="ss-create" autocomplete="off"><div class="ss-editor-top"><div><span class="ss-eyebrow">02 / A NEW WORLD</span><h2>Begin a story.</h2><p class="ss-editor-subtitle">Every manuscript begins as a private draft.</p></div><button type="button" class="ss-quiet" id="cancelCreate">Cancel</button></div><div class="ss-create-kind"><label><input type="radio" name="storyKind" value="standalone" checked><span><strong>Short story</strong><small>One complete work, one uninterrupted reading journey.</small></span></label><label><input type="radio" name="storyKind" value="series"><span><strong>Serial novel</strong><small>One book with chapters that you release over time.</small></span></label></div><div class="ss-field"><label for="newTitle">Book title</label><input id="newTitle" name="title" maxlength="150" required placeholder="The things we almost said…"></div><div class="ss-field"><label for="newGenre">Genre</label><select id="newGenre" name="genre">${genres.map(g=>`<option>${escape(g)}</option>`).join('')}</select></div><div class="ss-field"><label for="newSummary">Back-cover description</label><textarea id="newSummary" name="excerpt" rows="3" maxlength="380" placeholder="A promise to the reader—without revealing everything."></textarea></div><div class="ss-field" id="newChapterField" hidden><label for="newChapter">Opening chapter title</label><input id="newChapter" name="chapterTitle" maxlength="150" value="Chapter One"></div><div class="ss-field"><label for="newBody">Begin the manuscript</label><textarea class="ss-manuscript" name="body" id="newBody" maxlength="25000" placeholder="Start writing here. Paragraph breaks will become beautiful book pages…"></textarea></div><p class="ss-small-note">You can attach cover artwork, add later chapters, preview, schedule and publish after saving your private draft.</p><button type="submit" class="ss-primary" id="createDraft">Create private draft →</button></form>`;
+  $$('#ssCreateForm input,#ssCreateForm textarea,#ssCreateForm select').forEach(field=>field.addEventListener('input',()=>{state.dirty=true}));
+  $('#cancelCreate').onclick=()=>{if(!state.dirty||confirm('Discard this unfinished story?')){state.dirty=false;renderWelcome();}};
+  $$('input[name="storyKind"]').forEach(input=>input.onchange=()=>$('#newChapterField').hidden=selectedKind()!=='series');
+  const createRequestId=requestId();
+  $('#ssCreateForm').addEventListener('submit',async event=>{event.preventDefault();const f=event.currentTarget;const data={clientRequestId:createRequestId,kind:selectedKind(),title:f.elements.title.value,excerpt:f.elements.excerpt.value,genre:f.elements.genre.value,chapterTitle:f.elements.chapterTitle.value,body:f.elements.body.value};const btn=$('#createDraft');btn.disabled=true;btn.textContent='Creating…';try{const created=await request(base,'POST',data);notify('Private story draft created.');state.dirty=false;await loadBooks();const book=state.books.find(b=>b.chapters.some(c=>c.id===created.post.id));await selectBook(book?.id,created.post.id);}catch(error){notify(error.message,'error');btn.disabled=false;btn.textContent='Create private draft →';}});
+  $('#newTitle').focus();
+ }
+ function statusLabel(p){return `<span class="ss-tag ${escape(p.state)}">${statusText(p.state)}</span>`}
+ async function selectBook(bookId,chapterId){
+  if(state.pending){notify('Finish saving this chapter before switching.');return;}
+  if(state.dirty&&!state.pending&&!confirm('Leave this chapter with unsaved changes?'))return;
+  clearTimeout(state.saveTimer);state.dirty=false;state.selected=bookId;state.currentBook=state.books.find(b=>b.id===bookId)||null;renderBooks();
+  if(!state.currentBook){state.current=null;renderWelcome();return;}
+  const pick=chapterId||state.currentBook.chapters[0]?.id;if(!pick){renderWelcome();return;}
+  await openChapter(pick);
+ }
+ async function openChapter(id){if(state.pending){notify('Finish saving before switching chapters.');return;}clearTimeout(state.saveTimer);if(state.dirty&&!confirm('Discard your unsaved changes?'))return;state.dirty=false;
+  try{const detail=await request(base+'/'+encodeURIComponent(id));state.current=detail;state.tab='write';renderEditor();}
+  catch(error){notify(error.message,'error')}
+ }
+ function currentCover(){const b=state.currentBook;const firstId=b?.chapters[0]?.id;return state.current?.post?.id===firstId?(state.current.media||[]).find(m=>m.mime_type?.startsWith('image/'))||null:b?.cover||null;}
+ function editorData(){const f=$('#ssEditForm');return f?{title:f.elements.title.value,excerpt:f.elements.excerpt.value,genre:f.elements.genre.value,body:f.elements.body.value,version:state.current.post.version}:null;}
+ function renderEditor(){
+  const d=state.current,b=state.currentBook;if(!d||!b)return;const p=d.post,readOnly=p.state==='archived',firstId=b.chapters[0]?.id,cover=currentCover();
+  const published=b.publishedCount>0;
+  const livePath=b.kind==='series'?`/stories/book/${encodeURIComponent(b.slug)}`:`/stories/book/${encodeURIComponent(p.slug)}`;
+  const chapterButtons=b.chapters.map((c,i)=>`<button type="button" data-chapter="${escape(c.id)}" class="${p.id===c.id?'is-active':''}" aria-pressed="${p.id===c.id}">${String(i+1).padStart(2,'0')} ${escape(c.title)}</button>`).join('');
+  $('#ssDesk').innerHTML=`<div class="ss-editor"><header class="ss-editor-top"><div><span class="ss-eyebrow">02 / THE WRITER’S DESK</span><h2>${escape(b.title)}</h2><p class="ss-editor-subtitle">${b.kind==='series'?'A serial novel · '+chapterCount(b.chapterCount):'A standalone story'} · ${escape(b.genre)} · ${readingTime(b.wordCount)} min to read</p></div><div class="ss-state">${statusLabel(p)} <span id="ssSaveState">${readOnly?'Archived · read only':'All changes saved'}</span></div></header>
+   ${b.kind==='series'?`<section class="ss-book-settings"><h3>Book jacket & metadata</h3><div class="ss-field"><label for="bookTitle">Book title</label><input id="bookTitle" maxlength="150" value="${escape(d.book?.title||b.title)}" ${readOnly?'disabled':''}></div><div class="ss-field"><label for="bookDescription">Book description</label><textarea id="bookDescription" rows="2" maxlength="380" ${readOnly?'disabled':''}>${escape(d.book?.summary||b.description)}</textarea></div><button type="button" id="updateBook" class="ss-quiet" ${readOnly?'disabled':''}>Save book details</button></section>`:''}
+   <div class="ss-chapter-tabs" role="group" aria-label="Book chapters">${chapterButtons}${b.kind==='series'?'<button type="button" id="addChapter">+ Add chapter</button>':'<button type="button" id="makeSeries">+ Make a serial</button>'}</div>
+   <div class="ss-editor-tabs" role="tablist" aria-label="Writing or preview"><button type="button" data-tab="write" role="tab" aria-selected="true">Write</button><button type="button" data-tab="preview" role="tab" aria-selected="false">Proof preview</button></div>
+   <form id="ssEditForm" autocomplete="off"><div class="ss-editor-grid"><div class="ss-editor-copy"><div id="ssEditFields"><div class="ss-field"><label for="chapterTitle">Chapter title</label><input id="chapterTitle" name="title" maxlength="150" value="${escape(p.title)}" ${readOnly?'disabled':''} required></div><div class="ss-field"><label for="chapterSummary">Chapter excerpt</label><textarea id="chapterSummary" name="excerpt" rows="3" maxlength="380" ${readOnly?'disabled':''}>${escape(p.excerpt||'')}</textarea></div><div class="ss-field"><label for="chapterGenre">Genre</label><select id="chapterGenre" name="genre" ${readOnly?'disabled':''}>${genres.map(g=>`<option${g===d.genre?' selected':''}>${escape(g)}</option>`).join('')}</select></div><div class="ss-field"><label for="chapterBody">Manuscript</label><textarea class="ss-manuscript" id="chapterBody" name="body" spellcheck="true" maxlength="25000" ${readOnly?'disabled':''}>${escape(p.body||'')}</textarea></div><div class="ss-small-note"><span id="chapterWords">${(p.body||'').trim().split(/\s+/).filter(Boolean).length}</span> words · <span id="chapterMinutes">${readingTime((p.body||'').trim().split(/\s+/).filter(Boolean).length)}</span> min read · 25,000 characters per chapter</div></div><div id="ssProof" hidden></div></div><aside class="ss-side-panel"><div><h3>Cover art</h3><div id="coverPreview" class="ss-cover ss-book-tone-${Number(b.coverTone||0)}">${cover?.storage_key?`<img src="${url('/media/'+encodeURIComponent(cover.storage_key))}" alt="Book cover">`:escape(b.title)}</div><label class="ss-cover-upload"><span>Upload JPG, PNG or WebP</span><input type="file" id="coverFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" ${readOnly?'disabled':''}></label><p>First chapter artwork becomes the cover. Choose an image you own or are licensed to use.</p></div><div><h3>Ready to publish?</h3><ul class="ss-progress-list" id="qualityChecklist"><li class="${p.title?'is-done':''}">Chapter title</li><li class="${p.excerpt?'is-done':''}">Reader description</li><li class="${p.body?.trim()?'is-done':''}">Manuscript text</li><li class="${cover?'is-done':''}">Cover artwork (optional)</li></ul></div><div><h3>Reading experience</h3><p>Paper · Sepia · Night</p><p>Finger-driven page turning with real recorded paper audio; readers opt in to sound.</p>${published?`<a class="ss-link" href="${url(livePath)}" target="_blank" rel="noopener">Open published book ↗</a>`:'<p>Public book links appear only after publication.</p>'}</div></aside></div></form>
+   <div class="ss-schedule" id="ssSchedule" ${readOnly||p.state==='published'?'hidden':''}><div class="ss-field"><label for="scheduleLocal">Release date & time (${escape(boot.timezone||'Asia/Kolkata')})</label><input type="datetime-local" id="scheduleLocal" ${p.scheduled_at?`value="${escape(localInput(p.scheduled_at))}"`:''}></div><button type="button" class="ss-quiet" id="scheduleNow">${p.state==='scheduled'?'Reschedule':'Schedule chapter'}</button></div>
+   <footer class="ss-editor-actions"><div class="ss-actions-left"><button type="button" class="ss-quiet" id="saveChapter" ${readOnly?'disabled':''}>Save changes</button>${p.state==='scheduled'?'<button type="button" class="ss-quiet" id="unscheduleChapter">Unschedule</button>':''}<span id="ssAutosaveNote" class="ss-action-status">${p.state==='draft'?'Draft autosave on':'Edits require explicit save'}</span></div><div class="ss-actions-right">${p.state==='archived'?'<button type="button" id="restoreChapter" class="ss-quiet">Restore</button>':`<button type="button" id="archiveChapter" class="ss-quiet">Archive</button>${p.state!=='published'?'<button type="button" id="publishChapter" class="ss-primary">Publish chapter →</button>':''}`}</div></footer>
+  </div>`;
+  bindEditor();
+ }
+ function localInput(iso){try{const parts=new Intl.DateTimeFormat('sv-SE',{timeZone:boot.timezone||'Asia/Kolkata',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));return parts.replace(' ','T');}catch{return ''}}
+ function markDirty(){state.dirty=true;const status=$('#ssSaveState');if(status)status.textContent='Unsaved edits';const words=($('#chapterBody')?.value||'').trim().match(/\S+/g)||[];if($('#chapterWords'))$('#chapterWords').textContent=words.length;if($('#chapterMinutes'))$('#chapterMinutes').textContent=readingTime(words.length);
+  clearTimeout(state.saveTimer);if(state.current?.post.state==='draft')state.saveTimer=setTimeout(()=>void saveChapter({auto:true}),1500);
+ }
+ async function saveChapter({auto=false}={}){
+  if(state.pending)return;const values=editorData();if(!values||!state.current)return;clearTimeout(state.saveTimer);
+  if(!state.dirty&&!auto){notify('No changes to save.');return state.current;}
+  state.pending=true;const originalSnapshot=JSON.stringify({title:values.title,excerpt:values.excerpt,genre:values.genre,body:values.body});const currentId=state.current.post.id;const status=$('#ssSaveState');if(status)status.textContent='Saving…';
+  try{const next=await request(base+'/'+encodeURIComponent(currentId),'PATCH',values);state.current=next;const currentDraft=editorData();const currentSnapshot=currentDraft&&JSON.stringify({title:currentDraft.title,excerpt:currentDraft.excerpt,genre:currentDraft.genre,body:currentDraft.body});state.dirty=currentSnapshot!==originalSnapshot;if(status)status.textContent=state.dirty?'New edits waiting to save':'Saved';await loadBooks();state.currentBook=state.books.find(b=>b.chapters.some(c=>c.id===currentId))||state.currentBook;if(!auto)notify(state.dirty?'Earlier edits saved; new edits are pending.':'Chapter saved.');if(state.dirty&&next.post.state==='draft')state.saveTimer=setTimeout(()=>void saveChapter({auto:true}),320);return next;}
+  catch(error){if(status)status.textContent=error.status===409?'Version conflict · reload':'Could not save';if(!auto)notify(error.message,'error');else notify('Autosave failed: '+error.message,'error');if(error.status===409)$('#saveChapter').textContent='Reload to reconcile';return null;}
+  finally{state.pending=false;}
+ }
+ async function action(which,detail){
+  if(!state.current||state.pending)return;const p=state.current.post;
+  if(state.dirty){const saved=await saveChapter();if(!saved){notify('Save the chapter before continuing.','error');return;}}
+  const body={version:state.current.post.version,...detail};state.pending=true;
+  try{const updated=await request(base+'/'+encodeURIComponent(p.id)+'/'+which,'POST',body);
+    notify(({publish:'Chapter published to the bookshelf.',archive:'Chapter archived.',restore:'Chapter restored.',schedule:'Chapter scheduled.',unschedule:'Schedule removed.',serialize:'Serial book created.'})[which]||'Updated.');
+    await loadBooks();const book=state.books.find(b=>b.chapters.some(c=>c.id===p.id));state.selected=book?.id||null;state.currentBook=book||null;
+    if(which==='serialize'&&book){state.pending=false;await selectBook(book.id,p.id);}else{state.current=updated?.post?updated:await request(base+'/'+encodeURIComponent(p.id));renderBooks();renderEditor();}
+  }catch(error){notify(error.message,'error');if(error.status===409){$('#ssSaveState').textContent='Version conflict. Reload before continuing.';}}
+  finally{state.pending=false;}
+ }
+ function confirmAction(title,explanation){return new Promise(resolve=>{const dialog=$('#ssConfirm');$('#ssConfirmTitle').textContent=title;$('#ssConfirmText').textContent=explanation;const done=()=>{resolve(dialog.returnValue==='confirm');dialog.removeEventListener('close',done)};dialog.addEventListener('close',done);dialog.showModal();});}
+ function bindEditor(){
+  const p=state.current.post,b=state.currentBook;
+  $$('[data-chapter]').forEach(button=>button.onclick=()=>openChapter(button.dataset.chapter));
+  $('#addChapter')?.addEventListener('click',()=>showNewChapter(b.slug));
+  $('#makeSeries')?.addEventListener('click',async()=>{if(!await confirmAction('Continue as a serial novel?','The existing story becomes Chapter One. Its public book URL may change, although existing post content remains available.'))return;await action('serialize');});
+  $$('[data-tab]').forEach(button=>button.onclick=()=>{state.tab=button.dataset.tab;$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));$('#ssEditFields').hidden=state.tab!=='write';$('#ssProof').hidden=state.tab!=='preview';if(state.tab==='preview')renderProof();});
+  $$('#ssEditForm input:not([type=file]),#ssEditForm textarea,#ssEditForm select').forEach(input=>input.addEventListener('input',markDirty));
+  $('#saveChapter').onclick=async()=>{if($('#saveChapter').textContent.includes('Reload')){await openChapter(p.id);return;}await saveChapter();};
+  $('#publishChapter')?.addEventListener('click',async()=>{if(!await confirmAction('Publish this chapter?','Publishing immediately makes this work visible on your public Stories bookshelf. Copyright remains yours; it cannot make text technically impossible to copy.'))return;await action('publish');});
+  $('#archiveChapter')?.addEventListener('click',async()=>{if(!await confirmAction('Archive this chapter?','This chapter will disappear from the public reader. Other published chapters will remain visible.'))return;await action('archive');});
+  $('#restoreChapter')?.addEventListener('click',()=>action('restore'));
+  $('#unscheduleChapter')?.addEventListener('click',()=>action('unschedule'));
+  $('#scheduleNow')?.addEventListener('click',async()=>{const localTime=$('#scheduleLocal')?.value;if(!localTime){notify('Choose a release date and time.','error');return;}if(!await confirmAction('Schedule this chapter?','The chapter stays private until the scheduled time. The existing site scheduler handles publication.'))return;await action('schedule',{localTime,timezone:boot.timezone||'Asia/Kolkata'});});
+  $('#updateBook')?.addEventListener('click',async()=>{const btn=$('#updateBook');btn.disabled=true;try{const next=await request(base+'/series/'+encodeURIComponent(b.slug),'PATCH',{title:$('#bookTitle').value,summary:$('#bookDescription').value,updatedAt:state.current.book.updated_at});state.current.book=next;await loadBooks();state.currentBook=state.books.find(x=>x.id===b.id);state.selected=b.id;renderEditor();notify('Book jacket updated.');}catch(error){notify(error.message,'error');}finally{btn.disabled=false;}});
+  $('#coverFile')?.addEventListener('change',event=>{const file=event.target.files?.[0];if(file)void uploadCover(file);});
+ }
+ function renderProof(){const node=$('#ssProof');if(!node)return;node.replaceChildren();const f=$('#ssEditForm');const wrap=document.createElement('article');wrap.className='ss-preview';const eTitle=document.createElement('h2');eTitle.textContent=state.currentBook.title;wrap.append(eTitle);const chapter=document.createElement('h3');chapter.textContent=f.elements.title.value;wrap.append(chapter);const text=f.elements.body.value.trim();for(const value of text.split(/\n\s*\n/)){if(!value.trim())continue;const p=document.createElement('p');p.textContent=value;wrap.append(p);}const foot=document.createElement('div');foot.className='ss-preview-foot';foot.textContent='PREVIEW ONLY · NOT PUBLIC';wrap.append(foot);node.append(wrap);}
+ async function uploadCover(file){if(!state.currentBook)return;if(!['image/jpeg','image/png','image/webp','image/heic','image/heif'].includes(file.type)){notify('Choose a JPG, PNG, WebP or HEIC image.','error');return;}if(file.size>12*1024*1024){notify('Cover must be below 12 MB.','error');return;}
+  const firstId=state.currentBook.chapters[0]?.id;if(!firstId)return;
+  try{notify('Uploading your cover…');const params=new URLSearchParams({postId:firstId,alt:state.currentBook.title+' — cover art'});const uploaded=await request('/api/admin/media/upload?'+params,'POST',file);
+    const record=await request('/api/admin/posts/'+encodeURIComponent(firstId));const media=record?.media||[];
+    if(uploaded?.id&&media.some(m=>m.id===uploaded.id))await request('/api/admin/posts/'+encodeURIComponent(firstId)+'/media-order','POST',{ids:[uploaded.id,...media.filter(m=>m.id!==uploaded.id).map(m=>m.id)]});
+    await loadBooks();state.currentBook=state.books.find(b=>b.id===state.selected)||state.currentBook;state.current=await request(base+'/'+encodeURIComponent(state.current.post.id));renderEditor();notify('Cover art added to this story.');
+  }catch(error){notify(error.message,'error')}
+ }
+ function showNewChapter(slug){if(state.dirty&&!confirm('Discard unsaved changes?'))return;state.dirty=false;clearTimeout(state.saveTimer);$('#ssDesk').innerHTML=`<form id="ssNewChapter" class="ss-create"><header class="ss-editor-top"><div><span class="ss-eyebrow">ADD TO THE STORY</span><h2>A new chapter.</h2><p class="ss-editor-subtitle">${escape(state.currentBook?.title||'Your serial novel')}</p></div><button type="button" id="newChapterCancel" class="ss-quiet">Back to book</button></header><div class="ss-field"><label for="nextTitle">Chapter title</label><input id="nextTitle" name="title" maxlength="150" required placeholder="An unexpected visitor"></div><div class="ss-field"><label for="nextExcerpt">Chapter description</label><textarea id="nextExcerpt" name="excerpt" maxlength="380" rows="3" placeholder="A short description for the contents page"></textarea></div><div class="ss-field"><label for="nextGenre">Genre</label><select id="nextGenre" name="genre">${genres.map(g=>`<option ${state.currentBook?.genre===g?'selected':''}>${escape(g)}</option>`).join('')}</select></div><div class="ss-field"><label for="nextBody">Manuscript</label><textarea class="ss-manuscript" id="nextBody" name="body" maxlength="25000" placeholder="This chapter is saved privately until you publish…"></textarea></div><button type="submit" class="ss-primary" id="saveNewChapter">Add as draft →</button></form>`;
+  $$('#ssNewChapter input,#ssNewChapter textarea,#ssNewChapter select').forEach(field=>field.addEventListener('input',()=>{state.dirty=true}));
+  $('#newChapterCancel').onclick=()=>{if(state.dirty&&!confirm('Discard this unfinished chapter?'))return;state.dirty=false;const b=state.currentBook;void selectBook(b.id,b.chapters.at(-1).id)};
+  const chapterRequestId=requestId();
+  $('#ssNewChapter').onsubmit=async event=>{event.preventDefault();const f=event.currentTarget;const button=$('#saveNewChapter');button.disabled=true;try{const created=await request(base+'/series/'+encodeURIComponent(slug)+'/chapters','POST',{clientRequestId:chapterRequestId,title:f.elements.title.value,excerpt:f.elements.excerpt.value,genre:f.elements.genre.value,body:f.elements.body.value});await loadBooks();const updated=state.books.find(b=>b.slug===slug);state.dirty=false;await selectBook(updated.id,created.post.id);notify('Private chapter draft created.');}catch(error){notify(error.message,'error');button.disabled=false;}};
+  $('#nextTitle').focus();
+ }
+ $('#newBook').onclick=showCreate;$('#refreshBooks').onclick=()=>loadBooks();$('#bookSearch').oninput=event=>{state.search=event.target.value.toLowerCase().trim();renderBooks()};$$('[data-status]').forEach(button=>button.onclick=()=>{state.filter=button.dataset.status;$$('[data-status]').forEach(b=>b.classList.toggle('is-selected',b===button));renderBooks();});
+ $('#admin-logout')?.addEventListener('click',async()=>{if(!await confirmAction('Sign out of Studio?','You will return to the Studio sign-in page.'))return;try{await request('/api/admin/logout','POST',{});location.assign(url('/admin'));}catch(error){notify(error.message,'error');}});
+ $('[data-motion-toggle]')?.addEventListener('click',event=>{const active=event.currentTarget.getAttribute('aria-pressed')!=='true';event.currentTarget.setAttribute('aria-pressed',String(active));document.documentElement.classList.toggle('ss-reduced-motion',active);});
+ $('[data-studio-collapse]')?.addEventListener('click',event=>{const aside=$('.admin-sidebar');const next=event.currentTarget.getAttribute('aria-expanded')!=='false';event.currentTarget.setAttribute('aria-expanded',String(!next));aside?.classList.toggle('is-collapsed',next);});
+ document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'&&state.current){event.preventDefault();void saveChapter();}});
+ window.addEventListener('beforeunload',event=>{if(state.dirty){event.preventDefault();event.returnValue='';}});
+ void loadBooks();
+})();
