@@ -1,0 +1,36 @@
+name: Diwali isolated validation
+
+on:
+  push:
+    branches:
+      - feat/diwali-personal-greetings-20261107
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Corner server and sender helper syntax
+        run: |
+          node --check corner/src/diwali-sender.mjs
+          node --check corner/src/server.mjs
+      - name: Run isolated Diwali regression tests
+        run: node --test corner/tests/diwali-personal.test.mjs
+      - name: Compile embedded greeting and creator scripts
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs'),vm=require('node:vm');
+          for(const file of ['corner/public/diwali-siva.html','corner/public/diwali-create.html']){
+            const html=fs.readFileSync(file,'utf8');
+            const match=html.match(/<script>([\s\S]*?)<\/script>/i);
+            if(!match)throw Error('Missing embedded script: '+file);
+            new vm.Script(match[1],{filename:file});
+            console.log('Compiled:',file);
+          }
+          NODE
