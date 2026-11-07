@@ -125,8 +125,8 @@ button,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration
   .hero-hint {margin-top:clamp(14px,2.8svh,30px);font-size:10px}
 }
 /* Nonblocking canvas over every section, including tap-to-rocket on mobile. */
-#diwali-fireworks-layer {position:fixed;z-index:18;inset:0;width:100%;height:100%;pointer-events:none;display:block;contain:strict}
-#diwali-sound-toggle {position:fixed;z-index:22;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:8px 12px;color:#ffdf99;background:rgba(9,19,44,.85);border:1px solid rgba(217,184,118,.73);border-radius:24px;backdrop-filter:blur(12px);font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 5px 24px rgba(0,0,0,.18)}
+#diwali-fireworks-layer {position:fixed;z-index:60;inset:0;width:100%;height:100%;pointer-events:none;display:block;contain:strict}
+#diwali-sound-toggle {position:fixed;z-index:62;right:max(14px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:8px 12px;color:#ffdf99;background:rgba(9,19,44,.85);border:1px solid rgba(217,184,118,.73);border-radius:24px;backdrop-filter:blur(12px);font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 5px 24px rgba(0,0,0,.18)}
 #diwali-sound-toggle svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 #diwali-sound-toggle[aria-pressed="false"] {color:#e1e0e6;border-color:rgba(220,216,220,.4)}
 #diwali-sound-toggle:hover {background:rgba(21,38,74,.95)}
@@ -286,8 +286,8 @@ function launch(toX,toY,interactive){
   if(interactive && now-lastLaunch<210)return;
   if(interactive)lastLaunch=now;
   toX=Math.max(35,Math.min(width-35,toX));
-  toY=Math.max(65,Math.min(height*.69,toY));
-  const duration=motion.matches?.2:(width<=600?.56:.68)+Math.random()*.15;
+  toY=Math.max(65,Math.min(height*.43,toY));
+  const duration=motion.matches ? 0.2 : (width<=600 ? 0.56 : 0.68)+Math.random()*0.15;
   const color=colors[colorStep++%colors.length];
   if(motion.matches){
     bloom(toX,toY,8,color);
@@ -374,10 +374,22 @@ function fountain(now){
       .9+Math.random()*2.2,Math.random()>.24?colors[0]:colors[5],"fountain");
   }
 }
+function handheldSparklers(now){
+  for(const side of [-1,1]){
+    const x=side<0?Math.max(18,width*.078):Math.min(width-18,width*.922);
+    const y=height*(.44+Math.sin(now*.0012+(side<0?0:1.5))*.05);
+    const angle=now*.0035+(side<0?0:Math.PI);
+    const pointX=x+Math.cos(angle)*12,pointY=y+Math.sin(angle)*12;
+    const direction=Math.random()*Math.PI*2;
+    const speed=25+Math.random()*75;
+    addSpark(pointX,pointY,Math.cos(direction)*speed,Math.sin(direction)*speed,.18+Math.random()*.30,
+      .7+Math.random()*1.35,Math.random()>.40?colors[5]:colors[0],"glitter");
+  }
+}
 function drawOne(s,dt){
   s.life-=dt;
   s.x+=s.vx*dt;s.y+=s.vy*dt;
-  const d=s.kind==="burst"?.985:.976;
+  const d=s.kind==="burst" ? .985 : .976;
   s.vx*=Math.pow(d,dt*60);
   s.vy=s.vy*Math.pow(d,dt*60)+(s.kind==="fountain"?76:63)*dt;
   const alpha=Math.max(0,Math.min(1,s.life/s.maxLife));
@@ -397,11 +409,12 @@ function frame(now){
   if(isHero && !motion.matches){
     if(now-lastFountain>(width<=600?90:46)){
       fountain(now);
+      handheldSparklers(now);
       lastFountain=now;
     }
     if(now-lastSky>5800){
       // Ambient bursts stay along the outer upper edge, away from hero copy.
-      const side=Math.random()<.5?.16:.84;
+      const side=Math.random()<.5 ? .16 : .84;
       launch(width*side,Math.max(78,height*(.14+Math.random()*.17)),false);
       lastSky=now;
     }
@@ -427,7 +440,7 @@ function frame(now){
   }
   pen.restore();
   // Stop when there is no visible hero and no active user-generated effect.
-  if(isHero || rockets.length || sparks.length){raf=requestAnimationFrame(frame);}
+  if(((isHero && !motion.matches) || rockets.length || sparks.length) && !raf){raf=requestAnimationFrame(frame);}
 }
 function start(){
   if(!document.hidden&&!raf){
