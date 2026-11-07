@@ -1,4 +1,5 @@
 import {ReadingAnalytics} from './reading-analytics.mjs';
+import {normalizeDiwaliSender, personalizeDiwaliHtml} from './diwali-sender.mjs';
 import { dispatchPortfolioRequest } from './unified-dispatch.mjs';
 import { startUnifiedMaintenance } from './unified-maintenance.mjs';
 import {readingRoutes} from './reading-routes.mjs';
@@ -508,6 +509,28 @@ async function route(req,res){
     if(pathname.startsWith('/media/')){if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');return await mediaFile(req,res,pathname.split('/').at(-1),url.searchParams.get('variant')||'');}
     if(pathname==='/vendor/gsap-3.15.0.min.js')return end(res,200,fs.readFileSync(new URL(import.meta.resolve('gsap/dist/gsap.min.js'))),{'content-type':'text/javascript; charset=utf-8','cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff'});
     if(['/stories-unified.css','/corner-living-motion.css','/corner-living-motion.js','/stories-studio.css','/stories-studio.js','/stories.css','/stories-library.js','/stories-reader.css','/stories-reader.js','/stories-motion.mjs','/stories-paper.mp3','/style.css','/comfort.css','/refresh.css','/landing.css','/experience.js','/companion.js','/companion.css','/image-crop.js','/analysis-explore.js','/analysis-explore.css','/analysis-widgets.js','/analysis-widgets.css','/reading-analytics.js','/analysis-studio.js','/analysis.css','/communications.js','/communication-center.css','/command-center.css','/command-chat.css','/command-chat.js','/studio-theme.css','/studio-theme.js','/composer-workspace.css','/composer-workspace.js','/email-vm-mark.png','/studio.css','/media-library.css','/v5-like-particles.svg','/v5.js','/v5.css','/v6-public.css','/v6-motion.css','/v6-motion.js','/v6-reader.js','/v6-conversation.js','/v6-gravity.js','/v6-toast.js','/v6-publish-motion.js','/v6-publish-motion.css','/v6-mobile-ui.css','/v6-focus-icon.svg','/v6-ios-fix.css','/v6-ios-fix.js','/v6-pulse.css','/v6-pulse.js','/v6-action-motion.js','/v6-action-motion.css','/v6-motion-policy.js','/v6-motion-policy.css','/v6-reader-motion.js','/v6-reader-motion.css','/v6-photo-compare.js','/v6-photo-compare.css','/journal-series.css','/v51-mobile.css','/v51-mobile.js','/v5-heart.svg','/v5-hearts.gif','/v5-stars.gif','/v5-confetti.gif','/studio-motion.js','/magic.css','/motion.css','/motion.js','/v3.css','/v3.js','/v3-memories.css','/v3-memories.js','/v3-wishes.css','/v3-wishes.js','/v3-phase4.css','/v3-phase4.js','/v3-language-workbench.css','/v3-language-workbench.js','/account.css','/account-quiet.css','/legal.css','/app.js','/post-media.css','/post-gallery.js','/admin.js','/account.js','/nav.js','/mark.svg','/og.svg'].includes(pathname))return staticFile(res,pathname);
+    // Stateless name personalization: no accounts, records or changes to existing Corner routes.
+    if(pathname==='/diwali/create'||pathname==='/diwali/create/') {
+      if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');
+      const html=req.method==='HEAD'?'':fs.readFileSync(path.join(staticRoot,'diwali-create.html'),'utf8');
+      return page(res,html);
+    }
+    if(pathname==='/diwali'||pathname==='/diwali/') {
+      if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');
+      const from=url.searchParams.get('from');
+      if(from===null)return end(res,302,'',{'location':(config.basePath||'')+'/diwali/create','cache-control':'no-store'});
+      const sender=normalizeDiwaliSender(from);
+      if(!sender)throw httpError(400,'Enter a valid sender name between 2 and 48 characters.');
+      const template=fs.readFileSync(path.join(staticRoot,'diwali-siva.html'),'utf8');
+      const html=personalizeDiwaliHtml(template,sender);
+      return page(res,req.method==='HEAD'?'':html);
+    }
+    if(pathname==='/diwali/preview.png') {
+      if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');
+      const {default:sharp}=await import('sharp');
+      const image=await sharp(fs.readFileSync(path.join(staticRoot,'diwali-generic-preview.svg'))).png().toBuffer();
+      return end(res,200,req.method==='HEAD'?'':image,{'content-type':'image/png','cache-control':'public,max-age=86400','x-content-type-options':'nosniff'});
+    }
     if(pathname==='/diwali/siva'||pathname==='/diwali/siva/') {
       if(!['GET','HEAD'].includes(req.method))throw httpError(405,'Method not allowed');
       const html=req.method==='HEAD'?'':fs.readFileSync(path.join(staticRoot,'diwali-siva.html'),'utf8');
