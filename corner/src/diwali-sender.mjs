@@ -38,6 +38,7 @@ export function personalizeDiwaliHtml(template, sender) {
   return template
     .replaceAll(ORIGINAL_PREVIEW, GENERIC_PREVIEW)
     .replaceAll(ORIGINAL_URL, shareUrl)
+    .replaceAll("A warm Diwali greeting from Siva, celebrating light, joy and kindness.", `A warm Diwali greeting from ${name}, celebrating light, joy and kindness.`)
     .replaceAll(ORIGINAL_SENDER, name)
     .replace("</head>", '<meta name="robots" content="noindex, noarchive"></head>');
 }
