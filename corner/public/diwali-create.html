@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09132c">
+<meta name="robots" content="noindex, follow">
+<title>Create Your Diwali Greeting | The Light of Kindness</title>
+<meta name="description" content="Create a personal Diwali greeting in your name, with a glowing diya and a shareable link. No sign-in required.">
+<link rel="canonical" href="https://vamsimarripudi.me/corner/diwali/create">
+<style>
+:root{color-scheme:dark;--bg:#09132c;--panel:#132344;--line:rgba(220,183,111,.42);--gold:#dbbb7a;--ivory:#fff2d8;--muted:#bdbed0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{min-width:320px;margin:0;color:var(--ivory);background:radial-gradient(ellipse 70% 70% at 50% 35%,#1a3058,transparent),var(--bg);overflow-x:hidden}
+a{color:inherit}button,input{font:inherit}a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid #ffe5af;outline-offset:4px}
+main{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:65px 24px 75px;position:relative;isolation:isolate}
+main:before{position:absolute;content:"";inset:18px;border:1px solid var(--line);pointer-events:none;z-index:-1}
+main:after{content:"";position:absolute;inset:18px;border:2px solid transparent;border-top-color:#e6c58c;border-bottom-color:#e6c58c;clip-path:polygon(0 0,8% 0,8% 100%,0 100%,92% 0,100% 0,100% 100%,92% 100%);pointer-events:none}
+.back{position:absolute;top:36px;left:clamp(36px,5vw,90px);font-size:12px;color:var(--gold);text-decoration:none;display:inline-flex;gap:9px;align-items:center}
+.back:hover{text-decoration:underline;text-underline-offset:5px}
+.divider{width:min(240px,68%);display:flex;align-items:center;gap:16px;justify-content:center;margin:0 auto 23px;color:var(--gold)}
+.divider:before,.divider:after{content:"";flex:1;height:1px;background:var(--line)}
+.title{text-align:center;max-width:770px;margin:0 auto}
+.eyebrow{text-transform:uppercase;color:var(--gold);font-size:10px;letter-spacing:.28em;font-weight:650}
+h1{font:italic clamp(48px,8vw,94px)/1.02 Georgia,serif;color:var(--ivory);letter-spacing:-.052em;margin:14px auto 18px}
+h1 em{color:#ffdf9c;font-style:italic}
+.lead{font-size:clamp(15px,2vw,18px);line-height:1.7;color:var(--muted);max-width:48ch;margin:0 auto}
+.workspace{width:min(960px,100%);display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:34px;margin-top:52px;align-items:stretch}
+.editor,.preview{position:relative;background:linear-gradient(150deg,rgba(31,46,82,.95),rgba(12,23,52,.98));border:1px solid var(--line);padding:32px;border-radius:3px;min-width:0}
+.editor h2{font:normal 28px/1.2 Georgia,serif;margin:0 0 12px;color:var(--ivory)}
+.explain{font-size:14px;color:var(--muted);line-height:1.65;margin:0 0 27px}
+label{display:block;color:#f0dfc0;font-size:12px;letter-spacing:.04em;font-weight:650;margin-bottom:12px}
+input{display:block;width:100%;min-height:52px;background:#0a1635;color:var(--ivory);border:1px solid rgba(223,186,118,.6);border-radius:2px;font-size:17px;padding:12px 15px}
+input::placeholder{color:#9f9eaf}
+.help{margin-top:11px;font-size:12px;line-height:1.5;color:var(--muted)}
+.error{min-height:24px;margin:9px 0 0;color:#ffdba2;font-size:12px}
+.make{width:100%;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;color:#1e2342;background:#ffe0a0;border:1px solid #ffe0a0;font-size:14px;font-weight:700;cursor:pointer;transition:transform .2s,background .2s}
+.make:hover{background:#fff0c8;transform:translateY(-2px)}.make:active{transform:scale(.99)}
+.make:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.actions{display:flex;gap:12px;margin-top:12px}
+.actions button{flex:1;min-height:45px;padding:10px 12px;border:1px solid var(--line);color:var(--ivory);font-size:12px;background:transparent;cursor:pointer}
+.actions button:hover{border-color:#ffe5af}.actions button:disabled{opacity:.4;cursor:not-allowed}
+.privacy{font-size:12px;line-height:1.65;color:var(--muted);margin:23px 0 0}
+.preview{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;min-height:455px;background:radial-gradient(circle at 50% 50%,rgba(234,178,82,.12),transparent 51%),linear-gradient(#1d3159,#101b3a)}
+.preview:before{content:"";position:absolute;inset:17px;border:1px solid rgba(223,186,118,.3);pointer-events:none}
+.preview-header{font-size:10px;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin:0 0 18px}
+.preview svg{width:140px;height:140px;filter:drop-shadow(0 0 24px rgba(246,189,87,.34))}
+.flame{transform-origin:50% 48%;animation:flicker 2s ease-in-out infinite alternate}
+.preview h2{font:italic clamp(48px,6vw,68px)/1 Georgia,serif;margin:9px 0 20px;color:#ffe0a0}
+.preview p{font:italic 18px/1.5 Georgia,serif;margin:0;color:#ecd6b2}
+.preview-name{font:italic clamp(22px,3vw,32px) Georgia,serif;color:#ffe0a0;min-height:40px;margin-top:5px;overflow-wrap:anywhere;max-width:100%}
+footer{padding:25px 16px 35px;text-align:center;border-top:1px solid var(--line);font-size:12px;color:#aeb3c6}
+footer strong{color:var(--gold);font-weight:500}
+.status{min-height:20px;margin:9px 0 0;color:#f5d7a1;font-size:12px}
+@keyframes flicker{from{transform:rotate(-2deg) scaleX(.92)}to{transform:rotate(3deg) scaleX(1.05)}}
+@media(max-width:760px){main{padding:94px 22px 67px}.workspace{grid-template-columns:1fr;max-width:510px;gap:22px;margin-top:32px}.preview{min-height:360px;order:-1;padding:22px}.preview svg{width:115px;height:115px}.editor{padding:25px}.back{top:40px;left:35px}.eyebrow{letter-spacing:.18em}h1{font-size:clamp(43px,11vw,69px)}}
+@media(prefers-reduced-motion:reduce){.flame{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="/diwali/siva">← Back to the original wish</a>
+<div class="title">
+  <div class="divider" aria-hidden="true">✦</div>
+  <div class="eyebrow">A FESTIVAL OF LIGHT &amp; KINDNESS</div>
+  <h1>Make Diwali <em>personal.</em></h1>
+  <p class="lead">Turn a beautiful festival greeting into your own heartfelt wish. Enter your name, preview it and share one special link.</p>
+</div>
+<div class="workspace">
+  <section class="editor" aria-label="Create your greeting">
+    <h2>Your wish, your name.</h2>
+    <p class="explain">The greeting keeps the same diya lights, golden ornaments and festive message. Only the sender name changes.</p>
+    <form id="createForm" novalidate>
+      <label for="sender">Your name</label>
+      <input id="sender" name="sender" type="text" autocomplete="name" required maxlength="72" placeholder="e.g. Siva Palavalasa" aria-describedby="nameHelp nameError">
+      <p id="nameHelp" class="help">2 to 48 characters. Names in Indian languages and other alphabets are supported.</p>
+      <p id="nameError" class="error" role="alert"></p>
+      <button class="make" type="submit" id="makeButton">Open my greeting <span aria-hidden="true">↗</span></button>
+    </form>
+    <div class="actions">
+      <button type="button" id="copyButton" disabled>Copy my link</button>
+      <button type="button" id="whatsappButton" disabled>Share on WhatsApp ↗</button>
+    </div>
+    <p class="status" id="actionStatus" role="status" aria-live="polite"></p>
+    <p class="privacy">No account or upload is needed. Your name is included in your link, not stored in a greeting database.</p>
+  </section>
+  <section class="preview" aria-label="Live greeting preview">
+    <div class="preview-header">A PERSONAL DIWALI GREETING</div>
+    <svg viewBox="0 0 180 175" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#e08334"/><stop offset=".5" stop-color="#ffd178"/><stop offset="1" stop-color="#fff8de"/></linearGradient></defs><path class="flame" d="M90 8C67 45 73 58 90 81C115 57 108 36 90 8Z" fill="url(#g)"/><path d="M90 43c-9 13-5 26 0 33 11-9 11-20 0-33Z" fill="#fff7d7"/><ellipse cx="90" cy="99" rx="69" ry="19" fill="#4c2b2c" stroke="#ffe1a3" stroke-width="3"/><path d="M21 99C30 149 58 164 90 164S150 149 159 99Q90 126 21 99Z" fill="#a46543" stroke="#e9c18c" stroke-width="3"/><path d="M39 128Q90 151 141 128" stroke="#ffe1a3" stroke-width="3" fill="none"/></svg>
+    <h2>Happy Diwali</h2>
+    <p>With warm wishes from</p>
+    <div class="preview-name" id="previewName">Your name</div>
+  </section>
+</div>
+</main>
+<footer>Engineered by <strong>Vamsi Marripudi</strong> · A little light. A lot of kindness.</footer>
+<script>
+(function(){
+"use strict";
+const input=document.getElementById("sender");
+const form=document.getElementById("createForm");
+const preview=document.getElementById("previewName");
+const error=document.getElementById("nameError");
+const status=document.getElementById("actionStatus");
+const copy=document.getElementById("copyButton");
+const whatsapp=document.getElementById("whatsappButton");
+function currentName(){
+ const name=input.value.normalize("NFC").trim().replace(/\s+/gu," ");
+ if([...name].length<2||[...name].length>48)return null;
+ if(!/^[\p{L}\p{M}\p{N} .'-]+$/u.test(name)||!/\p{L}/u.test(name))return null;
+ return name;
+}
+function linkFor(name){return "https://vamsimarripudi.me/corner/diwali?from="+encodeURIComponent(name)}
+function refresh(){
+ const name=currentName();
+ preview.textContent=name||input.value.trim().slice(0,48)||"Your name";
+ copy.disabled=!name;whatsapp.disabled=!name;
+ error.textContent="";
+ status.textContent="";
+}
+input.addEventListener("input",refresh);
+form.addEventListener("submit",function(event){
+ event.preventDefault();
+ const name=currentName();
+ if(!name){error.textContent="Enter a valid name between 2 and 48 characters.";input.focus();return;}
+ location.assign(linkFor(name));
+});
+copy.addEventListener("click",async function(){
+ const name=currentName();if(!name)return;
+ try{await navigator.clipboard.writeText(linkFor(name));status.textContent="Your greeting link was copied.";}
+ catch{status.textContent="Copy is unavailable. Open the greeting and copy its URL.";}
+});
+whatsapp.addEventListener("click",function(){
+ const name=currentName();if(!name)return;
+ const msg="Happy Diwali! A special greeting with love from "+name+". "+linkFor(name);
+ const url="https://wa.me/?text="+encodeURIComponent(msg);
+ const popup=window.open(url,"_blank","noopener,noreferrer");
+ if(!popup)window.location.href=url;
+});
+refresh();
+})();
+</script>
+</body>
+</html>
