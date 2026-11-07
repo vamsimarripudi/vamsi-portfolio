@@ -34,6 +34,8 @@ test('personalized greeting link is stateless and preserves the card design',()=
   assert.equal(url,'https://vamsimarripudi.me/corner/diwali?from=Ananya%20Rao');
   const html=personalizeDiwaliHtml(original,sender);
   assert.match(html,/Ananya Rao/);
+  assert.match(html,/A warm Diwali greeting from Ananya Rao/);
+  assert.doesNotMatch(html,/greeting from Siva,/);
   assert.doesNotMatch(html,/Siva Palavalasa/);
   assert.match(html,/Happy/);
   assert.match(html,/id="compassion"/);
