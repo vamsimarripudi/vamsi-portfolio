@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+<defs>
+  <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080f2a"/><stop offset=".6" stop-color="#17284c"/><stop offset="1" stop-color="#0b142b"/></linearGradient>
+  <radialGradient id="light"><stop stop-color="#ffdb92" stop-opacity=".48"/><stop offset=".45" stop-color="#f0b756" stop-opacity=".16"/><stop offset="1" stop-color="#e7a650" stop-opacity="0"/></radialGradient>
+  <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9ba79"/><stop offset=".6" stop-color="#b66b3e"/><stop offset="1" stop-color="#6e443c"/></linearGradient>
+  <linearGradient id="fire" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#e58b37"/><stop offset=".4" stop-color="#ffcb69"/><stop offset="1" stop-color="#fff8c8"/></linearGradient>
+  <pattern id="dust" patternUnits="userSpaceOnUse" width="61" height="54"><circle cx="5" cy="9" r="1.5" fill="#d4b177" opacity=".3"/><circle cx="41" cy="33" r=".8" fill="#d4b177" opacity=".3"/></pattern>
+</defs>
+<rect width="1200" height="630" fill="url(#night)"/>
+<rect width="1200" height="630" fill="url(#dust)"/>
+<rect x="25" y="25" width="1150" height="580" fill="none" stroke="#bb985d" stroke-width="1.4"/>
+<path d="M25 90V25H92M1108 25h67v65M25 543v62h67M1108 605h67v-62" fill="none" stroke="#f5ce8f" stroke-width="3"/>
+<circle cx="370" cy="330" r="285" fill="url(#light)"/>
+<g transform="translate(360 375)">
+  <g fill="none" stroke="#dbb877" stroke-opacity=".38">
+  <circle cx="0" cy="20" r="150" stroke-dasharray="3 10"/><circle cx="0" cy="20" r="196" stroke-dasharray="2 18"/>
+  <path d="M0-172V-129M0 172V129M-172 0H-129M172 0H129"/>
+  </g>
+  <path d="M0-225C-40-158-25-134 0-112C34-143 38-179 0-225Z" fill="url(#fire)"/>
+  <path d="M0-169C-17-145-13-128 0-114C19-134 19-151 0-169Z" fill="#fff9d7"/>
+  <ellipse cx="0" cy="13" rx="190" ry="38" fill="#6f483a" stroke="#ecd09c" stroke-width="5"/>
+  <path d="M-190 9C-164 100-110 155 0 160C110 155 164 100 190 9C109 64-109 64-190 9Z" fill="url(#metal)" stroke="#e6bd7c" stroke-width="6"/>
+  <path d="M-149 92Q0 167 149 92" fill="none" stroke="#ffe2a6" stroke-width="3"/>
+  <circle cx="0" cy="117" r="11" fill="#ffdf9e"/>
+  <circle cx="-51" cy="100" r="6" fill="#ffdf9e"/><circle cx="51" cy="100" r="6" fill="#ffdf9e"/>
+</g>
+<path d="M130 74h480M130 560h480" fill="none" stroke="#d5ad71" opacity=".32"/>
+<text x="675" y="161" fill="#d9b876" font-family="Arial, sans-serif" font-size="24" letter-spacing="5">A FESTIVAL OF KINDNESS</text>
+<text x="665" y="296" fill="#fff1d0" font-family="Georgia, serif" font-size="104" font-style="italic">Happy</text>
+<text x="660" y="416" fill="#fbd48d" font-family="Georgia, serif" font-size="132" font-style="italic">Diwali</text>
+<path d="M680 447H1072" stroke="#d9b876" stroke-opacity=".75"/>
+<text x="677" y="498" fill="#fff2de" font-family="Georgia, serif" font-size="30" font-style="italic">From Siva Palavalasa</text>
+<text x="677" y="547" fill="#d9b876" font-family="Arial, sans-serif" font-size="18" letter-spacing="1">LIGHT UP HEARTS. NOT FEAR.</text>
+</svg>
