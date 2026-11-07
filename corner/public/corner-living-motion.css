@@ -1,0 +1,117 @@
+/* Vamsi's Corner — Quietly Alive motion constitution.
+ * CSS transform/opacity only; gesture-controlled reader remains authoritative.
+ * Decorative animations pause for reduced motion, background tabs, and focused reading.
+ */
+:root{
+ --corner-motion-fast:180ms;
+ --corner-motion-card:260ms;
+ --corner-motion-chapter:340ms;
+ --corner-motion-book:550ms;
+ --corner-motion-ease:cubic-bezier(.22,1,.36,1);
+ --corner-motion-spring:cubic-bezier(.2,.86,.26,1);
+}
+main.corner-motion-host{position:relative;isolation:isolate}
+.corner-ambient-layers{position:absolute;inset:0 0 auto;height:min(850px,105vh);pointer-events:none;overflow:hidden;z-index:-1;contain:paint}
+.corner-ambient-layers>span{position:absolute;display:block;filter:none;opacity:.32;border-radius:50%;will-change:transform;transform:translate3d(0,0,0)}
+.corner-ambient-layers>span:nth-child(1){width:48%;height:62%;left:-15%;top:-18%;background:radial-gradient(ellipse,#efbaa8 3%,#efbaa800 72%);animation:corner-wash-peach 36s ease-in-out infinite alternate}
+.corner-ambient-layers>span:nth-child(2){width:50%;height:64%;right:-14%;top:-21%;background:radial-gradient(ellipse,#cbbce1 4%,#cbbce100 72%);animation:corner-wash-lavender 42s ease-in-out infinite alternate}
+.corner-ambient-layers>span:nth-child(3){width:53%;height:58%;left:25%;bottom:-25%;background:radial-gradient(ellipse,#bed9cc 5%,#bed9cc00 74%);animation:corner-wash-sage 38s ease-in-out infinite alternate}
+@keyframes corner-wash-peach{to{transform:translate3d(13%,9%,0) scale(1.07)}}
+@keyframes corner-wash-lavender{to{transform:translate3d(-10%,12%,0) scale(.95)}}
+@keyframes corner-wash-sage{to{transform:translate3d(10%,-8%,0) scale(1.08)}}
+/* Content is static while the background moves subtly underneath. */
+:where(.corner-comfort) .corner-home-hero,
+:where(.corner-comfort) .sb-library-hero{animation:corner-editorial-arrive var(--corner-motion-book) var(--corner-motion-ease) both}
+@keyframes corner-editorial-arrive{from{opacity:.72;transform:translate3d(0,8px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+/* Gentle reveals only on first observation: the JS writes data-corner-visible=true. */
+[data-corner-reveal]{transition:opacity 550ms var(--corner-motion-ease),transform 550ms var(--corner-motion-ease);transition-delay:calc(min(var(--corner-stagger,0),5)*65ms)}
+html[data-corner-reveal-ready="true"] [data-corner-reveal]:not([data-corner-visible="true"]){opacity:0;transform:translate3d(0,10px,0)}
+html[data-corner-reveal-ready="true"] [data-corner-reveal][data-corner-visible="true"]{opacity:1;transform:translate3d(0,0,0)}
+/* One shared animated icon vocabulary, all triggered by interaction. */
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon] svg{transform-origin:center;transition:transform var(--corner-motion-fast) var(--corner-motion-ease)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="book"]:is(:hover,:focus-visible) svg{transform:perspective(200px) rotateY(-11deg) translateY(-1px)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="search"]:is(:focus-within,:hover) svg{transform:rotate(-8deg) scale(1.07)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="pen"]:is(:hover,:focus-visible) svg{transform:rotate(-10deg) translate(2px,-1px)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="page"]:is(:hover,:focus-visible) svg{transform:translateX(2px)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="bookmark"][aria-pressed="true"] svg{animation:corner-bookmark-tuck 330ms var(--corner-motion-ease) 1}
+@keyframes corner-bookmark-tuck{0%{transform:translateY(-4px)}55%{transform:translateY(1px) scale(.94)}100%{transform:translateY(0) scale(1)}}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon="sound"][aria-pressed="true"] svg{animation:corner-sound-on 300ms var(--corner-motion-ease) 1}
+@keyframes corner-sound-on{0%{transform:scale(.9)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-confirmed] svg{animation:corner-confirm-icon 420ms var(--corner-motion-spring) 1}
+@keyframes corner-confirm-icon{from{transform:scale(.7) rotate(-8deg)}65%{transform:scale(1.12) rotate(3deg)}to{transform:scale(1) rotate(0)}}
+/* Existing Corner category icons animate only when interacted with. */
+.corner-public-header .corner-rail-link :is(.corner-rail-icon,.corner-rail-icon svg){transition:transform var(--corner-motion-fast) var(--corner-motion-ease)}
+.corner-public-header .corner-rail-link:is(:hover,:focus-visible) .corner-rail-icon{transform:translateY(-2px)}
+.corner-public-header .corner-rail-link:is(:hover,:focus-visible) svg{transform:scale(1.045)}
+/* Studio event animations; never animate a save or publish until the API succeeds. */
+.corner-stories-studio .ss-primary,
+.corner-stories-studio .ss-quiet,
+.corner-stories-studio .ss-book-card,
+.corner-stories-studio .ss-book-thumb{transition:background-color var(--corner-motion-fast) ease,border-color var(--corner-motion-fast) ease,transform var(--corner-motion-card) var(--corner-motion-ease),box-shadow var(--corner-motion-card) ease}
+.corner-stories-studio .ss-book-card:is(:hover,:focus-visible) .ss-book-thumb{transform:translateY(-2px) rotate(-1deg)}
+.corner-stories-studio [data-corner-confirmed="published"]{animation:corner-editorial-stamp 440ms var(--corner-motion-ease) 1}
+@keyframes corner-editorial-stamp{0%{transform:scale(.94);opacity:.7}60%{transform:scale(1.035);opacity:1}100%{transform:scale(1);opacity:1}}
+.corner-stories-studio [data-corner-confirmed="saved"]{animation:corner-editorial-saved 360ms var(--corner-motion-ease) 1}
+@keyframes corner-editorial-saved{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+/* Don't move the book while it is being manipulated directly. */
+.story-reader .reader-leaf,.story-reader .reader-book,.story-reader .reader-stage{animation:none!important}
+.story-reader .reader-progress-track span{transition:width var(--corner-motion-chapter) var(--corner-motion-ease)}
+.story-reader [data-corner-icon="page"]:hover svg{transform:translateX(1px)}
+/* Visibility and accessibility controls are authoritative. */
+html.corner-motion-paused .corner-ambient-layers>span,
+html.ss-reduced-motion .corner-ambient-layers>span,
+html[data-v6-reading="focus"] .corner-ambient-layers>span{animation-play-state:paused!important}
+@media(max-width:700px){
+ .corner-ambient-layers>span{filter:none;opacity:.24}
+ .corner-ambient-layers>span:nth-child(3){display:none}
+ [data-corner-reveal]{transition-delay:0ms!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .corner-ambient-layers>span{animation:none!important;will-change:auto!important;opacity:.18}
+ :where(.corner-comfort) .corner-home-hero,:where(.corner-comfort) .sb-library-hero{animation:none!important}
+ [data-corner-reveal],html[data-corner-reveal-ready="true"] [data-corner-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+ :where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-icon] svg,
+ :where(.corner-comfort,.corner-stories-studio,.story-reader) [data-corner-confirmed],
+ .corner-public-header .corner-rail-link svg{animation:none!important;transition:none!important;transform:none!important}
+ .story-reader .reader-progress-track span{transition:none!important}
+}
+/* One-time illustrated book opening for empty/loading shelves (not a perpetual loop). */
+.sb-empty [data-corner-icon="book"] svg,
+.corner-stories-studio .ss-placeholder [data-corner-icon="book"] svg,
+.corner-stories-studio .ss-empty-list [data-corner-icon="book"] svg{
+ animation:corner-empty-book var(--corner-motion-book) var(--corner-motion-ease) 1 both;
+ transform-origin:50% 52%;
+}
+@keyframes corner-empty-book{from{opacity:.35;transform:perspective(240px) rotateY(-22deg) scale(.92)}to{opacity:1;transform:perspective(240px) rotateY(0) scale(1)}}
+/* Finish opening the jacket only when the book-detail page first arrives. */
+.sb-detail .sb-cover--hero{animation:corner-cover-open var(--corner-motion-book) var(--corner-motion-ease) 1 both;transform-origin:15% center}
+@keyframes corner-cover-open{from{opacity:.78;transform:perspective(800px) rotateY(-11deg) translateY(5px)}to{opacity:1;transform:perspective(800px) rotateY(0) translateY(0)}}
+/* Chapter reveal is sequenced and short; text remains visible without JS. */
+.sb-detail .sb-chapter-list li{animation:corner-chapter-arrive var(--corner-motion-chapter) var(--corner-motion-ease) both;animation-delay:calc(min(var(--corner-chapter-index,0),7)*48ms)}
+@keyframes corner-chapter-arrive{from{opacity:.72;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.corner-stories-studio .ss-placeholder [data-corner-icon="book"],
+.corner-stories-studio .ss-empty-list [data-corner-icon="book"]{display:grid;place-items:center;margin:0 auto 10px;color:var(--ss-accent)}
+.corner-stories-studio .ss-primary{display:inline-flex;justify-content:center;align-items:center;gap:8px}
+@media(prefers-reduced-motion:reduce){
+ .sb-empty [data-corner-icon="book"] svg,
+ .sb-detail .sb-cover--hero,.sb-detail .sb-chapter-list li,
+ .corner-stories-studio .ss-placeholder [data-corner-icon="book"] svg,
+ .corner-stories-studio .ss-empty-list [data-corner-icon="book"] svg{animation:none!important;transform:none!important;opacity:1!important}
+}
+/* Shared Corner header and Studio icons — action-driven, no perpetual bobbing. */
+.corner-public-header :is(.icon-button,.corner-profile-toggle,.corner-rail-toggle) svg,
+.admin-sidebar :is(.studio-icon-button,.admin-v3-link) svg{
+ transform-origin:center;
+ transition:transform var(--corner-motion-fast) var(--corner-motion-ease);
+}
+.corner-public-header .icon-button:is(:hover,:focus-visible) svg{transform:rotate(-9deg) scale(1.07)}
+.corner-public-header .corner-profile-toggle:is(:hover,:focus-visible) svg{transform:translateY(-2px)}
+.corner-public-header .corner-rail-toggle:is(:hover,:focus-visible) svg{transform:scaleX(1.06)}
+.admin-sidebar :is(.studio-icon-button,.admin-v3-link):is(:hover,:focus-visible) svg{transform:translateY(-1px) scale(1.035)}
+.story-reader #prevPage:is(:hover,:focus-visible) svg{transform:translateX(-1px)}
+:where(.corner-comfort,.corner-stories-studio,.story-reader) button:active:not(:disabled) svg{transform:scale(.97)}
+@media(prefers-reduced-motion:reduce){
+ .corner-public-header :is(.icon-button,.corner-profile-toggle,.corner-rail-toggle) svg,
+ .admin-sidebar :is(.studio-icon-button,.admin-v3-link) svg,
+ :where(.corner-comfort,.corner-stories-studio,.story-reader) button:active:not(:disabled) svg{transform:none!important;transition:none!important}
+}
