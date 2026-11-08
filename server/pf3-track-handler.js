@@ -5,6 +5,7 @@ import {json,query,requireOwner} from '../api/lib/track.js';
 const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','billing.snapshot']);
 const ROLES=new Set(['creator','freelancer','consultant','solo_business','agency','other']);
 const KEYS=['eventId','eventType','occurredAt','role','schemaVersion','source','workspaceRef'].sort().join(',');
+const WITH_FINANCE_KEYS=[...KEYS.split(','),'finance'].sort().join(',');
 const FINANCE_KEYS=['capturedMinor','refundedMinor','paymentCount','currency','periodStart','periodEnd'].sort().join(',');
 const validISO=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
 export function validPf3Finance(value){
@@ -16,7 +17,7 @@ export function validPf3Finance(value){
 const PATTERN_UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SECRET=()=>process.env.PF3_TRACK_SHARED_SECRET||'';
 export function validTrackPf3Envelope(body){
- return !!body&&typeof body==='object'&&!Array.isArray(body)&&(body.eventType==='billing.snapshot'?Object.keys(body).sort().join(',')===KEYS+',finance'&&validPf3Finance(body.finance):Object.keys(body).sort().join(',')===KEYS)&&
+ return !!body&&typeof body==='object'&&!Array.isArray(body)&&(body.eventType==='billing.snapshot'?Object.keys(body).sort().join(',')===WITH_FINANCE_KEYS&&validPf3Finance(body.finance):Object.keys(body).sort().join(',')===KEYS)&&
   body.schemaVersion===1&&body.source==='pakkafollow'&&PATTERN_UUID.test(body.eventId)&&
   TYPES.has(body.eventType)&&ROLES.has(body.role)&&/^[a-f0-9]{24}$/.test(body.workspaceRef)&&
   typeof body.occurredAt==='string'&&Number.isFinite(Date.parse(body.occurredAt))&&
