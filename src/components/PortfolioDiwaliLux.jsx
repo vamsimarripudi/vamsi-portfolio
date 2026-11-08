@@ -229,6 +229,17 @@ export default function PortfolioDiwaliLux(){
  const active=useToday();
  const [portalHost,setPortalHost]=useState(null);
  useEffect(()=>setPortalHost(document.body),[]);
+ useEffect(()=>{
+  if(!active)return undefined;
+  const hero=document.querySelector('main#main > section.hero.hero-identity');
+  if(!hero||!window.IntersectionObserver)return undefined;
+  const flag='vm-diwali-hero-on-screen';
+  const observer=new IntersectionObserver(entries=>{
+    document.documentElement.classList.toggle(flag,Boolean(entries[0]?.isIntersecting));
+  },{threshold:0,rootMargin:'-16% 0px -10% 0px'});
+  observer.observe(hero);
+  return()=>{observer.disconnect();document.documentElement.classList.remove(flag);};
+ },[active]);
  if(!active)return null;
  return <>
   <div className="portfolio-diwali-lux" data-portfolio-diwali-lux="2026" aria-hidden="true">
