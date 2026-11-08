@@ -462,3 +462,12 @@ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) > .living-en
   width:45px;
  }
 }
+
+
+/* Tablet QA: keep the left rotating chakra fully clear of the real headline. */
+@media(min-width:621px) and (max-width:950px){
+ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) .vm-lux-wheel{
+  top:69px!important;
+  width:48px!important;
+ }
+}
