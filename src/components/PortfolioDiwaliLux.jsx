@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { isDiwali2026Active, nextDiwali2026Boundary } from '../festivals/diwali2026.js';
 import './PortfolioDiwaliLux.css';
 
@@ -226,6 +227,8 @@ function Introduction(){
 /** Home-only decorations; no global palette changes or impact on original hero/canvas motion. */
 export default function PortfolioDiwaliLux(){
  const active=useToday();
+ const [portalHost,setPortalHost]=useState(null);
+ useEffect(()=>setPortalHost(document.body),[]);
  if(!active)return null;
  return <>
   <div className="portfolio-diwali-lux" data-portfolio-diwali-lux="2026" aria-hidden="true">
@@ -241,6 +244,6 @@ export default function PortfolioDiwaliLux(){
    <div className="vm-lux-diyas vm-lux-diyas--left"><Diya index={0}/><Diya index={1}/></div>
    <div className="vm-lux-diyas vm-lux-diyas--right"><Diya index={2}/><Diya index={3}/></div>
   </div>
-  <Introduction/>
+  {portalHost?createPortal(<Introduction/>,portalHost):null}
  </>;
 }
