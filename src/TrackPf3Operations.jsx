@@ -49,6 +49,7 @@ export default function TrackPf3Operations(){
  };
  
  const verifiedCollections=revenue&&(revenue.status==='verified_captured_snapshot'||revenue.status==='stale');
+ const health=data?.health;
  const cards=[
   {key:'events',label:'Verified events',value:count(metrics?.events),Icon:FiActivity,detail:'Deduplicated operational signals'},
   {key:'message_drafts',label:'Message drafts',value:count(metrics?.message_drafts),Icon:FiMail,detail:'Created, not automatically delivered'},
@@ -89,7 +90,7 @@ export default function TrackPf3Operations(){
      <p>Taxes, vendor costs and accounting profit are not verified in this view.</p></article>
     <article><FiFileText aria-hidden="true"/><h2>Customer documents</h2><strong>{data.invoices?.status==='operational_counts_only'?count(data.invoices.finalized):'Separate ledger'}</strong><p>Finalization events only. Customer invoices are excluded from PakkaFollow platform revenue; document amounts and contents are not shared with Track.</p></article>
    </section>}
-   {view==='monitoring'&&<section className="track-panel pf3-track-observability"><h2>Event pipeline status</h2><p>Last signed event received: {when(metrics?.last_received_at)}.</p><p>Signed events report a product activity stream; they do not prove API, database or email provider uptime.</p><p>Finance snapshot: {revenue?.status||'unavailable'}.</p></section>}
+   {view==='monitoring'&&<section className="track-panel pf3-track-observability"><h2>Verified public health</h2><p>API: <strong>{health?.api||'unavailable'}</strong> · Database readiness: <strong>{health?.database||'unavailable'}</strong>.</p><p>Health checked: {when(health?.checkedAt)}.</p><p>These checks do not prove provider, worker or billing health.</p><h2>Event pipeline status</h2><p>Last signed event received: {when(metrics?.last_received_at)}.</p><p>Signed events report a product activity stream; they do not prove API, database or email provider uptime.</p><p>Finance snapshot: {revenue?.status||'unavailable'}.</p></section>}
    {view==='ai'&&<section className="track-panel pf3-track-observability"><h2>AI monitoring</h2><p>AI-specific counters are not instrumented in this event feed. No usage or cost estimate is shown without a verified source.</p></section>}
    <section className="track-panel pf3-track-events" aria-labelledby="pf3-events-title">
     <div className="pf3-track-section-heading"><div><h2 id="pf3-events-title">{view==='audit'?'Signed event journal':'Recent operational events'}</h2><small>Source: {data.source||'unavailable'} · Checked {when(data.asOf)} · Most recent 40 events</small></div>

@@ -32,6 +32,19 @@ export function verifyTrackPf3Envelope(body,timestamp,signature,secret,now=Date.
  const actual=Buffer.from(signature,'hex');
  return expected.length===actual.length&&timingSafeEqual(expected,actual);
 }
+// A bounded public status check, never a substitute for revenue or signed event evidence.
+export async function probePf3Health(fetcher=fetch,now=new Date()){
+ const base='https://pakkafollow.vamsimarripudi.me';
+ const check=async(path,expected)=>{
+  try{
+   const response=await fetcher(base+path,{method:'GET',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(2500)});
+   const body=await response.json();
+   return response.ok&&body?.status===expected?'healthy':response.status===503?'degraded':'unknown';
+  }catch{return 'unavailable';}
+ };
+ const [api,database]=await Promise.all([check('/healthz','ok'),check('/readyz','ready')]);
+ return {api,database,checkedAt:now.toISOString(),source:'public_health_endpoints',actualRuntimeTelemetry:false};
+}
 async function ensureTable(db){
  await db`CREATE TABLE IF NOT EXISTS pf3_track_events(
   event_id uuid PRIMARY KEY,event_type text NOT NULL,role text NOT NULL,
@@ -71,7 +84,7 @@ export async function readPf3Operations(req,res){
  res.setHeader('Cache-Control','no-store');
  try{
   const db=query();
-  const [rows,recent,finance]=await Promise.all([
+  const [rows,recent,finance,health]=await Promise.all([
    db`SELECT count(*)::int AS events,
     count(*) FILTER (WHERE event_type='message.drafted')::int AS message_drafts,
     count(*) FILTER (WHERE event_type='message.accepted')::int AS provider_accepted,
@@ -89,7 +102,8 @@ export async function readPf3Operations(req,res){
     count(*) FILTER (WHERE event_type='document.delivery_uncertain')::int AS document_delivery_uncertain,
     max(received_at) AS last_received_at FROM pf3_track_events`,
    db`SELECT event_id,event_type,role,occurred_at,received_at FROM pf3_track_events ORDER BY received_at DESC LIMIT 40`,
-   db`SELECT finance_json,received_at FROM pf3_track_events WHERE event_type='billing.snapshot' AND finance_json IS NOT NULL ORDER BY occurred_at DESC LIMIT 1`
+   db`SELECT finance_json,received_at FROM pf3_track_events WHERE event_type='billing.snapshot' AND finance_json IS NOT NULL ORDER BY occurred_at DESC LIMIT 1`,
+   probePf3Health()
   ]);
   const latest=finance[0],financial=latest?.finance_json;
   const revenue=financial?{
@@ -101,12 +115,12 @@ export async function readPf3Operations(req,res){
    source:'pakkafollow_verified_payment_ids',vendorCostsMinor:null,taxLiabilityMinor:null
   }:{status:'unavailable',amountMinor:null,reason:'Awaiting a signed verified-collections snapshot.'};
   return json(res,200,{ok:true,connected:true,source:'signed_pakkafollow_outbox',
-   asOf:new Date().toISOString(),metrics:rows[0],events:recent,
+   asOf:new Date().toISOString(),metrics:rows[0],events:recent,health,
    revenue,
    invoices:{status:'operational_counts_only',drafts:rows[0]?.document_drafts??null,finalized:rows[0]?.document_finalized??null,amountMinor:null,reason:'Customer documents are not PakkaFollow platform revenue.'}});
  }catch(err){
   if(err?.code==='42P01')return json(res,200,{ok:true,connected:false,source:'awaiting_verified_events',
-   asOf:new Date().toISOString(),metrics:null,events:[],
+   asOf:new Date().toISOString(),metrics:null,events:[],health:await probePf3Health(),
    revenue:{status:'unavailable',amountMinor:null},invoices:{status:'unavailable',count:null}});
   console.error('pf3.track.read.failed',{code:err?.code||'INTERNAL'});
   return error(res,503,'TRACK_EVENTS_UNAVAILABLE','Operational reporting is unavailable; no zero-activity assumption was made.');

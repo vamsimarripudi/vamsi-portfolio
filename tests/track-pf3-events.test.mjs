@@ -75,6 +75,17 @@ test('editorial activity reports privacy-safe drafts and reviews without publish
  assert.match(code,/Editorial approval is not publishing or marketing delivery/);
  assert.match(code,/content\.drafted/);
 });
+test('health probes verify live public endpoint responses but never fabricate full telemetry',async()=>{
+ const {probePf3Health}=await import('../server/pf3-track-handler.js');
+ const expected=await probePf3Health(async(url)=>({
+  ok:true,status:200,json:async()=>({status:url.endsWith('/readyz')?'ready':'ok'})
+ }),new Date('2026-11-08T10:00:00.000Z'));
+ assert.deepEqual(expected,{api:'healthy',database:'healthy',checkedAt:'2026-11-08T10:00:00.000Z',source:'public_health_endpoints',actualRuntimeTelemetry:false});
+ const down=await probePf3Health(async()=>{throw Error('Unavailable');});
+ assert.equal(down.api,'unavailable');assert.equal(down.database,'unavailable');
+ const code=read('src/TrackPf3Operations.jsx');
+ assert.match(code,/These checks do not prove provider, worker or billing health/);
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);
