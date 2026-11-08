@@ -5,6 +5,7 @@ import './TrackPf3Operations.css';
 
 const when=value=>{if(!value)return 'Not received';const t=new Date(value);return Number.isNaN(+t)?'Unverified timestamp':new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(t);};
 const count=value=>Number.isInteger(value)?new Intl.NumberFormat('en-IN').format(value):'—';
+const inr=value=>Number.isSafeInteger(value)&&value>=0?new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(value/100):'—';
 export default function TrackPf3Operations(){
  const [data,setData]=useState(null),[status,setStatus]=useState('loading'),[failure,setFailure]=useState('');
  const [refresh,setRefresh]=useState(0);
@@ -17,7 +18,8 @@ export default function TrackPf3Operations(){
    .catch(error=>{if(live&&error.name!=='AbortError'){setFailure(error.message);setStatus('error');}});
   return()=>{live=false;controller.abort();};
  },[refresh]);
- const metrics=data?.connected?data.metrics:null;
+ const metrics=data?.connected?data.metrics:null,revenue=data?.revenue;
+ const verifiedCollections=revenue&&(revenue.status==='verified_captured_snapshot'||revenue.status==='stale');
  const cards=[
   {key:'events',label:'Verified events',value:count(metrics?.events),Icon:FiActivity,detail:'Deduplicated operational signals'},
   {key:'message_drafts',label:'Message drafts',value:count(metrics?.message_drafts),Icon:FiMail,detail:'Created, not automatically delivered'},
@@ -43,7 +45,11 @@ export default function TrackPf3Operations(){
     <span className="pf3-track-card-icon"><Icon aria-hidden="true"/></span><span>{label}</span><strong>{value}</strong><small>{detail}</small>
    </article>)}</section>
    <section className="pf3-track-ledgers" aria-label="Financial reporting">
-    <article><FiBarChart2 aria-hidden="true"/><h2>Platform revenue</h2><strong>Not reconciled</strong><p>Subscription collections, refunds and fees require verified provider ledgers. Customer invoices are excluded.</p></article>
+    <article><FiBarChart2 aria-hidden="true"/><h2>Captured platform collections</h2>
+     <strong>{verifiedCollections?inr(revenue.capturedMinor):'Not reconciled'}</strong>
+     {verifiedCollections?<p>Refunds {inr(revenue.refundedMinor)} · Net collections {inr(revenue.netCollectionsMinor)}. <b>{revenue.status==='stale'?'Snapshot stale':'Verified payment ledger snapshot'}</b> through {when(revenue.periodEnd)}.</p>:
+     <p>Awaiting a verified payment snapshot. Customer invoices are never counted as platform revenue.</p>}
+     <p>Taxes, vendor costs and accounting profit are not verified in this view.</p></article>
     <article><FiFileText aria-hidden="true"/><h2>Customer invoices</h2><strong>Separate ledger</strong><p>Customer-issued documents never count as PakkaFollow revenue. This connector is not activated.</p></article>
    </section>
    <section className="track-panel pf3-track-events" aria-labelledby="pf3-events-title">
