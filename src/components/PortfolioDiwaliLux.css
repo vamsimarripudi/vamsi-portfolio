@@ -430,3 +430,26 @@ main#main > section.hero.hero-identity .vm-lux-border-light--right { width:2px; 
 @media(max-width:360px){
  main#main > section.hero.hero-identity .vm-lux-wheel{top:74px;width:32px}
 }
+
+
+/* The living-engineering scene is a background, never a grid row. */
+main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) > .living-engineering-canvas{
+ position:absolute!important;
+ inset:0!important;
+ z-index:0!important;
+ pointer-events:none!important;
+}
+/* The quick bar returns automatically once the visitor leaves the hero. */
+@media(max-width:620px){
+ html.vm-diwali-hero-on-screen:has(.portfolio-diwali-lux) .mobile-quick-nav{
+  opacity:0!important;
+  transform:translate(-50%,calc(100% + 28px))!important;
+  pointer-events:none!important;
+ }
+ html:has(.portfolio-diwali-lux) .mobile-quick-nav{
+  transition:opacity .23s ease,transform .23s ease;
+ }
+}
+@media(min-width:951px){
+ main#main > section.hero.hero-identity .vm-diwali-lux__toranam{top:16px}
+}
