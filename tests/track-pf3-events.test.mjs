@@ -34,6 +34,15 @@ test('the owner dashboard reports financial unknowns and never fabricates revenu
  assert.match(ui,/Snapshot stale/);
  assert.match(ui,/Customer invoices are excluded/);
 });
+test('document events show only safe counts, never customer invoice amounts',()=>{
+ const event={...body,eventType:'document.finalized'};
+ const timestamp=Date.now();
+ assert.equal(validTrackPf3Envelope(event),true);
+ assert.equal(verifyTrackPf3Envelope(event,timestamp,sign(event,timestamp),secret,timestamp),true);
+ assert.equal(validTrackPf3Envelope({...event,invoiceAmount:99900}),false);
+ assert.match(read('server/pf3-track-handler.js'),/document_finalized/);
+ assert.match(read('src/TrackPf3Operations.jsx'),/Customer-owned documents, not platform revenue/);
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);

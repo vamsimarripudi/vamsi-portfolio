@@ -26,7 +26,8 @@ export default function TrackPf3Operations(){
   {key:'provider_accepted',label:'Provider accepted',value:count(metrics?.provider_accepted),Icon:FiMail,detail:'Acceptance is not proof of delivery'},
   {key:'delivery_uncertain',label:'Uncertain sends',value:count(metrics?.delivery_uncertain),Icon:FiAlertTriangle,detail:'Requires manual reconciliation'},
   {key:'message_failed',label:'Send failures',value:count(metrics?.message_failed),Icon:FiAlertTriangle,detail:'Not automatically retried'},
-  {key:'grants_saved',label:'Saved grants',value:count(metrics?.grants_saved),Icon:FiShield,detail:'Grant events, not active automation'}
+  {key:'grants_saved',label:'Saved grants',value:count(metrics?.grants_saved),Icon:FiShield,detail:'Grant events, not active automation'},
+  {key:'document_finalized',label:'Documents finalized',value:count(metrics?.document_finalized),Icon:FiFileText,detail:'Customer-owned documents, not platform revenue'}
  ];
  return <main className="track-page pf3-track" aria-labelledby="pf3-track-title">
   <header className="pf3-track-heading">
@@ -50,7 +51,7 @@ export default function TrackPf3Operations(){
      {verifiedCollections?<p>Refunds {inr(revenue.refundedMinor)} · Net collections {inr(revenue.netCollectionsMinor)}. <b>{revenue.status==='stale'?'Snapshot stale':'Verified payment ledger snapshot'}</b> through {when(revenue.periodEnd)}.</p>:
      <p>Awaiting a verified payment snapshot. Customer invoices are never counted as platform revenue.</p>}
      <p>Taxes, vendor costs and accounting profit are not verified in this view.</p></article>
-    <article><FiFileText aria-hidden="true"/><h2>Customer invoices</h2><strong>Separate ledger</strong><p>Customer invoices are excluded from PakkaFollow platform revenue. This connector is not activated.</p></article>
+    <article><FiFileText aria-hidden="true"/><h2>Customer documents</h2><strong>{data.invoices?.status==='operational_counts_only'?count(data.invoices.finalized):'Separate ledger'}</strong><p>Finalization events only. Customer invoices are excluded from PakkaFollow platform revenue; document amounts and contents are not shared with Track.</p></article>
    </section>
    <section className="track-panel pf3-track-events" aria-labelledby="pf3-events-title">
     <div className="pf3-track-section-heading"><h2 id="pf3-events-title">Recent operational events</h2><small>Source: {data.source||'unavailable'} · Checked {when(data.asOf)}</small></div>

@@ -2,7 +2,7 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 import {json,query,requireOwner} from '../api/lib/track.js';
 
 // Product events are an allowlisted operational summary, not an access path to customer records.
-const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','billing.snapshot']);
+const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','document.drafted','document.finalized','billing.snapshot']);
 const ROLES=new Set(['creator','freelancer','consultant','solo_business','agency','other']);
 const KEYS=['eventId','eventType','occurredAt','role','schemaVersion','source','workspaceRef'].sort().join(',');
 const WITH_FINANCE_KEYS=[...KEYS.split(','),'finance'].sort().join(',');
@@ -78,6 +78,8 @@ export async function readPf3Operations(req,res){
     count(*) FILTER (WHERE event_type='message.failed')::int AS message_failed,
     count(*) FILTER (WHERE event_type='message.uncertain')::int AS delivery_uncertain,
     count(*) FILTER (WHERE event_type='automation.granted')::int AS grants_saved,
+    count(*) FILTER (WHERE event_type='document.drafted')::int AS document_drafts,
+    count(*) FILTER (WHERE event_type='document.finalized')::int AS document_finalized,
     max(received_at) AS last_received_at FROM pf3_track_events`,
    db`SELECT event_id,event_type,role,occurred_at,received_at FROM pf3_track_events ORDER BY received_at DESC LIMIT 40`,
    db`SELECT finance_json,received_at FROM pf3_track_events WHERE event_type='billing.snapshot' AND finance_json IS NOT NULL ORDER BY occurred_at DESC LIMIT 1`
@@ -94,7 +96,7 @@ export async function readPf3Operations(req,res){
   return json(res,200,{ok:true,connected:true,source:'signed_pakkafollow_outbox',
    asOf:new Date().toISOString(),metrics:rows[0],events:recent,
    revenue,
-   invoices:{status:'unavailable',count:null,reason:'Customer invoices are not PakkaFollow platform revenue.'}});
+   invoices:{status:'operational_counts_only',drafts:rows[0]?.document_drafts??null,finalized:rows[0]?.document_finalized??null,amountMinor:null,reason:'Customer documents are not PakkaFollow platform revenue.'}});
  }catch(err){
   if(err?.code==='42P01')return json(res,200,{ok:true,connected:false,source:'awaiting_verified_events',
    asOf:new Date().toISOString(),metrics:null,events:[],
