@@ -453,3 +453,12 @@ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) > .living-en
 @media(min-width:951px){
  main#main > section.hero.hero-identity .vm-diwali-lux__toranam{top:16px}
 }
+
+
+/* Tablet overlap fix validated against 768px: leave clear space before the title. */
+@media(min-width:621px) and (max-width:950px){
+ main#main > section.hero.hero-identity .vm-lux-wheel{
+  top:80px;
+  width:45px;
+ }
+}
