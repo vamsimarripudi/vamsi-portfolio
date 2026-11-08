@@ -52,3 +52,13 @@ test('full-screen introduction uses a top-level portal, while the mobile hero st
  assert.match(css,/padding:104px 12px 132px!important/);
  assert.match(css,/\.vm-diwali-lux__toranam\{top:15px;height:57px\}/);
 });
+
+
+test('animated engineering canvas remains behind hero copy, and mobile nav stays accessible after leaving hero',()=>{
+ const css=read('src/components/PortfolioDiwaliLux.css');
+ const code=read('src/components/PortfolioDiwaliLux.jsx');
+ assert.match(css,/\.living-engineering-canvas\{\s*position:absolute!important/);
+ assert.match(code,/vm-diwali-hero-on-screen/);
+ assert.match(code,/observer\.disconnect\(\)/);
+ assert.match(css,/html\.vm-diwali-hero-on-screen:has\(\.portfolio-diwali-lux\) \.mobile-quick-nav/);
+});
