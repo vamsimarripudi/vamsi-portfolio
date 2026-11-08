@@ -41,3 +41,14 @@ test('mobile festive decorations are isolated inside hero, with natural flow and
  assert.match(css,/\.site-header \.header-contact/);
  assert.match(css,/\.vm-lux-gold-frame/);
 });
+
+
+test('full-screen introduction uses a top-level portal, while the mobile hero starts below its separate garland',()=>{
+ const component=read('src/components/PortfolioDiwaliLux.jsx');
+ const css=read('src/components/PortfolioDiwaliLux.css');
+ assert.match(component,/import \{ createPortal \} from 'react-dom'/);
+ assert.match(component,/createPortal\(<Introduction\/>,portalHost\)/);
+ assert.match(css,/align-content:start!important/);
+ assert.match(css,/padding:104px 12px 132px!important/);
+ assert.match(css,/\.vm-diwali-lux__toranam\{top:15px;height:57px\}/);
+});
