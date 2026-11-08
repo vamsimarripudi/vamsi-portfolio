@@ -397,3 +397,36 @@ main#main > section.hero.hero-identity .vm-lux-border-light--right { width:2px; 
  main#main > section.hero.hero-identity .vm-lux-wheel {width:32px;top:61px}
  main#main > section.hero.hero-identity .vm-lux-diya {width:39px}
 }
+
+
+/* Mobile cleanup 2: prevent a huge empty gap above the hero, keep garland below the header. */
+@media(max-width:950px){
+ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux){
+  align-content:start!important;
+  align-items:start!important;
+  justify-content:start!important;
+  grid-auto-rows:max-content!important;
+ }
+ main#main > section.hero.hero-identity .vm-diwali-lux__toranam{
+  top:15px;
+  height:60px;
+ }
+ main#main > section.hero.hero-identity .vm-lux-wheel{
+  top:78px;
+ }
+}
+@media(max-width:620px){
+ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux){
+  min-height:calc(100svh - 72px)!important;
+  padding:104px 12px 132px!important;
+  gap:18px!important;
+ }
+ main#main > section.hero.hero-identity .vm-diwali-lux__toranam{top:15px;height:57px}
+ main#main > section.hero.hero-identity .vm-lux-wheel{top:75px;width:35px}
+ main#main > section.hero.hero-identity .vm-lux-diyas{bottom:21px}
+ main#main > section.hero.hero-identity .vm-lux-muggu--bl,
+ main#main > section.hero.hero-identity .vm-lux-muggu--br{bottom:84px}
+}
+@media(max-width:360px){
+ main#main > section.hero.hero-identity .vm-lux-wheel{top:74px;width:32px}
+}
