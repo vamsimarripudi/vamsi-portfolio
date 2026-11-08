@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {isDiwali2026Active,DIWALI_2026_END} from '../src/festivals/diwali2026.js';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+test('Diwali premium hero is explicitly homepage-only and retains real portfolio hero and animation',()=>{
+ const app=read('src/App.jsx'),lux=read('src/components/PortfolioDiwaliLux.jsx'),css=read('src/components/PortfolioDiwaliLux.css');
+ assert.match(app,/import PortfolioDiwaliLux from '\.\/components\/PortfolioDiwaliLux\.jsx'/);
+ assert.match(app,/function Home\(\)[\s\S]*?return <main id="main">\s*<PortfolioDiwali \/>\s*<PortfolioDiwaliLux \/>/);
+ assert.equal((app.match(/<PortfolioDiwaliLux \/>/g)||[]).length,1);
+ assert.match(app,/<LivingEngineeringCanvas\/>/);
+ assert.match(app,/I build useful products/);
+ assert.match(lux,/function Toranam\(/);assert.match(lux,/function Muggu\(/);assert.match(lux,/function Diya\(/);assert.match(lux,/function Chakra\(/);
+ assert.match(lux,/function Rockets\(/);assert.match(lux,/function Introduction\(/);
+ assert.match(css,/vm-lux-thread-pulse/);assert.match(css,/@keyframes vm-lux-spin/);
+ assert.match(css,/@keyframes vm-lux-flame/);
+ assert.match(css,/pointer-events:none/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(lux,/fetch\(|XMLHttpRequest|sendBeacon|new Audio|AudioContext/);
+ assert.equal(isDiwali2026Active(DIWALI_2026_END),false);
+});
+test('opening is skippable, festive card closes after ten seconds and has dialog semantics',()=>{
+ const src=read('src/components/PortfolioDiwaliLux.jsx');
+ assert.match(src,/SEEN_KEY/);
+ assert.match(src,/phase!=='greeting'/);
+ assert.match(src,/setTimeout\(\(\)=>setPhase\('none'\),10000\)/);
+ assert.match(src,/setTimeout\(\(\)=>setPhase\('greeting'\),3500\)/);
+ assert.match(src,/aria-modal="true"/);
+ assert.match(src,/ref=\{close\}/);
+ assert.match(src,/Warm wishes from Vamsi Marripudi/);
+});

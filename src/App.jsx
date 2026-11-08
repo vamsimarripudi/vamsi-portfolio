@@ -1,6 +1,7 @@
 import SiteMeasurement from './SiteMeasurement.jsx';
 import LivingEngineeringCanvas from './components/LivingEngineeringCanvas.jsx';
 import PortfolioDiwali from './components/PortfolioDiwali.jsx';
+import PortfolioDiwaliLux from './components/PortfolioDiwaliLux.jsx';
 import LegalCenter from './LegalCenter.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -150,6 +151,7 @@ function Home(){
   usePageMeta('Founder Engineer',pageDescriptions['/']);
   return <main id="main">
     <PortfolioDiwali />
+    <PortfolioDiwaliLux />
     <section className="hero hero-motion hero-identity">
       <LivingEngineeringCanvas/>
       <div className="hero-copy" data-reveal>
