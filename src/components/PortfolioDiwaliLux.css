@@ -170,3 +170,16 @@ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-second
  .vm-lux-muggu--tl,.vm-lux-muggu--tr{top:235px;width:40px}
  .vm-lux-muggu--tl{left:-15px}.vm-lux-muggu--tr{right:-15px}
 }
+
+
+/* Keep the last diya row clear of the existing portfolio focus card on mobile and tablet. */
+@media(max-width:620px){
+ .vm-lux-diyas{bottom:8px}
+}
+@media(min-width:621px) and (max-width:950px){
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:125px!important}
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:0!important;padding:12px!important}
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:12px 0!important}
+ .vm-lux-diyas{bottom:8px}
+ .vm-lux-wheel{top:86px}
+}
