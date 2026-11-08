@@ -31,7 +31,7 @@ export default function TrackPf3Operations(){
  const eventGroups={
   overview:null,revenue:['billing.snapshot'],invoices:['document.drafted','document.finalized'],
   communications:['message.drafted','message.approved','message.accepted','message.failed','message.uncertain'],
-  automation:['automation.granted','automation.revoked'],ai:[],monitoring:null,audit:null
+  automation:['automation.granted','automation.revoked','automation.task_created','automation.task_completed'],ai:[],monitoring:null,audit:null
  };
  const filteredEvents=(data?.events||[]).filter(event=>{
   const allowed=eventGroups[view];
@@ -56,6 +56,7 @@ export default function TrackPf3Operations(){
   {key:'delivery_uncertain',label:'Uncertain sends',value:count(metrics?.delivery_uncertain),Icon:FiAlertTriangle,detail:'Requires manual reconciliation'},
   {key:'message_failed',label:'Send failures',value:count(metrics?.message_failed),Icon:FiAlertTriangle,detail:'Not automatically retried'},
   {key:'grants_saved',label:'Saved grants',value:count(metrics?.grants_saved),Icon:FiShield,detail:'Grant events, not active automation'},
+  {key:'internal_tasks_created',label:'Internal review tasks',value:count(metrics?.internal_tasks_created),Icon:FiActivity,detail:'Owner-only tasks, no external messages'},
   {key:'document_finalized',label:'Documents finalized',value:count(metrics?.document_finalized),Icon:FiFileText,detail:'Customer-owned documents, not platform revenue'},
   {key:'document_provider_accepted',label:'PDF emails accepted',value:count(metrics?.document_provider_accepted),Icon:FiMail,detail:'Provider accepted, not proof of inbox delivery'},
   {key:'document_delivery_uncertain',label:'Uncertain PDF sends',value:count(metrics?.document_delivery_uncertain),Icon:FiAlertTriangle,detail:'Manual reconciliation required'}

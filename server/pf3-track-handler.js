@@ -2,7 +2,7 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 import {json,query,requireOwner} from '../api/lib/track.js';
 
 // Product events are an allowlisted operational summary, not an access path to customer records.
-const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','document.drafted','document.finalized','document.send_requested','document.provider_accepted','document.delivery_failed','document.delivery_uncertain','billing.snapshot']);
+const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','document.drafted','document.finalized','document.send_requested','document.provider_accepted','document.delivery_failed','document.delivery_uncertain','automation.task_created','automation.task_completed','billing.snapshot']);
 const ROLES=new Set(['creator','freelancer','consultant','solo_business','agency','other']);
 const KEYS=['eventId','eventType','occurredAt','role','schemaVersion','source','workspaceRef'].sort().join(',');
 const WITH_FINANCE_KEYS=[...KEYS.split(','),'finance'].sort().join(',');
@@ -78,6 +78,8 @@ export async function readPf3Operations(req,res){
     count(*) FILTER (WHERE event_type='message.failed')::int AS message_failed,
     count(*) FILTER (WHERE event_type='message.uncertain')::int AS delivery_uncertain,
     count(*) FILTER (WHERE event_type='automation.granted')::int AS grants_saved,
+    count(*) FILTER (WHERE event_type='automation.task_created')::int AS internal_tasks_created,
+    count(*) FILTER (WHERE event_type='automation.task_completed')::int AS internal_tasks_completed,
     count(*) FILTER (WHERE event_type='document.drafted')::int AS document_drafts,
     count(*) FILTER (WHERE event_type='document.finalized')::int AS document_finalized,
     count(*) FILTER (WHERE event_type='document.provider_accepted')::int AS document_provider_accepted,

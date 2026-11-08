@@ -59,6 +59,13 @@ test('final document emails use allowlisted metadata only, not recipient or PDF 
  assert.ok(read('server/pf3-track-handler.js').includes('document_provider_accepted'));
  assert.ok(read('src/TrackPf3Operations.jsx').includes('Provider accepted, not proof of inbox delivery'));
 });
+test('internal reminder events remain metadata-only and cannot reveal client contents',()=>{
+ const event={...body,eventType:'automation.task_created'},now=Date.now();
+ assert.equal(validTrackPf3Envelope(event),true);
+ assert.equal(verifyTrackPf3Envelope(event,now,sign(event,now),secret,now),true);
+ assert.equal(validTrackPf3Envelope({...event,followupBody:'private content'}),false);
+ assert.ok(read('server/pf3-track-handler.js').includes('internal_tasks_created'));
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);
