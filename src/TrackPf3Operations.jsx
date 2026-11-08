@@ -56,7 +56,9 @@ export default function TrackPf3Operations(){
   {key:'delivery_uncertain',label:'Uncertain sends',value:count(metrics?.delivery_uncertain),Icon:FiAlertTriangle,detail:'Requires manual reconciliation'},
   {key:'message_failed',label:'Send failures',value:count(metrics?.message_failed),Icon:FiAlertTriangle,detail:'Not automatically retried'},
   {key:'grants_saved',label:'Saved grants',value:count(metrics?.grants_saved),Icon:FiShield,detail:'Grant events, not active automation'},
-  {key:'document_finalized',label:'Documents finalized',value:count(metrics?.document_finalized),Icon:FiFileText,detail:'Customer-owned documents, not platform revenue'}
+  {key:'document_finalized',label:'Documents finalized',value:count(metrics?.document_finalized),Icon:FiFileText,detail:'Customer-owned documents, not platform revenue'},
+  {key:'document_provider_accepted',label:'PDF emails accepted',value:count(metrics?.document_provider_accepted),Icon:FiMail,detail:'Provider accepted, not proof of inbox delivery'},
+  {key:'document_delivery_uncertain',label:'Uncertain PDF sends',value:count(metrics?.document_delivery_uncertain),Icon:FiAlertTriangle,detail:'Manual reconciliation required'}
  ];
  return <main className="track-page pf3-track" aria-labelledby="pf3-track-title">
   <header className="pf3-track-heading">

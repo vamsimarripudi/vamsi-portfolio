@@ -2,7 +2,7 @@ import {createHmac,timingSafeEqual} from 'node:crypto';
 import {json,query,requireOwner} from '../api/lib/track.js';
 
 // Product events are an allowlisted operational summary, not an access path to customer records.
-const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','document.drafted','document.finalized','billing.snapshot']);
+const TYPES=new Set(['settings.updated','message.drafted','message.approved','message.accepted','message.failed','message.uncertain','automation.granted','automation.revoked','document.drafted','document.finalized','document.send_requested','document.provider_accepted','document.delivery_failed','document.delivery_uncertain','billing.snapshot']);
 const ROLES=new Set(['creator','freelancer','consultant','solo_business','agency','other']);
 const KEYS=['eventId','eventType','occurredAt','role','schemaVersion','source','workspaceRef'].sort().join(',');
 const WITH_FINANCE_KEYS=[...KEYS.split(','),'finance'].sort().join(',');
@@ -80,6 +80,9 @@ export async function readPf3Operations(req,res){
     count(*) FILTER (WHERE event_type='automation.granted')::int AS grants_saved,
     count(*) FILTER (WHERE event_type='document.drafted')::int AS document_drafts,
     count(*) FILTER (WHERE event_type='document.finalized')::int AS document_finalized,
+    count(*) FILTER (WHERE event_type='document.provider_accepted')::int AS document_provider_accepted,
+    count(*) FILTER (WHERE event_type='document.delivery_failed')::int AS document_delivery_failed,
+    count(*) FILTER (WHERE event_type='document.delivery_uncertain')::int AS document_delivery_uncertain,
     max(received_at) AS last_received_at FROM pf3_track_events`,
    db`SELECT event_id,event_type,role,occurred_at,received_at FROM pf3_track_events ORDER BY received_at DESC LIMIT 40`,
    db`SELECT finance_json,received_at FROM pf3_track_events WHERE event_type='billing.snapshot' AND finance_json IS NOT NULL ORDER BY occurred_at DESC LIMIT 1`

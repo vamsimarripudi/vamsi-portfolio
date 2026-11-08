@@ -51,6 +51,14 @@ test('owner console provides filterable safe event sections and no invented AI t
  assert.ok(jsx.includes('Signed events report a product activity stream'));
  assert.ok(!jsx.includes('client_email'));
 });
+test('final document emails use allowlisted metadata only, not recipient or PDF content',()=>{
+ const event={...body,eventType:'document.provider_accepted'},timestamp=Date.now();
+ assert.equal(validTrackPf3Envelope(event),true);
+ assert.equal(verifyTrackPf3Envelope(event,timestamp,sign(event,timestamp),secret,timestamp),true);
+ assert.equal(validTrackPf3Envelope({...event,recipient:'client@example.com'}),false);
+ assert.ok(read('server/pf3-track-handler.js').includes('document_provider_accepted'));
+ assert.ok(read('src/TrackPf3Operations.jsx').includes('Provider accepted, not proof of inbox delivery'));
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);
