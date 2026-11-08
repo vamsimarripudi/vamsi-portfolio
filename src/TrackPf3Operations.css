@@ -36,3 +36,15 @@
 @media(max-width:900px){.pf3-track-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.pf3-track-heading{flex-direction:column}.pf3-track-cards,.pf3-track-ledgers{grid-template-columns:1fr}.pf3-track-card{min-height:114px}.pf3-track-connection small{width:100%;margin-left:0}}
 @media(prefers-reduced-motion:reduce){.pf3-track *{animation:none!important;transition:none!important}}
+
+.pf3-track-tabs{display:flex;gap:7px;overflow-x:auto;padding:0 0 13px;margin:0 0 20px;border-bottom:1px solid #d8e3f0}
+.pf3-track-tabs button{border:1px solid transparent;padding:10px 12px;border-radius:10px;background:transparent;color:#586c86;font:inherit;font-size:12px;font-weight:670;white-space:nowrap;min-height:43px}
+.pf3-track-tabs button[aria-current=page]{color:#284e7c;background:#ecf2fa;border-color:#c5d7ee}
+.pf3-track-event-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.pf3-track-event-controls label{display:grid;gap:4px;font-size:10px;color:#6d8299}
+.pf3-track-event-controls select,.pf3-track-event-controls button{min-height:41px;border:1px solid #cdd9e8;background:#fff;border-radius:9px;padding:9px 11px;color:#2e4d72;font:inherit;font-size:12px}
+.pf3-track-event-controls button{display:flex;align-items:center;gap:7px}
+.pf3-track-observability{padding:17px!important;margin-bottom:16px}
+.pf3-track-observability h2{font-size:15px;margin:0 0 10px}
+.pf3-track-observability p{font-size:12px;color:#61758e;line-height:1.65;margin:7px 0}
+@media(max-width:600px){.pf3-track-event-controls{width:100%}.pf3-track-event-controls select{max-width:100%}}

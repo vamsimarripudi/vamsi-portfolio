@@ -43,6 +43,14 @@ test('document events show only safe counts, never customer invoice amounts',()=
  assert.match(read('server/pf3-track-handler.js'),/document_finalized/);
  assert.match(read('src/TrackPf3Operations.jsx'),/Customer-owned documents, not platform revenue/);
 });
+test('owner console provides filterable safe event sections and no invented AI totals',()=>{
+ const jsx=read('src/TrackPf3Operations.jsx');
+ for(const label of ['Revenue','Invoices','Communications','Workflows','AI','Monitoring','Event logs'])assert.ok(jsx.includes(label));
+ assert.ok(jsx.includes('Export safe CSV'));
+ assert.ok(jsx.includes('not instrumented in this event feed'));
+ assert.ok(jsx.includes('Signed events report a product activity stream'));
+ assert.ok(!jsx.includes('client_email'));
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);
