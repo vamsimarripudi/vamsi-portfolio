@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from 'react';
+import {createElement,useCallback,useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {FiActivity,FiAlertTriangle,FiBarChart2,FiFileText,FiMail,FiRefreshCw,FiShield} from 'react-icons/fi';
 import './TrackPf3Operations.css';
@@ -42,7 +42,7 @@ export default function TrackPf3Operations(){
     <small>Last event: {when(metrics?.last_received_at)}</small>
    </div>
    <section className="pf3-track-cards" aria-label="Operational counters">{cards.map(({key,label,value,Icon,detail})=><article key={key} className="pf3-track-card">
-    <span className="pf3-track-card-icon"><Icon aria-hidden="true"/></span><span>{label}</span><strong>{value}</strong><small>{detail}</small>
+    <span className="pf3-track-card-icon">{createElement(Icon,{'aria-hidden':true})}</span><span>{label}</span><strong>{value}</strong><small>{detail}</small>
    </article>)}</section>
    <section className="pf3-track-ledgers" aria-label="Financial reporting">
     <article><FiBarChart2 aria-hidden="true"/><h2>Captured platform collections</h2>
