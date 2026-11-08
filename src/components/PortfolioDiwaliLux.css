@@ -1,25 +1,25 @@
 /* The separate, homepage-only Diwali layer leaves the original portfolio hero interactive. */
-#main:has(> .portfolio-diwali-lux){position:relative}
-#main:has(> .portfolio-diwali-lux) > .portfolio-diwali{display:none!important}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity{
+#main:has(> section.hero.hero-identity > .portfolio-diwali-lux){position:relative}
+#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > .portfolio-diwali{display:none!important}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity{
  min-height:100svh!important;
  position:relative;isolation:isolate;
  --ink:#fff6e4;--muted:#ebd4c1;--line:#bc8b55;--accent:#f0b86c;--lime:#e6b87b;
  background:radial-gradient(ellipse at 52% 48%,#30213c 0%,#181326 54%,#10121b 100%)!important;
  color:#fdf2e3;border-radius:0;
 }
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-copy,
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card,
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity :is(.hero-actions,.hero-current-note) {position:relative;z-index:2}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity :is(h1,h2,.hero-title){color:#fff3e5}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity :is(.hero-intro,.eyebrow,.hero-current-note){color:#e7d0b7}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-current-dot{background:#f6c078}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-copy,
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card,
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity :is(.hero-actions,.hero-current-note) {position:relative;z-index:2}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity :is(h1,h2,.hero-title){color:#fff3e5}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity :is(.hero-intro,.eyebrow,.hero-current-note){color:#e7d0b7}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-current-dot{background:#f6c078}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{
  background:linear-gradient(155deg,#3d2a427d,#1d1b2bc2);border-color:#d7a76686;box-shadow:0 20px 70px #0004;color:#f8e6d6
 }
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card :is(h2,h3,p,span){color:inherit}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .arrow-link{background:#efc57f;color:#261925;border-color:#f6dba3}
-main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-secondary-action{color:#ffe6b1}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card :is(h2,h3,p,span){color:inherit}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .arrow-link{background:#efc57f;color:#261925;border-color:#f6dba3}
+main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-secondary-action{color:#ffe6b1}
 :root:has(.portfolio-diwali-lux) .site-header{
  position:relative;z-index:12;background:linear-gradient(120deg,#18141f,#29202e 60%,#15151e);
  border-bottom:1px solid #d6a462aa;color:#fff1dc;
@@ -134,7 +134,7 @@ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-second
  .vm-lux-diyas--left{left:18px}.vm-lux-diyas--right{right:18px}
  .vm-lux-diya{width:47px}
  .vm-lux-diyas .vm-lux-diya:nth-child(2){display:none}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity {min-height:100svh!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity {min-height:100svh!important}
  :root:has(.portfolio-diwali-lux) .site-header{border-color:#d29d58}
 }
 @media(max-width:360px){
@@ -163,9 +163,9 @@ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-second
 }
 @media(max-width:620px){
  .portfolio-diwali-lux{height:100svh}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:120px!important}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:195px!important;padding:12px!important}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:9px 0!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:120px!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:195px!important;padding:12px!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:9px 0!important}
  .vm-lux-wheel{top:94px;width:57px}
  .vm-lux-muggu--tl,.vm-lux-muggu--tr{top:235px;width:40px}
  .vm-lux-muggu--tl{left:-15px}.vm-lux-muggu--tr{right:-15px}
@@ -177,9 +177,223 @@ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-second
  .vm-lux-diyas{bottom:8px}
 }
 @media(min-width:621px) and (max-width:950px){
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:125px!important}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:0!important;padding:12px!important}
- main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:12px 0!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:125px!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:0!important;padding:12px!important}
+ main#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:12px 0!important}
  .vm-lux-diyas{bottom:8px}
  .vm-lux-wheel{top:86px}
+}
+
+
+/* 2026-11-08 mobile cleanup: isolate ornamental art INSIDE its own hero.
+   The existing site header, links, engineering canvas and focus card retain their semantics.
+   The focus card may naturally scroll; its bottom is never hidden by the quick nav. */
+#main:has(> section.hero.hero-identity > .portfolio-diwali-lux) > .portfolio-diwali {
+ display:none!important;
+}
+main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) {
+ position:relative;
+ isolation:isolate;
+ min-height:calc(100svh - 82px)!important;
+ height:auto!important;
+ max-height:none!important;
+ padding:clamp(100px,12svh,125px) 24px clamp(112px,12svh,136px)!important;
+}
+main#main > section.hero.hero-identity > .portfolio-diwali-lux {
+ position:absolute!important;
+ inset:0!important;
+ width:100%;
+ height:100%!important;
+ overflow:hidden;
+ pointer-events:none!important;
+ z-index:1;
+}
+main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) > :not(.portfolio-diwali-lux):not(.vm-lux-intro) {
+ position:relative;
+ z-index:2;
+}
+/* Restore the engineering scene to its original background position. */
+main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux) > .living-engineering-canvas {
+ position:absolute;
+ z-index:0;
+}
+
+/* The toranam now lives below the navigation, never over its wordmark or buttons. */
+main#main > section.hero.hero-identity .vm-diwali-lux__toranam {
+ top:5px;
+ height:68px;
+ left:11px;
+ right:11px;
+ width:calc(100% - 22px);
+ opacity:.86;
+}
+main#main > section.hero.hero-identity .vm-lux-gold-frame {
+ inset:5px 5px 10px;
+ border-width:1.3px;
+ opacity:.7;
+ box-shadow:inset 0 0 0 1px #ffe5a33b,0 0 9px #f3c0752a;
+}
+main#main > section.hero.hero-identity .vm-lux-gold-frame::after { opacity:.35; }
+main#main > section.hero.hero-identity .vm-lux-muggu--tl,
+main#main > section.hero.hero-identity .vm-lux-muggu--tr { top:81px; width:55px; }
+main#main > section.hero.hero-identity .vm-lux-muggu--bl,
+main#main > section.hero.hero-identity .vm-lux-muggu--br { bottom:92px; width:55px; }
+main#main > section.hero.hero-identity .vm-lux-wheel { top:70px; width:71px; }
+main#main > section.hero.hero-identity .vm-lux-wheel--left { left:clamp(68px,8vw,115px); }
+main#main > section.hero.hero-identity .vm-lux-wheel--right { right:clamp(68px,8vw,115px); }
+main#main > section.hero.hero-identity .vm-lux-diyas { bottom:21px; }
+main#main > section.hero.hero-identity .vm-lux-border-light { opacity:.7; }
+main#main > section.hero.hero-identity .vm-lux-border-light--left,
+main#main > section.hero.hero-identity .vm-lux-border-light--right { width:2px; }
+
+/* Ensure the light Contact pill remains readable even with the themed header. */
+:root:has(.portfolio-diwali-lux) .site-header .header-contact {
+ color:#241826!important;
+ background:#f4d49c;
+ border-color:#edc68b;
+ font-weight:750;
+}
+:root:has(.portfolio-diwali-lux) .site-header .header-contact:hover,
+:root:has(.portfolio-diwali-lux) .site-header .header-contact:focus-visible {
+ background:#ffebba;
+ color:#20151e!important;
+}
+@media(min-width:621px) and (max-width:950px){
+ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux){
+  padding:105px 20px 120px!important;
+ }
+ main#main > section.hero.hero-identity .vm-lux-wheel{
+  top:72px;width:58px;
+ }
+ main#main > section.hero.hero-identity .vm-lux-muggu--tl,
+ main#main > section.hero.hero-identity .vm-lux-muggu--tr {top:158px;width:44px}
+ main#main > section.hero.hero-identity .vm-lux-muggu--bl,
+ main#main > section.hero.hero-identity .vm-lux-muggu--br {bottom:87px;width:40px}
+ main#main > section.hero.hero-identity .vm-lux-wheel--left {left:15px}
+ main#main > section.hero.hero-identity .vm-lux-wheel--right {right:15px}
+ main#main > section.hero.hero-identity .vm-lux-diya{width:50px}
+}
+@media(max-width:620px){
+ main#main > section.hero.hero-identity:has(> .portfolio-diwali-lux){
+  width:min(calc(100% - 24px),var(--max));
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:20px;
+  min-height:calc(100svh - 72px)!important;
+  padding:102px 12px 116px!important;
+  overflow:visible;
+ }
+ main#main > section.hero.hero-identity .hero-copy { min-width:0; }
+ main#main > section.hero.hero-identity .hero-title {
+  font-size:clamp(2rem,8.8vw,2.65rem)!important;
+  line-height:1.12!important;
+  letter-spacing:-.055em;
+ }
+ main#main > section.hero.hero-identity .hero-intro{
+  margin-top:14px!important;
+  font-size:clamp(.93rem,3.7vw,1rem)!important;
+  line-height:1.55!important;
+ }
+ main#main > section.hero.hero-identity .hero-actions {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch!important;
+  gap:9px!important;
+  margin-top:18px!important;
+ }
+ main#main > section.hero.hero-identity .hero-actions > a {
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  min-height:44px;
+  justify-content:center;
+  box-sizing:border-box;
+ }
+ main#main > section.hero.hero-identity .hero-actions > a:first-child {
+  grid-column:1/-1;
+  min-height:51px;
+  border-radius:12px;
+  padding:11px 15px;
+ }
+ main#main > section.hero.hero-identity .hero-actions > a.hero-secondary-action {
+  display:inline-flex;
+  padding:8px 5px;
+  gap:7px;
+  color:#f8e3bb;
+  background:rgba(255,210,138,.045);
+  border:1px solid rgba(243,197,126,.38);
+  border-radius:10px;
+  font-size:clamp(.74rem,3vw,.86rem);
+  line-height:1.25;
+  text-decoration:none;
+ }
+ main#main > section.hero.hero-identity .hero-current-note {
+  margin-top:17px!important;
+  max-width:100%;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  font-size:clamp(.72rem,3vw,.84rem);
+ }
+ main#main > section.hero.hero-identity .hero-focus-card {
+  min-height:0!important;
+  padding:14px!important;
+  margin:0;
+  border-radius:14px;
+  background:rgba(49,35,56,.88);
+ }
+ main#main > section.hero.hero-identity .hero-focus-center { margin:13px 0!important; }
+
+ /* Make the festive ornament a small separated top strip rather than a navbar overlay. */
+ main#main > section.hero.hero-identity .vm-diwali-lux__toranam {
+  top:6px;height:61px;left:9px;right:9px;width:calc(100% - 18px);
+ }
+ main#main > section.hero.hero-identity .vm-lux-thread{stroke-width:3.6}
+ main#main > section.hero.hero-identity .vm-lux-thread-pulse{stroke-width:5.8}
+ main#main > section.hero.hero-identity .vm-lux-twinkle{filter:none}
+ main#main > section.hero.hero-identity .vm-lux-wheel{top:66px;width:36px;opacity:.83}
+ main#main > section.hero.hero-identity .vm-lux-wheel--left{left:13px}
+ main#main > section.hero.hero-identity .vm-lux-wheel--right{right:13px}
+ main#main > section.hero.hero-identity .vm-lux-muggu--tl,
+ main#main > section.hero.hero-identity .vm-lux-muggu--tr{display:none}
+ main#main > section.hero.hero-identity .vm-lux-muggu--bl,
+ main#main > section.hero.hero-identity .vm-lux-muggu--br{bottom:90px;width:30px;opacity:.7}
+ main#main > section.hero.hero-identity .vm-lux-muggu--bl{left:13px}
+ main#main > section.hero.hero-identity .vm-lux-muggu--br{right:13px}
+ main#main > section.hero.hero-identity .vm-lux-diyas{bottom:25px}
+ main#main > section.hero.hero-identity .vm-lux-diyas--left{left:19px}
+ main#main > section.hero.hero-identity .vm-lux-diyas--right{right:19px}
+ main#main > section.hero.hero-identity .vm-lux-diya{width:44px}
+ main#main > section.hero.hero-identity .vm-lux-gold-frame{
+  inset:8px 0 12px;
+  border:1px solid #d69b5685;
+  border-radius:14px;
+  opacity:.72;
+ }
+ main#main > section.hero.hero-identity .vm-lux-gold-frame::after{display:none}
+ main#main > section.hero.hero-identity .vm-lux-border-light--top,
+ main#main > section.hero.hero-identity .vm-lux-border-light--bottom{opacity:.3}
+ main#main > section.hero.hero-identity .vm-lux-border-light--left,
+ main#main > section.hero.hero-identity .vm-lux-border-light--right{opacity:.38}
+ :root:has(.portfolio-diwali-lux) .mobile-quick-nav {
+  padding:3px 5px;
+  border:1px solid rgba(238,185,108,.55);
+  background:rgba(25,18,30,.94);
+  box-shadow:0 8px 28px rgba(0,0,0,.36);
+  border-radius:14px;
+ }
+ :root:has(.portfolio-diwali-lux) .mobile-quick-nav a {
+  min-height:42px;
+  color:#ecd3b5;
+  font-size:.73rem;
+ }
+ :root:has(.portfolio-diwali-lux) .mobile-quick-nav a.active {
+  background:rgba(242,185,105,.18);
+  color:#ffefce;
+ }
+}
+@media(max-width:360px){
+ main#main > section.hero.hero-identity .hero-title{font-size:1.95rem!important}
+ main#main > section.hero.hero-identity .vm-lux-wheel {width:32px;top:61px}
+ main#main > section.hero.hero-identity .vm-lux-diya {width:39px}
 }

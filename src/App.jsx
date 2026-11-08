@@ -151,8 +151,8 @@ function Home(){
   usePageMeta('Founder Engineer',pageDescriptions['/']);
   return <main id="main">
     <PortfolioDiwali />
-    <PortfolioDiwaliLux />
     <section className="hero hero-motion hero-identity">
+      <PortfolioDiwaliLux />
       <LivingEngineeringCanvas/>
       <div className="hero-copy" data-reveal>
         <p className="eyebrow hero-name">Vamsi Marripudi <span className="availability"><i/> Founder Engineer</span></p>

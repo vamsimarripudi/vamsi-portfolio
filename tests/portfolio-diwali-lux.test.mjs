@@ -6,7 +6,7 @@ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('Diwali premium hero is explicitly homepage-only and retains real portfolio hero and animation',()=>{
  const app=read('src/App.jsx'),lux=read('src/components/PortfolioDiwaliLux.jsx'),css=read('src/components/PortfolioDiwaliLux.css');
  assert.match(app,/import PortfolioDiwaliLux from '\.\/components\/PortfolioDiwaliLux\.jsx'/);
- assert.match(app,/function Home\(\)[\s\S]*?return <main id="main">\s*<PortfolioDiwali \/>\s*<PortfolioDiwaliLux \/>/);
+ assert.match(app,/function Home\(\)[\s\S]*?return <main id="main">\s*<PortfolioDiwali \/>\s*<section className="hero hero-motion hero-identity">\s*<PortfolioDiwaliLux \/>/);
  assert.equal((app.match(/<PortfolioDiwaliLux \/>/g)||[]).length,1);
  assert.match(app,/<LivingEngineeringCanvas\/>/);
  assert.match(app,/I build useful products/);
@@ -28,4 +28,16 @@ test('opening is skippable, festive card closes after ten seconds and has dialog
  assert.match(src,/aria-modal="true"/);
  assert.match(src,/ref=\{close\}/);
  assert.match(src,/Warm wishes from Vamsi Marripudi/);
+});
+
+
+test('mobile festive decorations are isolated inside hero, with natural flow and readable navigation',()=>{
+ const source=read('src/App.jsx'),css=read('src/components/PortfolioDiwaliLux.css');
+ assert.match(source,/<section className="hero hero-motion hero-identity">\s*<PortfolioDiwaliLux \/>/);
+ assert.doesNotMatch(source,/<PortfolioDiwaliLux \/>\s*<section className="hero hero-motion hero-identity">/);
+ assert.match(css,/section\.hero\.hero-identity:has\(> \.portfolio-diwali-lux\)/);
+ assert.match(css,/\.vm-lux-muggu--tl,\s*main#main > section\.hero\.hero-identity \.vm-lux-muggu--tr\{display:none\}/);
+ assert.match(css,/\.hero-actions > a:first-child/);
+ assert.match(css,/\.site-header \.header-contact/);
+ assert.match(css,/\.vm-lux-gold-frame/);
 });
