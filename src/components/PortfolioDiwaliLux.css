@@ -154,3 +154,19 @@ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-second
  .vm-lux-wheel,.vm-lux-muggu,.vm-lux-diyas,.vm-lux-border-light,.vm-diwali-lux__toranam{display:none!important}
 }
 @media print{.portfolio-diwali-lux,.vm-lux-intro{display:none!important}}
+
+
+/* Browser-verified 360/390/1280px spacing: fully visible diyas; no Muggu/chakra overlap. */
+.portfolio-diwali-lux{height:100svh}
+@media(min-width:621px){
+ .vm-lux-muggu--tl,.vm-lux-muggu--tr{top:320px}
+}
+@media(max-width:620px){
+ .portfolio-diwali-lux{height:100svh}
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity{padding-bottom:120px!important}
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-card{min-height:195px!important;padding:12px!important}
+ main#main:has(> .portfolio-diwali-lux) > section.hero.hero-identity .hero-focus-center{margin:9px 0!important}
+ .vm-lux-wheel{top:94px;width:57px}
+ .vm-lux-muggu--tl,.vm-lux-muggu--tr{top:235px;width:40px}
+ .vm-lux-muggu--tl{left:-15px}.vm-lux-muggu--tr{right:-15px}
+}
