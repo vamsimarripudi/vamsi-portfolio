@@ -66,6 +66,15 @@ test('internal reminder events remain metadata-only and cannot reveal client con
  assert.equal(validTrackPf3Envelope({...event,followupBody:'private content'}),false);
  assert.ok(read('server/pf3-track-handler.js').includes('internal_tasks_created'));
 });
+test('editorial activity reports privacy-safe drafts and reviews without publishing claims',()=>{
+ const event={...body,eventType:'content.reviewed'},timestamp=Date.now();
+ assert.equal(validTrackPf3Envelope(event),true);
+ assert.equal(verifyTrackPf3Envelope(event,timestamp,sign(event,timestamp),secret,timestamp),true);
+ assert.equal(validTrackPf3Envelope({...event,subscriberEmail:'subscriber@example.com'}),false);
+ const code=read('src/TrackPf3Operations.jsx');
+ assert.match(code,/Editorial approval is not publishing or marketing delivery/);
+ assert.match(code,/content\.drafted/);
+});
 test('Track routes remain private and retain existing support/analytics',()=>{
  const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
  assert.match(route,/PakkaFollow support/);

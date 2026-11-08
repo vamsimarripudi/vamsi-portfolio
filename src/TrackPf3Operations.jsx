@@ -12,7 +12,7 @@ export default function TrackPf3Operations(){
  const [params,setParams]=useSearchParams();
  const views=[
   ['overview','Overview'],['revenue','Revenue'],['invoices','Invoices'],['communications','Communications'],
-  ['automation','Workflows'],['ai','AI'],['monitoring','Monitoring'],['audit','Event logs']
+  ['automation','Workflows'],['content','Content'],['ai','AI'],['monitoring','Monitoring'],['audit','Event logs']
  ];
  const view=views.some(([id])=>id===params.get('view'))?params.get('view'):'overview';
  const [filter,setFilter]=useState('all');
@@ -31,7 +31,7 @@ export default function TrackPf3Operations(){
  const eventGroups={
   overview:null,revenue:['billing.snapshot'],invoices:['document.drafted','document.finalized'],
   communications:['message.drafted','message.approved','message.accepted','message.failed','message.uncertain'],
-  automation:['automation.granted','automation.revoked','automation.task_created','automation.task_completed'],ai:[],monitoring:null,audit:null
+  automation:['automation.granted','automation.revoked','automation.task_created','automation.task_completed'],content:['content.drafted','content.updated','content.reviewed'],ai:[],monitoring:null,audit:null
  };
  const filteredEvents=(data?.events||[]).filter(event=>{
   const allowed=eventGroups[view];
@@ -58,6 +58,7 @@ export default function TrackPf3Operations(){
   {key:'grants_saved',label:'Saved grants',value:count(metrics?.grants_saved),Icon:FiShield,detail:'Grant events, not active automation'},
   {key:'internal_tasks_created',label:'Internal review tasks',value:count(metrics?.internal_tasks_created),Icon:FiActivity,detail:'Owner-only tasks, no external messages'},
   {key:'document_finalized',label:'Documents finalized',value:count(metrics?.document_finalized),Icon:FiFileText,detail:'Customer-owned documents, not platform revenue'},
+  {key:'editorial_reviewed',label:'Content reviewed',value:count(metrics?.editorial_reviewed),Icon:FiFileText,detail:'Editorial approval is not publishing or marketing delivery'},
   {key:'document_provider_accepted',label:'PDF emails accepted',value:count(metrics?.document_provider_accepted),Icon:FiMail,detail:'Provider accepted, not proof of inbox delivery'},
   {key:'document_delivery_uncertain',label:'Uncertain PDF sends',value:count(metrics?.document_delivery_uncertain),Icon:FiAlertTriangle,detail:'Manual reconciliation required'}
  ];
@@ -77,7 +78,7 @@ export default function TrackPf3Operations(){
     <FiShield aria-hidden="true"/><span>{data.connected?'Signed operational events connected':'Awaiting verified event ingestion'}</span>
     <small>Last event: {when(metrics?.last_received_at)}</small>
    </div>
-   {(view==='overview'||view==='communications'||view==='automation'||view==='invoices')&&<section className="pf3-track-cards" aria-label="Operational counters">{cards.map(({key,label,value,Icon,detail})=><article key={key} className="pf3-track-card">
+   {(view==='overview'||view==='communications'||view==='automation'||view==='invoices'||view==='content')&&<section className="pf3-track-cards" aria-label="Operational counters">{cards.map(({key,label,value,Icon,detail})=><article key={key} className="pf3-track-card">
     <span className="pf3-track-card-icon">{createElement(Icon,{'aria-hidden':true})}</span><span>{label}</span><strong>{value}</strong><small>{detail}</small>
    </article>)}</section>}
    {(view==='overview'||view==='revenue'||view==='invoices')&&<section className="pf3-track-ledgers" aria-label="Financial reporting">
