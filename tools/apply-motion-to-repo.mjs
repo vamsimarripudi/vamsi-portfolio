@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Offline, fail-closed, local-only installer for approved Corner ambient motion.
+// Untouched styling also includes public/stories.css; only the three new ambient assets may be replaced.
 // Never changes original Stories reader/Studio implementation or pushes/deploys.
 import {readFile,copyFile,mkdir,rename,rm,stat} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
