@@ -25,6 +25,7 @@
   return data?.data;
  }
  const setCount=(name,value)=>{const el=$('#ssCount'+name);if(el)el.textContent=String(value||0)};
+ function markBusy(value){state.pending=Boolean(value);$$('#ssDesk button').forEach(b=>{if(b.dataset.neverDisable)return;b.disabled=Boolean(value)});}
  function renderBooks(){
   const target=$('#ssBooks');const visible=state.books.filter(b=>(state.filter==='all'||b.state===state.filter)&&(!state.search||[b.title,b.description,b.genre,...b.chapters.map(c=>c.title)].join(' ').toLowerCase().includes(state.search)));
   if(!visible.length){target.innerHTML=`<div class="ss-empty-list"><span data-corner-icon="book" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 6c-3-2-6.5-2.5-9-1v14c3-1.2 6-1.1 9 1 3-2.1 6-2.2 9-1V5c-2.5-1.5-6-1-9 1v14"/></svg></span>${state.search?'No matches on this shelf.':'No '+(state.filter==='all'?'stories':'stories in this state')+' yet.'}<br><button type="button" class="ss-quiet" id="emptyNew">Start writing</button></div>`;$('#emptyNew').onclick=()=>showCreate();return;}
@@ -64,7 +65,7 @@
  function currentCover(){const b=state.currentBook;const firstId=b?.chapters[0]?.id;return state.current?.post?.id===firstId?(state.current.media||[]).find(m=>m.mime_type?.startsWith('image/'))||null:b?.cover||null;}
  function editorData(){const f=$('#ssEditForm');return f?{title:f.elements.title.value,excerpt:f.elements.excerpt.value,genre:f.elements.genre.value,body:f.elements.body.value,version:state.current.post.version}:null;}
  function renderEditor(){
-  const d=state.current,b=state.currentBook;if(!d||!b)return;const p=d.post,readOnly=p.state==='archived',cover=currentCover();
+  const d=state.current,b=state.currentBook;if(!d||!b)return;const p=d.post,readOnly=p.state==='archived',firstId=b.chapters[0]?.id,cover=currentCover();
   const published=b.publishedCount>0;
   const livePath=b.kind==='series'?`/stories/book/${encodeURIComponent(b.slug)}`:`/stories/book/${encodeURIComponent(p.slug)}`;
   const chapterButtons=b.chapters.map((c,i)=>`<button type="button" data-chapter="${escape(c.id)}" class="${p.id===c.id?'is-active':''}" aria-pressed="${p.id===c.id}">${String(i+1).padStart(2,'0')} ${escape(c.title)}</button>`).join('');
