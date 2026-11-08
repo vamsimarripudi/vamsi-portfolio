@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHmac} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import {validTrackPf3Envelope,verifyTrackPf3Envelope} from '../server/pf3-track-handler.js';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const body={eventId:'fdd59eb1-b109-4661-bb0a-ced88b14dbef',eventType:'message.drafted',role:'freelancer',
+ workspaceRef:'a'.repeat(24),occurredAt:'2026-11-08T08:00:00.000Z',schemaVersion:1,source:'pakkafollow'};
+const secret='s'.repeat(48);
+const sign=(payload,t)=>createHmac('sha256',secret).update(String(t)+'.'+JSON.stringify(payload)).digest('hex');
+test('Track accepts only signed allowlisted operational metadata',()=>{
+ const timestamp=Date.now();
+ assert.equal(validTrackPf3Envelope(body),true);
+ assert.equal(verifyTrackPf3Envelope(body,timestamp,sign(body,timestamp),secret,timestamp),true);
+ assert.equal(verifyTrackPf3Envelope({...body,customerEmail:'secret@example.com'},timestamp,sign({...body,customerEmail:'secret@example.com'},timestamp),secret,timestamp),false);
+ assert.equal(verifyTrackPf3Envelope({...body,eventType:'invoice.full_document'},timestamp,sign(body,timestamp),secret,timestamp),false);
+ assert.equal(verifyTrackPf3Envelope(body,timestamp-400000,sign(body,timestamp-400000),secret,timestamp),false);
+ assert.equal(verifyTrackPf3Envelope(body,timestamp,'0'.repeat(64),secret,timestamp),false);
+ assert.equal(verifyTrackPf3Envelope(body,timestamp,sign(body,timestamp),'short',timestamp),false);
+});
+test('the owner dashboard reports financial unknowns and never fabricates revenue',()=>{
+ const server=read('server/pf3-track-handler.js'),ui=read('src/TrackPf3Operations.jsx'),api=read('api/track/metrics.js');
+ assert.match(server,/requireOwner\(req,res\)/);
+ assert.match(server,/ON CONFLICT\(event_id\) DO NOTHING/);
+ assert.match(server,/source:'awaiting_verified_events'/);
+ assert.match(server,/platformRevenue|Platform revenue|revenue:\{status:'unavailable'/);
+ assert.match(api,/view==='pf3-ingest'/);
+ assert.match(api,/view==='pf3-ops'/);
+ assert.match(ui,/No signed events have been received/);
+ assert.match(ui,/Provider accepted/);
+ assert.match(ui,/Not reconciled/);
+ assert.match(ui,/Customer invoices are excluded/);
+});
+test('Track routes remain private and retain existing support/analytics',()=>{
+ const route=read('src/Track.jsx'),vercel=JSON.parse(read('vercel.json'));
+ assert.match(route,/PakkaFollow support/);
+ assert.match(route,/PakkaFollow 3\.0/);
+ assert.match(route,/TrackPf3Operations/);
+ for(const p of ['/api/track/pakkafollow/events','/api/track/pakkafollow/operations','/track/pakkafollow/operations'])
+  assert.ok(vercel.rewrites.some(r=>r.source===p));
+ assert.ok(vercel.headers.some(r=>r.source==='/track/:path*'&&r.headers.some(h=>h.key==='X-Robots-Tag')));
+});
