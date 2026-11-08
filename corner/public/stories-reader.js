@@ -39,13 +39,11 @@ let chapterIndex=Math.max(0,Math.min(chapters.length-1,initialChapterNumber-1));
 let chapter=boot.chapter;
 let pages=[];
 let basePage=0;
-let wordsTotal=0;
 let isLoading=false;
 let activeTurn=null;
 let frame=0;
 let frameTime=0;
 let resizeTimer=0;
-let pendingChapter=null;
 const fetched=new Map([[chapterIndex,chapter]]);
 const chapterRequests=new Map();
 
@@ -128,7 +126,6 @@ function pageStep(){return narrow.matches?1:2;}
 function alignPage(index){return Math.max(0,Math.floor(Math.max(0,index)/pageStep())*pageStep());}
 function currentWord(){return pages[Math.min(basePage,pages.length-1)]?.startWord||0;}
 function lastVisibleWord(){const page=pages[Math.min(pages.length-1,basePage+pageStep()-1)];return (page?.startWord||0)+(page?.wordCount||0);}
-function chapterWordCount(index){return Math.max(1,Number(chapters[index]?.words)||1);}
 function totalBookWords(){return chapters.reduce((sum,c)=>sum+Math.max(0,Number(c.words)||0),0)||1;}
 function readPercent(){
   let words=0;
@@ -299,7 +296,7 @@ function onPointerMove(event){
 }
 function onPointerUp(event){
   if(activeTurn?.pointerId!==event.pointerId)return;
-  try{if(el.stage.hasPointerCapture(event.pointerId))el.stage.releasePointerCapture(event.pointerId);}catch{}
+  try{if(el.stage.hasPointerCapture(event.pointerId))el.stage.releasePointerCapture(event.pointerId);}catch{/* Capture may already be released by the browser. */}
   el.stage.classList.remove('is-dragging');el.touch.style.opacity='0';finishTurn();event.preventDefault();
 }
 function onPointerCancel(event){
@@ -359,7 +356,7 @@ class RecordedPaperAudio {
   }
   stop(){
     if(this.rustle){
-      try{this.rustleGain.gain.setTargetAtTime(0,this.ctx.currentTime,.025);this.rustle.stop(this.ctx.currentTime+.1);}catch{}
+      try{this.rustleGain.gain.setTargetAtTime(0,this.ctx.currentTime,.025);this.rustle.stop(this.ctx.currentTime+.1);}catch{/* This short-lived sound can already be stopped. */}
       this.rustle=null;this.rustleGain=null;
     }
   }
@@ -403,7 +400,7 @@ async function loadChapter(index,word=0,{announceChange=false}={}){
     if(announceChange)announce(`Chapter ${index+1}, ${chapter.title}.`);
     prefetchAdjacent();
     return true;
-  }catch(error){
+  }catch{
     chapterIndex=previous.index;chapter=previous.chapter;pages=previous.pages;basePage=previous.basePage;
     paint();announce('Chapter could not be loaded. Try again.');return false;
   }finally{isLoading=false;updateControls();}
