@@ -50,7 +50,7 @@ export default function TrackPf3Operations(){
      {verifiedCollections?<p>Refunds {inr(revenue.refundedMinor)} · Net collections {inr(revenue.netCollectionsMinor)}. <b>{revenue.status==='stale'?'Snapshot stale':'Verified payment ledger snapshot'}</b> through {when(revenue.periodEnd)}.</p>:
      <p>Awaiting a verified payment snapshot. Customer invoices are never counted as platform revenue.</p>}
      <p>Taxes, vendor costs and accounting profit are not verified in this view.</p></article>
-    <article><FiFileText aria-hidden="true"/><h2>Customer invoices</h2><strong>Separate ledger</strong><p>Customer-issued documents never count as PakkaFollow revenue. This connector is not activated.</p></article>
+    <article><FiFileText aria-hidden="true"/><h2>Customer invoices</h2><strong>Separate ledger</strong><p>Customer invoices are excluded from PakkaFollow platform revenue. This connector is not activated.</p></article>
    </section>
    <section className="track-panel pf3-track-events" aria-labelledby="pf3-events-title">
     <div className="pf3-track-section-heading"><h2 id="pf3-events-title">Recent operational events</h2><small>Source: {data.source||'unavailable'} · Checked {when(data.asOf)}</small></div>
