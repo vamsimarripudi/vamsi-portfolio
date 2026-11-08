@@ -89,6 +89,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/track/pakkafollow/events",
+      "destination": "/api/track/metrics?view=pf3-ingest"
+    },
+    {
+      "source": "/api/track/pakkafollow/operations",
+      "destination": "/api/track/metrics?view=pf3-ops"
+    },
+    {
       "source": "/corner",
       "destination": "https://corner-web-production-2600.up.railway.app/corner"
     },
@@ -130,6 +138,10 @@
     },
     {
       "source": "/track/ev-surveys",
+      "destination": "/track/index.html"
+    },
+    {
+      "source": "/track/pakkafollow/operations",
       "destination": "/track/index.html"
     }
   ],
