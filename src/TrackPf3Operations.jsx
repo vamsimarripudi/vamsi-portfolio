@@ -42,7 +42,7 @@ export default function TrackPf3Operations(){
   if(!filteredEvents.length)return;
   const cols=['event_type','role','occurred_at','received_at'];
   const csv=[cols.join(','),...filteredEvents.map(record=>cols.map(key=>
-   '"'+String(record[key]||'').replaceAll('"','""').replace(/^[=+@-]/,'\u2019 const metrics=data?.connected?data.metrics:null,revenue=data?.revenue;')+'"').join(','))].join('\n');
+   '"'+String(record[key]||'').replaceAll('"','""').replace(/^[=+@-]/,'\u2019'\u2019 const metrics=data?.connected?data.metrics:null,revenue=data?.revenue;'')+'"').join(','))].join('\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   const link=document.createElement('a');link.href=url;link.download='pakkafollow-safe-events.csv';link.click();
   setTimeout(()=>URL.revokeObjectURL(url),3000);

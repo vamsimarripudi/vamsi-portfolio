@@ -107,3 +107,9 @@ test('Track verifies signed collection snapshots and rejects customer invoice co
  assert.equal(validTrackPf3Envelope({...event,finance:{...finance,refundedMinor:100000}}),false);
  assert.equal(verifyTrackPf3Envelope({...event,finance:{...finance,capturedMinor:0}},timestamp,signature,secret,timestamp),false);
 });
+
+test('CSV export preserves leading characters while neutralizing spreadsheet formulas',()=>{
+ const jsx=read('src/TrackPf3Operations.jsx');
+ assert.ok(jsx.includes("replace(/^[=+@-]/,'\\u2019$&')"));
+ assert.ok(!jsx.includes('const metrics=data?.connected?data.metrics:null,revenue=data?.revenue;\u0027)'));
+});
