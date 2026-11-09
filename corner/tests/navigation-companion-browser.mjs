@@ -67,12 +67,12 @@ try{
          pulseBottom:pulse?.bottom,pulseTop:pulse?.top};
      });
      assert.equal(layout.position,'fixed','Mobile dock floats above content '+width);
-     assert.equal(layout.display,'grid','Six-column mobile dock '+width);
+     assert.equal(layout.display,'grid','Category dock uses an accessible grid '+width);
      assert.equal(layout.visibility,'visible','Bottom dock stays visible '+width);
-     assert.equal(layout.columns,6,'One icon per category '+width);
+     assert.equal(layout.columns,7,'Six categories and Stories share one row '+width);
      assert.ok(layout.width<=width&&layout.left>=-1&&layout.right<=width+1,'Glass dock inside viewport '+width+' '+JSON.stringify(layout));
      assert.ok(layout.top>height-160&&layout.bottom<=height+1,'Dock is at screen bottom '+width);
-     assert.equal(await rail.locator('.corner-rail-link').count(),6,'All category links stay accessible');
+     assert.equal(await rail.locator('.corner-rail-link').count(),7,'All six categories and Stories stay accessible');
      assert.equal(await page.locator('[data-corner-rail-backdrop]').isVisible(),false,'No side drawer backdrop');
      await page.locator('#corner-rail-nav a[href$="/category/builds"]').focus();
      assert.equal(await page.locator('#corner-rail-nav a[href$="/category/builds"]').evaluate(el=>el===document.activeElement),true,'Mobile nav keyboard focus');

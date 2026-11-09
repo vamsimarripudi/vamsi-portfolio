@@ -328,7 +328,7 @@ body.corner-comfort .corner-home-shell .corner-spotlight-link:hover{background:#
   }
 }
 
-/* Mobile dock reuses the six existing category links. It is NOT another nav.
+/* Mobile dock carries six categories plus Stories in one rail. It is NOT another nav.
  * Desktop retains the existing left floating rail; at <=900 px that rail
  * becomes a bottom frosted-glass capsule, including on category/detail pages. */
 @media(max-width:900px){
@@ -342,7 +342,7 @@ body.corner-comfort .corner-home-shell .corner-spotlight-link:hover{background:#
     position:fixed!important;inset:auto auto calc(12px + env(safe-area-inset-bottom,0px)) 50%!important;
     top:auto!important;left:50%!important;right:auto!important;
     bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;
-    display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
     align-items:center!important;justify-content:center!important;gap:3px!important;
     width:min(calc(100vw - 20px),475px)!important;max-width:475px!important;
     min-width:0!important;height:76px!important;min-height:76px!important;max-height:76px!important;

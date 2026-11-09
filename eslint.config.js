@@ -32,4 +32,10 @@ export default defineConfig([
       globals: { ...globals.node, ...globals.browser },
     },
   },
+  // The published page-turn reader is hash-locked for behavior, timing and sound.
+  // Keep its original bytes unchanged; exempt only inherited legacy warnings.
+  {
+    files: ['corner/public/stories-reader.js'],
+    rules: { 'no-unused-vars': 'off', 'no-empty': 'off' },
+  },
 ])
