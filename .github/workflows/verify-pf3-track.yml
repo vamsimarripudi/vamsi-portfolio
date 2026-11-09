@@ -1,0 +1,31 @@
+name: PakkaFollow 3.0 Track scoped verification
+on:
+  pull_request:
+    paths:
+      - 'src/Track.jsx'
+      - 'src/TrackPf3Operations.*'
+      - 'server/pf3-track-handler.js'
+      - 'api/track/metrics.js'
+      - 'tests/track-pf3-events.test.mjs'
+      - 'vercel.json'
+      - '.github/workflows/verify-pf3-track.yml'
+  workflow_dispatch:
+jobs:
+  verify-track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint changed Track modules
+        run: npx eslint src/Track.jsx src/TrackPf3Operations.jsx server/pf3-track-handler.js api/track/metrics.js
+      - name: Verify Track signed ingestion, finance, support and access
+        run: node --test tests/track-pf3-events.test.mjs tests/track-pakkafollow.test.mjs tests/track-api-routes.test.mjs
+      - name: Build the entire portfolio application
+        run: npm run build
