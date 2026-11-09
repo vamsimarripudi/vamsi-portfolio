@@ -110,6 +110,7 @@ test('Track verifies signed collection snapshots and rejects customer invoice co
 
 test('CSV export preserves leading characters while neutralizing spreadsheet formulas',()=>{
  const jsx=read('src/TrackPf3Operations.jsx');
- assert.ok(jsx.includes("replace(/^[=+@-]/,'\\u2019$&')"));
- assert.ok(!jsx.includes('const metrics=data?.connected?data.metrics:null,revenue=data?.revenue;\u0027)'));
+ const exportLine=jsx.split('\n').find(line=>line.includes('String(record[key]'));
+ assert.ok(exportLine.includes(String.raw`replace(/^[=+@-]/,value=>'\u2019'+value)`));
+ assert.ok(!exportLine.includes('const metrics'));
 });
