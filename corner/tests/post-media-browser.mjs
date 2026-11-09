@@ -4,13 +4,21 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
+import {createServer} from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 import {passwordHash} from '../src/auth.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'corner-post-media-browser-'));
-const port=59000+Math.floor(Math.random()*400);
+// Use an OS-selected ephemeral port instead of a collision-prone random fixed range.
+const port=await new Promise((resolve,reject)=>{
+ const probe=createServer();probe.once('error',reject);
+ probe.listen(0,'127.0.0.1',()=>{
+  const selected=probe.address().port;
+  probe.close(error=>error?reject(error):resolve(selected));
+ });
+});
 const origin='http://127.0.0.1:'+port,base=origin+'/corner';
 const owner='photo-owner@browser.test',password=crypto.randomBytes(28).toString('base64url');
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/V3sAAAAASUVORK5CYII=','base64');
