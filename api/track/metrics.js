@@ -3,8 +3,11 @@ import analytics from '../../server/track-analytics-handler.js';
 import { json, query, requireOwner } from '../lib/track.js';
 import publicEVSurvey from '../../server/ev-survey-public-handler.js';
 import privateEVSurvey from '../../server/ev-survey-private-handler.js';
+import {ingestPf3Event,readPf3Operations} from '../../server/pf3-track-handler.js';
 
 export default async function handler(req, res) {
+  if(req.query?.view==='pf3-ingest')return ingestPf3Event(req,res);
+  if(req.query?.view==='pf3-ops')return readPf3Operations(req,res);
   if (req.query?.view === 'site-events') return websiteCollector(req, res);
   // Keep EV research within the current Vercel Hobby serverless-function budget.
   if (req.query?.view === 'ev-public') return publicEVSurvey(req, res);
